@@ -519,6 +519,23 @@ int call_magic(struct char_data *caster, struct char_data *cvict, struct obj_dat
   if (spellnum < 1 || spellnum > TOP_SPELL_DEFINE)
     return (0);
 
+  // Message for debugging
+  // send_to_char(caster, "Caster: %s, Victim: %s, Object: %s, Spell: %s, Metamagic: %d, Level: %d, Cast Type: %d\r\n", GET_NAME(caster),
+  //              cvict ? GET_NAME(cvict) : "None",
+  //              ovict ? (ovict->short_description ? ovict->short_description : "Unnamed Object")
+  //                    : "None",
+  //              spell_info[spellnum].name, metamagic, level, casttype);
+
+  if (is_spellnum_psionic(spellnum) && !MOB_KNOWS_SPELL(caster, spellnum))
+  {
+    if (!IS_PSIONIC(caster))
+    {
+      // Commented out when not needed for debugging
+      // send_to_char(caster, "Only psions can use psionic powers.\r\n");
+      return 0;
+    }
+  }
+
   if (!cast_wtrigger(caster, cvict, ovict, spellnum))
     return 0;
   if (!cast_otrigger(caster, ovict, spellnum))

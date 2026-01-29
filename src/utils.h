@@ -983,9 +983,13 @@ void char_from_furniture(struct char_data *ch);
        ? GET_LEVEL(ch)                                                                             \
        : (CLASS_LEVEL(ch, CLASS_SUMMONER) + CLASS_LEVEL(ch, CLASS_NECROMANCER)))
 #define GET_PSIONIC_LEVEL(ch)                                                                      \
-  (((IS_NPC(ch) && GET_CLASS(ch) == CLASS_PSIONICIST) || GET_LEVEL(ch) >= LVL_IMMORT)              \
+  (( \
+  (IS_NPC(ch) && GET_CLASS(ch) == CLASS_PSIONICIST) || \
+  (!IS_NPC(ch) && GET_LEVEL(ch) >= LVL_IMMORT) \
+   ) \
        ? GET_LEVEL(ch)                                                                             \
-       : CLASS_LEVEL(ch, CLASS_PSIONICIST))
+       : CLASS_LEVEL(ch, CLASS_PSIONICIST) \
+  )
 #define IS_PSIONIC(ch)                                                                             \
   (GET_PSIONIC_LEVEL(ch) > 0 || (IS_NPC(ch) && GET_CLASS(ch) == CLASS_PSIONICIST))
 #define PSIONIC_LEVEL(ch)                                                                          \
