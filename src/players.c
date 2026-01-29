@@ -494,6 +494,7 @@ int load_char(const char *name, struct char_data *ch)
     GET_IRRESISTIBLE_MAGIC_COOLDOWN(ch) = 0;
     GET_QUICK_CAST_COOLDOWN(ch) = 0;
     GET_SPELL_RECALL_COOLDOWN(ch) = 0;
+    GET_COSMIC_AWARENESS_COOLDOWN(ch) = 0;
     GET_BONUS_DOMAIN_SLOTS_USED(ch) = 0;
     GET_BONUS_DOMAIN_REGEN_TIMER(ch) = 0;
     GET_BONUS_SLOTS_USED(ch) = 0;
@@ -1674,6 +1675,8 @@ int load_char(const char *name, struct char_data *ch)
           GET_QUICK_CAST_COOLDOWN(ch) = atoi(line);
         else if (!strcmp(tag, "SpRc"))
           GET_SPELL_RECALL_COOLDOWN(ch) = atoi(line);
+        else if (!strcmp(tag, "CoAw"))
+          GET_COSMIC_AWARENESS_COOLDOWN(ch) = atoi(line);
         else if (!strcmp(tag, "Skil"))
           load_skills(fl, ch);
         else if (!strcmp(tag, "SklF"))
@@ -2531,6 +2534,8 @@ void save_char(struct char_data *ch, int mode)
     BUFFER_WRITE("QkCs: %d\n", GET_QUICK_CAST_COOLDOWN(ch));
   if (GET_SPELL_RECALL_COOLDOWN(ch) != 0)
     BUFFER_WRITE("SpRc: %d\n", GET_SPELL_RECALL_COOLDOWN(ch));
+  if (GET_COSMIC_AWARENESS_COOLDOWN(ch) != 0)
+    BUFFER_WRITE("CoAw: %d\n", GET_COSMIC_AWARENESS_COOLDOWN(ch));
   if (GET_RETAINER_COOLDOWN(ch) != 0)
     BUFFER_WRITE("RetC: %d\n", GET_RETAINER_COOLDOWN(ch));
   if (GET_BONUS_DOMAIN_SLOTS_USED(ch) != 0)

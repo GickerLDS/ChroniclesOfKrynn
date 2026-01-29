@@ -4409,6 +4409,7 @@ const struct set_struct
     {"background", LVL_STAFF, PC, MISC},        /* 106 */
     {"arcanemark", LVL_STAFF, PC, MISC},        /* 107 */
     {"arcaneschool", LVL_STAFF, PC, MISC},      /* 108 */
+    {"talents", LVL_IMPL, PC, NUMBER},            /* 109 */
 
     {"\n", 0, BOTH, MISC},
 };
@@ -5341,6 +5342,13 @@ static int perform_set(struct char_data *ch, struct char_data *vict, int mode, c
                  spell_schools[school]);
     send_to_char(vict, "%s has set your spell school to %s.\r\n",
                  CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", spell_schools[school]);
+    break;
+
+  case 109:
+    GET_TALENT_POINTS(vict) = RANGE(0, 100);
+    send_to_char(ch, "%s's talent points set to %d.\r\n", GET_NAME(vict), GET_TALENT_POINTS(vict));
+    send_to_char(vict, "%s has set your talent points to %d.\r\n",
+                 CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", GET_TALENT_POINTS(vict));
     break;
 
   default:

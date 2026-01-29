@@ -2736,6 +2736,8 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
     send_to_char(ch, "Quick Cast - Duration: %d seconds\r\n", GET_QUICK_CAST_COOLDOWN(k) * 6);
   if (GET_SPELL_RECALL_COOLDOWN(k) > 0)
     send_to_char(ch, "Spell Recall - Duration: %d seconds\r\n", GET_SPELL_RECALL_COOLDOWN(k) * 6);
+  if (GET_COSMIC_AWARENESS_COOLDOWN(k) > 0)
+    send_to_char(ch, "Cosmic Awareness - Duration: %d seconds\r\n", GET_COSMIC_AWARENESS_COOLDOWN(k) * 6);
 
   /* PvP cooldown timer - only shows if PvP is enabled and time remaining */
   if (PRF_FLAGGED(k, PRF_PVP) && GET_PVP_TIMER(k) > 0)

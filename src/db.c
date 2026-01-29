@@ -4846,6 +4846,22 @@ struct obj_data *read_object(obj_vnum nr, int type) /* and obj_rnum */
     // REMOVE_BIT_AR(GET_OBJ_EXTRA(obj), ITEM_SET_STATS_AT_LOAD);
   }
 
+  /* Remove dashes from keywords */
+  if (obj->name)
+  {
+    char *src = obj->name;
+    char *dst = obj->name;
+    while (*src)
+    {
+      if (*src != '-')
+      {
+        *dst++ = *src;
+      }
+      src++;
+    }
+    *dst = '\0';
+  }
+
   return (obj);
 }
 

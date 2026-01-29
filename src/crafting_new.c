@@ -3339,13 +3339,14 @@ bool create_craft_skill_check(struct char_data *ch, struct obj_data *obj, int sk
 {
   if (!ch || !obj)
     return FALSE;
-  int roll, skill_mod;
+  int roll, skill_mod, proficiency_bonus = 0;
 
   roll = d20(ch);
   skill_mod = get_craft_skill_value(ch, skill);
 
   /* Add proficient talent bonus */
-  skill_mod += get_proficient_talent_bonus(ch, skill);
+  proficiency_bonus += get_proficient_talent_bonus(ch, skill);
+  skill_mod += proficiency_bonus;
 
   /* Add +5 bonus for Craft Wondrous Item feat when crafting misc items */
   if (HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM) &&
@@ -3390,59 +3391,61 @@ bool create_craft_skill_check(struct char_data *ch, struct obj_data *obj, int sk
   }
   else if ((roll + skill_mod) < dc)
   {
+    int base_skill = get_craft_skill_value(ch, skill);
+    const char *feat_bonus_desc = "";
+    char proficiency_desc[50] = "";
+    
     if (HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM) &&
         GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_MISC)
     {
-      send_to_char(ch,
-                   "You rolled %d + your skill in %s of %d (+5 Craft Wondrous Item bonus) = total "
-                   "of %d vs. dc %d. The %s attempt failed, but you may try again.\r\n",
-                   roll, ability_names[skill], skill_mod, roll + skill_mod, dc, method);
+      feat_bonus_desc = " (+5 Craft Wondrous Item)";
     }
     else if (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR) &&
              (GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_WEAPON ||
               GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR))
     {
-      send_to_char(ch,
-                   "You rolled %d + your skill in %s of %d (+5 Craft Magical Arms and Armor bonus) "
-                   "= total of %d vs. dc %d. The %s attempt failed, but you may try again.\r\n",
-                   roll, ability_names[skill], skill_mod, roll + skill_mod, dc, method);
+      feat_bonus_desc = " (+5 Craft Magical Arms and Armor)";
     }
-    else
-    {
-      send_to_char(ch,
-                   "You rolled %d + your skill in %s of %d = total of %d vs. dc %d. The %s attempt "
-                   "failed, but you may try again.\r\n",
-                   roll, ability_names[skill], skill_mod, roll + skill_mod, dc, method);
-    }
+
+    if (proficiency_bonus > 0)
+      snprintf(proficiency_desc, sizeof(proficiency_desc), " (+%d proficiency)", proficiency_bonus);
+
+    send_to_char(ch,
+                 "You rolled %d + your skill in %s of %d%s%s = total of %d vs. dc %d. The %s "
+                 "attempt failed, but you may try again.\r\n",
+                 roll, ability_names[skill], base_skill, proficiency_desc,
+                 feat_bonus_desc,
+                 roll + skill_mod, dc, method);
     gain_craft_exp(ch, exp, skill, TRUE);
     return FALSE;
   }
   else
   {
+    int base_skill = get_craft_skill_value(ch, skill);
+    const char *feat_bonus_desc = "";
+    char proficiency_desc[50] = "";
+    
     if (HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM) &&
         GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_MISC)
     {
-      send_to_char(ch,
-                   "You rolled %d + your skill in %s of %d (+5 Craft Wondrous Item bonus) = total "
-                   "of %d vs. dc %d. The %s attempt succeeded!\r\n",
-                   roll, ability_names[skill], skill_mod, roll + skill_mod, dc, method);
+      feat_bonus_desc = " (+5 Craft Wondrous Item)";
     }
     else if (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR) &&
              (GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_WEAPON ||
               GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR))
     {
-      send_to_char(ch,
-                   "You rolled %d + your skill in %s of %d (+5 Craft Magical Arms and Armor bonus) "
-                   "= total of %d vs. dc %d. The %s attempt succeeded!\r\n",
-                   roll, ability_names[skill], skill_mod, roll + skill_mod, dc, method);
+      feat_bonus_desc = " (+5 Craft Magical Arms and Armor)";
     }
-    else
-    {
-      send_to_char(ch,
-                   "You rolled %d + your skill in %s of %d = total of %d vs. dc %d. The %s attempt "
-                   "succeeded!\r\n",
-                   roll, ability_names[skill], skill_mod, roll + skill_mod, dc, method);
-    }
+
+    if (proficiency_bonus > 0)
+      snprintf(proficiency_desc, sizeof(proficiency_desc), " (+%d proficiency)", proficiency_bonus);
+
+    send_to_char(ch,
+                 "You rolled %d + your skill in %s of %d%s%s = total of %d vs. dc %d. The %s "
+                 "attempt succeeded!\r\n",
+                 roll, ability_names[skill], base_skill, proficiency_desc,
+                 feat_bonus_desc,
+                 roll + skill_mod, dc, method);
     return TRUE;
   }
   return FALSE;

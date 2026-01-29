@@ -9055,6 +9055,7 @@ void clear_misc_cooldowns(struct char_data *ch)
   GET_MISSION_COOLDOWN(ch) = 0;
   GET_FORAGE_COOLDOWN(ch) = 0;
   GET_SCROUNGE_COOLDOWN(ch) = 0;
+  GET_COSMIC_AWARENESS_COOLDOWN(ch) = 0;
 }
 
 bool can_mastermind_power(struct char_data *ch, int spellnum)

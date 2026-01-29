@@ -1825,6 +1825,12 @@ void finishCasting(struct char_data *ch)
                (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch),
                CAST_SPELL);
 
+    /* Set cosmic awareness cooldown after successful manifestation */
+    if (!IS_NPC(ch) && spellnum == PSIONIC_COSMIC_AWARENESS)
+    {
+      GET_COSMIC_AWARENESS_COOLDOWN(ch) = 100; /* 10 minutes = 100 ticks */
+    }
+
     /* Psionicist Telepathic Control Tier I mechanics */
     if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_PSIONICIST && is_spellnum_psionic(spellnum))
     {
@@ -2297,6 +2303,22 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
     send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
     return 0;
   }
+  // cosmic awareness cooldown (10 minutes = 100 ticks)
+  if (spellnum == PSIONIC_COSMIC_AWARENESS && GET_COSMIC_AWARENESS_COOLDOWN(ch) > 0)
+  {
+    int seconds_left = GET_COSMIC_AWARENESS_COOLDOWN(ch) * 6;
+    int minutes = seconds_left / 60;
+    int seconds = seconds_left % 60;
+
+    if (minutes > 0)
+      send_to_char(ch, "You must wait %d minute%s and %d second%s before manifesting cosmic awareness again.\r\n",
+                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+    else
+      send_to_char(ch, "You must wait %d second%s before manifesting cosmic awareness again.\r\n",
+                   seconds, (seconds != 1 ? "s" : ""));
+    return 0;
+  }
+
   if (char_has_mud_event(ch, eEPICMAGEARMOR) && spellnum == SPELL_EPIC_MAGE_ARMOR)
   {
     send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");

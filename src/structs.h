@@ -6823,6 +6823,7 @@ struct player_special_data_saved
   int quick_cast_cooldown;    // Versatile Caster perk: 5 minute cooldown for free quicken metamagic
   int spell_recall_cooldown;  // Versatile Caster perk: daily cooldown for restoring a spell slot
   int deathless_frenzy_timer; // Berserker Occult Slayer perk: 5 minute cooldown for Deathless Frenzy
+  int cosmic_awareness_cooldown; // Cosmic Awareness psionic power: 10 minute cooldown
 
   /* Domain Master perk bonus spell slot tracking */
   int bonus_domain_slots_used;  // Tracks used bonus domain spell slots
