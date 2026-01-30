@@ -13,6 +13,7 @@
 
 #include "sysdep.h"
 #include "structs.h"
+#include "utils.h"
 
 /* Forward declaration */
 struct char_data;
@@ -139,7 +140,10 @@ struct char_data;
 #define TALENT_LIGHTNING_MOTE_SYNERGY 93
 #define TALENT_WATER_MOTE_SYNERGY 94
 
-#define TALENT_MAX 95 /* one past highest */
+/* Misc/General Talents */
+#define TALENT_SURVEYOR 95
+
+#define TALENT_MAX 96 /* one past highest */
 
 /* Talent Categories */
 #define TALENT_CAT_GENERAL 0

@@ -538,15 +538,13 @@ int do_simple_move(struct char_data *ch, int dir, int need_specials_check)
   }
 
   /* Check zone flag restrictions */
-  if (ZONE_FLAGGED(GET_ROOM_ZONE(going_to), ZONE_CLOSED))
+  if (ZONE_FLAGGED(GET_ROOM_ZONE(going_to), ZONE_CLOSED) && GET_LEVEL(ch) < LVL_IMMORT)
   {
-    send_to_char(ch, "A mysterious barrier forces you back! That area is "
-                     "off-limits.\r\n");
+    send_to_char(ch, "A mysterious barrier forces you back! That area is off-limits.\r\n");
     return (0);
   }
 
-  if (ZONE_FLAGGED(GET_ROOM_ZONE(going_to), ZONE_NOIMMORT) && (GET_LEVEL(ch) >= LVL_IMMORT) &&
-      (GET_LEVEL(ch) < LVL_GRSTAFF))
+  if (ZONE_FLAGGED(GET_ROOM_ZONE(going_to), ZONE_NOIMMORT) && GET_LEVEL(ch) < LVL_IMMORT)
   {
     send_to_char(ch, "A mysterious barrier forces you back! That area is off-limits.\r\n");
     return (0);
@@ -860,6 +858,10 @@ int do_simple_move(struct char_data *ch, int dir, int need_specials_check)
     GET_MOVE(RIDING(ch)) -= need_movement;
   else if (ridden_by)
     GET_MOVE(RIDDEN_BY(ch)) -= need_movement;
+
+  /* Reduce survey rooms counter on movement (if > 0) */
+  if (!IS_NPC(ch) && GET_SURVEY_ROOMS(ch) > 0)
+    GET_SURVEY_ROOMS(ch)--;
 
   /* Display leave messages using modular function */
   display_leave_messages(ch, dir, riding, ridden_by);

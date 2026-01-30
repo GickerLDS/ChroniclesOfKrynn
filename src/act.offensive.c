@@ -7716,8 +7716,7 @@ ACMD(do_grave_magic)
 
     if (INCORPOREAL_FORM_TIMER(ch) <= 0)
       INCORPOREAL_FORM_TIMER(ch) = 150;
-    INCORPOREAL_FORM_USES(ch)
-    --;
+    INCORPOREAL_FORM_USES(ch)--;
 
     return; // end incorporeal form
   }

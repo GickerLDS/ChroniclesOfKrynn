@@ -1471,9 +1471,10 @@
 #define PRF_AUTOSEARCH                                                                             \
   84 /**< Automatically search for traps when moving (1/2 perception, 1/2 speed, lose initiative) */
 #define PRF_SWEEPING_STRIKE 85 /**< Monk sweeping strike: auto-trip on first flurry attack */
+#define PRF_SURVEY_ROOMS_PROMPT 86 /**< Display survey rooms in prompt */
 
 /** Total number of available PRF flags */
-#define NUM_PRF_FLAGS 86
+#define NUM_PRF_FLAGS 87
 
 /* Score Color Theme constants */
 #define SCORE_THEME_ENHANCED 0     /**< Enhanced theme with rich colors */
@@ -6251,6 +6252,11 @@ struct char_point_data
      handler.c reset_char_points() to see if it needs to be added */
 };
 
+/* Talent rank storage (must be >= TALENT_MAX from talents.h). */
+#ifndef TALENT_RANKS_MAX
+#define TALENT_RANKS_MAX 128
+#endif
+
 /** char_special_data_saved: specials which both a PC and an NPC have in
  * common, but which must be saved to the players file for PC's. */
 struct char_special_data_saved
@@ -6617,8 +6623,8 @@ struct player_special_data_saved
   /* Talent system (crafting / harvesting) */
   int talent_points; /* Unspent crafting talent points */
   /* New rank-based talent storage; index by talent id. 0 = not learned. */
-  /* Using 64 as a stable upper bound; must be >= TALENT_MAX from talents.h */
-  ubyte talent_ranks[64];
+  /* Sized to TALENT_RANKS_MAX (must be >= TALENT_MAX from talents.h). */
+  ubyte talent_ranks[TALENT_RANKS_MAX];
   /* Legacy bitset kept for backwards-compat load. No longer used by game logic. */
   unsigned int talents_bits[2]; /* [DEPRECATED] Bitset for up to 64 talents */
 
@@ -6736,6 +6742,8 @@ struct player_special_data_saved
   int faction;
 
   bool quit_survey_completed; /* Has the quit feedback prompt been answered? */
+  int survey_rooms;           /* Number of rooms surveyed for harvesting */
+  time_t survey_exp_cooldown; /* Cooldown for gaining survey exp (2 minutes) */
 
   /* staff event variables */
   int staff_ran_events[STAFF_RAN_EVENTS_VAR];
@@ -7983,7 +7991,7 @@ extern struct race_data race_list[];
 #define TALENT_ACCESS_MACROS
 /* Rank access; bounds-safe: talents are 1..TALENT_MAX-1. */
 #define GET_TALENT_RANK(ch, talent)                                                                \
-  (((ch) && (ch)->player_specials && (talent) > 0 && (talent) < 64)                                \
+  (((ch) && (ch)->player_specials && (talent) > 0 && (talent) < TALENT_RANKS_MAX)                  \
        ? (ch)->player_specials->saved.talent_ranks[(talent)]                                       \
        : 0)
 
@@ -7994,7 +8002,8 @@ extern struct race_data race_list[];
 #define SET_TALENT(ch, talent)                                                                     \
   do                                                                                               \
   {                                                                                                \
-    if ((ch) && (talent) > 0 && (talent) < 64 && GET_TALENT_RANK((ch), (talent)) == 0)             \
+    if ((ch) && (talent) > 0 && (talent) < TALENT_RANKS_MAX &&                                     \
+        GET_TALENT_RANK((ch), (talent)) == 0)                                                      \
       (ch)->player_specials->saved.talent_ranks[(talent)] = 1;                                     \
   } while (0)
 

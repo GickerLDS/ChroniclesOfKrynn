@@ -11,6 +11,7 @@
 #include "conf.h"
 #include "sysdep.h"
 #include "structs.h"
+#include "talents.h"
 #include "utils.h"
 #include "db.h"
 #include "handler.h"
@@ -941,7 +942,9 @@ int load_char(const char *name, struct char_data *ch)
         else if (!strcmp(tag, "CrSN"))
           GET_CRAFT(ch).supply_num_required = atoi(line);
         else if (!strcmp(tag, "CrSR"))
-          GET_CRAFT(ch).survey_rooms = atoi(line);
+          GET_SURVEY_ROOMS(ch) = atoi(line);
+        else if (!strcmp(tag, "SECd"))
+          GET_SURVEY_EXP_COOLDOWN(ch) = (time_t)atoi(line);
         else if (!strcmp(tag, "CrIy"))
           GET_CRAFT(ch).instrument_type = atoi(line);
         else if (!strcmp(tag, "CrIQ"))
@@ -1807,13 +1810,13 @@ int load_char(const char *name, struct char_data *ch)
         }
         else if (!strcmp(tag, "Tlrk"))
         {
-          /* New rank array: pairs of (talent rank) across 64 entries */
-          /* Format: Tlrk: <t0> <t1> ... <t63> (we will actually use indices 1..TALENT_MAX-1) */
+          /* New rank array: pairs of (talent rank) across TALENT_MAX entries */
+          /* Format: Tlrk: <t0> <t1> ... <tN> (we will actually use indices 1..TALENT_MAX-1) */
           int consumed = 0;
           const char *p = line;
           int val;
           int t;
-          for (t = 0; t < 64; t++)
+          for (t = 0; t < TALENT_MAX; t++)
           {
             if (sscanf(p, "%d%n", &val, &consumed) == 1)
             {
@@ -2414,9 +2417,9 @@ void save_char(struct char_data *ch, int mode)
 
   if (GET_TALENT_POINTS(ch) != 0)
     BUFFER_WRITE("Tlpt: %d\n", GET_TALENT_POINTS(ch));
-  /* Save rank array (fixed 64 entries) */
+  /* Save rank array (fixed TALENT_MAX entries) */
   BUFFER_WRITE("Tlrk:");
-  for (i = 0; i < 64; i++)
+  for (i = 0; i < TALENT_MAX; i++)
     BUFFER_WRITE(" %d", ch->player_specials->saved.talent_ranks[i]);
   BUFFER_WRITE("\n");
   /* Also write a zeroed legacy bitset for compatibility, or synthesize from ranks */
@@ -2899,7 +2902,9 @@ void save_char(struct char_data *ch, int mode)
     }
   }
 
-  BUFFER_WRITE("CrSR: %d\n", GET_CRAFT(ch).survey_rooms);
+  BUFFER_WRITE("CrSR: %d\n", GET_SURVEY_ROOMS(ch));
+  if (GET_SURVEY_EXP_COOLDOWN(ch) > 0)
+    BUFFER_WRITE("SECd: %ld\n", (long)GET_SURVEY_EXP_COOLDOWN(ch));
   BUFFER_WRITE("CrIy: %d\n", GET_CRAFT(ch).instrument_type);
   BUFFER_WRITE("CrIQ: %d\n", GET_CRAFT(ch).instrument_quality);
   BUFFER_WRITE("CrIE: %d\n", GET_CRAFT(ch).instrument_effectiveness);

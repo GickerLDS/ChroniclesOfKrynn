@@ -1312,6 +1312,7 @@ const char *preference_bits[] = {"Brief",
                                  "BoardCheck-On-Login",
                                  "Auto-Search",
                                  "Sweeping-Strike",
+                                 "Survey-Rooms",
                                  "\n"};
 CHECK_TABLE_SIZE(preference_bits, NUM_PRF_FLAGS + 1);
 
@@ -3080,7 +3081,7 @@ const char *ability_names[] = {
     "jewelcrafting", "leatherworking", "trapmaking", "poisonmaking", "metalworking", "fishing",
     "cooking", "brewing",
     // harvesting
-    "mining", "hunting", "forestry", "gathering", "\n"};
+    "mining", "hunting", "forestry", "gathering", "surveying", "\n"};
 CHECK_TABLE_SIZE(ability_names, NUM_ABILITIES - START_GENERAL_ABILITIES + 3);
 
 #if defined(CAMPAIGN_DL)

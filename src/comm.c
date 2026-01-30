@@ -1937,6 +1937,16 @@ static char *make_prompt(struct descriptor_data *d)
         if (count >= 0)
           len += count;
       }
+
+      /* display survey rooms */
+      if (PRF_FLAGGED(d->character, PRF_SURVEY_ROOMS_PROMPT) && len < sizeof(prompt))
+      {
+        count = snprintf(prompt + len, sizeof(prompt) - len, "%sSurvey:%s%d ",
+                         CCYEL(d->character, C_NRM), CCNRM(ch, C_NRM),
+                         GET_SURVEY_ROOMS(ch));
+        if (count >= 0)
+          len += count;
+      }
     } /* end prompt itself, start extra */
 
     if (HAS_WAIT(d->character) && len < sizeof(prompt))

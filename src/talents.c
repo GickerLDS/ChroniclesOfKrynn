@@ -153,6 +153,13 @@ void init_talents(void)
           "water mote from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
 
+  /* Misc/General Talents */
+  talento(TALENT_SURVEYOR, "surveyor", 1, 1000, 10,
+          "Reveals information about surrounding areas",
+          "Each rank in surveyor grants additional insight when exploring and surveying the "
+          "landscape, revealing more information about the surrounding areas.",
+          TRUE, TALENT_CAT_GENERAL);
+
   /* Skill-specific talents generated from CSV */
   /* Woodworking talents */
   talento(TALENT_PROFICIENT_WOODWORKING, "proficient woodworking", 1, 1000, 5,
@@ -1268,7 +1275,7 @@ ACMD(do_talento)
     return;
   }
 
-  if (talent_num > 0 && talent_num < 64)
+  if (talent_num > 0 && talent_num < TALENT_MAX)
     vict->player_specials->saved.talent_ranks[talent_num] = (ubyte)value;
 
   send_to_char(ch, "%s's talent '%s' set to rank %d.\r\n", GET_NAME(vict),

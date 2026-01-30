@@ -2189,11 +2189,23 @@ static void look_at_target(struct char_data *ch, char *arg)
 void perform_cooldowns(struct char_data *ch, struct char_data *k)
 {
   struct mud_event_data *pMudEvent = NULL;
-
+  time_t now = time(NULL);
 
   send_to_char(ch, "\tC");
   text_line(ch, "\tYCooldowns\tC", 80, '-', '-');
   send_to_char(ch, "\tn");
+
+  /* Survey exp cooldown */
+  if (GET_SURVEY_EXP_COOLDOWN(k) > now)
+  {
+    int seconds_left = GET_SURVEY_EXP_COOLDOWN(k) - now;
+    int minutes_left = seconds_left / 60;
+    seconds_left = seconds_left % 60;
+    send_to_char(ch,
+                 "Survey Exp Cooldown: You can gain survey exp again in %d minute%s %d second%s.\r\n",
+                 minutes_left, (minutes_left == 1) ? "" : "s", seconds_left,
+                 (seconds_left == 1) ? "" : "s");
+  }
 
   // Device creation cooldown (global for artificer)
   if (k->player_specials->saved.device_creation_cooldown > time(0))

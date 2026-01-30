@@ -3,6 +3,7 @@
 
 #include "conf.h"
 #include "sysdep.h"
+#include <time.h>
 #include "structs.h"
 #include "bool.h"
 #include "mysql.h"
@@ -747,6 +748,7 @@ int craft_group_by_material(int material)
 
 void survey_complete(struct char_data *ch)
 {
+  int roll = 0, talent_bonus = 0, skill_bonus = 0;
   ch->player_specials->surveyed_room = TRUE;
   if (world[IN_ROOM(ch)].harvest_material != CRAFT_MAT_NONE &&
       world[IN_ROOM(ch)].harvest_material_amount > 0)
@@ -767,9 +769,44 @@ void survey_complete(struct char_data *ch)
   }
   GET_CRAFT(ch).crafting_method = 0;
   GET_CRAFT(ch).craft_duration = 0;
-  GET_CRAFT(ch).survey_rooms = d20(ch) + 5;
-  send_to_char(ch, "You have surveyed %d rooms of the surrounding area.\r\n",
-               GET_CRAFT(ch).survey_rooms);
+  roll = d20(ch);
+  talent_bonus = get_talent_rank(ch, TALENT_SURVEYOR);
+  skill_bonus = get_craft_skill_value(ch, ABILITY_HARVEST_SURVEYING);
+  GET_SURVEY_ROOMS(ch) = roll + talent_bonus + skill_bonus;
+  
+  char talent_bonus_text[128];
+  char skill_bonus_text[128];
+  
+  if (talent_bonus > 0)
+    snprintf(talent_bonus_text, sizeof(talent_bonus_text), " + surveyor talent [%d]", talent_bonus);
+  else
+    talent_bonus_text[0] = '\0';
+  
+  if (skill_bonus > 0)
+    snprintf(skill_bonus_text, sizeof(skill_bonus_text), " + skill bonus [%d]", skill_bonus);
+  else
+    skill_bonus_text[0] = '\0';
+  
+  send_to_char(ch, "Roll [%d]%s%s = %d rooms surveyed.\r\n",
+               roll, talent_bonus_text, skill_bonus_text, GET_SURVEY_ROOMS(ch));
+  
+  /* Check for survey exp cooldown */
+  time_t now = time(NULL);
+  if (GET_SURVEY_EXP_COOLDOWN(ch) > now)
+  {
+    int seconds_left = GET_SURVEY_EXP_COOLDOWN(ch) - now;
+    int minutes_left = seconds_left / 60;
+    seconds_left = seconds_left % 60;
+    send_to_char(ch, "\tYSurvey exp cooldown active - you can gain exp again in %d minute%s %d second%s.\tn\r\n",
+                 minutes_left, (minutes_left == 1) ? "" : "s", seconds_left, (seconds_left == 1) ? "" : "s");
+  }
+  else
+  {
+    /* Cooldown has expired or doesn't exist, set new cooldown (2 minutes) */
+    GET_SURVEY_EXP_COOLDOWN(ch) = now + (2 * 60);
+    gain_craft_exp(ch, 10 + GET_SURVEY_ROOMS(ch), ABILITY_HARVEST_SURVEYING, TRUE);
+  }
+  
   act("$n finishes surveying.", FALSE, ch, 0, 0, TO_ROOM);
 }
 
@@ -4446,8 +4483,8 @@ const int craft_skills_alphabetic[END_HARVEST_ABILITIES - START_CRAFT_ABILITIES 
     ABILITY_CRAFT_COOKING,        ABILITY_CRAFT_FISHING,       ABILITY_HARVEST_FORESTRY,
     ABILITY_HARVEST_GATHERING,    ABILITY_HARVEST_HUNTING,     ABILITY_CRAFT_JEWELCRAFTING,
     ABILITY_CRAFT_LEATHERWORKING, ABILITY_CRAFT_METALWORKING,  ABILITY_HARVEST_MINING,
-    ABILITY_CRAFT_POISONMAKING,   ABILITY_CRAFT_TAILORING,     ABILITY_CRAFT_TRAPMAKING,
-    ABILITY_CRAFT_WEAPONSMITHING, ABILITY_CRAFT_WOODWORKING};
+    ABILITY_CRAFT_POISONMAKING,   ABILITY_HARVEST_SURVEYING,   ABILITY_CRAFT_TAILORING,
+    ABILITY_CRAFT_TRAPMAKING,     ABILITY_CRAFT_WEAPONSMITHING, ABILITY_CRAFT_WOODWORKING};
 
 void show_craft_score(struct char_data *ch, const char *arg2)
 {
@@ -4793,6 +4830,7 @@ void harvest_complete(struct char_data *ch)
   int skill = 0, skill_roll = 0, roll = 0, dc = 0, amount = 0, bonus = 0, harvest_level = 0;
   bool motes_found = FALSE;
   int num_motes, mote_type, bonus_motes, synergy_talent, synergy_rank;
+  int prof_bonus = 0;
 
   if (world[IN_ROOM(ch)].harvest_material == CRAFT_MAT_NONE ||
       world[IN_ROOM(ch)].harvest_material_amount <= 0)
@@ -4814,12 +4852,12 @@ void harvest_complete(struct char_data *ch)
   skill_roll = get_craft_skill_value(ch, skill);
 
   /* Add proficient talent bonus */
-  skill_roll += get_proficient_talent_bonus(ch, skill);
+  prof_bonus = get_proficient_talent_bonus(ch, skill);
 
   harvest_level = MAX(1, material_grade(world[IN_ROOM(ch)].harvest_material) * 5);
   dc = HARVEST_BASE_DC + (harvest_level);
 
-  if ((20 + skill_roll) < dc)
+  if ((20 + skill_roll + prof_bonus) < dc)
   {
     send_to_char(ch, "You don't have the skill to harvest %s.\r\n",
                  crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
@@ -4848,12 +4886,18 @@ void harvest_complete(struct char_data *ch)
     GET_CRAFT(ch).crafting_method = 0;
     return;
   }
-  else if ((roll + skill_roll) < dc)
+  else if ((roll + skill_roll + prof_bonus) < dc)
   {
+    char prof_bonus_text[128];
+    if (prof_bonus > 0)
+      snprintf(prof_bonus_text, sizeof(prof_bonus_text), " + proficiency bonus [%d]", prof_bonus);
+    else
+      prof_bonus_text[0] = '\0';
+    
     send_to_char(ch,
-                 "Roll [%d] + Skill [%d] = Total [%d] vs. DC [%d]. Failure. You have failed to "
+                 "Roll [%d] + Skill [%d]%s = Total [%d] vs. DC [%d]. Failure. You have failed to "
                  "harvest %s.\r\n",
-                 roll, skill_roll, roll + skill_roll, dc,
+                 roll, skill_roll, prof_bonus_text, roll + skill_roll + prof_bonus, dc,
                  crafting_materials[world[IN_ROOM(ch)].harvest_material]);
     GET_CRAFT(ch).craft_duration = 0;
     GET_CRAFT(ch).crafting_method = 0;
@@ -4877,10 +4921,16 @@ void harvest_complete(struct char_data *ch)
     }
     else
     {
+      char prof_bonus_text[128];
+      if (prof_bonus > 0)
+        snprintf(prof_bonus_text, sizeof(prof_bonus_text), " + proficiency bonus [%d]", prof_bonus);
+      else
+        prof_bonus_text[0] = '\0';
+      
       send_to_char(ch,
-                   "Roll [%d] + Skill [%d] = Total [%d] vs. DC [%d]. Success! You have harvested "
+                   "Roll [%d] + Skill [%d]%s = Total [%d] vs. DC [%d]. Success! You have harvested "
                    "%d %s from %s.\r\n",
-                   roll, skill_roll, roll + skill_roll, dc, amount,
+                   roll, skill_roll, prof_bonus_text, roll + skill_roll + prof_bonus, dc, amount,
                    crafting_materials[world[IN_ROOM(ch)].harvest_material],
                    crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
       gain_craft_exp(ch, HARVEST_BASE_EXP + ((HARVEST_BASE_EXP / 2) * harvest_level), skill, TRUE);
@@ -4993,6 +5043,12 @@ void newcraft_harvest(struct char_data *ch, const char *argument)
     return;
   }
 
+  if (GET_SURVEY_ROOMS(ch) <= 0)
+  {
+    send_to_char(ch, "You must survey the area before harvesting.\r\n");
+    return;
+  }
+
   if (world[IN_ROOM(ch)].harvest_material == CRAFT_MAT_NONE ||
       world[IN_ROOM(ch)].harvest_material_amount <= 0)
   {
@@ -5028,7 +5084,9 @@ void newcraft_harvest(struct char_data *ch, const char *argument)
   GET_CRAFT(ch).crafting_method = SCMD_NEWCRAFT_HARVEST;
   GET_CRAFT(ch).craft_duration = seconds;
 
-  send_to_char(ch, "You begin %s.\r\n", harvesting_messages[world[IN_ROOM(ch)].harvest_material]);
+  send_to_char(ch, "You begin %s. Survey rooms remaining: %d\r\n", 
+               harvesting_messages[world[IN_ROOM(ch)].harvest_material],
+               GET_SURVEY_ROOMS(ch));
   act("$n starts harvesting.", FALSE, ch, 0, 0, TO_ROOM);
 }
 
@@ -5606,6 +5664,7 @@ int crafting_skill_type(int skill)
   case ABILITY_HARVEST_HUNTING:
   case ABILITY_HARVEST_FORESTRY:
   case ABILITY_HARVEST_GATHERING:
+  case ABILITY_HARVEST_SURVEYING:
     return CRAFT_SKILL_TYPE_HARVEST;
 
   case ABILITY_CRAFT_BOWMAKING:

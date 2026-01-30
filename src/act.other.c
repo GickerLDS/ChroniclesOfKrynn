@@ -8435,6 +8435,8 @@ ACMD(do_gen_tog)
        "attack.\r\n",
        "Sweeping strike enabled. You will now automatically attempt a trip on the first flurry of "
        "blows attack each round.\r\n"},
+      // 69
+      {"Survey rooms in prompt disabled.\r\n", "Survey rooms in prompt enabled.\r\n"},
   };
 
   if (IS_NPC(ch))
@@ -8762,6 +8764,9 @@ ACMD(do_gen_tog)
       return;
     }
     result = PRF_TOG_CHK(ch, PRF_SWEEPING_STRIKE);
+    break;
+  case SCMD_SURVEY_ROOMS_PROMPT:
+    result = PRF_TOG_CHK(ch, PRF_SURVEY_ROOMS_PROMPT);
     break;
   default:
     log("SYSERR: Unknown subcmd %d in do_gen_toggle.", subcmd);
