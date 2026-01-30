@@ -4612,11 +4612,12 @@ bool perform_wield(struct char_data *ch, struct obj_data *obj, bool not_silent)
     if (not_silent)
       send_to_char(ch, "You can't wield an object mold!\r\n");
   }
-  else if (GET_OBJ_WEIGHT(obj) > str_app[GET_STR(ch)].wield_w)
-  {
-    if (not_silent)
-      send_to_char(ch, "It's too heavy for you to use.\r\n");
-  }
+  // We don't want to restrict wielding by strength
+  // else if (GET_OBJ_WEIGHT(obj) > str_app[GET_STR(ch)].wield_w)
+  // {
+  //   if (not_silent)
+  //     send_to_char(ch, "It's too heavy for you to use.\r\n");
+  // }
   else if (level_allowed < GET_OBJ_LEVEL(obj))
   {
     if (not_silent)
