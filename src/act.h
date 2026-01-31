@@ -1142,6 +1142,7 @@ ACMD_DECL(do_objcheck);
 ACMD_DECL(do_resourceadmin);
 ACMD_DECL(do_regenadmin);
 ACMD_DECL(do_materialadmin);
+ACMD_DECL(do_findmaterial);
 ACMD_DECL(do_effectsadmin);
 ACMD_DECL(do_zunlock);
 ACMD_DECL(do_afflist);

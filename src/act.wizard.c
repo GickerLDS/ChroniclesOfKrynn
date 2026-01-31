@@ -4409,7 +4409,8 @@ const struct set_struct
     {"background", LVL_STAFF, PC, MISC},        /* 106 */
     {"arcanemark", LVL_STAFF, PC, MISC},        /* 107 */
     {"arcaneschool", LVL_STAFF, PC, MISC},      /* 108 */
-    {"talents", LVL_IMPL, PC, NUMBER},            /* 109 */
+    {"talents", LVL_GRSTAFF, PC, NUMBER},       /* 109 */
+    {"addtalents", LVL_GRSTAFF, PC, NUMBER},    /* 110 */
 
     {"\n", 0, BOTH, MISC},
 };
@@ -5349,6 +5350,14 @@ static int perform_set(struct char_data *ch, struct char_data *vict, int mode, c
     send_to_char(ch, "%s's talent points set to %d.\r\n", GET_NAME(vict), GET_TALENT_POINTS(vict));
     send_to_char(vict, "%s has set your talent points to %d.\r\n",
                  CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", GET_TALENT_POINTS(vict));
+    break;
+
+  case 110:
+    int talents = RANGE(-100, 100);
+    GET_TALENT_POINTS(vict) += talents;
+    send_to_char(ch, "%s's talent points adjusted by %d.\r\n", GET_NAME(vict), talents);
+    send_to_char(vict, "%s has adjusted your talent points by %d.\r\n",
+                 CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", talents);
     break;
 
   default:
@@ -11812,6 +11821,66 @@ ACMD(do_effectsadmin)
   }
 
   send_to_char(ch, "Unknown command. Type 'effectsadmin' for help.\r\n");
+}
+
+/* Staff command to find rooms with specific harvestable materials */
+ACMD(do_findmaterial)
+{
+  char arg[MAX_INPUT_LENGTH];
+  room_rnum room;
+  int material_type = -1;
+  int count = 0;
+  int i;
+
+  one_argument(argument, arg, sizeof(arg));
+
+  if (!*arg)
+  {
+    send_to_char(ch, "Usage: findmaterial <material_name>\r\n");
+    send_to_char(ch, "Example: findmaterial copper\r\n");
+    send_to_char(ch, "\r\nAvailable materials:\r\n");
+    for (i = 1; i < NUM_CRAFT_MATS; i++)
+    {
+      send_to_char(ch, "  %s\r\n", crafting_materials[i]);
+    }
+    return;
+  }
+
+  /* Search for matching material name */
+  for (i = 1; i < NUM_CRAFT_MATS; i++)
+  {
+    if (is_abbrev(arg, crafting_materials[i]))
+    {
+      material_type = i;
+      break;
+    }
+  }
+
+  if (material_type == -1)
+  {
+    send_to_char(ch, "Unknown material type '%s'.\r\n", arg);
+    send_to_char(ch, "Use 'findmaterial' without arguments to see available materials.\r\n");
+    return;
+  }
+
+  send_to_char(ch, "\r\nSearching for: %s\r\n", crafting_materials[material_type]);
+  send_to_char(ch, "==================================================\r\n");
+
+  /* Iterate through all rooms in the game */
+  for (room = 0; room <= top_of_world; room++)
+  {
+    if (world[room].harvest_material == material_type)
+    {
+      count++;
+      send_to_char(ch, "[%5d] %-40s (%d units)\r\n",
+                   GET_ROOM_VNUM(room),
+                   world[room].name,
+                   world[room].harvest_material_amount);
+    }
+  }
+
+  send_to_char(ch, "==================================================\r\n");
+  send_to_char(ch, "Total rooms found: %d\r\n", count);
 }
 
 /* Phase 4.5: Admin command to add materials for testing */

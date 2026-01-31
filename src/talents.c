@@ -112,45 +112,37 @@ void init_talents(void)
           TRUE, TALENT_CAT_GENERAL);
 
   /* Mote Synergy Talents */
-  talento(TALENT_AIR_MOTE_SYNERGY, "air mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra air mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra air mote whenever you would gain an air "
-          "mote from harvesting.",
+    talento(TALENT_AIR_MOTE_SYNERGY, "air mote synergy", 2, 5000, 5,
+      "+1 air mote per rank when harvesting",
+      "Each rank grants +1 air mote whenever you would gain air motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_DARK_MOTE_SYNERGY, "dark mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra dark mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra dark mote whenever you would gain a dark "
-          "mote from harvesting.",
+      "+1 dark mote per rank when harvesting",
+      "Each rank grants +1 dark mote whenever you would gain dark motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_EARTH_MOTE_SYNERGY, "earth mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra earth mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra earth mote whenever you would gain an "
-          "earth mote from harvesting.",
+      "+1 earth mote per rank when harvesting",
+      "Each rank grants +1 earth mote whenever you would gain earth motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_FIRE_MOTE_SYNERGY, "fire mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra fire mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra fire mote whenever you would gain a fire "
-          "mote from harvesting.",
+      "+1 fire mote per rank when harvesting",
+      "Each rank grants +1 fire mote whenever you would gain fire motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_ICE_MOTE_SYNERGY, "ice mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra ice mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra ice mote whenever you would gain an ice "
-          "mote from harvesting.",
+      "+1 ice mote per rank when harvesting",
+      "Each rank grants +1 ice mote whenever you would gain ice motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_LIGHT_MOTE_SYNERGY, "light mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra light mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra light mote whenever you would gain a "
-          "light mote from harvesting.",
+      "+1 light mote per rank when harvesting",
+      "Each rank grants +1 light mote whenever you would gain light motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_LIGHTNING_MOTE_SYNERGY, "lightning mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra lightning mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra lightning mote whenever you would gain a "
-          "lightning mote from harvesting.",
+      "+1 lightning mote per rank when harvesting",
+      "Each rank grants +1 lightning mote whenever you would gain lightning motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
   talento(TALENT_WATER_MOTE_SYNERGY, "water mote synergy", 2, 5000, 5,
-          "10% chance per rank for extra water mote when harvesting",
-          "Each rank gives a 10% chance to gain an extra water mote whenever you would gain a "
-          "water mote from harvesting.",
+      "+1 water mote per rank when harvesting",
+      "Each rank grants +1 water mote whenever you would gain water motes from harvesting.",
           TRUE, TALENT_CAT_GENERAL);
 
   /* Misc/General Talents */

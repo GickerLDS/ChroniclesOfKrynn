@@ -158,6 +158,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"advance", "adv", POS_DEAD, do_advance, LVL_GRSTAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"analyzeworld", "analyzew", POS_DEAD, do_analyze_world, LVL_IMPL, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"materialadmin", "matadmin", POS_DEAD, do_materialadmin, LVL_GRSTAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"findmaterial", "findmat", POS_DEAD, do_findmaterial, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"aedit", "aed", POS_DEAD, do_oasis_aedit, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"ai", "ai", POS_DEAD, do_ai, LVL_GRSTAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"alias", "ali", POS_DEAD, do_alias, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -999,7 +1000,6 @@ cpp_extern const struct command_info cmd_info[] = {
     {"chimericbreath", "chimericbreath", POS_FIGHTING, do_chimericbreath, 1, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
     {"sweepingcinder", "sweepingc", POS_STANDING, do_sweepingcinder, 1, 0, FALSE, ACTION_SWIFT, {3, 0}, can_sweepingcinder},
     {"sweepingstrike", "sweepings", POS_DEAD, do_gen_tog, 0, SCMD_SWEEPING_STRIKE, TRUE, ACTION_NONE, {0, 0}, NULL},
-    {"surveyroomsprompt", "survey", POS_DEAD, do_gen_tog, 0, SCMD_SURVEY_ROOMS_PROMPT, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"switch", "switch", POS_DEAD, do_switch, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"swindle", "swindle", POS_STANDING, do_swindle, 1, 0, TRUE, ACTION_STANDARD, {0, 0}, NULL},
     {"shapechange", "shapechange", POS_FIGHTING, do_wildshape, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
@@ -1021,6 +1021,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"seekerarrow", "seekerarrow", POS_FIGHTING, do_seekerarrow, 1, 0, FALSE, ACTION_NONE, {0, 0}, can_seekerarrow},
 #if defined(CAMPAIGN_DL) || defined(CAMPAIGN_FR)
     {"survey", "survey", POS_STANDING, do_newcraft, 0, SCMD_NEWCRAFT_SURVEY, TRUE, ACTION_STANDARD, {0, 0}, NULL},
+    {"surveyroomsprompt", "surveyroompr", POS_DEAD, do_gen_tog, 0, SCMD_SURVEY_ROOMS_PROMPT, TRUE, ACTION_NONE, {0, 0}, NULL},
 #else
     {"survey", "survey", POS_RECLINING, do_survey, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
 #endif

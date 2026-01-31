@@ -5004,12 +5004,8 @@ void harvest_complete(struct char_data *ch)
         synergy_rank = get_talent_rank(ch, synergy_talent);
         if (synergy_rank > 0)
         {
-          int synergy_chance = synergy_rank * 10; /* 10% per rank */
-          if (rand_number(1, 100) <= synergy_chance)
-          {
-            bonus_motes = 1;
-            send_to_char(ch, "\tC*MOTE SYNERGY*\tn ");
-          }
+          bonus_motes = synergy_rank; /* +1 mote per rank */
+          send_to_char(ch, "\tC*MOTE SYNERGY (+%d)*\tn ", bonus_motes);
         }
       }
 
@@ -5107,6 +5103,13 @@ void show_harvesting_tool_needed(struct char_data *ch)
     return;
   }
 
+  if (mat_type == CRAFT_MAT_COAL)
+  {
+    send_to_char(ch, "You need a pickaxe equipped to harvest %s.\r\n",
+                 crafting_material_nodes[mat_type]);
+    return;
+  }
+
   if ((mat_group = craft_group_by_material(mat_type)) == CRAFT_GROUP_NONE)
   {
     send_to_char(ch, "There was an error determining the material group. Please inform staff.\r\n");
@@ -5133,6 +5136,10 @@ void show_harvesting_tool_needed(struct char_data *ch)
     send_to_char(ch, "You need a wood axe equipped to harvest %s.\r\n",
                  crafting_material_nodes[mat_type]);
     break;
+    default:
+    send_to_char(ch, "There was an error determining the required harvesting tool. Please inform "
+                     "staff.\r\n");
+    break;
   }
 }
 
@@ -5147,6 +5154,9 @@ bool has_proper_harvesting_tool_equipped(struct char_data *ch)
 
   if ((mat_type = world[IN_ROOM(ch)].harvest_material) == CRAFT_MAT_NONE)
     return false;
+
+  if (mat_type == CRAFT_MAT_COAL)
+    return GET_EQ(ch, WEAR_CRAFT_PICKAXE);
 
   if ((mat_group = craft_group_by_material(mat_type)) == CRAFT_GROUP_NONE)
     return false;
@@ -5168,6 +5178,7 @@ bool has_proper_harvesting_tool_equipped(struct char_data *ch)
     has_tool = GET_EQ(ch, WEAR_CRAFT_AXE);
     break;
   }
+
   return has_tool;
 }
 
