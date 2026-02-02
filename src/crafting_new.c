@@ -8552,7 +8552,23 @@ void show_mote_bonuses(struct char_data *ch, int mote)
   // crafting_mote_by_bonus_location
 }
 
-ACMDU(do_motes)
+static void impl_do_motes_(struct char_data *ch, char *argument, int cmd, int subcmd);
+void do_motes(struct char_data *ch, const char *argument, int cmd, int subcmd)
+{
+  if (!argument)
+  {
+    impl_do_motes_(ch, NULL, cmd, subcmd);
+  }
+  else
+  {
+    char arg_buf[MAX_INPUT_LENGTH];
+    strlcpy(arg_buf, argument, sizeof(arg_buf));
+    impl_do_motes_(ch, arg_buf, cmd, subcmd);
+  }
+}
+static void impl_do_motes_(struct char_data *ch, char *argument,
+                           int cmd __attribute__((unused)),
+                           int subcmd __attribute__((unused)))
 {
   int i;
   char mote[50];
