@@ -654,6 +654,11 @@ int load_char(const char *name, struct char_data *ch)
     ch->player_specials->saved.active_fiendish_boons = 0;
     ch->player_specials->saved.channel_energy_type = 0;
 
+    /* Initialize golem crafting info */
+    ch->char_specials.saved.golem_stored_type = GOLEM_TYPE_NONE;
+    ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
+    ch->char_specials.saved.golem_recall_cooldown = 0;
+
     for (i = 0; i < NUM_LANGUAGES; i++)
       ch->player_specials->saved.languages_known[i] = 0;
     SPEAKING(ch) = LANG_COMMON;
@@ -1086,7 +1091,13 @@ int load_char(const char *name, struct char_data *ch)
       case 'G':
         if (!strcmp(tag, "Gold"))
           GET_GOLD(ch) = atoi(line);
-        if (!strcmp(tag, "God "))
+        if (!strcmp(tag, "GolT"))
+          ch->char_specials.saved.golem_stored_type = atoi(line);
+        else if (!strcmp(tag, "GolS"))
+          ch->char_specials.saved.golem_stored_size = atoi(line);
+        else if (!strcmp(tag, "GolC"))
+          ch->char_specials.saved.golem_recall_cooldown = atol(line);
+        else if (!strcmp(tag, "God "))
           GET_DEITY(ch) = atoi(line);
         else if (!strcmp(tag, "GMCP") && ch->desc)
           ch->desc->pProtocol->bGMCP = atoi(line);
@@ -2575,6 +2586,15 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("EldS: %d\n", GET_ELDRITCH_SHAPE(ch));
   if (GET_DR_MOD(ch) > 0)
     BUFFER_WRITE("DRMd: %d\n", GET_DR_MOD(ch));
+
+  /* Golem crafting info */
+  if (ch->char_specials.saved.golem_stored_type != GOLEM_TYPE_NONE)
+  {
+    BUFFER_WRITE("GolT: %d\n", ch->char_specials.saved.golem_stored_type);
+    BUFFER_WRITE("GolS: %d\n", ch->char_specials.saved.golem_stored_size);
+  }
+  if (ch->char_specials.saved.golem_recall_cooldown != 0)
+    BUFFER_WRITE("GolC: %ld\n", ch->char_specials.saved.golem_recall_cooldown);
 
   if (DRAGON_MAGIC_USES(ch) != PFDEF_DRAGON_MAGIC_USES)
     BUFFER_WRITE("DrMU: %d\n", DRAGON_MAGIC_USES(ch));

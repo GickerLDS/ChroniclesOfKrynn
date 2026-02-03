@@ -6311,6 +6311,11 @@ struct char_special_data_saved
   /* Blackguard Brutal Oath favored foe type */
   int blackguard_favored_foe; // race/creature type for Brutal Oath perk
   int psionic_energy_type; // this is the element that will be used when using psionic energy powers
+
+  /* Golem crafting info - saved to pfile */
+  int golem_stored_type;                     // Type of golem stored for recall (GOLEM_TYPE_*)
+  int golem_stored_size;                     // Size of golem stored for recall (GOLEM_SIZE_*)
+  time_t golem_recall_cooldown;              // When golem can be recalled again
 };
 
 /* not saved player data used for condensed combat */

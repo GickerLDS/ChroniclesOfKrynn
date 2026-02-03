@@ -12592,6 +12592,10 @@ bool process_healing(struct char_data *ch, struct char_data *victim, int spellnu
   int start_mv = GET_MOVE(victim);
   int start_psp = GET_PSP(victim);
 
+  /* Golems receive half healing efficiency from healing spells */
+  if (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_GOLEM))
+    healing = healing / 2;
+
   /* black mantle reduces effectiveness of healing by 20% */
   if (AFF_FLAGGED(victim, AFF_BLACKMANTLE) || AFF_FLAGGED(ch, AFF_BLACKMANTLE))
     healing = (float)healing * 0.8;
@@ -12684,17 +12688,8 @@ void mag_points(int level, struct char_data *ch, struct char_data *victim, struc
       level += weather_info.moons.nuitari_lv;
   }
 
-  /* Golems are immune to magical/psionic healing; they require repair */
-  if (IS_GOLEM(victim))
-  {
-    if (ch && ch != victim)
-      send_to_char(
-          ch,
-          "%s is a construct and cannot be healed by magic-use golemrepair command instead.\r\n",
-          GET_NAME(victim));
-    send_to_char(victim, "Your construct form rejects magical healing.\r\n");
-    return;
-  }
+  /* Golems can be healed by magical/psionic healing at 1/2 efficiency */
+  /* The efficiency reduction is handled in process_healing() */
 
   if (casttype == CAST_WEAPON_POISON || casttype == CAST_WEAPON_SPELL)
     ;

@@ -43,6 +43,8 @@
 #include "vnums.h"
 #include "crafting_recipes.h"
 
+#define GOLEM_RECALL_COOLDOWN 300  // 5 minutes in seconds
+
 ACMD_DECL(do_practice);
 
 int copy_object(struct obj_data *to, struct obj_data *from);
@@ -1708,13 +1710,24 @@ void set_crafting_bonuses(struct char_data *ch, const char *argument)
   cr_variant = GET_CRAFT(ch).craft_variant;
   cr_recipe = GET_CRAFT(ch).crafting_recipe;
 
-  if (!cr_type || !cr_spec_type || !cr_variant || cr_recipe == -1)
+  if (!cr_type)
   {
-    send_to_char(ch, "You must set the following before you can apply bonuses.\r\n"
-                     "-- craft type [weapon, armor, shield, instrument, misc]\r\n"
-                     "-- craft specific [weapon type, armor type, instrument type, misc type]\r\n"
-                     "-- craft variant [variant name]\r\n"
-                     "-- craft recipe [recipe name]\r\n");
+    send_to_char(ch, "You must set the crafting item type before setting bonuses.\r\n");
+    return;
+  }
+  else if (!cr_spec_type)
+  {
+    send_to_char(ch, "You must set the crafting specific type before setting bonuses.\r\n");
+    return;
+  }
+  else if (cr_variant == -1)
+  {
+    send_to_char(ch, "You must set the crafting variant before setting bonuses.\r\n");
+    return;
+  }
+  else if (cr_recipe == -1)
+  {
+    send_to_char(ch, "You must set the crafting recipe before setting bonuses.\r\n");
     return;
   }
 
@@ -9800,17 +9813,17 @@ int get_golem_material_requirements(int golem_type, int golem_size, int *materia
   {
   case GOLEM_TYPE_WOOD:
     primary_material = CRAFT_MAT_ASH_WOOD;
-    base_material_amount = 50;      // Small wood golem needs 50 units of wood
+    base_material_amount = 50;     // Small wood golem needs 50 units of wood
     secondary_material_amount = 10; // and 10 units of metal
     break;
   case GOLEM_TYPE_STONE:
     primary_material = CRAFT_MAT_STONE;
-    base_material_amount = 50;      // Small stone golem needs 100 units of stone
-    secondary_material_amount = 10; // and 20 units of metal
+    base_material_amount = 50;     // Small stone golem needs 50 units of stone
+    secondary_material_amount = 10; // and 10 units of metal
     break;
   case GOLEM_TYPE_IRON:
     primary_material = CRAFT_MAT_IRON;
-    base_material_amount = 50; // Small iron golem needs 100 units of iron
+    base_material_amount = 50; // Small iron golem needs 50 units of iron
     secondary_material_amount = 10;
     break;
   default:
@@ -10361,6 +10374,18 @@ void craft_golem_complete(struct char_data *ch)
       return;
     }
 
+    // Check if they have a stored golem of a different type
+    if (ch->char_specials.saved.golem_stored_type != GOLEM_TYPE_NONE &&
+        ch->char_specials.saved.golem_stored_type != GET_CRAFT(ch).golem_type)
+    {
+      send_to_char(ch, "\tRYou already have a %s golem stored!\tn You must shutdown your stored golem "
+                       "before creating a different type.\r\n",
+                   ch->char_specials.saved.golem_stored_type == GOLEM_TYPE_WOOD ? "wood" :
+                   ch->char_specials.saved.golem_stored_type == GOLEM_TYPE_STONE ? "stone" : "iron");
+      reset_current_golem_craft(ch);
+      return;
+    }
+
     // Get the appropriate VNUM for this golem
     golem_vnum = get_golem_vnum(GET_CRAFT(ch).golem_type, GET_CRAFT(ch).golem_size);
 
@@ -10427,6 +10452,7 @@ void craft_golem_complete(struct char_data *ch)
     send_to_char(ch, "\tGSuccess!\tn You have successfully constructed a %s %s golem!\r\n",
                  golem_size_names[GET_CRAFT(ch).golem_size],
                  golem_type_names[GET_CRAFT(ch).golem_type]);
+    send_to_char(ch, "Your golem can be recalled for free if it is destroyed (5 minute cooldown).\r\n");
     act("$n successfully constructs a golem!", FALSE, ch, 0, 0, TO_ROOM);
     act("$N springs to life and begins following $n!", FALSE, ch, 0, golem, TO_ROOM);
 
@@ -10436,6 +10462,10 @@ void craft_golem_complete(struct char_data *ch)
     // Auto-join group if creator is leading a group
     if (!GROUP(golem) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
       join_group(golem, GROUP(ch));
+    
+    // Store golem info for recall
+    ch->char_specials.saved.golem_stored_type = GET_CRAFT(ch).golem_type;
+    ch->char_specials.saved.golem_stored_size = GET_CRAFT(ch).golem_size;
   }
   else
   {
@@ -10458,6 +10488,304 @@ void craft_golem_complete(struct char_data *ch)
   reset_current_golem_craft(ch);
 }
 
+// Check if player can recall their golem based on cooldown
+bool can_recall_golem(struct char_data *ch)
+{
+  time_t now = time(NULL);
+  
+  // Check cooldown
+  if (ch->char_specials.saved.golem_recall_cooldown > now)
+  {
+    int seconds_left = ch->char_specials.saved.golem_recall_cooldown - now;
+    int minutes_left = seconds_left / 60;
+    seconds_left = seconds_left % 60;
+    send_to_char(ch, "Your golem cannot be recalled yet. Cooldown: %d minute%s %d second%s.\r\n",
+                 minutes_left, (minutes_left == 1) ? "" : "s",
+                 seconds_left, (seconds_left == 1) ? "" : "s");
+    return false;
+  }
+  
+  return true;
+}
+
+// Recall a destroyed golem for free
+void recall_golem(struct char_data *ch)
+{
+  int golem_vnum = NOBODY;
+  struct char_data *golem = NULL;
+  const char *golem_type_names[] = {"", "wood", "stone", "iron"};
+  const char *golem_size_names[] = {"small", "medium", "large", "huge"};
+  
+  // Check if they have a stored golem type
+  if (ch->char_specials.saved.golem_stored_type == GOLEM_TYPE_NONE)
+  {
+    send_to_char(ch, "You don't have a golem to recall.\r\n");
+    return;
+  }
+  
+  // Check if they already have a golem
+  if (has_golem_follower(ch))
+  {
+    send_to_char(ch, "You already have an active golem.\r\n");
+    return;
+  }
+  
+  // Check cooldown
+  if (!can_recall_golem(ch))
+    return;
+  
+  // Get the golem VNUM
+  golem_vnum = get_golem_vnum(ch->char_specials.saved.golem_stored_type, ch->char_specials.saved.golem_stored_size);
+  
+  if (golem_vnum == NOBODY)
+  {
+    send_to_char(ch, "\tRError:\tn Invalid stored golem type!\r\n");
+    return;
+  }
+  
+  // Check if we can add this follower
+  if (!can_add_follower(ch, golem_vnum))
+  {
+    send_to_char(ch, "\tRYou cannot control another follower right now!\tn\r\n");
+    return;
+  }
+  
+  // Create the golem
+  golem = read_mobile(golem_vnum, VIRTUAL);
+  
+  if (!golem)
+  {
+    send_to_char(ch, "\tRError:\tn Failed to recall golem! Contact an administrator.\r\n");
+    return;
+  }
+  
+  char_to_room(golem, IN_ROOM(ch));
+  
+  IS_CARRYING_W(golem) = 0;
+  IS_CARRYING_N(golem) = 0;
+  SET_BIT_AR(AFF_FLAGS(golem), AFF_CHARM);
+  SET_BIT_AR(MOB_FLAGS(golem), MOB_GOLEM);
+  GET_REAL_RACE(golem) = RACE_TYPE_CONSTRUCT;
+  
+  send_to_char(ch, "\tGSuccess!\tn You recall your %s %s golem!\r\n",
+               golem_size_names[ch->char_specials.saved.golem_stored_size],
+               golem_type_names[ch->char_specials.saved.golem_stored_type]);
+  act("$N materializes before $n in a flash of arcane energy!", FALSE, ch, 0, golem, TO_ROOM);
+  
+  load_mtrigger(golem);
+  add_follower(golem, ch);
+  
+  // Auto-join group if creator is leading a group
+  if (!GROUP(golem) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
+    join_group(golem, GROUP(ch));
+  
+  // Set cooldown
+  ch->char_specials.saved.golem_recall_cooldown = time(NULL) + GOLEM_RECALL_COOLDOWN;
+}
+
+// Shutdown an active golem to allow crafting a different type
+void shutdown_golem(struct char_data *ch, struct char_data *golem)
+{
+  const char *golem_type_names[] = {"", "wood", "stone", "iron"};
+  const char *golem_size_names[] = {"small", "medium", "large", "huge"};
+  int golem_vnum, golem_type, golem_size;
+  int material_types[3] = {0}, material_amounts[3] = {0};
+  int mote_types[NUM_CRAFT_MOTES] = {0}, mote_amounts[NUM_CRAFT_MOTES] = {0};
+  int num_mats = 0, num_motes = 0;
+  int i = 0;
+  
+  if (!golem || !IS_NPC(golem) || !MOB_FLAGGED(golem, MOB_GOLEM))
+  {
+    send_to_char(ch, "That's not a golem.\r\n");
+    return;
+  }
+  
+  if (golem->master != ch)
+  {
+    send_to_char(ch, "That golem doesn't belong to you.\r\n");
+    return;
+  }
+  
+  golem_vnum = GET_MOB_VNUM(golem);
+  golem_type = get_golem_type_from_vnum(golem_vnum);
+  golem_size = get_golem_size_from_vnum(golem_vnum);
+  
+  if (golem_type < 0 || golem_size < 0)
+  {
+    send_to_char(ch, "That golem is invalid!\r\n");
+    return;
+  }
+  
+  // Get materials and motes used to craft this golem
+  num_mats = get_golem_material_requirements(golem_type, golem_size, material_types, material_amounts);
+  num_motes = get_golem_mote_requirements(golem_type, golem_size, mote_types, mote_amounts);
+  
+  send_to_char(ch, "You shut down your %s %s golem.\r\n",
+               golem_size_names[golem_size], golem_type_names[golem_type]);
+  act("$n's golem powers down and vanishes in a shimmer of magic.", FALSE, ch, 0, 0, TO_ROOM);
+  
+  // Recover half of the materials used
+  send_to_char(ch, "\tGYou recover the following materials:\tn\r\n");
+  for (i = 0; i < num_mats; i++)
+  {
+    if (material_types[i] > 0 && material_amounts[i] > 0)
+    {
+      int recovered_amount = material_amounts[i] / 2;
+      if (golem_type == GOLEM_TYPE_WOOD && i == 0)
+      {
+        // For wood golems, return the selected wood type
+        int selected_wood_type = GET_CRAFT(ch).golem_materials[i][0];
+        GET_CRAFT_MAT(ch, selected_wood_type) += recovered_amount;
+      }
+      else
+      {
+        GET_CRAFT_MAT(ch, material_types[i]) += recovered_amount;
+      }
+      send_to_char(ch, "  %d units of material\r\n", recovered_amount);
+    }
+  }
+  
+  // Recover half of the motes used
+  send_to_char(ch, "\tGYou recover the following motes:\tn\r\n");
+  for (i = 0; i < num_motes; i++)
+  {
+    if (mote_types[i] > 0 && mote_amounts[i] > 0)
+    {
+      int recovered_amount = mote_amounts[i] / 2;
+      GET_CRAFT_MOTES(ch, mote_types[i]) += recovered_amount;
+      send_to_char(ch, "  %d motes\r\n", recovered_amount);
+    }
+  }
+  
+  // Clear stored golem so they can build a new type
+  ch->char_specials.saved.golem_stored_type = GOLEM_TYPE_NONE;
+  ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
+  ch->char_specials.saved.golem_recall_cooldown = 0;
+  
+  extract_char(golem);
+}
+
+// Upgrade an active golem to a larger size of the same type
+void upgrade_golem(struct char_data *ch, struct char_data *golem, int new_size)
+{
+  int golem_vnum, golem_type, current_size;
+  int material_types_current[3] = {0}, material_amounts_current[3] = {0};
+  int material_types_new[3] = {0}, material_amounts_new[3] = {0};
+  int mote_types_current[NUM_CRAFT_MOTES] = {0}, mote_amounts_current[NUM_CRAFT_MOTES] = {0};
+  int mote_types_new[NUM_CRAFT_MOTES] = {0}, mote_amounts_new[NUM_CRAFT_MOTES] = {0};
+  int num_mats_current = 0, num_mats_new = 0;
+  int num_motes_current = 0, num_motes_new = 0;
+  int i = 0;
+  const char *golem_type_names[] = {"", "wood", "stone", "iron"};
+  const char *golem_size_names[] = {"small", "medium", "large", "huge"};
+  
+  if (!golem || !IS_NPC(golem) || !MOB_FLAGGED(golem, MOB_GOLEM))
+  {
+    send_to_char(ch, "That's not a golem.\r\n");
+    return;
+  }
+  
+  if (golem->master != ch)
+  {
+    send_to_char(ch, "That golem doesn't belong to you.\r\n");
+    return;
+  }
+  
+  golem_vnum = GET_MOB_VNUM(golem);
+  golem_type = get_golem_type_from_vnum(golem_vnum);
+  current_size = get_golem_size_from_vnum(golem_vnum);
+  
+  if (golem_type < 0 || current_size < 0)
+  {
+    send_to_char(ch, "That golem is invalid!\r\n");
+    return;
+  }
+  
+  if (new_size <= current_size)
+  {
+    send_to_char(ch, "The new size must be larger than the current size.\r\n");
+    return;
+  }
+  
+  if (new_size >= NUM_GOLEM_SIZES)
+  {
+    send_to_char(ch, "That size is too large.\r\n");
+    return;
+  }
+  
+  /* Get materials and motes for current and new size */
+  num_mats_current = get_golem_material_requirements(golem_type, current_size, material_types_current, material_amounts_current);
+  num_mats_new = get_golem_material_requirements(golem_type, new_size, material_types_new, material_amounts_new);
+  num_motes_current = get_golem_mote_requirements(golem_type, current_size, mote_types_current, mote_amounts_current);
+  num_motes_new = get_golem_mote_requirements(golem_type, new_size, mote_types_new, mote_amounts_new);
+  
+  /* Calculate difference (what's needed for upgrade) */
+  for (i = 0; i < num_mats_new; i++)
+  {
+    if (material_types_new[i] > 0 && material_amounts_new[i] > 0)
+    {
+      int diff = material_amounts_new[i] - (i < num_mats_current ? material_amounts_current[i] : 0);
+      if (diff > 0)
+      {
+        /* Check if player has enough materials */
+        if (GET_CRAFT_MAT(ch, material_types_new[i]) < diff)
+        {
+          send_to_char(ch, "You don't have enough materials to upgrade your golem.\r\n");
+          return;
+        }
+      }
+    }
+  }
+  
+  for (i = 0; i < num_motes_new; i++)
+  {
+    if (mote_types_new[i] > 0 && mote_amounts_new[i] > 0)
+    {
+      int diff = mote_amounts_new[i] - (i < num_motes_current ? mote_amounts_current[i] : 0);
+      if (diff > 0)
+      {
+        /* Check if player has enough motes */
+        if (GET_CRAFT_MOTES(ch, mote_types_new[i]) < diff)
+        {
+          send_to_char(ch, "You don't have enough motes to upgrade your golem.\r\n");
+          return;
+        }
+      }
+    }
+  }
+  
+  /* Consume the difference in materials */
+  for (i = 0; i < num_mats_new; i++)
+  {
+    if (material_types_new[i] > 0 && material_amounts_new[i] > 0)
+    {
+      int diff = material_amounts_new[i] - (i < num_mats_current ? material_amounts_current[i] : 0);
+      if (diff > 0)
+        GET_CRAFT_MAT(ch, material_types_new[i]) -= diff;
+    }
+  }
+  
+  /* Consume the difference in motes */
+  for (i = 0; i < num_motes_new; i++)
+  {
+    if (mote_types_new[i] > 0 && mote_amounts_new[i] > 0)
+    {
+      int diff = mote_amounts_new[i] - (i < num_motes_current ? mote_amounts_current[i] : 0);
+      if (diff > 0)
+        GET_CRAFT_MOTES(ch, mote_types_new[i]) -= diff;
+    }
+  }
+  
+  send_to_char(ch, "\tGSuccess!\tn You upgrade your %s %s golem to %s size!\r\n",
+               golem_type_names[golem_type], golem_size_names[current_size],
+               golem_size_names[new_size]);
+  act("$N begins to glow brightly as $n enhances the golem's form, growing larger!", 
+      FALSE, ch, 0, golem, TO_ROOM);
+  
+  /* Update the stored golem size */
+  ch->char_specials.saved.golem_stored_size = new_size;
+}
+
 void newcraft_golem(struct char_data *ch, const char *argument)
 {
   char arg1[200], arg2[MAX_INPUT_LENGTH];
@@ -10472,6 +10800,9 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     send_to_char(ch, "  craft golem show - Display current golem project\r\n");
     send_to_char(ch, "  craft golem reset - Reset golem project\r\n");
     send_to_char(ch, "  craft golem start - Begin construction\r\n");
+    send_to_char(ch, "  craft golem recall - Recall your destroyed golem (5 min cooldown)\r\n");
+    send_to_char(ch, "  craft golem shutdown - Shutdown your golem to build a new type\r\n");
+    send_to_char(ch, "  craft golem upgrade (small|medium|large|huge) - Upgrade golem to larger size\r\n");
     return;
   }
 
@@ -10497,6 +10828,77 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     {
       GET_CRAFT(ch).craft_duration = MAX(GET_CRAFT(ch).craft_duration, 1);
     }
+  }
+  else if (is_abbrev(arg1, "recall"))
+  {
+    recall_golem(ch);
+  }
+  else if (is_abbrev(arg1, "shutdown"))
+  {
+    struct char_data *golem = NULL;
+    struct follow_type *k;
+    
+    // Find the golem follower
+    for (k = ch->followers; k; k = k->next)
+    {
+      if (IS_PET(k->follower) && MOB_FLAGGED(k->follower, MOB_GOLEM))
+      {
+        golem = k->follower;
+        break;
+      }
+    }
+    
+    if (!golem)
+    {
+      send_to_char(ch, "You don't have an active golem to shutdown.\r\n");
+      return;
+    }
+    
+    shutdown_golem(ch, golem);
+  }
+  else if (is_abbrev(arg1, "upgrade"))
+  {
+    struct char_data *golem = NULL;
+    struct follow_type *k;
+    int new_size = -1;
+    
+    if (!*arg2)
+    {
+      send_to_char(ch, "Upgrade to which size? (small|medium|large|huge)\r\n");
+      return;
+    }
+    
+    if (is_abbrev(arg2, "small"))
+      new_size = GOLEM_SIZE_SMALL;
+    else if (is_abbrev(arg2, "medium"))
+      new_size = GOLEM_SIZE_MEDIUM;
+    else if (is_abbrev(arg2, "large"))
+      new_size = GOLEM_SIZE_LARGE;
+    else if (is_abbrev(arg2, "huge"))
+      new_size = GOLEM_SIZE_HUGE;
+    else
+    {
+      send_to_char(ch, "Unknown size. Use: small, medium, large, or huge\r\n");
+      return;
+    }
+    
+    /* Find the golem follower */
+    for (k = ch->followers; k; k = k->next)
+    {
+      if (IS_PET(k->follower) && MOB_FLAGGED(k->follower, MOB_GOLEM))
+      {
+        golem = k->follower;
+        break;
+      }
+    }
+    
+    if (!golem)
+    {
+      send_to_char(ch, "You don't have an active golem to upgrade.\r\n");
+      return;
+    }
+    
+    upgrade_golem(ch, golem, new_size);
   }
   else
   {
@@ -10526,8 +10928,8 @@ int get_golem_repair_material_cost(int golem_type, int golem_size)
 
   if (num_mats > 0 && material_amounts[0] > 0)
   {
-    /* Return 10% of the primary material requirement per 10% repair */
-    return material_amounts[0] / 10;
+    /* Return 0.625% of the primary material requirement per 10% repair (1/16 of 10%, which is 1/4 of the original 1/40) */
+    return material_amounts[0] / 160;
   }
   return 0;
 }
