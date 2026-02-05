@@ -173,6 +173,8 @@ void assign_harvest_materials_to_word(void)
 
   for (cnt = 0; cnt <= top_of_world; cnt++)
   {
+    if (is_someone_harvesting_room(cnt))
+      continue;
     // erase all harvest materials
     wipe_room_harvest_materials(cnt);
     // check valid sector type
@@ -624,6 +626,22 @@ bool room_has_harvest_materials(room_rnum room)
   for (i = 1; i < NUM_CRAFT_MATS; i++)
     if (world[room].harvest_material > 0)
       return TRUE;
+
+  return FALSE;
+}
+
+bool is_someone_harvesting_room(room_rnum room)
+{
+  struct char_data *ch = NULL;
+
+  if (room == NOWHERE)
+    return FALSE;
+
+  for (ch = world[room].people; ch; ch = ch->next_in_room)
+  {
+    if (GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_HARVEST && GET_CRAFT(ch).craft_duration > 0)
+      return TRUE;
+  }
 
   return FALSE;
 }

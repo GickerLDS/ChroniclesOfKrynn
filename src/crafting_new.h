@@ -362,6 +362,7 @@ int get_golem_material_requirements(int golem_type, int golem_size, int *materia
                                     int *material_amounts);
 int get_golem_mote_requirements(int golem_type, int golem_size, int *mote_types, int *mote_amounts);
 bool begin_golem_craft(struct char_data *ch);
+bool is_someone_harvesting_room(room_rnum room);
 
 ACMD_DECL(do_newcraft);
 ACMD_DECL(do_setmaterial);

@@ -1146,8 +1146,8 @@ int handle_database_help(struct char_data *ch, const char *argument, const char 
 
   /* Return based on match type:
      * - Exact match: return 1 (stop chain, we found exactly what user wanted)
-     * - Partial match: return 0 (continue chain to show soundex suggestions)
-     * This ensures soundex suggestions appear for typos even when partial matches exist
+     * - Partial match: return 1 (stop chain, we displayed a help entry so don't show suggestions)
+     * We only show soundex suggestions if NO help entry was found at all
      */
   if (exact_match_found)
   {
@@ -1158,10 +1158,11 @@ int handle_database_help(struct char_data *ch, const char *argument, const char 
   else if (partial_match_displayed)
   {
     if (HELP_DEBUG)
-      log("DEBUG: Partial match displayed, continuing to soundex for '%s'", argument);
-    /* Set context flag for soundex handler to know partial help was displayed */
-    ctx->partial_help_displayed = 1;
-    return 0; /* Partial match - continue to soundex for suggestions */
+      log("DEBUG: Partial match displayed, stopping chain for '%s'", argument);
+    /* We displayed a help entry, so stop the chain. Don't show soundex suggestions
+     * as they appear jarring when the user is reading a multi-page help entry.
+     */
+    return 1; /* Partial match displayed - stop chain */
   }
   return 1; /* Should not reach here, but default to handled */
 }
@@ -1426,7 +1427,7 @@ int handle_race_help(struct char_data *ch, const char *argument, const char *raw
 /**
  * Handler for soundex suggestions - always last in chain.
  * This is the fallback when no exact match is found.
- * Enhanced to work with partial matches from database handler.
+ * Only called when NO help content was actually displayed.
  */
 int handle_soundex_suggestions(struct char_data *ch, const char *argument, const char *raw_argument,
                                struct help_context *ctx)
@@ -1434,36 +1435,18 @@ int handle_soundex_suggestions(struct char_data *ch, const char *argument, const
   struct help_keyword_list *keywords = NULL, *tmp_keyword = NULL;
   int soundex_matches_found = 0;
 
-  /* Check if database handler already displayed partial match help */
-  if (!ctx->partial_help_displayed)
-  {
-    /* No partial match was shown, display the standard "not found" message */
-    send_to_char(ch, "There is no help on '%s'.\r\n", raw_argument);
-    mudlog(NRM, MAX(LVL_IMPL, GET_INVIS_LEV(ch)), TRUE, "%s tried to get help on '%s'",
-           GET_NAME(ch), raw_argument);
-  }
-  else
-  {
-    /* Partial match was shown, add a note about it */
-    send_to_char(ch, "\r\n\tcNote: Showing closest partial match above.\tn\r\n");
-    if (HELP_DEBUG)
-      log("DEBUG: Partial help was displayed, adding soundex suggestions for '%s'", raw_argument);
-  }
+  UNUSED(ctx);
+
+  /* No help was found in database, display "not found" message */
+  send_to_char(ch, "There is no help on '%s'.\r\n", raw_argument);
+  mudlog(NRM, MAX(LVL_IMPL, GET_INVIS_LEV(ch)), TRUE, "%s tried to get help on '%s'",
+         GET_NAME(ch), raw_argument);
 
   /* Try soundex search for suggestions - use raw_argument not modified argument */
   if ((keywords = soundex_search_help_keywords(raw_argument, GET_LEVEL(ch))) != NULL)
   {
     soundex_matches_found = 1;
-    if (ctx->partial_help_displayed)
-    {
-      /* If we showed partial match, phrase differently */
-      send_to_char(ch, "\r\nPerhaps you meant one of these:\r\n");
-    }
-    else
-    {
-      /* Standard "did you mean" for no matches at all */
-      send_to_char(ch, "\r\nDid you mean:\r\n");
-    }
+    send_to_char(ch, "\r\nDid you mean:\r\n");
     tmp_keyword = keywords;
     while (tmp_keyword != NULL)
     {
@@ -1499,8 +1482,6 @@ int handle_soundex_suggestions(struct char_data *ch, const char *argument, const
     {
       log("DEBUG: handle_soundex_suggestions: No soundex suggestions found for '%s'", raw_argument);
     }
-    log("DEBUG: handle_soundex_suggestions: Partial help was %sdisplayed",
-        ctx->partial_help_displayed ? "" : "NOT ");
   }
 
   return 1; /* Always returns handled as this is the final fallback */
