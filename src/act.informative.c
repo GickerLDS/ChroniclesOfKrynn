@@ -1563,6 +1563,13 @@ void look_at_room(struct char_data *ch, int ignore_brief)
                    crafting_materials[world[IN_ROOM(ch)].harvest_material]);
     }
   }
+  else if (!IS_NPC(ch) && GET_SURVEY_ROOMS(ch) > 0)
+  {
+    if (world[IN_ROOM(ch)].harvest_material != 0 && world[IN_ROOM(ch)].harvest_material_amount > 0)
+    {
+      send_to_char(ch, "\r\n\tyYour surveying has uncovered %s.\r\n\tn", crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
+    }
+  }
 
   /* === SPECIAL ROOM FLAGS DISPLAY === */
   send_to_char(ch, "%s\r\n", CCNRM(ch, C_NRM)); /* End line and reset color */

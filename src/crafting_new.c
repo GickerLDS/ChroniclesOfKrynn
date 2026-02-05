@@ -11016,7 +11016,7 @@ bool can_repair_golem(struct char_data *ch, struct char_data *golem, int *materi
 
   /* Calculate repair percentage and material cost */
   repair_percent = (missing_hp * 100) / GET_MAX_HIT(golem);
-  *material_needed = (repair_percent / 10) * get_golem_repair_material_cost(golem_type, golem_size);
+  *material_needed = MAX(1, repair_percent / 25);
   *material_type = get_golem_repair_material_type(golem_type);
 
   /* Check if player has enough materials */

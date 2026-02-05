@@ -11099,6 +11099,8 @@ ACMDU(do_device)
   int spell_assignment_level, max_spell_level;
   /* char spell_list[MAX_STRING_LENGTH]; */ /* moved to event handler */
 
+  #define SINFO spell_info[spell_num]
+
   /* Clear any pending device destroy confirmation codes when using other commands */
   {
     /* Parse the arguments to see if this is a destroy command */
@@ -11445,6 +11447,7 @@ ACMDU(do_device)
 
     /* Check that all spells are either violent or non-violent (no mixing) */
     int first_spell_violent = spell_info[spell_nums[0]].violent;
+    
     for (i = 1; i < num_spells; i++)
     {
       if (spell_info[spell_nums[i]].violent != first_spell_violent)
@@ -11452,6 +11455,67 @@ ACMDU(do_device)
         send_to_char(ch,
                      "You cannot combine violent and non-violent spells in the same device.\r\n");
         send_to_char(ch, "All spells must be either violent or non-violent, not mixed.\r\n");
+        return;
+      }
+    }
+
+    /* Check that spells with object targets can only combine with other object-target spells */
+    int first_spell_is_obj_target = 0;
+    int first_spell_target = spell_info[spell_nums[0]].targets;
+    
+    if (first_spell_target == TAR_OBJ_INV || 
+        first_spell_target == TAR_OBJ_ROOM || 
+        first_spell_target == TAR_OBJ_EQUIP)
+    {
+      first_spell_is_obj_target = 1;
+    }
+    
+    for (i = 1; i < num_spells; i++)
+    {
+      int current_target = spell_info[spell_nums[i]].targets;
+      int current_is_obj_target = (current_target == TAR_OBJ_INV || 
+                                   current_target == TAR_OBJ_ROOM || 
+                                   current_target == TAR_OBJ_EQUIP);
+      
+      if (first_spell_is_obj_target != current_is_obj_target)
+      {
+        send_to_char(ch,
+                     "You cannot combine object-targeting spells with non-object-targeting spells.\r\n");
+        send_to_char(ch, "All spells must either target objects or target non-objects, not mixed.\r\n");
+        return;
+      }
+    }
+
+    /* Check that spells with TAR_OBJ_WORLD can only combine with other TAR_OBJ_WORLD spells */
+    int first_spell_is_world_target = (first_spell_target == TAR_OBJ_WORLD);
+    
+    for (i = 1; i < num_spells; i++)
+    {
+      int current_target = spell_info[spell_nums[i]].targets;
+      int current_is_world_target = (current_target == TAR_OBJ_WORLD);
+      
+      if (first_spell_is_world_target != current_is_world_target)
+      {
+        send_to_char(ch,
+                     "You cannot combine world-targeting spells with non-world-targeting spells.\r\n");
+        send_to_char(ch, "All spells must either target the world or not, not mixed.\r\n");
+        return;
+      }
+    }
+
+    /* Check that spells with TAR_CHAR_WORLD can only combine with other TAR_CHAR_WORLD spells */
+    int first_spell_is_char_world_target = (first_spell_target == TAR_CHAR_WORLD);
+    
+    for (i = 1; i < num_spells; i++)
+    {
+      int current_target = spell_info[spell_nums[i]].targets;
+      int current_is_char_world_target = (current_target == TAR_CHAR_WORLD);
+      
+      if (first_spell_is_char_world_target != current_is_char_world_target)
+      {
+        send_to_char(ch,
+                     "You cannot combine character-world-targeting spells with non-character-world-targeting spells.\r\n");
+        send_to_char(ch, "All spells must either target characters world-wide or not, not mixed.\r\n");
         return;
       }
     }
@@ -12113,7 +12177,80 @@ ACMDU(do_device)
 
     /* Parse optional target argument */
     struct char_data *target = NULL;
-    if (*arg3)
+    struct obj_data *obj_target = NULL;
+    struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
+    
+    for (i = 0; i < inv->num_spells; i++)
+    {
+      int spell_num = inv->spell_effects[i];
+      if (spell_num > 0 && spell_num < NUM_SPELLS)
+      {
+        if (IS_SET(SINFO.targets, TAR_OBJ_INV) || IS_SET(SINFO.targets, TAR_OBJ_ROOM) ||
+            IS_SET(SINFO.targets, TAR_OBJ_WORLD))
+        {
+          /* Spell can target objects - check in order: room, inventory, world */
+          if (*arg3)
+          {
+            /* 1. Check objects in room */
+            obj_target = get_obj_in_list_vis(ch, arg3, NULL, world[ch->in_room].contents);
+            if (obj_target)
+            {
+              target = NULL;
+              break;
+            }
+            
+            /* 2. Check objects in inventory or equipped */
+            obj_target = get_obj_in_list_vis(ch, arg3, NULL, ch->carrying);
+            if (obj_target)
+            {
+              target = NULL;
+              break;
+            }
+            
+            /* 3. Check objects in world (if TAR_OBJ_WORLD is set) */
+            if (IS_SET(SINFO.targets, TAR_OBJ_WORLD) && !obj_target)
+            {
+              obj_target = get_obj_vis(ch, arg3, NULL);
+              if (obj_target)
+              {
+                target = NULL;
+                break;
+              }
+            }
+          }
+        }
+        else if (IS_SET(SINFO.targets, TAR_CHAR_WORLD) || IS_SET(SINFO.targets, TAR_CHAR_ROOM))
+        {
+          /* Spell can target characters - check in order: world, then room */
+          if (*arg3)
+          {
+            /* 4. Check characters in the world (if TAR_CHAR_WORLD is set) */
+            if (IS_SET(SINFO.targets, TAR_CHAR_WORLD))
+            {
+              target = get_char_vis(ch, arg3, NULL, FIND_CHAR_WORLD);
+              if (target)
+              {
+                obj_target = NULL;
+                break;
+              }
+            }
+            
+            /* 5. Check characters in the room (if TAR_CHAR_ROOM is set) */
+            if (IS_SET(SINFO.targets, TAR_CHAR_ROOM))
+            {
+              target = get_char_vis(ch, arg3, NULL, FIND_CHAR_ROOM);
+              if (target)
+              {
+                obj_target = NULL;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (*arg3 && !obj_target && !target)
     {
       /* Target specified, try to find them in the room */
       target = get_char_vis(ch, arg3, NULL, FIND_CHAR_ROOM);
@@ -12123,8 +12260,6 @@ ACMDU(do_device)
         return;
       }
     }
-
-    struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
 
     /* Check if device is broken */
     if (inv->broken)
