@@ -2760,8 +2760,7 @@ void nanny(struct descriptor_data *d, char *arg)
         write_to_output(d, "That character doesn't exist.  Please choose another.  Your Choice: ");
         return;
       }
-      else if ((player_i = load_char(d->account->character_names[atoi(arg) - 1], d->character)) >
-               -1)
+      else if ((player_i = load_char(d->account->character_names[atoi(arg) - 1], d->character)) > -1)
       {
         GET_PFILEPOS(d->character) = player_i;
         if (PLR_FLAGGED(d->character, PLR_DELETED))
@@ -2776,9 +2775,7 @@ void nanny(struct descriptor_data *d, char *arg)
           GET_PFILEPOS(d->character) = player_i;
           if (GET_LEVEL(d->character) < circle_restrict)
           {
-            write_to_output(d, "The game is temporarily open for staff members only.  Please refer "
-                               "to the website for more "
-                               "intormation.\r\nhttp://www.luminarimud.com/\r\n");
+            write_to_output(d, "The game is temporarily open for staff members only.\r\n");
             STATE(d) = CON_CLOSE;
             mudlog(NRM, LVL_STAFF, true, "Request for login denied for %s [%s] (wizlock)",
                    GET_NAME(d->character), d->host);

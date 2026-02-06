@@ -6773,7 +6773,7 @@ struct player_special_data_saved
   int grasp_of_the_dead_uses;
   int grasp_of_the_dead_timer;
   int incorporeal_form_uses;
-  int incorporeal_form_timer;
+  sh_int incorporeal_form_timer;
 
   int potions[MAX_SPELLS]; // used in new consumables system store/unstore/quaff
   int scrolls[MAX_SPELLS]; // used in new consumables system store/unstore/recite

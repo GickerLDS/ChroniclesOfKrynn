@@ -2082,7 +2082,7 @@ void update_player_misc(void)
         send_to_char(ch, "Your grasp of the dead uses have been refreshed.\r\n");
       }
     }
-    if (HAS_FEAT(ch, FEAT_INCORPOREAL_FORM) && INCORPOREAL_FORM_TIMER(ch) > 0)
+    if (HAS_FEAT(ch, FEAT_INCORPOREAL_FORM) && INCORPOREAL_FORM_TIMER(ch) > 0 && GET_LEVEL(ch) < LVL_IMMORT)
     {
       INCORPOREAL_FORM_TIMER(ch)--;
       if (INCORPOREAL_FORM_TIMER(ch) <= 0)

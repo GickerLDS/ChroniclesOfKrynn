@@ -2726,7 +2726,7 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
                  GRASP_OF_THE_DEAD_TIMER(ch) * 6);
   if (INCORPOREAL_FORM_TIMER(ch) > 0)
     send_to_char(ch, "Incorporeal Form (Undead Bloodline) Cooldown - Duration: %d seconds\r\n",
-                 INCORPOREAL_FORM_TIMER(ch) * 6);
+                  INCORPOREAL_FORM_TIMER(ch) * 6);
   if (GET_MISSION_COOLDOWN(k) > 0)
     send_to_char(ch, "Mission Ready Cooldown - Duration: %d seconds\r\n",
                  GET_MISSION_COOLDOWN(k) * 6);

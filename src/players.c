@@ -616,7 +616,7 @@ int load_char(const char *name, struct char_data *ch)
     GRASP_OF_THE_DEAD_USES(ch) = PFDEF_GRASP_OF_THE_DEAD_USES;
     GRASP_OF_THE_DEAD_TIMER(ch) = PFDEF_GRASP_OF_THE_DEAD_TIMER;
     INCORPOREAL_FORM_USES(ch) = PFDEF_INCORPOREAL_FORM_USES;
-    INCORPOREAL_FORM_TIMER(ch) = PFDEF_INCORPOREAL_FORM_TIMER;
+    INCORPOREAL_FORM_TIMER(ch) = 0;
     HAS_SET_STATS_STUDY(ch) = PFDEF_HAS_SET_STATS_STUDY;
     GET_BLOODLINE_SUBTYPE(ch) = PFDEF_SORC_BLOODLINE_SUBTYPE;
     NEW_ARCANA_SLOT(ch, 0) = NEW_ARCANA_SLOT(ch, 1) = NEW_ARCANA_SLOT(ch, 2) =
@@ -700,8 +700,7 @@ int load_char(const char *name, struct char_data *ch)
     GET_HOLY_WEAPON_TYPE(ch) = PFDEF_HOLY_WEAPON_TYPE;
     for (i = 0; i < MAX_SPELLS; i++)
     {
-      STORED_POTIONS(ch, i) = STORED_SCROLLS(ch, i) = STORED_WANDS(ch, i) = STORED_STAVES(ch, i) =
-          0;
+      STORED_POTIONS(ch, i) = STORED_SCROLLS(ch, i) = STORED_WANDS(ch, i) = STORED_STAVES(ch, i) = 0;
     }
 
     /* finished inits, start loading from file */
