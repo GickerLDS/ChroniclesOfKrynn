@@ -187,6 +187,10 @@ struct alias_data
 #define SCMD_RP_FLAWS 6
 #define SCMD_RP_BG_STORY 7
 
+
+#define SCMD_ADDMATERIALS 0
+#define SCMD_SETMATERIALS 1
+
 /* Necessary for CMD_IS macro.  Borland needs the structure defined first
  * so it has been moved down here. */
 /* Global buffering system */

@@ -163,6 +163,11 @@ static void cedit_setup(struct descriptor_data *d)
   OLC_CONFIG(d)->happy_hour.qp = CONFIG_HAPPY_HOUR_QP;
   OLC_CONFIG(d)->happy_hour.gold = CONFIG_HAPPY_HOUR_GOLD;
   OLC_CONFIG(d)->happy_hour.treasure = CONFIG_HAPPY_HOUR_TREASURE;
+  OLC_CONFIG(d)->happy_hour.crafting_exp = CONFIG_HAPPY_HOUR_CRAFTING_EXP;
+  OLC_CONFIG(d)->happy_hour.harvesting_exp = CONFIG_HAPPY_HOUR_HARVESTING_EXP;
+  OLC_CONFIG(d)->happy_hour.harvesting_materials = CONFIG_HAPPY_HOUR_HARVESTING_MATERIALS;
+  OLC_CONFIG(d)->happy_hour.harvesting_motes_chance = CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE;
+  OLC_CONFIG(d)->happy_hour.harvesting_motes_obtained = CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED;
 
   /* Player config stuff */
 
@@ -348,6 +353,11 @@ static void cedit_save_internally(struct descriptor_data *d)
   CONFIG_HAPPY_HOUR_QP = OLC_CONFIG(d)->happy_hour.qp;
   CONFIG_HAPPY_HOUR_GOLD = OLC_CONFIG(d)->happy_hour.gold;
   CONFIG_HAPPY_HOUR_TREASURE = OLC_CONFIG(d)->happy_hour.treasure;
+  CONFIG_HAPPY_HOUR_CRAFTING_EXP = OLC_CONFIG(d)->happy_hour.crafting_exp;
+  CONFIG_HAPPY_HOUR_HARVESTING_EXP = OLC_CONFIG(d)->happy_hour.harvesting_exp;
+  CONFIG_HAPPY_HOUR_HARVESTING_MATERIALS = OLC_CONFIG(d)->happy_hour.harvesting_materials;
+  CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE = OLC_CONFIG(d)->happy_hour.harvesting_motes_chance;
+  CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED = OLC_CONFIG(d)->happy_hour.harvesting_motes_obtained;
 
   CONFIG_PSIONIC_DAMAGE = OLC_CONFIG(d)->player_config.psionic_power_damage_bonus;
   CONFIG_DIVINE_DAMAGE = OLC_CONFIG(d)->player_config.divine_spell_damage_bonus;
@@ -867,6 +877,26 @@ int save_config(IDXTYPE nowhere)
           "* Percent Increase for chance of random treasure during automated happy hour.\n"
           "happy_hour_treasure_bonus = %d\n\n",
           CONFIG_HAPPY_HOUR_TREASURE);
+  fprintf(fl,
+          "* Percent increase in crafting exp gained during automated happy hour.\n"
+          "happy_hour_crafting_exp_bonus = %d\n\n",
+          CONFIG_HAPPY_HOUR_CRAFTING_EXP);
+  fprintf(fl,
+          "* Percent increase in harvesting exp gained during automated happy hour.\n"
+          "happy_hour_harvesting_exp_bonus = %d\n\n",
+          CONFIG_HAPPY_HOUR_HARVESTING_EXP);
+  fprintf(fl,
+          "* Percent increase in materials harvested during automated happy hour.\n"
+          "happy_hour_harvesting_materials_bonus = %d\n\n",
+          CONFIG_HAPPY_HOUR_HARVESTING_MATERIALS);
+  fprintf(fl,
+          "* Percent increase for mote drop chance during automated happy hour.\n"
+          "happy_hour_harvesting_motes_chance_bonus = %d\n\n",
+          CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE);
+  fprintf(fl,
+          "* Percent increase in motes obtained during automated happy hour.\n"
+          "happy_hour_harvesting_motes_obtained_bonus = %d\n\n",
+          CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED);
 
   // Player stats stuff
   fprintf(fl,
@@ -1115,13 +1145,22 @@ static void cedit_disp_happy_hour_options(struct descriptor_data *d)
                   "%s3%s) Percent Amount of Additional EXP            : %s%d\r\n"
                   "%s4%s) Percent Amount of Additional Gold           : %s%d\r\n"
                   "%s5%s) Increase Percent Chance of Random Treasure  : %s%d\r\n"
+                  "%s6%s) Percent Increase for Crafting EXP           : %s%d\r\n"
+                  "%s7%s) Percent Increase for Harvesting EXP         : %s%d\r\n"
+                  "%s8%s) Percent Increase for Materials Harvested    : %s%d\r\n"
+                  "%s9%s) Percent Increase for Mote Drop Chance       : %s%d\r\n"
+                  "%sA%s) Percent Increase for Motes Obtained         : %s%d\r\n"
                   "%sQ%s) Exit To The Main Menu\r\n"
                   "Enter your choice : ",
 
                   grn, nrm, cyn, OLC_CONFIG(d)->happy_hour.chance, grn, nrm, cyn,
                   OLC_CONFIG(d)->happy_hour.qp, grn, nrm, cyn, OLC_CONFIG(d)->happy_hour.exp, grn,
                   nrm, cyn, OLC_CONFIG(d)->happy_hour.gold, grn, nrm, cyn,
-                  OLC_CONFIG(d)->happy_hour.treasure, grn, nrm);
+                  OLC_CONFIG(d)->happy_hour.treasure, grn, nrm, cyn, OLC_CONFIG(d)->happy_hour.crafting_exp,
+                  grn, nrm, cyn, OLC_CONFIG(d)->happy_hour.harvesting_exp, grn, nrm, cyn,
+                  OLC_CONFIG(d)->happy_hour.harvesting_materials, grn, nrm, cyn,
+                  OLC_CONFIG(d)->happy_hour.harvesting_motes_chance, grn, nrm, cyn,
+                  OLC_CONFIG(d)->happy_hour.harvesting_motes_obtained, grn, nrm);
 
   OLC_MODE(d) = CEDIT_HAPPY_HOUR_MENU;
 }
@@ -1651,6 +1690,32 @@ void cedit_parse(struct descriptor_data *d, char *arg)
       write_to_output(d, "Enter the percent increase for chance to obtain random treasure during "
                          "an automated happy hour. : ");
       OLC_MODE(d) = CEDIT_HAPPY_HOUR_TREASURE;
+      return;
+    case '6':
+      write_to_output(
+          d, "Enter the percent increase of crafting exp gained during an automated happy hour. : ");
+      OLC_MODE(d) = CEDIT_HAPPY_HOUR_CRAFTING_EXP;
+      return;
+    case '7':
+      write_to_output(
+          d, "Enter the percent increase of harvesting exp gained during an automated happy hour. : ");
+      OLC_MODE(d) = CEDIT_HAPPY_HOUR_HARVESTING_EXP;
+      return;
+    case '8':
+      write_to_output(
+          d, "Enter the percent increase of materials harvested during an automated happy hour. : ");
+      OLC_MODE(d) = CEDIT_HAPPY_HOUR_HARVESTING_MATERIALS;
+      return;
+    case '9':
+      write_to_output(
+          d, "Enter the percent increase for mote drop chance during an automated happy hour. : ");
+      OLC_MODE(d) = CEDIT_HAPPY_HOUR_HARVESTING_MOTES_CHANCE;
+      return;
+    case 'a':
+    case 'A':
+      write_to_output(
+          d, "Enter the percent increase of motes obtained during an automated happy hour. : ");
+      OLC_MODE(d) = CEDIT_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED;
       return;
     case 'q':
     case 'Q':
@@ -2938,6 +3003,71 @@ void cedit_parse(struct descriptor_data *d, char *arg)
     else
     {
       OLC_CONFIG(d)->happy_hour.treasure = atoi(arg);
+      cedit_disp_happy_hour_options(d);
+    }
+    break;
+
+  case CEDIT_HAPPY_HOUR_CRAFTING_EXP:
+    if (!*arg)
+    {
+      write_to_output(d, "That is an invalid choice!\r\n"
+                         "Enter the percent increase of crafting exp gained during an automated happy hour. : ");
+    }
+    else
+    {
+      OLC_CONFIG(d)->happy_hour.crafting_exp = atoi(arg);
+      cedit_disp_happy_hour_options(d);
+    }
+    break;
+
+  case CEDIT_HAPPY_HOUR_HARVESTING_EXP:
+    if (!*arg)
+    {
+      write_to_output(d, "That is an invalid choice!\r\n"
+                         "Enter the percent increase of harvesting exp gained during an automated happy hour. : ");
+    }
+    else
+    {
+      OLC_CONFIG(d)->happy_hour.harvesting_exp = atoi(arg);
+      cedit_disp_happy_hour_options(d);
+    }
+    break;
+
+  case CEDIT_HAPPY_HOUR_HARVESTING_MATERIALS:
+    if (!*arg)
+    {
+      write_to_output(d, "That is an invalid choice!\r\n"
+                         "Enter the percent increase of materials harvested during an automated happy hour. : ");
+    }
+    else
+    {
+      OLC_CONFIG(d)->happy_hour.harvesting_materials = atoi(arg);
+      cedit_disp_happy_hour_options(d);
+    }
+    break;
+
+  case CEDIT_HAPPY_HOUR_HARVESTING_MOTES_CHANCE:
+    if (!*arg)
+    {
+      write_to_output(d, "That is an invalid choice!\r\n"
+                         "Enter the percent increase for mote drop chance during an automated happy hour. : ");
+    }
+    else
+    {
+      OLC_CONFIG(d)->happy_hour.harvesting_motes_chance = atoi(arg);
+      cedit_disp_happy_hour_options(d);
+    }
+    break;
+
+  case CEDIT_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED:
+    if (!*arg)
+    {
+      write_to_output(d, "That is an invalid choice!\r\n"
+                         "Enter the percent increase of motes obtained during an automated happy hour. : ");
+    }
+    else
+    {
+      OLC_CONFIG(d)->happy_hour.harvesting_motes_obtained = atoi(arg);
       cedit_disp_happy_hour_options(d);
     }
     break;

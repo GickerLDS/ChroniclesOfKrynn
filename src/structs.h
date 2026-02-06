@@ -7653,11 +7653,16 @@ struct staffevent_struct
 /** Happy Hour Data */
 struct happyhour
 {
-  int qp_rate;       // % increase in qp
-  int exp_rate;      // % increase in exp
-  int gold_rate;     // % increase in gold
-  int treasure_rate; // % increase in treasure drop
-  int ticks_left;    // time left for happyhour
+  int qp_rate;              // % increase in qp
+  int exp_rate;             // % increase in exp
+  int gold_rate;            // % increase in gold
+  int treasure_rate;        // % increase in treasure drop
+  int crafting_exp_rate;    // % increase in crafting exp
+  int harvesting_exp_rate;  // % increase in harvesting exp
+  int harvesting_materials_rate; // % increase in materials harvested
+  int harvesting_motes_chance_rate; // % increase in mote drop chance
+  int harvesting_motes_obtained_rate; // % increase in motes obtained
+  int ticks_left;           // time left for happyhour
 };
 
 /** structure for list of recent players (see 'recent' command) */
@@ -7717,6 +7722,11 @@ struct happy_hour_data
   int exp;      // percent increase in exp
   int gold;     // percent increase in gold
   int treasure; // percent increase in random treasure chance
+  int crafting_exp; // percent increase in crafting exp
+  int harvesting_exp; // percent increase in harvesting exp
+  int harvesting_materials; // percent increase in materials harvested
+  int harvesting_motes_chance; // percent increase in mote drop chance
+  int harvesting_motes_obtained; // percent increase in motes obtained
   int chance;   // percent chance the happy hour will occur each rl hour
 };
 

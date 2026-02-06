@@ -4937,6 +4937,9 @@ void harvest_complete(struct char_data *ch)
   }
   else
   {
+    int happy_hour_mat_bonus = 0;
+    int mote_chance = 0;
+    
     amount = HARVEST_BASE_AMOUNT;
     amount = MIN(amount, world[IN_ROOM(ch)].harvest_material_amount);
 
@@ -4959,7 +4962,7 @@ void harvest_complete(struct char_data *ch)
         prof_bonus_text[0] = '\0';
       
       send_to_char(ch,
-                   "Roll [%d] + Skill [%d]%s = Total [%d] vs. DC [%d]. Success! You have harvested "
+                   "Roll [%d] + Skill [%d]%s = Total [%d] vs. DC [%d]. Success!\r\nYou have harvested "
                    "%d %s from %s.\r\n",
                    roll, skill_roll, prof_bonus_text, roll + skill_roll + prof_bonus, dc, amount,
                    crafting_materials[world[IN_ROOM(ch)].harvest_material],
@@ -4979,7 +4982,14 @@ void harvest_complete(struct char_data *ch)
 
     world[IN_ROOM(ch)].harvest_material_amount -= amount;
 
-    GET_CRAFT_MAT(ch, world[IN_ROOM(ch)].harvest_material) += amount + bonus + efficient_bonus;
+    /* Apply happy hour bonus for materials harvested */
+    if (HAPPY_HARVESTING_MATERIALS > 0)
+    {
+      happy_hour_mat_bonus = MAX(1, ((amount + bonus + efficient_bonus) * HAPPY_HARVESTING_MATERIALS) / 100);
+      send_to_char(ch, "\tY*HAPPY HOUR*\tn You gain %d bonus materials!\r\n", happy_hour_mat_bonus);
+    }
+
+    GET_CRAFT_MAT(ch, world[IN_ROOM(ch)].harvest_material) += amount + bonus + efficient_bonus + happy_hour_mat_bonus;
 
     if (world[IN_ROOM(ch)].harvest_material_amount <= 0)
     {
@@ -4990,11 +5000,24 @@ void harvest_complete(struct char_data *ch)
     }
 
     // random motes
-    if ((dice(1, 100) <= HARVEST_MOTE_CHANCE) || motes_found)
+    mote_chance = HARVEST_MOTE_CHANCE;
+    if (HAPPY_HARVESTING_MOTES_CHANCE > 0)
+    {
+      mote_chance += HAPPY_HARVESTING_MOTES_CHANCE;
+    }
+    
+    if ((dice(1, 100) <= mote_chance) || motes_found)
     {
       num_motes =
           dice(MAX(1, material_grade(world[IN_ROOM(ch)].harvest_material)), HARVEST_MOTE_DICE_SIZE);
       num_motes = num_motes * HARVEST_MOTE_MULTIPLIER / 100;
+      
+      /* Apply happy hour bonus for motes obtained */
+      if (HAPPY_HARVESTING_MOTES_OBTAINED > 0)
+      {
+        num_motes = num_motes + ((num_motes * HAPPY_HARVESTING_MOTES_OBTAINED) / 100);
+      }
+      
       mote_type = dice(1, NUM_CRAFT_MOTES - 1);
       bonus_motes = 0;
       synergy_talent = TALENT_NONE;
@@ -5039,6 +5062,10 @@ void harvest_complete(struct char_data *ch)
           send_to_char(ch, "\tC*MOTE SYNERGY (+%d)*\tn ", bonus_motes);
         }
       }
+      if (HAPPY_HARVESTING_MOTES_CHANCE > 0)
+      {
+        send_to_char(ch, "\tY*HAPPY HOUR*\tn ");
+      }
 
       send_to_char(ch, "\tYYou have extracted a small cache of %d %ss!.\r\n",
                    num_motes + bonus_motes, crafting_motes[mote_type]);
@@ -5064,7 +5091,7 @@ void newcraft_harvest(struct char_data *ch, const char *argument)
     return;
   }
 
-  if (!ch->player_specials->surveyed_room)
+  if (GET_SURVEY_ROOMS(ch) <= 0)
   {
     send_to_char(ch, "You must first survey to locate any resources here.\r\n");
     return;
@@ -5218,6 +5245,7 @@ void gain_craft_exp(struct char_data *ch, int exp, int abil, bool verbose)
   int bonus_percentage = 0;
   int bonus_exp = 0;
   int total_exp = exp;
+  int happy_hour_bonus = 0;
 
   // Validate ability/skill type to prevent array out-of-bounds crashes
   if (abil < 0 || abil > NUM_ABILITIES)
@@ -5237,15 +5265,39 @@ void gain_craft_exp(struct char_data *ch, int exp, int abil, bool verbose)
     total_exp = exp + bonus_exp;
   }
 
+  /* Check for happy hour bonus */
+  if (abil >= ABILITY_CRAFT_WOODWORKING && abil <= ABILITY_CRAFT_COOKING)
+  {
+    /* Crafting skills */
+    if (HAPPY_CRAFTING_EXP > 0)
+    {
+      happy_hour_bonus = (exp * HAPPY_CRAFTING_EXP) / 100;
+      total_exp += happy_hour_bonus;
+    }
+  }
+  else if (abil >= ABILITY_HARVEST_MINING && abil <= ABILITY_HARVEST_SURVEYING)
+  {
+    /* Harvesting skills */
+    if (HAPPY_HARVESTING_EXP > 0)
+    {
+      happy_hour_bonus = (exp * HAPPY_HARVESTING_EXP) / 100;
+      total_exp += happy_hour_bonus;
+    }
+  }
+
   GET_CRAFT_SKILL_EXP(ch, abil) += total_exp;
   if (verbose)
   {
-    if (bonus_exp > 0)
+    if (bonus_exp > 0 || happy_hour_bonus > 0)
     {
       send_to_char(ch,
-                   "You've gained %d experience points in the '%s' skill (+%d bonus from "
-                   "insightful talent).\r\n",
-                   total_exp, ability_names[abil], bonus_exp);
+                   "You've gained %d experience points in the '%s' skill",
+                   total_exp, ability_names[abil]);
+      if (bonus_exp > 0)
+        send_to_char(ch, " (+%d bonus from insightful talent)", bonus_exp);
+      if (happy_hour_bonus > 0)
+        send_to_char(ch, " (+%d happy hour bonus)", happy_hour_bonus);
+      send_to_char(ch, ".\r\n");
     }
     else
     {
@@ -6029,10 +6081,20 @@ ACMD(do_setmaterial)
 
   if (!*target || !*mat_type || !*mat_amount)
   {
-    send_to_char(ch, "You need to specify whose materials to change, the material type, and how "
+    if (subcmd == SCMD_SETMATERIALS)
+    {
+      send_to_char(ch, "You need to specify whose materials to change, the material type, and how "
+                     "many to set to.\r\n"
+                     "Eg. setmaterial gicker alchemical-silver 10.\r\n"
+                     "This will set gicker's alchemical silver material count to 10.\r\n"); 
+    }
+    else
+    {
+      send_to_char(ch, "You need to specify whose materials to change, the material type, and how "
                      "many to give/reduce.\r\n"
                      "Eg. setmaterial gicker alchemical-silver 10.\r\n"
-                     "This will set gicker's alchemical silver material count to 10.\r\n");
+                     "This will give gicker additional alchemical silver material count of 10.\r\n"); 
+    }
   }
 
   if (!(tch = get_char_vis(ch, target, NULL, FIND_CHAR_WORLD)))
@@ -6086,7 +6148,11 @@ ACMD(do_setmaterial)
     }
     else
     {
-      GET_CRAFT_MOTES(tch, type) = amount;
+      if (subcmd == SCMD_SETMATERIALS)
+        GET_CRAFT_MOTES(tch, type) = amount;
+      else
+        GET_CRAFT_MOTES(tch, type) += amount;
+
       if (GET_CRAFT_MOTES(tch, type) < 0)
       {
         snprintf(buf, sizeof(buf), "$n has set your %s units to 0.", crafting_motes[type]);
@@ -6097,12 +6163,20 @@ ACMD(do_setmaterial)
       }
       else
       {
-        snprintf(buf, sizeof(buf), "$n has set your %s units to %d.", crafting_motes[type],
-                 GET_CRAFT_MOTES(tch, type));
-        act(buf, FALSE, ch, 0, tch, TO_VICT);
-        snprintf(buf, sizeof(buf), "You have set $N's %s units to %d.", crafting_motes[type],
-                 GET_CRAFT_MOTES(tch, type));
-        act(buf, FALSE, ch, 0, tch, TO_CHAR);
+        if (subcmd == SCMD_SETMATERIALS)
+        {
+          snprintf(buf, sizeof(buf), "$n has set your %s units to %d.", crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_VICT);
+          snprintf(buf, sizeof(buf), "You have set $N's %s units to %d.", crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_CHAR);
+        }
+        else
+        {
+          snprintf(buf, sizeof(buf), "$n has given you %d %s units making your new total on-hand %d.", amount, crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_VICT);
+          snprintf(buf, sizeof(buf), "You have given $N %d %s units making their new total on-hand %d.", amount, crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_CHAR);
+        }
       }
       return;
     }
@@ -6116,26 +6190,36 @@ ACMD(do_setmaterial)
   }
   else
   {
-    GET_CRAFT_MAT(tch, type) = amount;
-    if (GET_CRAFT_MAT(tch, type) < 0)
-    {
-      snprintf(buf, sizeof(buf), "$n has set your %s material units to 0.",
-               crafting_materials[type]);
-      act(buf, FALSE, ch, 0, tch, TO_VICT);
-      snprintf(buf, sizeof(buf), "You have set $N's %s material units to 0.",
-               crafting_materials[type]);
-      act(buf, FALSE, ch, 0, tch, TO_CHAR);
-      GET_CRAFT_MAT(tch, type) = 0;
-    }
-    else
-    {
-      snprintf(buf, sizeof(buf), "$n has set your %s material units to %d.",
-               crafting_materials[type], GET_CRAFT_MAT(tch, type));
-      act(buf, FALSE, ch, 0, tch, TO_VICT);
-      snprintf(buf, sizeof(buf), "You have set $N's %s material units to %d.",
-               crafting_materials[type], GET_CRAFT_MAT(tch, type));
-      act(buf, FALSE, ch, 0, tch, TO_CHAR);
-    }
+    if (subcmd == SCMD_SETMATERIALS)
+        GET_CRAFT_MOTES(tch, type) = amount;
+      else
+        GET_CRAFT_MOTES(tch, type) += amount;
+
+      if (GET_CRAFT_MOTES(tch, type) < 0)
+      {
+        snprintf(buf, sizeof(buf), "$n has set your %s units to 0.", crafting_motes[type]);
+        act(buf, FALSE, ch, 0, tch, TO_VICT);
+        snprintf(buf, sizeof(buf), "You have set $N's %s units to 0.", crafting_motes[type]);
+        act(buf, FALSE, ch, 0, tch, TO_CHAR);
+        GET_CRAFT_MOTES(tch, type) = 0;
+      }
+      else
+      {
+        if (subcmd == SCMD_SETMATERIALS)
+        {
+          snprintf(buf, sizeof(buf), "$n has set your %s units to %d.", crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_VICT);
+          snprintf(buf, sizeof(buf), "You have set $N's %s units to %d.", crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_CHAR);
+        }
+        else
+        {
+          snprintf(buf, sizeof(buf), "$n has given you %d %s units making your new total on-hand %d.", amount, crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_VICT);
+          snprintf(buf, sizeof(buf), "You have given $N %d %s units making their new total on-hand %d.", amount, crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          act(buf, FALSE, ch, 0, tch, TO_CHAR);
+        }
+      }
   }
 }
 
@@ -6317,7 +6401,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "HARD METALS", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_HARD_METALS)
@@ -6336,7 +6420,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "SOFT METALS", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_SOFT_METALS)
@@ -6356,7 +6440,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "HIDES", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_HIDES)
@@ -6376,7 +6460,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "WOOD", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_WOOD)
@@ -6395,7 +6479,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "CLOTH", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_CLOTH)
@@ -6415,7 +6499,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "STONE", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_STONE)
@@ -6435,7 +6519,7 @@ ACMD(do_list_craft_materials)
   text_line(ch, "REFINING MATERIALS", 80, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = 2; i < NUM_CRAFT_MATS; i++)
+  for (i = 0; i < NUM_CRAFT_MATS; i++)
   {
     mat = materials_sort_info[i];
     if (craft_group_by_material(mat) != CRAFT_GROUP_REFINING)
@@ -6485,10 +6569,10 @@ void sort_materials(void)
   int a;
 
   /* initialize array, avoiding reserved. */
-  for (a = 1; a < NUM_CRAFT_MATS; a++)
+  for (a = 0; a < NUM_CRAFT_MATS; a++)
     materials_sort_info[a] = a;
 
-  qsort(&materials_sort_info[1], NUM_CRAFT_MATS, sizeof(int), compare_materials);
+  qsort(&materials_sort_info[0], NUM_CRAFT_MATS, sizeof(int), compare_materials);
 }
 
 int craft_skill_level_exp(struct char_data *ch, int level)
@@ -10371,7 +10455,7 @@ void craft_golem_complete(struct char_data *ch)
 
   roll = d20(ch);
   dc = GET_CRAFT(ch).dc;
-  skill = get_craft_skill_value(ch, ABILITY_ARCANA);
+  skill = compute_ability(ch, ABILITY_ARCANA);
 
   send_to_char(ch, "You rolled %d + your Arcana skill of %d = total of %d vs. dc %d.\r\n", roll,
                skill, roll + skill, dc);
@@ -10381,7 +10465,7 @@ void craft_golem_complete(struct char_data *ch)
   num_motes = get_golem_mote_requirements(GET_CRAFT(ch).golem_type, GET_CRAFT(ch).golem_size,
                                           mote_types, mote_amounts);
 
-  if (roll + skill >= dc)
+  if ((roll + skill) >= dc)
   {
     // Success! First check if they already have a golem
     if (has_golem_follower(ch))
@@ -10487,19 +10571,19 @@ void craft_golem_complete(struct char_data *ch)
   }
   else
   {
-    send_to_char(ch, "\tRFailed!\tn The construction fails, and the materials are wasted.\r\n");
+    send_to_char(ch, "\tRFailed!\tn The construction fails, and some of the materials are wasted.\r\n");
 
     // Consume materials even on failure for realism
     for (i = 0; i < num_mats; i++)
     {
       if (material_types[i] > 0)
-        GET_CRAFT_MAT(ch, material_types[i]) -= material_amounts[i];
+        GET_CRAFT_MAT(ch, material_types[i]) -= MAX(1, material_amounts[i] / 10); // Lose 10% on fail
     }
 
     for (i = 0; i < num_motes; i++)
     {
       if (mote_types[i] > 0)
-        GET_CRAFT_MOTES(ch, mote_types[i]) -= mote_amounts[i];
+        GET_CRAFT_MOTES(ch, mote_types[i]) -= MAX(1, mote_amounts[i] / 10); // Lose 10% on fail
     }
   }
 

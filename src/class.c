@@ -9411,13 +9411,13 @@ void load_class_list(void)
   feat_assignment(CLASS_ARTIFICER, FEAT_SIMPLE_WEAPON_PROFICIENCY, Y, 1, N);
   feat_assignment(CLASS_ARTIFICER, FEAT_ARMOR_PROFICIENCY_LIGHT, Y, 1, N);
   feat_assignment(CLASS_ARTIFICER, FEAT_ARMOR_PROFICIENCY_SHIELD, Y, 1, N);
-  feat_assignment(CLASS_ARTIFICER, FEAT_SCRIBE_SCROLL, Y, 2, N);
-  feat_assignment(CLASS_ARTIFICER, FEAT_BREW_POTION, Y, 3, N);
+  // feat_assignment(CLASS_ARTIFICER, FEAT_SCRIBE_SCROLL, Y, 2, N);
+  // feat_assignment(CLASS_ARTIFICER, FEAT_BREW_POTION, Y, 3, N);
   feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_WONDEROUS_ITEM, Y, 4, N);
   feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR, Y, 5, N);
-  feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_WAND, Y, 7, N);
-  feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_ROD, Y, 9, N);
-  feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_STAFF, Y, 12, N);
+  // feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_WAND, Y, 7, N);
+  // feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_ROD, Y, 9, N);
+  // feat_assignment(CLASS_ARTIFICER, FEAT_CRAFT_STAFF, Y, 12, N);
   feat_assignment(CLASS_ARTIFICER, FEAT_FORGE_RING, Y, 14, N);
   feat_assignment(CLASS_ARTIFICER, FEAT_ARTIFICERS_LORE, Y, 1, N);
   /* artificer class abilities */

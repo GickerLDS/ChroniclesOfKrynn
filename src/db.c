@@ -184,7 +184,7 @@ struct reset_q_type reset_q;          /* queue of zones to be reset	 */
 
 struct staffevent_struct staffevent_data = {
     -1, 0, 3}; /* first value is event index which starts with 0, -1 means no event */
-struct happyhour happy_data = {0, 0, 0, 0, 0};
+struct happyhour happy_data = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 /* declaration of local (file scope) variables */
 static int converting = FALSE;
@@ -7502,6 +7502,11 @@ static void load_default_config(void)
   CONFIG_HAPPY_HOUR_QP = happy_hour_qp_bonus;
   CONFIG_HAPPY_HOUR_GOLD = happy_hour_gold_bonus;
   CONFIG_HAPPY_HOUR_TREASURE = happy_hour_treasure_bonus;
+  CONFIG_HAPPY_HOUR_CRAFTING_EXP = happy_hour_crafting_exp_bonus;
+  CONFIG_HAPPY_HOUR_HARVESTING_EXP = happy_hour_harvesting_exp_bonus;
+  CONFIG_HAPPY_HOUR_HARVESTING_MATERIALS = happy_hour_harvesting_materials_bonus;
+  CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE = happy_hour_harvesting_motes_chance_bonus;
+  CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED = happy_hour_harvesting_motes_obtained_bonus;
 
   /* Mob Stats - Initialize to 100% (normal) */
   CONFIG_MOB_WARRIORS_HP = 100;
@@ -7704,6 +7709,16 @@ void load_config(void)
         CONFIG_HAPPY_HOUR_GOLD = num;
       else if (!str_cmp(tag, "happy_hour_treasure_bonus"))
         CONFIG_HAPPY_HOUR_TREASURE = num;
+      else if (!str_cmp(tag, "happy_hour_crafting_exp_bonus"))
+        CONFIG_HAPPY_HOUR_CRAFTING_EXP = num;
+      else if (!str_cmp(tag, "happy_hour_harvesting_exp_bonus"))
+        CONFIG_HAPPY_HOUR_HARVESTING_EXP = num;
+      else if (!str_cmp(tag, "happy_hour_harvesting_materials_bonus"))
+        CONFIG_HAPPY_HOUR_HARVESTING_MATERIALS = num;
+      else if (!str_cmp(tag, "happy_hour_harvesting_motes_chance_bonus"))
+        CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE = num;
+      else if (!str_cmp(tag, "happy_hour_harvesting_motes_obtained_bonus"))
+        CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED = num;
       break;
 
     case 'i':

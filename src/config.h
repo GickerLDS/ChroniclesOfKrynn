@@ -83,6 +83,11 @@ extern int happy_hour_exp_bonus;
 extern int happy_hour_qp_bonus;
 extern int happy_hour_gold_bonus;
 extern int happy_hour_treasure_bonus;
+extern int happy_hour_crafting_exp_bonus;
+extern int happy_hour_harvesting_exp_bonus;
+extern int happy_hour_harvesting_materials_bonus;
+extern int happy_hour_harvesting_motes_chance_bonus;
+extern int happy_hour_harvesting_motes_obtained_bonus;
 
 extern int medit_advanced_stats;
 extern float min_pop_to_claim;

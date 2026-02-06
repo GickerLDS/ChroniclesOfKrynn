@@ -243,6 +243,11 @@ int happy_hour_exp_bonus = 50;
 int happy_hour_qp_bonus = 50;
 int happy_hour_gold_bonus = 50;
 int happy_hour_treasure_bonus = 20;
+int happy_hour_crafting_exp_bonus = 25;
+int happy_hour_harvesting_exp_bonus = 25;
+int happy_hour_harvesting_materials_bonus = 25;
+int happy_hour_harvesting_motes_chance_bonus = 10;
+int happy_hour_harvesting_motes_obtained_bonus = 25;
 
 /* Rationale for enabling this, as explained by Naved:
  * Usually, when you select ban a site, it is because one or two people are

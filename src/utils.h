@@ -2487,6 +2487,11 @@ bool can_blood_drain_target(struct char_data *ch, struct char_data *vict);
 #define HAPPY_GOLD happy_data.gold_rate
 #define HAPPY_QP happy_data.qp_rate
 #define HAPPY_TREASURE happy_data.treasure_rate
+#define HAPPY_CRAFTING_EXP happy_data.crafting_exp_rate
+#define HAPPY_HARVESTING_EXP happy_data.harvesting_exp_rate
+#define HAPPY_HARVESTING_MATERIALS happy_data.harvesting_materials_rate
+#define HAPPY_HARVESTING_MOTES_CHANCE happy_data.harvesting_motes_chance_rate
+#define HAPPY_HARVESTING_MOTES_OBTAINED happy_data.harvesting_motes_obtained_rate
 
 #define HAPPY_TIME happy_data.ticks_left
 
@@ -2696,6 +2701,16 @@ bool can_blood_drain_target(struct char_data *ch, struct char_data *vict);
 #define CONFIG_HAPPY_HOUR_GOLD config_info.happy_hour.gold
 /** Percent increase of chance for random treasure during automated happy hour */
 #define CONFIG_HAPPY_HOUR_TREASURE config_info.happy_hour.treasure
+/** Percent increase of crafting exp during automated happy hour */
+#define CONFIG_HAPPY_HOUR_CRAFTING_EXP config_info.happy_hour.crafting_exp
+/** Percent increase of harvesting exp during automated happy hour */
+#define CONFIG_HAPPY_HOUR_HARVESTING_EXP config_info.happy_hour.harvesting_exp
+/** Percent increase of harvesting materials during automated happy hour */
+#define CONFIG_HAPPY_HOUR_HARVESTING_MATERIALS config_info.happy_hour.harvesting_materials
+/** Percent increase of harvesting motes chance during automated happy hour */
+#define CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE config_info.happy_hour.harvesting_motes_chance
+/** Percent increase of harvesting motes obtained during automated happy hour */
+#define CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED config_info.happy_hour.harvesting_motes_obtained
 
 /* Player config data stuff! */
 /** Percent increase on psionic power damage */

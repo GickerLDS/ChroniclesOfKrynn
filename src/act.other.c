@@ -2833,7 +2833,7 @@ ACMD(do_golemrepair)
   extern int get_golem_repair_dc(int golem_type, int golem_size);
   dc = get_golem_repair_dc(golem_type, golem_size);
   roll = d20(ch);
-  skill = get_craft_skill_value(ch, ABILITY_ARCANA);
+  skill = compute_ability(ch, ABILITY_ARCANA);
 
   send_to_char(ch,
                "You begin carefully repairing %s. You rolled %d + %d Arcana = %d vs. DC %d.\r\n",
@@ -8799,6 +8799,7 @@ ACMD(do_diplomacy)
 void show_happyhour(struct char_data *ch)
 {
   char happyexp[80], happygold[80], happyqp[80], happytreasure[80];
+  char happycraftexp[80], happyharvestexp[80], happyharvestmat[80], happyharvestmotechance[80], happyharvestmoteobtained[80];
   int secs_left;
 
   if ((IS_HAPPYHOUR) || (GET_LEVEL(ch) >= LVL_GRSTAFF))
@@ -8816,6 +8817,16 @@ void show_happyhour(struct char_data *ch)
              HAPPY_EXP, CCNRM(ch, C_NRM));
     snprintf(happytreasure, sizeof(happytreasure), "%s+%d%%%s to Treasure Drop rate\r\n",
              CCYEL(ch, C_NRM), HAPPY_TREASURE, CCNRM(ch, C_NRM));
+    snprintf(happycraftexp, sizeof(happycraftexp), "%s+%d%%%s to Crafting Experience\r\n",
+             CCYEL(ch, C_NRM), HAPPY_CRAFTING_EXP, CCNRM(ch, C_NRM));
+    snprintf(happyharvestexp, sizeof(happyharvestexp), "%s+%d%%%s to Harvesting Experience\r\n",
+             CCYEL(ch, C_NRM), HAPPY_HARVESTING_EXP, CCNRM(ch, C_NRM));
+    snprintf(happyharvestmat, sizeof(happyharvestmat), "%s+%d%%%s to Materials Harvested\r\n",
+             CCYEL(ch, C_NRM), HAPPY_HARVESTING_MATERIALS, CCNRM(ch, C_NRM));
+    snprintf(happyharvestmotechance, sizeof(happyharvestmotechance), "%s+%d%%%s to Mote Drop Chance\r\n",
+             CCYEL(ch, C_NRM), HAPPY_HARVESTING_MOTES_CHANCE, CCNRM(ch, C_NRM));
+    snprintf(happyharvestmoteobtained, sizeof(happyharvestmoteobtained), "%s+%d%%%s to Motes Obtained\r\n",
+             CCYEL(ch, C_NRM), HAPPY_HARVESTING_MOTES_OBTAINED, CCNRM(ch, C_NRM));
 
 #if defined(CAMPAIGN_DL)
     send_to_char(ch,
@@ -8828,11 +8839,17 @@ void show_happyhour(struct char_data *ch)
                  "LuminariMUD Happy Hour!\r\n"
 #endif
                  "------------------\r\n"
-                 "%s%s%s%sTime Remaining: %s%d%s hours %s%d%s mins %s%d%s secs\r\n",
+                 "%s%s%s%s%s%s%s%s%sTime Remaining: %s%d%s hours %s%d%s mins %s%d%s secs\r\n",
                  (IS_HAPPYEXP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyexp : "",
                  (IS_HAPPYGOLD || (GET_LEVEL(ch) >= LVL_STAFF)) ? happygold : "",
                  (IS_HAPPYTREASURE || (GET_LEVEL(ch) >= LVL_STAFF)) ? happytreasure : "",
-                 (IS_HAPPYQP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyqp : "", CCYEL(ch, C_NRM),
+                 (IS_HAPPYQP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyqp : "",
+                 (HAPPY_CRAFTING_EXP > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happycraftexp : "",
+                 (HAPPY_HARVESTING_EXP > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestexp : "",
+                 (HAPPY_HARVESTING_MATERIALS > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmat : "",
+                 (HAPPY_HARVESTING_MOTES_CHANCE > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmotechance : "",
+                 (HAPPY_HARVESTING_MOTES_OBTAINED > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmoteobtained : "",
+                 CCYEL(ch, C_NRM),
                  (secs_left / 3600), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), (secs_left % 3600) / 60,
                  CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), (secs_left % 60), CCNRM(ch, C_NRM));
   }
@@ -8853,6 +8870,11 @@ void invoke_happyhour(struct char_data *ch)
   HAPPY_QP = 50;
   HAPPY_TREASURE = 20;
   HAPPY_TIME = 48;
+  HAPPY_CRAFTING_EXP = 25;
+  HAPPY_HARVESTING_EXP = 25;
+  HAPPY_HARVESTING_MATERIALS = 25;
+  HAPPY_HARVESTING_MOTES_CHANCE = 10;
+  HAPPY_HARVESTING_MOTES_OBTAINED = 25;
 
   game_info("A Happyhour has been started by %s!", GET_NAME(ch));
 
@@ -8917,6 +8939,36 @@ ACMD(do_happyhour)
     HAPPY_QP = num;
     send_to_char(ch, "Happy Hour Questpoints rate set to +%d%%\r\n", HAPPY_QP);
   }
+  else if (is_abbrev(arg, "craftingexp"))
+  {
+    num = MIN(MAX((atoi(val)), 0), 1000);
+    HAPPY_CRAFTING_EXP = num;
+    send_to_char(ch, "Happy Hour Crafting Exp rate set to +%d%%\r\n", HAPPY_CRAFTING_EXP);
+  }
+  else if (is_abbrev(arg, "harvestingexp"))
+  {
+    num = MIN(MAX((atoi(val)), 0), 1000);
+    HAPPY_HARVESTING_EXP = num;
+    send_to_char(ch, "Happy Hour Harvesting Exp rate set to +%d%%\r\n", HAPPY_HARVESTING_EXP);
+  }
+  else if (is_abbrev(arg, "harvestingmaterials"))
+  {
+    num = MIN(MAX((atoi(val)), 0), 1000);
+    HAPPY_HARVESTING_MATERIALS = num;
+    send_to_char(ch, "Happy Hour Materials Harvested rate set to +%d%%\r\n", HAPPY_HARVESTING_MATERIALS);
+  }
+  else if (is_abbrev(arg, "harvestingmotechance"))
+  {
+    num = MIN(MAX((atoi(val)), 0), 100);
+    HAPPY_HARVESTING_MOTES_CHANCE = num;
+    send_to_char(ch, "Happy Hour Mote Drop Chance rate set to +%d%%\r\n", HAPPY_HARVESTING_MOTES_CHANCE);
+  }
+  else if (is_abbrev(arg, "harvestingmotesobtained"))
+  {
+    num = MIN(MAX((atoi(val)), 0), 1000);
+    HAPPY_HARVESTING_MOTES_OBTAINED = num;
+    send_to_char(ch, "Happy Hour Motes Obtained rate set to +%d%%\r\n", HAPPY_HARVESTING_MOTES_OBTAINED);
+  }
   else if (is_abbrev(arg, "show"))
   {
     show_happyhour(ch);
@@ -8929,12 +8981,22 @@ ACMD(do_happyhour)
     HAPPY_QP = 50;
     HAPPY_TREASURE = 25;
     HAPPY_TIME = 48;
+    HAPPY_CRAFTING_EXP = 25;
+    HAPPY_HARVESTING_EXP = 25;
+    HAPPY_HARVESTING_MATERIALS = 25;
+    HAPPY_HARVESTING_MOTES_CHANCE = 10;
+    HAPPY_HARVESTING_MOTES_OBTAINED = 25;
 #else
     HAPPY_EXP = 100;
     HAPPY_GOLD = 50;
     HAPPY_QP = 50;
     HAPPY_TREASURE = 20;
     HAPPY_TIME = 48;
+    HAPPY_CRAFTING_EXP = 25;
+    HAPPY_HARVESTING_EXP = 25;
+    HAPPY_HARVESTING_MATERIALS = 25;
+    HAPPY_HARVESTING_MOTES_CHANCE = 10;
+    HAPPY_HARVESTING_MOTES_OBTAINED = 25;
 #endif
     game_info("A Happyhour has started!");
     set_db_happy_hour(1);
@@ -8943,21 +9005,35 @@ ACMD(do_happyhour)
   {
     send_to_char(
         ch,
-        "Usage: %shappyhour                 %s- show usage (this info)\r\n"
-        "       %shappyhour show            %s- display current settings (what mortals see)\r\n"
-        "       %shappyhour time <ticks>    %s- set happyhour time and start timer\r\n"
-        "       %shappyhour qp <num>        %s- set qp percentage gain\r\n"
-        "       %shappyhour exp <num>       %s- set exp percentage gain\r\n"
-        "       %shappyhour gold <num>      %s- set gold percentage gain\r\n"
-        "       %shappyhour treasure <num>  %s- set treasure drop-rate gain\r\n"
-        "       \tyhappyhour default      \tw- sets a default setting for happyhour\r\n\r\n"
+        "Usage: %shappyhour                               %s- show usage (this info)\r\n"
+        "       %shappyhour show                          %s- display current settings (what mortals see)\r\n"
+        "       %shappyhour time <ticks>                  %s- set happyhour time and start timer\r\n"
+        "       %shappyhour qp <num>                      %s- set qp percentage gain\r\n"
+        "       %shappyhour exp <num>                     %s- set exp percentage gain\r\n"
+        "       %shappyhour gold <num>                    %s- set gold percentage gain\r\n"
+        "       %shappyhour treasure <num>                %s- set treasure drop-rate gain\r\n"
+        "       %shappyhour craftingexp <num>             %s- set crafting exp percentage gain\r\n"
+        "       %shappyhour harvestingexp <num>           %s- set harvesting exp percentage gain\r\n"
+        "       %shappyhour harvestingmaterials <num>     %s- set materials harvested percentage gain\r\n"
+        "       %shappyhour harvestingmotechance <num>    %s- set mote drop chance (max 100)\r\n"
+        "       %shappyhour harvestingmotesobtained <num> %s- set motes obtained percentage gain\r\n"
+        "       \tyhappyhour default            \tw- sets a default setting for happyhour\r\n\r\n"
         "Configure the happyhour settings and start a happyhour.\r\n"
         "Currently 1 hour IRL = %d ticks\r\n"
         "If no number is specified, 0 (off) is assumed.\r\nThe command \tyhappyhour time\tn will "
         "therefore stop the happyhour timer.\r\n",
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM),
-        CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
         (3600 / SECS_PER_MUD_HOUR));
   }
 }
@@ -12168,6 +12244,7 @@ ACMDU(do_device)
       send_to_char(ch, "Use which invention? Usage: device use <number> [target]\r\n");
       return;
     }
+
     int inv_idx = atoi(arg2) - 1;
     if (inv_idx < 0 || inv_idx >= ch->player_specials->saved.num_inventions)
     {
@@ -12454,7 +12531,7 @@ ACMDU(do_device)
       int spell_num = inv->spell_effects[i];
       if (spell_num > 0 && spell_num < NUM_SPELLS)
       {
-        call_magic(ch, target, NULL, spell_num, 0, artificer_level, CAST_DEVICE);
+        call_magic(ch, target, obj_target, spell_num, 0, artificer_level, CAST_DEVICE);
       }
     }
 
