@@ -6191,32 +6191,32 @@ ACMD(do_setmaterial)
   else
   {
     if (subcmd == SCMD_SETMATERIALS)
-        GET_CRAFT_MOTES(tch, type) = amount;
+        GET_CRAFT_MAT(tch, type) = amount;
       else
-        GET_CRAFT_MOTES(tch, type) += amount;
+        GET_CRAFT_MAT(tch, type) += amount;
 
-      if (GET_CRAFT_MOTES(tch, type) < 0)
+      if (GET_CRAFT_MAT(tch, type) < 0)
       {
-        snprintf(buf, sizeof(buf), "$n has set your %s units to 0.", crafting_motes[type]);
+        snprintf(buf, sizeof(buf), "$n has set your %s units to 0.", crafting_materials[type]);
         act(buf, FALSE, ch, 0, tch, TO_VICT);
-        snprintf(buf, sizeof(buf), "You have set $N's %s units to 0.", crafting_motes[type]);
+        snprintf(buf, sizeof(buf), "You have set $N's %s units to 0.", crafting_materials[type]);
         act(buf, FALSE, ch, 0, tch, TO_CHAR);
-        GET_CRAFT_MOTES(tch, type) = 0;
+        GET_CRAFT_MAT(tch, type) = 0;
       }
       else
       {
         if (subcmd == SCMD_SETMATERIALS)
         {
-          snprintf(buf, sizeof(buf), "$n has set your %s units to %d.", crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          snprintf(buf, sizeof(buf), "$n has set your %s units to %d.", crafting_materials[type], GET_CRAFT_MAT(tch, type));
           act(buf, FALSE, ch, 0, tch, TO_VICT);
-          snprintf(buf, sizeof(buf), "You have set $N's %s units to %d.", crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          snprintf(buf, sizeof(buf), "You have set $N's %s units to %d.", crafting_materials[type], GET_CRAFT_MAT(tch, type));
           act(buf, FALSE, ch, 0, tch, TO_CHAR);
         }
         else
         {
-          snprintf(buf, sizeof(buf), "$n has given you %d %s units making your new total on-hand %d.", amount, crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          snprintf(buf, sizeof(buf), "$n has given you %d %s units making your new total on-hand %d.", amount, crafting_materials[type], GET_CRAFT_MAT(tch, type));
           act(buf, FALSE, ch, 0, tch, TO_VICT);
-          snprintf(buf, sizeof(buf), "You have given $N %d %s units making their new total on-hand %d.", amount, crafting_motes[type], GET_CRAFT_MOTES(tch, type));
+          snprintf(buf, sizeof(buf), "You have given $N %d %s units making their new total on-hand %d.", amount, crafting_materials[type], GET_CRAFT_MAT(tch, type));
           act(buf, FALSE, ch, 0, tch, TO_CHAR);
         }
       }
