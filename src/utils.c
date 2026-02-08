@@ -11809,4 +11809,19 @@ int sector_type_to_terrain_type(int sector)
   return TERRAIN_TYPE_NONE;
 }
 
+/* Determine max spell level available for artificers */
+int max_artificer_spell_circle(int artificer_level)
+{
+  if (artificer_level < 1)
+    return 0;
+  else if (artificer_level >= 11)
+    return 4; /* 4th level spells (7th assignment level) */
+  else if (artificer_level >= 5)
+    return 3; /* 3rd level spells (5th assignment level) */
+  else if (artificer_level >= 3)
+    return 2; /* 2nd level spells (3rd assignment level) */
+  else
+    return 1; /* 1st level spells only */
+}
+
 /* EoF */

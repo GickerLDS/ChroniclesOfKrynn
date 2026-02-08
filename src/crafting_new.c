@@ -517,34 +517,34 @@ int determine_random_grade(int grade)
   case 1:
     return 1;
   case 2:
-    if (chance <= 66)
+    if (chance <= 50)
       return 1;
     else
       return 2;
   case 3:
-    if (chance <= 50)
+    if (chance <= 33)
       return 1;
-    else if (chance <= 85)
+    else if (chance <= 66)
       return 2;
     else
       return 3;
   case 4:
-    if (chance <= 30)
-      return 1;
-    else if (chance <= 60)
-      return 2;
-    else if (chance <= 85)
-      return 3;
-    else
-      return 4;
-  case 5:
     if (chance <= 25)
       return 1;
     else if (chance <= 50)
       return 2;
-    else if (chance <= 70)
+    else if (chance <= 75)
       return 3;
-    else if (chance <= 85)
+    else
+      return 4;
+  case 5:
+    if (chance <= 15)
+      return 1;
+    else if (chance <= 30)
+      return 2;
+    else if (chance <= 50)
+      return 3;
+    else if (chance <= 75)
       return 4;
     else
       return 5;
@@ -554,13 +554,13 @@ int determine_random_grade(int grade)
 
 int determine_grade_by_zone_level(int zone_level)
 {
-  if (zone_level <= 6)
+  if (zone_level <= 5)
     return 1;
-  else if (zone_level <= 12)
+  else if (zone_level <= 10)
     return 2;
-  else if (zone_level <= 18)
+  else if (zone_level <= 15)
     return 3;
-  else if (zone_level <= 24)
+  else if (zone_level <= 20)
     return 4;
   else
     return 5;
@@ -1818,6 +1818,8 @@ void set_crafting_bonuses(struct char_data *ch, const char *argument)
   {
     if (!is_valid_apply(i))
       continue;
+    if (i == APPLY_FEAT)
+      continue;
     snprintf(temp, sizeof(temp), "%s", apply_types[i]);
     for (j = 0; j < strlen(temp); j++)
     {
@@ -1830,6 +1832,7 @@ void set_crafting_bonuses(struct char_data *ch, const char *argument)
   if (i >= NUM_APPLIES)
   {
     send_to_char(ch, "You need to specify a valid bonus location. Type 'applies' for a list.\r\n");
+    send_to_char(ch, "Note: Feats cannot be set as a bonus location.\r\n");
     return;
   }
 
@@ -4563,6 +4566,24 @@ void show_craft_score(struct char_data *ch, const char *arg2)
   draw_line(ch, 90, '-', '-');
   send_to_char(ch, "\tn");
 
+  if (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR) || HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM))
+  {
+    bool has_both = (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR) && HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM));
+    if (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR))
+    {
+      send_to_char(ch, "Craft Magical Arms and Armor -> +5 when crafting weapons, armor and shields.\r\n");
+    }
+    if (HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM))
+    {
+      send_to_char(ch, "Craft Wonderous Item         -> +5 when crafting misc items, such as rings, bracers, etc.\r\n");
+    }
+    send_to_char(ch, "%s bonus%s %s listed here because they are tied to the type of item being crafted,\r\n"
+                     "not to a specific crafting skill.\r\n", has_both ? "These" : "This", has_both ? "s" : "", has_both ? "are" : "is");
+    send_to_char(ch, "\tc");
+    draw_line(ch, 90, '-', '-');
+    send_to_char(ch, "\tn");
+  }
+
   /* Display talent points and artisan points */
   send_to_char(ch, "\r\n");
   send_to_char(ch, "\tCTalent Points (TP):\tn %d unspent\r\n", GET_TALENT_POINTS(ch));
@@ -4848,9 +4869,9 @@ void craft_refine_complete(struct char_data *ch)
     gain_craft_exp(ch, (REFINE_BASE_EXP)*num, skill_type, TRUE);
   }
 
-  GET_CRAFT_MAT(ch, GET_CRAFT(ch).refining_result[0]) += GET_CRAFT(ch).refining_result[1];
-  send_to_char(ch, "You refine %d unit%s of %s.\r\n", GET_CRAFT(ch).refining_result[1],
-               GET_CRAFT(ch).refining_result[1] > 1 ? "s" : "",
+  GET_CRAFT_MAT(ch, GET_CRAFT(ch).refining_result[0]) += num;
+  send_to_char(ch, "You refine %d unit%s of %s.\r\n", num,
+               num > 1 ? "s" : "",
                crafting_materials[GET_CRAFT(ch).refining_result[0]]);
   reset_current_craft(ch, NULL, FALSE, FALSE);
   act("$n finishes refining.", FALSE, ch, 0, 0, TO_ROOM);
@@ -5315,6 +5336,10 @@ void gain_craft_exp(struct char_data *ch, int exp, int abil, bool verbose)
     /* Award 1 crafting talent point per crafting/harvesting skill level up */
     gain_talent_point(ch, 1);
   }
+  send_to_char(ch, "You have %d experience points in the '%s' skill and need %d more for rank %d.\r\n", 
+    GET_CRAFT_SKILL_EXP(ch, abil), ability_names[abil], 
+    craft_skill_level_exp(ch, get_craft_skill_value(ch, abil) + 1) - GET_CRAFT_SKILL_EXP(ch, abil),
+    get_craft_skill_value(ch, abil) + 1);
 }
 
 void show_refine_noargs(struct char_data *ch)

@@ -1811,6 +1811,7 @@ void update_player_misc(void)
   struct descriptor_data *d = NULL;
   struct char_data *ch = NULL;
   int i = 0;
+  struct mud_event_data *pMudEvent = NULL;
 
   for (d = descriptor_list; d; d = d->next)
   {
@@ -1834,6 +1835,11 @@ void update_player_misc(void)
       {
         send_to_char(ch, "You can now forage for food again.\r\n");
       }
+    }
+
+    if (!PRF_FLAGGED(ch, PRF_NO_CRAFT_PROGRESS) && (pMudEvent = char_has_mud_event(ch, eBREWING)))
+    {
+      send_to_char(ch, "You continue brewing, with approximately %d seconds left.\r\n", (int)(event_time(pMudEvent->pEvent) / 10));
     }
 
     /* Decrement Nature's Wrath cooldown if active */

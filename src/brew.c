@@ -37,7 +37,7 @@ int craft_skill_to_ability(int craft_skill)
 {
   switch (craft_skill)
   {
-  case CRAFT_SKILL_BREWING:
+  case ABILITY_CRAFT_ALCHEMY:
     return ABILITY_CRAFT_ALCHEMY;
   case CRAFT_SKILL_WEAPONSMITH:
     return ABILITY_CRAFT_WEAPONSMITHING;
@@ -179,9 +179,9 @@ EVENTFUNC(event_brewing)
     /* Give minimal alchemy experience for critical failure */
     if (brewing_skill < LVL_STAFF)
     {
-      int exp_gain = highest_circle * 5 + (num_spells - 1) * 2;
-      GET_CRAFT_SKILL_EXP(ch, craft_skill_to_ability(CRAFT_SKILL_BREWING)) += exp_gain;
-      send_to_char(ch, "You gain %d alchemy experience from the failed attempt.\r\n", exp_gain);
+      int exp_gain = (highest_circle * 5 + (num_spells - 1) * 2);
+        
+      send_to_char(ch, "You gain %d alchemy experience from the disastrous attempt.\r\n", exp_gain);
     }
 
     save_char(ch, 0);
@@ -204,8 +204,8 @@ EVENTFUNC(event_brewing)
     /* Give some alchemy experience for regular failure */
     if (brewing_skill < LVL_STAFF)
     {
-      int exp_gain = MAX(5, highest_circle * 3 / 4);
-      GET_CRAFT_SKILL_EXP(ch, craft_skill_to_ability(CRAFT_SKILL_BREWING)) += exp_gain;
+      int exp_gain = 20 + MAX(5, highest_circle * 3 / 4);
+      gain_craft_exp(ch, exp_gain, ABILITY_CRAFT_ALCHEMY, TRUE);
       send_to_char(ch, "You gain %d alchemy experience from the failed attempt.\r\n", exp_gain);
     }
 
@@ -357,19 +357,17 @@ EVENTFUNC(event_brewing)
   /* Give additional alchemy experience for completion */
   if (brewing_skill < LVL_STAFF)
   {
-    int completion_exp = highest_circle * 20 + (num_spells - 1) * 10;
+    int completion_exp = 30 + (highest_circle * 20 + (num_spells - 1) * 10);
     if (critical_success)
     {
       completion_exp = (completion_exp * 3) / 2; /* 50% bonus experience for critical success */
-      send_to_char(ch, "You gain %d alchemy experience for your masterful technique!\r\n",
-                   completion_exp);
+      send_to_char(ch, "You gain %d alchemy experience for your masterful technique!\r\n", completion_exp);
     }
     else
     {
-      send_to_char(ch, "You gain %d alchemy experience for completing the process.\r\n",
-                   completion_exp);
+      send_to_char(ch, "You gain %d alchemy experience for completing the process.\r\n", completion_exp);
     }
-    GET_CRAFT_SKILL_EXP(ch, craft_skill_to_ability(CRAFT_SKILL_BREWING)) += completion_exp;
+    gain_craft_exp(ch, completion_exp, ABILITY_CRAFT_ALCHEMY, TRUE);
   }
 
   /* Save character */
@@ -623,6 +621,7 @@ int find_spell_by_name(char *name)
 bool can_brew_spell(struct char_data *ch, int spell_num)
 {
   int spell_level = 0;
+  int max_spell_level = 0;
 
   if (!ch || spell_num < 1 || spell_num > TOP_SPELL_DEFINE)
     return FALSE;
@@ -662,6 +661,16 @@ bool can_brew_spell(struct char_data *ch, int spell_num)
 
     for (class_num = 0; class_num < NUM_CLASSES; class_num++)
     {
+      if (class_num == CLASS_ARTIFICER)
+      {
+        max_spell_level = max_artificer_spell_circle(CLASS_LEVEL(ch, CLASS_ARTIFICER));
+        if (spell_info[spell_num].min_level[CLASS_WIZARD] <= max_spell_level ||
+            spell_info[spell_num].min_level[CLASS_CLERIC] <= max_spell_level)
+        {
+          can_cast = TRUE;
+          break;
+        }
+      }
       if (CLASS_LEVEL(ch, class_num) > 0 &&
           spell_info[spell_num].min_level[class_num] <= CLASS_LEVEL(ch, class_num))
       {
@@ -943,6 +952,7 @@ ACMD(do_brew)
   struct mud_event_data *pMudEvent = NULL;
   const char *arg_ptr;
   int brewing_skill, dc;
+  int max_spell_level = 0;
 
   if (IS_NPC(ch))
   {
@@ -1102,6 +1112,15 @@ ACMD(do_brew)
     {
       if (spell_prep_gen_check(ch, spell_nums[i], 0) == CLASS_UNDEFINED)
       {
+        if (CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0)
+        {
+          max_spell_level = max_artificer_spell_circle(CLASS_LEVEL(ch, CLASS_ARTIFICER));
+          if (spell_info[spell_nums[i]].min_level[CLASS_WIZARD] <= max_spell_level ||
+              spell_info[spell_nums[i]].min_level[CLASS_CLERIC] <= max_spell_level)
+          {
+            continue; /* Artificer can brew this spell */
+          }
+        }
         send_to_char(ch, "You don't have '%s' prepared or you lack the spell slots to cast it.\r\n",
                      spell_info[spell_nums[i]].name);
         return;
@@ -1133,7 +1152,7 @@ ACMD(do_brew)
 
   /* Calculate alchemy skill check DC (for later use in event) */
   dc = 10 + (highest_circle * 2) + (num_spells - 1) * 3; /* +3 DC per additional spell */
-  brewing_skill = get_craft_skill_value(ch, craft_skill_to_ability(CRAFT_SKILL_BREWING));
+  brewing_skill = get_craft_skill_value(ch, craft_skill_to_ability(ABILITY_CRAFT_ALCHEMY));
 
   /* Materials are available - start alchemy process without consuming them yet */
   send_to_char(ch, "You have the required materials. Starting alchemy process...\r\n");
@@ -1153,12 +1172,14 @@ ACMD(do_brew)
   brew_time = 0;
   for (i = 0; i < num_spells; i++)
   {
-    brew_time += spell_levels[i] * 5;
+    brew_time += spell_levels[i] * 2;
   }
   if (num_spells > 1)
   {
     brew_time = (int)(brew_time * 1.5); /* 50% longer for multi-spell potions */
   }
+  brew_time /= 2; /* Adjust time to be more reasonable (2 seconds per spell level) */
+  brew_time -= brew_time % 6; /* Round to nearest 6 seconds for event timing */
 
   /* Start brewing process */
   if (num_spells == 1)

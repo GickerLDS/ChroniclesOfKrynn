@@ -3285,12 +3285,6 @@ ASPELL(spell_shadow_jump)
     return;
   }
 
-  if ((OUTSIDE(victim) || OUTSIDE(ch)) && weather_info.sunlight != SUN_DARK)
-  {
-    send_to_char(ch, "It must be night time for you to shadow jump.\r\n");
-    return;
-  }
-
   if (IS_SHADOW_CONDITIONS(ch) && IS_SHADOW_CONDITIONS(victim))
   {
     send_to_char(ch,

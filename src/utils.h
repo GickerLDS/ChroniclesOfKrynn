@@ -389,6 +389,7 @@ bool is_pc_idnum_in_room(struct char_data *ch, long int idnum);
 int is_player_grouped(struct char_data *target, struct char_data *group);
 bool are_grouped(struct char_data *ch, struct char_data *target);
 int find_ability_num_by_name(char *name);
+int max_artificer_spell_circle(int artificer_level);
 bool is_grouped_with_dragon(struct char_data *ch);
 bool has_bite_attack(struct char_data *ch);
 bool power_resistance(struct char_data *ch, struct char_data *victim, int modifier);

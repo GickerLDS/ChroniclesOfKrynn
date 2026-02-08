@@ -12867,8 +12867,7 @@ ACMDU(do_device)
       return;
     }
 
-    send_to_char(ch, "Available %s spells for artificer level %d:\r\n\r\n", class_name,
-                 artificer_level);
+    send_to_char(ch, "Available %s spells for artificer level %d:\r\n\r\n", class_name, artificer_level);
 
     /* Show spells by level (1st through max available) */
     for (spell_level = 1; spell_level <= max_spell_level; spell_level++)

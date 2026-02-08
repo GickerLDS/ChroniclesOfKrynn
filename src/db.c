@@ -4616,6 +4616,18 @@ struct char_data *read_mobile(mob_vnum nr, int type) /* and mob_rnum */
   /* Initialize known spell slots for mobs */
   init_known_spell_slots(mob);
 
+  if (mob->player.name)
+  {
+      char *p = mob->player.name;
+
+      while (*p)
+      {
+          if (*p == '-')
+              *p = ' ';
+          p++;
+      }
+  }
+
   return (mob);
 }
 
@@ -4846,20 +4858,17 @@ struct obj_data *read_object(obj_vnum nr, int type) /* and obj_rnum */
     // REMOVE_BIT_AR(GET_OBJ_EXTRA(obj), ITEM_SET_STATS_AT_LOAD);
   }
 
-  /* Remove dashes from keywords */
+  /* Replace dashes with spaces in keywords */
   if (obj->name)
   {
-    char *src = obj->name;
-    char *dst = obj->name;
-    while (*src)
-    {
-      if (*src != '-')
+      char *p = obj->name;
+
+      while (*p)
       {
-        *dst++ = *src;
+          if (*p == '-')
+              *p = ' ';
+          p++;
       }
-      src++;
-    }
-    *dst = '\0';
   }
 
   return (obj);
