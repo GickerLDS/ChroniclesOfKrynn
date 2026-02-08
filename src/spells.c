@@ -3285,7 +3285,7 @@ ASPELL(spell_shadow_jump)
     return;
   }
 
-  if (IS_SHADOW_CONDITIONS(ch) && IS_SHADOW_CONDITIONS(victim))
+  if (!IS_SHADOW_CONDITIONS(ch) || !IS_SHADOW_CONDITIONS(victim))
   {
     send_to_char(ch,
                  "Either your current or target room is too bright to perform a shadow jump.\r\n");
