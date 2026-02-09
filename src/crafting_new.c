@@ -33,6 +33,8 @@
 #include "talents.h" /* crafting talent system */
 #include "dg_scripts.h"
 #include "resource_system.h"
+#include "domains_schools.h"
+#include "brew.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -8687,6 +8689,15 @@ void show_mote_bonuses(struct char_data *ch, int mote)
       break;
     }
   }
+
+  for (i = 1; i < NUM_SCHOOLS; i++)
+  {
+    if (get_mote_type_for_school(i) == mote)
+    {
+      send_to_char(ch, "%s spells.\r\n", spell_schools[i]);
+    }
+  }
+
   send_to_char(ch, "\r\n");
 
   // crafting_mote_by_bonus_location

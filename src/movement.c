@@ -1097,6 +1097,12 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
 
     return (1);
   }
+  if (GET_WALKTO_LOC(ch))
+  {
+    send_to_char(ch, "You stop walking to '%s'", get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
+    GET_WALKTO_LOC(ch) = 0;
+  }
+
   return (0);
 }
 

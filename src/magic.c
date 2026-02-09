@@ -7277,7 +7277,7 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       act("$N is already affected by chilling black tentacles.", FALSE, ch, 0, victim, TO_CHAR);
       return;
     }
-    af[0].duration = level; // 1 round per level
+    af[0].duration = dice(1, 4) + 1; // 1d4+1 rounds
     af[0].location = APPLY_SPECIAL;
     af[0].modifier = 0;
     SET_BIT_AR(af[0].bitvector, AFF_ENTANGLED);
@@ -7308,7 +7308,7 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       act("$N is already affected by chilling black tentacles.", FALSE, ch, 0, victim, TO_CHAR);
       return;
     }
-    af[0].duration = level; // 1 round per level
+    af[0].duration = dice(1, 6) + 1; // 1d4+1 rounds
     af[0].location = APPLY_SPECIAL;
     af[0].modifier = 0;
     SET_BIT_AR(af[0].bitvector, AFF_ENTANGLED);
