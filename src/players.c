@@ -21,6 +21,7 @@
 #include "interpreter.h"
 #include "mysql.h"
 #include "genolc.h"     /* for strip_cr */
+#include "modify.h"     /* for strip_colors */
 #include "config.h"     /* for pclean_criteria[] */
 #include "dg_scripts.h" /* To enable saving of player variables to disk */
 #include "quest.h"
@@ -99,7 +100,10 @@ static void load_bombs(FILE *fl, struct char_data *ch);
 static void load_craft_mats_onhand(FILE *fl, struct char_data *ch);
 static void load_craft_motes_onhand(FILE *fl, struct char_data *ch);
 static void load_judgements(FILE *fl, struct char_data *ch);
-static void load_potions(FILE *fl, struct char_data *ch);
+// static void load_potions(FILE *fl, struct char_data *ch);
+static void load_potions_new(FILE *fl, struct char_data *ch);
+static void migrate_potions_to_new_system(struct char_data *ch);
+static void consolidate_stored_potions(struct char_data *ch);
 static void load_scrolls(FILE *fl, struct char_data *ch);
 static void load_wands(FILE *fl, struct char_data *ch);
 static void load_staves(FILE *fl, struct char_data *ch);
@@ -1301,7 +1305,7 @@ int load_char(const char *name, struct char_data *ch)
         else if (!strcmp(tag, "Pass"))
           strcpy(GET_PASSWD(ch), line);
         else if (!strcmp(tag, "Potn"))
-          load_potions(fl, ch);
+          load_potions_new(fl, ch);
         else if (!strcmp(tag, "Plyd"))
           ch->player.time.played = atoi(line);
         else if (!strcmp(tag, "PreB"))
@@ -2960,10 +2964,27 @@ void save_char(struct char_data *ch, int mode)
 
 
   // Save consumables: potions, scrolls, wands and staves
+  /* First migrate any old potions if they exist */
+  migrate_potions_to_new_system(ch);
+  
+  /* Save new individual potion system */
   BUFFER_WRITE("Potn:\n");
-  for (i = 0; i < MAX_SPELLS; i++)
-    if (STORED_POTIONS(ch, i) > 0)
-      BUFFER_WRITE("%d %d\n", i, STORED_POTIONS(ch, i));
+  BUFFER_WRITE("2\n");  /* Version marker: 2 = new format */
+  BUFFER_WRITE("%d\n", ch->player_specials->saved.stored_potion_count);
+  
+  for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+  {
+    struct stored_potion *pot = &ch->player_specials->saved.stored_potions[i];
+    BUFFER_WRITE("%s\n", pot->name);
+    BUFFER_WRITE("%d %d %d %d %d %d %d\n", 
+                 pot->cast_level, 
+                 pot->spells[0], 
+                 pot->spells[1], 
+                 pot->spells[2],
+                 pot->num_spells,
+                 pot->quantity,
+                 pot->vnum);
+  }
   BUFFER_WRITE("-1\n");
 
   BUFFER_WRITE("Scrl:\n");
@@ -4631,19 +4652,19 @@ static void load_favored_terrains(FILE *fl, struct char_data *ch)
   } while (num != -1);
 }
 
-static void load_potions(FILE *fl, struct char_data *ch)
-{
-  int num = 0, num2 = 0;
-  char line[MAX_INPUT_LENGTH + 1];
+// static void load_potions(FILE *fl, struct char_data *ch)
+// {
+//   int num = 0, num2 = 0;
+//   char line[MAX_INPUT_LENGTH + 1];
 
-  do
-  {
-    get_line(fl, line);
-    sscanf(line, "%d %d", &num, &num2);
-    if (num != 0)
-      STORED_POTIONS(ch, num) = num2;
-  } while (num != -1);
-}
+//   do
+//   {
+//     get_line(fl, line);
+//     sscanf(line, "%d %d", &num, &num2);
+//     if (num != 0)
+//       STORED_POTIONS(ch, num) = num2;
+//   } while (num != -1);
+// }
 
 static void load_buffs(FILE *fl, struct char_data *ch)
 {
@@ -5655,4 +5676,210 @@ void set_eidolon_descs(struct char_data *ch)
   }
 
   mysql_free_result(result);
+}
+
+/* New potion storage load function - loads individual potions */
+static void load_potions_new(FILE *fl, struct char_data *ch)
+{
+  int count = 0, i = 0, num = 0, num2 = 0;
+  int version = 0;
+  char line[MAX_INPUT_LENGTH + 1];
+  struct stored_potion *pot;
+  
+  ch->player_specials->saved.stored_potion_count = 0;
+  
+  /* Read version marker or first spell_id */
+  get_line(fl, line);
+  sscanf(line, "%d", &version);
+  
+  /* Detect if this is old format (spell_id, quantity pairs) or new format (version marker) */
+  /* New format: first number is version (currently 2)
+     Old format: first number is spell_id or -1 terminator */
+  if (version == 2)
+  {
+    /* This is NEW format with version marker - read the actual count */
+    get_line(fl, line);
+    sscanf(line, "%d", &count);
+    
+    /* Cap at maximum to prevent buffer overflow */
+    if (count > MAX_STORED_POTIONS)
+      count = MAX_STORED_POTIONS;
+    
+    for (i = 0; i < count; i++)
+    {
+      pot = &ch->player_specials->saved.stored_potions[i];
+      
+      /* Read potion name */
+      get_line(fl, line);
+      pot->name = strdup(line);
+      
+      /* Read potion attributes */
+      get_line(fl, line);
+      pot->vnum = 0;  /* Initialize vnum */
+      sscanf(line, "%d %d %d %d %d %d %d", 
+             &pot->cast_level, 
+             &pot->spells[0], 
+             &pot->spells[1], 
+             &pot->spells[2],
+             &pot->num_spells,
+             &pot->quantity,
+             &pot->vnum);
+      
+      ch->player_specials->saved.stored_potion_count++;
+    }
+    
+    /* Read and discard the -1 terminator */
+    get_line(fl, line);
+    
+    /* Consolidate duplicate potions */
+    consolidate_stored_potions(ch);
+  }
+  else
+  {
+    /* This is OLD format - load old spell-based potions */
+    num = version;
+    if (num != 0)
+      STORED_POTIONS(ch, num) = num2;
+    
+    do
+    {
+      get_line(fl, line);
+      sscanf(line, "%d %d", &num, &num2);
+      if (num != 0)
+        STORED_POTIONS(ch, num) = num2;
+    } while (num != -1);
+    
+    /* Migrate old system to new system */
+    migrate_potions_to_new_system(ch);
+  }
+}
+
+/* Consolidate duplicate stored potions by merging entries with same name, level, and spells */
+static void consolidate_stored_potions(struct char_data *ch)
+{
+  int i, j, k;
+  int consolidated_count = 0;
+  struct stored_potion consolidated[MAX_STORED_POTIONS];
+  
+  /* Clear consolidated array */
+  memset(consolidated, 0, sizeof(consolidated));
+  
+  /* Process each stored potion */
+  for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+  {
+    struct stored_potion *current = &ch->player_specials->saved.stored_potions[i];
+    
+    /* Strip color from current potion name for consistent comparison */
+    if (current->name)
+      strip_colors(current->name);
+    
+    bool found_match = false;
+    
+    /* Check if we've already consolidated a matching potion */
+    for (j = 0; j < consolidated_count; j++)
+    {
+      struct stored_potion *check = &consolidated[j];
+      
+      /* Check if name, level, and spells match */
+      if (check->cast_level == current->cast_level && 
+          check->num_spells == current->num_spells && 
+          strcmp(check->name, current->name) == 0)
+      {
+        /* Verify all spells match */
+        bool spells_match = true;
+        for (k = 0; k < current->num_spells; k++)
+        {
+          if (check->spells[k] != current->spells[k])
+          {
+            spells_match = false;
+            break;
+          }
+        }
+        
+        if (spells_match)
+        {
+          /* Merge quantities */
+          check->quantity += current->quantity;
+          found_match = true;
+          
+          /* Free the original name since we're consolidating */
+          if (current->name)
+            free(current->name);
+          break;
+        }
+      }
+    }
+    
+    /* If no match found, add to consolidated array */
+    if (!found_match && consolidated_count < MAX_STORED_POTIONS)
+    {
+      consolidated[consolidated_count] = *current;
+      consolidated_count++;
+    }
+  }
+  
+  /* Copy consolidated array back to character */
+  for (i = 0; i < consolidated_count; i++)
+  {
+    ch->player_specials->saved.stored_potions[i] = consolidated[i];
+  }
+  ch->player_specials->saved.stored_potion_count = consolidated_count;
+}
+
+/* Migration function - convert old spell-based potions to new individual potion system */
+static void migrate_potions_to_new_system(struct char_data *ch)
+{
+  int i, j;
+  int potion_count = 0;
+  struct stored_potion *pot;
+  
+  /* Skip migration if already migrated */
+  if (ch->player_specials->saved.stored_potion_count > 0)
+    return;
+  
+  /* Check old potion array for any stored potions */
+  for (i = 0; i < MAX_SPELLS; i++)
+  {
+    if (STORED_POTIONS(ch, i) > 0 && potion_count < MAX_STORED_POTIONS)
+    {
+      pot = &ch->player_specials->saved.stored_potions[potion_count];
+      
+      /* Create default name based on spell */
+      char temp_name[256] = {0};
+      snprintf(temp_name, sizeof(temp_name), "a potion of %s", spell_info[i].name);
+      pot->name = strdup(temp_name);
+      
+      /* Set cast level (default to circle of the spell) */
+      int spell_circle = 1;
+      for (j = 0; j < NUM_CLASSES; j++)
+      {
+        if (!IS_SPELLCASTER_CLASS(j))
+          continue;
+        int circle = compute_spells_circle(ch, j, i, 0, 0);
+        if (circle > 0 && circle <= 9)
+        {
+          spell_circle = circle;
+          break;
+        }
+      }
+      pot->cast_level = spell_circle;
+      
+      /* Store the single spell */
+      pot->spells[0] = i;
+      pot->spells[1] = -1;
+      pot->spells[2] = -1;
+      pot->num_spells = 1;
+      
+      /* Store the quantity */
+      pot->quantity = STORED_POTIONS(ch, i);
+      
+      /* Initialize vnum to prototype */
+      pot->vnum = ITEM_PROTOTYPE;
+      
+      potion_count++;
+      STORED_POTIONS(ch, i) = 0; /* Clear old system */
+    }
+  }
+  
+  ch->player_specials->saved.stored_potion_count = potion_count;
 }

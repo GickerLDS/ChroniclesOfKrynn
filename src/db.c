@@ -6367,6 +6367,17 @@ void free_char(struct char_data *ch)
       ch->player_specials->device_destroy_confirm = NULL;
     }
 
+    /* Free stored potion names */
+    int i;
+    for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+    {
+      if (ch->player_specials->saved.stored_potions[i].name)
+      {
+        free(ch->player_specials->saved.stored_potions[i].name);
+        ch->player_specials->saved.stored_potions[i].name = NULL;
+      }
+    }
+
     if (IS_NPC(ch))
       log("SYSERR: Mob %s (#%d) had player_specials allocated!", GET_NAME(ch), GET_MOB_VNUM(ch));
   }

@@ -28,6 +28,7 @@
 #include "mud_event.h"
 #include "hlquest.h"
 #include "fight.h"
+#include "modify.h"
 #include "mudlim.h"
 #include "handler.h"
 #include "actions.h"
@@ -6128,24 +6129,46 @@ ACMD(do_channelspell)
 
 void list_consumables(struct char_data *ch, int type)
 {
-  int i = 0;
+  int i = 0, j = 0;
   bool found = false;
-
-  send_to_char(ch, "%s %-22s %-s\r\n", item_types[type], "Spell", "# Stored / Charges");
 
   switch (type)
   {
   case ITEM_POTION:
-    for (i = 0; i < NUM_SPELLS; i++)
+    /* List new individual potion system */
+    send_to_char(ch, "Potions Stored:\r\n");
+    send_to_char(ch, "   #   Qty  Lvl  Name                               Spells\r\n");
+    send_to_char(ch, "   --- ---  ---  ---------------------------------- ------------------------------\r\n");
+    for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+    {
+      struct stored_potion *pot = &ch->player_specials->saved.stored_potions[i];
+      if (pot->quantity > 0)
+      {
+        send_to_char(ch, "  %3d %4d  %3d  %-34.34s ", i + 1, pot->quantity, pot->cast_level, pot->name);
+        for (j = 0; j < pot->num_spells; j++)
+        {
+          if (j > 0)
+            send_to_char(ch, ", ");
+          send_to_char(ch, "%s", spell_info[pot->spells[j]].name);
+        }
+        send_to_char(ch, "\r\n");
+        found = true;
+      }
+    }
+    
+    /* Also list any old system potions for backward compatibility */
+    for (i = 0; i < MAX_SPELLS; i++)
     {
       if (spell_info[i].min_position == POS_DEAD)
         continue;
       if (STORED_POTIONS(ch, i) > 0)
       {
-        send_to_char(ch, "%-25s %d\r\n", spell_info[i].name, STORED_POTIONS(ch, i));
+        send_to_char(ch, "  old %4d  ---  %-34.34s %s\r\n", STORED_POTIONS(ch, i),
+                     AN(spell_info[i].name), spell_info[i].name);
         found = true;
       }
     }
+    
     if (!found)
     {
       send_to_char(ch, "You don't seem to have any potions stored.\r\n");
@@ -6205,11 +6228,47 @@ void list_consumables(struct char_data *ch, int type)
   }
 }
 
+/* Helper function to add "a" or "an" prefix to a name if not already present */
+static void add_article_to_name(char *name, size_t size)
+{
+  if (!name || !*name)
+    return;
+  
+  /* Check if already starts with "a " or "an " */
+  if ((strncmp(name, "a ", 2) == 0) || (strncmp(name, "an ", 3) == 0))
+    return;
+  
+  /* Check if first character is a vowel */
+  char first_char = tolower(*name);
+  const char *article = (first_char == 'a' || first_char == 'e' || first_char == 'i' || 
+                         first_char == 'o' || first_char == 'u') ? "an " : "a ";
+  
+  /* Build new name with article */
+  char temp_buf[512] = {0};
+  snprintf(temp_buf, sizeof(temp_buf), "%s%s", article, name);
+  snprintf(name, size, "%s", temp_buf);
+}
+
+/* Helper function to remove leading "a " or "an " from a name */
+static void remove_article_from_name(char *name)
+{
+  if (!name || !*name)
+    return;
+  
+  if (strncmp(name, "an ", 3) == 0)
+  {
+    memmove(name, name + 3, strlen(name + 3) + 1);
+  }
+  else if (strncmp(name, "a ", 2) == 0)
+  {
+    memmove(name, name + 2, strlen(name + 2) + 1);
+  }
+}
+
 ACMD(do_store)
 {
   struct obj_data *obj = NULL, *next_obj = NULL;
   int i = 0;
-  bool found = false;
   char arg1[MEDIUM_STRING] = {'\0'}, arg2[MEDIUM_STRING] = {'\0'};
 
   two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -6295,29 +6354,135 @@ ACMD(do_store)
   switch (GET_OBJ_TYPE(obj))
   {
   case ITEM_POTION:
-    for (i = 1; i <= 3; i++)
+    /* Store potion using new individual storage system */
     {
-      if (GET_OBJ_VAL(obj, i) > 0)
+      int num_spells = 0;
+      bool has_violent = false;
+      int temp_spells[3] = {0, 0, 0};
+      int cast_level = GET_OBJ_VAL(obj, 0);
+      
+      /* Count spells and check for violent ones */
+      for (i = 1; i <= 3; i++)
       {
-        if (spell_info[GET_OBJ_VAL(obj, i)].violent)
+        if (GET_OBJ_VAL(obj, i) > 0)
         {
-          found = true;
-          continue;
+          if (spell_info[GET_OBJ_VAL(obj, i)].violent)
+          {
+            has_violent = true;
+            continue;
+          }
+          temp_spells[num_spells] = GET_OBJ_VAL(obj, i);
+          num_spells++;
         }
-        STORED_POTIONS(ch, GET_OBJ_VAL(obj, i))++;
-        send_to_char(ch, "You have stored a potion of '%s'.\r\n",
-                     spell_info[GET_OBJ_VAL(obj, i)].name);
-        GET_OBJ_VAL(obj, i) = 0;
       }
-    }
-    if (found)
-    {
-      send_to_char(ch, "One or more of your potion spells could not be stored.\r\n");
-    }
-    else
-    {
-      obj_from_char(obj);
-      extract_obj(obj);
+      
+      if (has_violent)
+      {
+        send_to_char(ch, "One or more of your potion spells could not be stored (violent spells).\r\n");
+      }
+      
+      if (num_spells > 0)
+      {
+        /* Build potion name */
+        char name_buf[512] = {0};
+        if (GET_OBJ_VNUM(obj) == ITEM_PROTOTYPE)
+        {
+          /* For random treasure drops, generate name from spells */
+          if (num_spells == 1)
+          {
+            snprintf(name_buf, sizeof(name_buf), "a potion of %s", spell_info[temp_spells[0]].name);
+          }
+          else
+          {
+            snprintf(name_buf, sizeof(name_buf), "apotion of %s", spell_info[temp_spells[0]].name);
+            for (i = 1; i < num_spells; i++)
+            {
+              strncat(name_buf, " and ", sizeof(name_buf) - strlen(name_buf) - 1);
+              strncat(name_buf, spell_info[temp_spells[i]].name, sizeof(name_buf) - strlen(name_buf) - 1);
+            }
+          }
+        }
+        else
+        {
+          /* Use the original object name */
+          snprintf(name_buf, sizeof(name_buf), "%s", obj->short_description ? obj->short_description : obj->name);
+        }
+        
+        /* Strip color codes from the name */
+        strip_colors(name_buf);
+        
+        /* Add article prefix if not already present */
+        add_article_to_name(name_buf, sizeof(name_buf));
+        
+        /* Check if a matching potion already exists */
+        struct stored_potion *existing_pot = NULL;
+        for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+        {
+          struct stored_potion *check_pot = &ch->player_specials->saved.stored_potions[i];
+          
+          /* Check if name, level, spells, and vnum match */
+          if (check_pot->cast_level == cast_level && 
+              check_pot->num_spells == num_spells && 
+              check_pot->vnum == GET_OBJ_VNUM(obj) &&
+              strcmp(check_pot->name, name_buf) == 0)
+          {
+            /* Verify all spells match */
+            bool spells_match = true;
+            int j;
+            for (j = 0; j < num_spells; j++)
+            {
+              if (check_pot->spells[j] != temp_spells[j])
+              {
+                spells_match = false;
+                break;
+              }
+            }
+            
+            if (spells_match)
+            {
+              existing_pot = check_pot;
+              break;
+            }
+          }
+        }
+        
+        if (existing_pot)
+        {
+          /* Stack with existing potion */
+          existing_pot->quantity++;
+          send_to_char(ch, "You have stored '%s'. (Total quantity: %d)\r\n", existing_pot->name, existing_pot->quantity);
+        }
+        else if (ch->player_specials->saved.stored_potion_count < MAX_STORED_POTIONS)
+        {
+          /* Create new potion entry */
+          struct stored_potion *pot = &ch->player_specials->saved.stored_potions[ch->player_specials->saved.stored_potion_count];
+          pot->name = strdup(name_buf);
+          pot->cast_level = cast_level;
+          pot->vnum = GET_OBJ_VNUM(obj);
+          for (i = 0; i < num_spells; i++)
+          {
+            pot->spells[i] = temp_spells[i];
+          }
+          pot->num_spells = num_spells;
+          pot->quantity = 1;
+          
+          ch->player_specials->saved.stored_potion_count++;
+          
+          send_to_char(ch, "You have stored '%s'.\r\n", pot->name);
+        }
+        else
+        {
+          send_to_char(ch, "You have reached your potion storage limit (%d potions).\r\n", MAX_STORED_POTIONS);
+          return;
+        }
+        
+        obj_from_char(obj);
+        extract_obj(obj);
+      }
+      else if (!has_violent)
+      {
+        send_to_char(ch, "This potion has no valid spells to store.\r\n");
+      }
     }
     break;
 
@@ -6374,11 +6539,149 @@ ACMDU(do_unstore)
   {
     if (!*arg2)
     {
-      send_to_char(ch, "You need to specify the spell name of the potion you wish to unstore.  To "
+      send_to_char(ch, "You need to specify the potion name/number or spell name you wish to unstore.  To "
                        "see what you have type 'store list potions'.\r\n");
       return;
     }
 
+    /* First check if argument is a number (potion index) */
+    struct stored_potion *found_pot = NULL;
+    int potion_index = -1;
+    
+    if (isdigit(*arg2))
+    {
+      potion_index = atoi(arg2) - 1;  /* Convert to 0-based index */
+      if (potion_index >= 0 && potion_index < ch->player_specials->saved.stored_potion_count)
+      {
+        found_pot = &ch->player_specials->saved.stored_potions[potion_index];
+        if (found_pot->quantity <= 0)
+          found_pot = NULL;
+      }
+    }
+    
+    /* If not found by number, try by name */
+    if (!found_pot)
+    {
+      for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+      {
+        struct stored_potion *pot = &ch->player_specials->saved.stored_potions[i];
+        if (isname(arg2, pot->name) && pot->quantity > 0)
+        {
+          found_pot = pot;
+          break;
+        }
+      }
+    }
+    
+    /* If not found by name, try by spell name */
+    if (!found_pot)
+    {
+      spellnum = find_skill_num(arg2);
+      
+      if ((spellnum >= 1) && (spellnum < MAX_SPELLS))
+      {
+        for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+        {
+          struct stored_potion *pot = &ch->player_specials->saved.stored_potions[i];
+          if (pot->quantity > 0)
+          {
+            int j;
+            for (j = 0; j < pot->num_spells; j++)
+            {
+              if (pot->spells[j] == spellnum)
+              {
+                found_pot = pot;
+                break;
+              }
+            }
+            if (found_pot)
+              break;
+          }
+        }
+      }
+    }
+    
+    /* If found in new system, unstore it */
+    if (found_pot)
+    {
+      /* Try to restore original object if vnum is known and not a prototype */
+      if (found_pot->vnum > 0 && found_pot->vnum != ITEM_PROTOTYPE)
+      {
+        if ((obj = read_object(found_pot->vnum, VIRTUAL)) == NULL)
+        {
+          /* If original vnum no longer exists, fall back to manual rebuild */
+          if ((obj = read_object(ITEM_PROTOTYPE, VIRTUAL)) == NULL)
+          {
+            log("SYSERR:  do_unstore returned NULL");
+            return;
+          }
+          
+          GET_OBJ_TYPE(obj) = ITEM_POTION;
+          GET_OBJ_VAL(obj, 0) = found_pot->cast_level;
+          
+          /* Set the spell values */
+          for (i = 0; i < found_pot->num_spells; i++)
+          {
+            GET_OBJ_VAL(obj, i + 1) = found_pot->spells[i];
+          }
+          
+          GET_OBJ_MATERIAL(obj) = MATERIAL_GLASS;
+          GET_OBJ_COST(obj) = 1;
+          GET_OBJ_LEVEL(obj) = 1;
+          SET_BIT_AR(GET_OBJ_EXTRA(obj), ITEM_MAGIC);
+          
+          /* Set the stored potion name - create new copies, don't free prototype fields */
+          obj->name = strdup(found_pot->name);
+          snprintf(buf, sizeof(buf), "%s", found_pot->name);
+          obj->short_description = strdup(buf);
+        }
+      }
+      else
+      {
+        /* Create potion object manually for prototypes */
+        if ((obj = read_object(ITEM_PROTOTYPE, VIRTUAL)) == NULL)
+        {
+          log("SYSERR:  do_unstore returned NULL");
+          return;
+        }
+        
+        GET_OBJ_TYPE(obj) = ITEM_POTION;
+        GET_OBJ_VAL(obj, 0) = found_pot->cast_level;
+        
+        /* Set the spell values */
+        for (i = 0; i < found_pot->num_spells; i++)
+        {
+          GET_OBJ_VAL(obj, i + 1) = found_pot->spells[i];
+        }
+        
+        GET_OBJ_MATERIAL(obj) = MATERIAL_GLASS;
+        GET_OBJ_COST(obj) = 1;
+        GET_OBJ_LEVEL(obj) = 1;
+        SET_BIT_AR(GET_OBJ_EXTRA(obj), ITEM_MAGIC);
+        
+        /* Set the stored potion name - create new copies, don't free prototype fields */
+        obj->name = strdup(found_pot->name);
+        snprintf(buf, sizeof(buf), "%s", found_pot->name);
+        obj->short_description = strdup(buf);
+      }
+      
+      snprintf(buf, sizeof(buf), "%s lies here.", found_pot->name);
+      obj->description = strdup(buf);
+      
+      obj_to_char(obj, ch);
+      
+      /* Decrease quantity */
+      found_pot->quantity--;
+      
+      /* Remove article from display message */
+      char display_name[512] = {0};
+      snprintf(display_name, sizeof(display_name), "%s", found_pot->name);
+      remove_article_from_name(display_name);
+      send_to_char(ch, "You have retrieved a %s from your potion storage.\r\n", display_name);
+      return;
+    }
+
+    /* Fall back to old system */
     spellnum = find_skill_num(arg2);
 
     if ((spellnum < 1) || (spellnum > MAX_SPELLS))
@@ -6674,6 +6977,7 @@ void quaff_potion(struct char_data *ch, char *argument)
   char buf[MEDIUM_STRING] = {'\0'};
   char metamagic_desc[128] = {'\0'}; /* sufficient for all metamagic names */
   char *temp_argument = argument;
+  struct stored_potion *stored_pot = NULL;
 
   /* Parse metamagic first if the character has Improved Metamagic Science */
   if (HAS_FEAT(ch, FEAT_IMPROVED_METAMAGIC_SCIENCE))
@@ -6689,29 +6993,218 @@ void quaff_potion(struct char_data *ch, char *argument)
 
   if (!*temp_argument)
   {
-    send_to_char(ch, "You need to specify the spell name of the potion you wish to quaff.\r\n");
+    send_to_char(ch, "You need to specify the spell name, potion name, or potion number you wish to quaff.\r\n");
     return;
   }
 
-  spellnum = find_skill_num(temp_argument);
-
-  if ((spellnum < 1) || (spellnum > MAX_SPELLS))
+  /* First check if argument is a number (potion index) */
+  int potion_index = -1;
+  if (isdigit(*temp_argument))
   {
-    send_to_char(ch, "That is not a valid spell name.\r\n");
-    return;
+    potion_index = atoi(temp_argument) - 1;  /* Convert to 0-based index */
+    if (potion_index >= 0 && potion_index < ch->player_specials->saved.stored_potion_count)
+    {
+      stored_pot = &ch->player_specials->saved.stored_potions[potion_index];
+      if (stored_pot->quantity <= 0)
+        stored_pot = NULL;
+    }
   }
 
-  if (STORED_POTIONS(ch, spellnum) <= 0)
+  /* If not found by number, try to find by potion name in new system */
+  if (!stored_pot)
   {
-    send_to_char(ch, "You don't have any potions of that type stored.\r\n");
+    for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+    {
+      stored_pot = &ch->player_specials->saved.stored_potions[i];
+      if (isname(temp_argument, stored_pot->name) && stored_pot->quantity > 0)
+      {
+        /* Found a matching potion name */
+        break;
+      }
+    }
+    
+    if (i >= ch->player_specials->saved.stored_potion_count)
+      stored_pot = NULL;
+  }
+
+  /* If not found by name, try by spell name in new system */
+  if (!stored_pot)
+  {
+    spellnum = find_skill_num(temp_argument);
+    
+    if ((spellnum >= 1) && (spellnum < MAX_SPELLS))
+    {
+      for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
+      {
+        struct stored_potion *pot = &ch->player_specials->saved.stored_potions[i];
+        if (pot->quantity > 0)
+        {
+          int j;
+          for (j = 0; j < pot->num_spells; j++)
+          {
+            if (pot->spells[j] == spellnum)
+            {
+              stored_pot = pot;
+              break;
+            }
+          }
+          if (stored_pot)
+            break;
+        }
+      }
+    }
+  }
+
+  /* Try old system if new system fails */
+  if (!stored_pot)
+  {
+    /* Check inventory for a matching potion */
+    struct obj_data *inv_potion = NULL;
+    int inv_j = 0;
+    
+    for (inv_potion = ch->carrying; inv_potion; inv_potion = inv_potion->next_content)
+    {
+      if (GET_OBJ_TYPE(inv_potion) == ITEM_POTION)
+      {
+        /* Check if potion matches by keyword */
+        if (isname(temp_argument, inv_potion->name))
+        {
+          /* Found a matching potion in inventory */
+          break;
+        }
+        
+        /* Also check if any spell in the potion matches */
+        spellnum = find_skill_num(temp_argument);
+        if ((spellnum >= 1) && (spellnum < MAX_SPELLS))
+        {
+          for (inv_j = 1; inv_j <= 3; inv_j++)
+          {
+            if (GET_OBJ_VAL(inv_potion, inv_j) == spellnum)
+            {
+              /* Found a matching spell in inventory potion */
+              break;
+            }
+          }
+          if (GET_OBJ_VAL(inv_potion, 1) == spellnum || 
+              GET_OBJ_VAL(inv_potion, 2) == spellnum || 
+              GET_OBJ_VAL(inv_potion, 3) == spellnum)
+            break;
+        }
+      }
+    }
+    
+    if (inv_potion)
+    {
+      /* Found matching potion in inventory - use it */
+      int inv_spell_level = GET_OBJ_VAL(inv_potion, 0);
+      
+      send_to_char(ch, "You quaff the potion from your inventory.\r\n");
+      act("$n quaffs a potion.", TRUE, ch, 0, 0, TO_ROOM);
+      
+      /* Cast all spells from the potion */
+      for (inv_j = 1; inv_j <= 3; inv_j++)
+      {
+        spellnum = GET_OBJ_VAL(inv_potion, inv_j);
+        if (spellnum > 0 && spellnum < MAX_SPELLS)
+        {
+          call_magic(ch, ch, NULL, spellnum, 0, inv_spell_level, CAST_POTION);
+        }
+      }
+      
+      /* Extract and process the object potion */
+      obj_from_char(inv_potion);
+      extract_obj(inv_potion);
+      
+      USE_SWIFT_ACTION(ch);
+      return;
+    }
+    
+    spellnum = find_skill_num(temp_argument);
+
+    if ((spellnum < 1) || (spellnum > MAX_SPELLS))
+    {
+      send_to_char(ch, "That is not a valid spell or potion name.\r\n");
+      return;
+    }
+
+    if (STORED_POTIONS(ch, spellnum) <= 0)
+    {
+      send_to_char(ch, "You don't have any potions of that type stored.\r\n");
+      return;
+    }
+    
+    /* Using old system - continue with old logic */
+    /* Check Use Magic Device for metamagic potions */
+    if (metamagic > 0)
+    {
+      get_metamagic_description(metamagic, metamagic_desc, sizeof(metamagic_desc));
+      umd_dc = calculate_metamagic_scroll_dc(spell_level, metamagic);
+      umd_check = skill_check(ch, ABILITY_USE_MAGIC_DEVICE, umd_dc);
+
+      if (umd_check < 0)
+      {
+        send_to_char(ch,
+                     "You fail to properly activate the metamagic effects of the potion (DC %d Use "
+                     "Magic Device check failed).\r\n",
+                     umd_dc);
+        return;
+      }
+      else
+      {
+        send_to_char(ch, "You successfully channel metamagic into the potion!\r\n");
+      }
+    }
+
+    for (i = 0; i < NUM_CLASSES; i++)
+    {
+      if (!IS_SPELLCASTER_CLASS(i))
+        continue;
+      spell_level = MIN(spell_level, compute_spells_circle(ch, i, spellnum, 0, 0));
+    }
+
+    if (spell_level <= 0 || spell_level > 9)
+    {
+      send_to_char(
+          ch, "There is an error in quaffing that potion. Report to a staff member ERRQUAFF1.\r\n");
+      return;
+    }
+
+    spell_level = MAX(1, spell_level * 2 - 1);
+
+    if (KNOWS_DISCOVERY(ch, ALC_DISC_ENHANCE_POTION) &&
+        spell_level < CLASS_LEVEL(ch, CLASS_ALCHEMIST))
+      spell_level = CLASS_LEVEL(ch, CLASS_ALCHEMIST);
+
+    spell_level += skill_roll(ch, ABILITY_USE_MAGIC_DEVICE) / 3;
+
+    STORED_POTIONS(ch, spellnum)
+    --;
+
+    if (metamagic > 0)
+    {
+      snprintf(buf, sizeof(buf), "You quaff a potion of '%s %s'.", metamagic_desc,
+               spell_info[spellnum].name);
+    }
+    else
+    {
+      snprintf(buf, sizeof(buf), "You quaff a potion of '%s'.", spell_info[spellnum].name);
+    }
+    act(buf, TRUE, ch, 0, 0, TO_CHAR);
+    act("$n quaffs a potion", TRUE, ch, 0, 0, TO_ROOM);
+
+    call_magic(ch, ch, NULL, spellnum, metamagic, spell_level, CAST_POTION);
+    USE_SWIFT_ACTION(ch);
+
+    save_char(ch, 0);
     return;
   }
 
+  /* Using new system */
   /* Check Use Magic Device for metamagic potions */
   if (metamagic > 0)
   {
     get_metamagic_description(metamagic, metamagic_desc, sizeof(metamagic_desc));
-    umd_dc = calculate_metamagic_scroll_dc(spell_level, metamagic);
+    umd_dc = calculate_metamagic_scroll_dc(stored_pot->cast_level, metamagic);
     umd_check = skill_check(ch, ABILITY_USE_MAGIC_DEVICE, umd_dc);
 
     if (umd_check < 0)
@@ -6728,20 +7221,7 @@ void quaff_potion(struct char_data *ch, char *argument)
     }
   }
 
-  for (i = 0; i < NUM_CLASSES; i++)
-  {
-    if (!IS_SPELLCASTER_CLASS(i))
-      continue;
-    spell_level = MIN(spell_level, compute_spells_circle(ch, i, spellnum, 0, 0));
-  }
-
-  if (spell_level <= 0 || spell_level > 9)
-  {
-    send_to_char(
-        ch, "There is an error in quaffing that potion. Report to a staff member ERRQUAFF1.\r\n");
-    return;
-  }
-
+  spell_level = stored_pot->cast_level;
   spell_level = MAX(1, spell_level * 2 - 1);
 
   if (KNOWS_DISCOVERY(ch, ALC_DISC_ENHANCE_POTION) &&
@@ -6750,24 +7230,60 @@ void quaff_potion(struct char_data *ch, char *argument)
 
   spell_level += skill_roll(ch, ABILITY_USE_MAGIC_DEVICE) / 3;
 
-  STORED_POTIONS(ch, spellnum)
-  --;
-
-  if (metamagic > 0)
+  /* Apply all spells in this potion */
+  if (stored_pot->num_spells == 1)
   {
-    snprintf(buf, sizeof(buf), "You quaff a potion of '%s %s'.", metamagic_desc,
-             spell_info[spellnum].name);
+    if (metamagic > 0)
+    {
+      snprintf(buf, sizeof(buf), "You quaff %s %s.", metamagic_desc, stored_pot->name);
+    }
+    else
+    {
+      snprintf(buf, sizeof(buf), "You quaff %s.", stored_pot->name);
+    }
   }
   else
   {
-    snprintf(buf, sizeof(buf), "You quaff a potion of '%s'.", spell_info[spellnum].name);
+    if (metamagic > 0)
+    {
+      snprintf(buf, sizeof(buf), "You quaff the %s %s potion.", metamagic_desc, stored_pot->name);
+    }
+    else
+    {
+      snprintf(buf, sizeof(buf), "You quaff the %s potion.", stored_pot->name);
+    }
   }
+  
   act(buf, TRUE, ch, 0, 0, TO_CHAR);
   act("$n quaffs a potion", TRUE, ch, 0, 0, TO_ROOM);
 
-  call_magic(ch, ch, NULL, spellnum, metamagic, spell_level, CAST_POTION);
-  USE_SWIFT_ACTION(ch);
+  for (i = 0; i < stored_pot->num_spells; i++)
+  {
+    if (stored_pot->spells[i] > 0 && stored_pot->spells[i] < MAX_SPELLS)
+    {
+      call_magic(ch, ch, NULL, stored_pot->spells[i], metamagic, spell_level, CAST_POTION);
+    }
+  }
 
+  /* Consume one use of the potion */
+  stored_pot->quantity--;
+  if (stored_pot->quantity <= 0)
+  {
+    /* Remove this potion from storage if none left */
+    int idx = stored_pot - ch->player_specials->saved.stored_potions;
+    if (idx >= 0 && idx < ch->player_specials->saved.stored_potion_count)
+    {
+      /* Shift all potions after this one */
+      for (i = idx; i < ch->player_specials->saved.stored_potion_count - 1; i++)
+      {
+        ch->player_specials->saved.stored_potions[i] = 
+          ch->player_specials->saved.stored_potions[i + 1];
+      }
+      ch->player_specials->saved.stored_potion_count--;
+    }
+  }
+  
+  USE_SWIFT_ACTION(ch);
   save_char(ch, 0);
 }
 void recite_scroll(struct char_data *ch, char *argument)

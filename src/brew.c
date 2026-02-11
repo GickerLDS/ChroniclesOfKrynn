@@ -23,6 +23,7 @@
 #include "domains_schools.h"
 #include "helpers.h"
 #include "mud_event.h"
+#include "modify.h"
 #include "crafting_new.h"
 #include "interpreter.h"
 #include "brew.h"
@@ -294,16 +295,89 @@ EVENTFUNC(event_brewing)
   /* Check if player is using stored consumables system */
   if (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_USE_STORED_CONSUMABLES))
   {
-    /* Add to stored consumables */
+    /* Add to stored consumables using new individual potion system */
     for (cycle = 0; cycle < creation_cycles; cycle++)
     {
-      for (i = 0; i < num_spells; i++)
+      struct stored_potion *pot = NULL;
+      int pot_idx = -1;
+      
+      /* Check if we already have this exact combination of spells stored */
+      int j = 0;
+      for (i = 0; i < ch->player_specials->saved.stored_potion_count; i++)
       {
-        if (spell_nums[i] > 0)
+        struct stored_potion *existing = &ch->player_specials->saved.stored_potions[i];
+        
+        /* Check if spells match */
+        if (existing->num_spells == num_spells && existing->cast_level == highest_circle)
         {
-          STORED_POTIONS(ch, spell_nums[i])++;
-          total_potions_created++;
+          bool spells_match = true;
+          for (j = 0; j < num_spells; j++)
+          {
+            if (existing->spells[j] != spell_nums[j])
+            {
+              spells_match = false;
+              break;
+            }
+          }
+          if (spells_match)
+          {
+            pot_idx = i;
+            pot = existing;
+            break;
+          }
         }
+      }
+      
+      /* If we didn't find a matching potion, create a new one */
+      if (pot_idx == -1 && ch->player_specials->saved.stored_potion_count < MAX_STORED_POTIONS)
+      {
+        pot = &ch->player_specials->saved.stored_potions[ch->player_specials->saved.stored_potion_count];
+        pot_idx = ch->player_specials->saved.stored_potion_count;
+        
+        /* Create potion name */
+        char name_buf[512] = {0};
+        if (num_spells == 1)
+        {
+          snprintf(name_buf, sizeof(name_buf), "a potion of %s", spell_info[spell_nums[0]].name);
+        }
+        else
+        {
+          snprintf(name_buf, sizeof(name_buf), "a potion of %s", spell_info[spell_nums[0]].name);
+          for (i = 1; i < num_spells; i++)
+          {
+            strncat(name_buf, " and ", sizeof(name_buf) - strlen(name_buf) - 1);
+            strncat(name_buf, spell_info[spell_nums[i]].name, sizeof(name_buf) - strlen(name_buf) - 1);
+          }
+        }
+        
+        /* Strip color codes and add article prefix */
+        strip_colors(name_buf);
+        
+        /* Add article if not already present */
+        char first_char = tolower(name_buf[0]);
+        const char *article = (first_char == 'a' || first_char == 'e' || first_char == 'i' || 
+                               first_char == 'o' || first_char == 'u') ? "an " : "a ";
+        char temp_name[512] = {0};
+        snprintf(temp_name, sizeof(temp_name), "%s%s", article, name_buf);
+        snprintf(name_buf, sizeof(name_buf), "%s", temp_name);
+        pot->name = strdup(name_buf);
+        
+        pot->cast_level = highest_circle;
+        for (i = 0; i < num_spells; i++)
+        {
+          pot->spells[i] = spell_nums[i];
+        }
+        pot->num_spells = num_spells;
+        pot->quantity = 0;
+        
+        ch->player_specials->saved.stored_potion_count++;
+      }
+      
+      /* Add to potion quantity if we have space */
+      if (pot)
+      {
+        pot->quantity++;
+        total_potions_created++;
       }
     }
 
@@ -311,23 +385,8 @@ EVENTFUNC(event_brewing)
     {
       send_to_char(ch, "\tCYou successfully added %d potion%s to your stored consumables!\tn\r\n",
                    total_potions_created, total_potions_created > 1 ? "s" : "");
-      if (num_spells == 1)
-      {
-        send_to_char(ch, "Stored: %d potion%s of %s\r\n", creation_cycles,
-                     creation_cycles > 1 ? "s" : "", spell_info[spell_nums[0]].name);
-      }
-      else
-      {
-        send_to_char(ch, "Stored potions for each spell:\r\n");
-        for (i = 0; i < num_spells; i++)
-        {
-          if (spell_nums[i] > 0)
-          {
-            send_to_char(ch, "  %d potion%s of %s\r\n", creation_cycles,
-                         creation_cycles > 1 ? "s" : "", spell_info[spell_nums[i]].name);
-          }
-        }
-      }
+      send_to_char(ch, "Stored: potion of %s (Level %d)\r\n", 
+                   spell_info[spell_nums[0]].name, highest_circle);
     }
   }
   else

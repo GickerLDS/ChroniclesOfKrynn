@@ -6577,6 +6577,19 @@ struct char_perk_data
 
 /***/
 
+/* Potion storage structure for new consumables system */
+#define MAX_STORED_POTIONS 2000
+
+struct stored_potion
+{
+  char *name;      /* Custom name for the potion (e.g., "Healing Salve", "Invisibility Draught") */
+  int cast_level;      /* The spell cast level/circle for this potion */
+  int spells[3];       /* Up to 3 spells in this potion (-1 if unused) */
+  int num_spells;      /* Number of spells actually stored */
+  int quantity;        /* Number of this potion stored */
+  int vnum;            /* Original potion vnum (for restoring original object, ITEM_PROTOTYPE if generated) */
+};
+
 /* Phase 4.5: Material storage structure for wilderness harvesting */
 /* Maximum materials a player can store - reasonable limit */
 #define MAX_STORED_MATERIALS 100
@@ -6863,6 +6876,12 @@ struct player_special_data_saved
   /* Stores wilderness materials with (category, subtype, quality) structure */
   int stored_material_count; /* Number of different materials stored */
   struct material_storage stored_materials[MAX_STORED_MATERIALS]; /* Material storage array */
+  
+  /* New individual potion storage system */
+  /* Stores potions individually by name with cast level and spells */
+  int stored_potion_count; /* Number of unique potions stored */
+  struct stored_potion stored_potions[MAX_STORED_POTIONS]; /* Individual potion storage array */
+  
   int ability_exp[MAX_ABILITIES + 1];                             // abilities
 
   int new_supply_num_made;
