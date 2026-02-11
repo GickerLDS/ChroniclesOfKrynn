@@ -399,5 +399,6 @@ bool can_repair_golem(struct char_data *ch, struct char_data *golem, int *materi
                       int *material_type);
 int get_golem_type_from_vnum(int vnum);
 int get_golem_size_from_vnum(int vnum);
+bool has_golem_follower(struct char_data *ch);
 
 #endif // NEWCRAFT_H

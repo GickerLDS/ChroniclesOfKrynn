@@ -10186,6 +10186,15 @@ void show_current_golem_craft(struct char_data *ch)
   }
 }
 
+bool has_golem_constructed(struct char_data *ch)
+{
+    if (ch->char_specials.saved.golem_stored_type > 0 || ch->char_specials.saved.golem_stored_size > 0)
+    {
+        return true;
+    }
+    return false;
+}
+
 void reset_current_golem_craft(struct char_data *ch)
 {
   GET_CRAFT(ch).golem_type = GOLEM_TYPE_NONE;
@@ -10201,6 +10210,18 @@ bool begin_golem_craft(struct char_data *ch)
   int mote_types[NUM_CRAFT_MOTES] = {0}, mote_amounts[NUM_CRAFT_MOTES] = {0};
   int num_mats = 0, num_motes = 0;
   int seconds = 0;
+
+  if (has_golem_follower(ch))
+  {
+    send_to_char(ch, "You cannot create a new golem while you have an active golem follower.\r\n");
+    return false;
+  }
+
+  if (has_golem_constructed(ch))
+  {
+    send_to_char(ch, "You cannot create a new golem while you have an existing golem construct. Shutdown your current golem before starting a new one.\r\n");
+    return false;
+  }
 
   if (GET_CRAFT(ch).golem_type == GOLEM_TYPE_NONE)
   {
@@ -11022,7 +11043,7 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     
     if (!golem)
     {
-      send_to_char(ch, "You don't have an active golem to shutdown.\r\n");
+      send_to_char(ch, "You don't have an active golem to shutdown. Try using 'craft golem recall' first, then try shutdown again.\r\n");
       return;
     }
     
