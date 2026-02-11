@@ -10919,6 +10919,40 @@ void upgrade_golem(struct char_data *ch, struct char_data *golem, int new_size)
                golem_size_names[new_size]);
   act("$N begins to glow brightly as $n enhances the golem's form, growing larger!", 
       FALSE, ch, 0, golem, TO_ROOM);
+
+  struct follow_type *k;
+  
+  // Find the golem follower
+  for (k = ch->followers; k; k = k->next)
+  {
+    if (IS_PET(k->follower) && MOB_FLAGGED(k->follower, MOB_GOLEM))
+    {
+      golem = k->follower;
+      break;
+    }
+  }
+
+  // Clear stored golem so they can build a new type
+  ch->char_specials.saved.golem_stored_type = golem_type;
+  ch->char_specials.saved.golem_stored_size = new_size;
+  
+  extract_char(golem);
+  
+  golem_vnum = get_golem_vnum(golem_type, new_size);
+  golem = read_mobile(golem_vnum, VIRTUAL);
+  char_to_room(golem, IN_ROOM(ch));
+  
+  IS_CARRYING_W(golem) = 0;
+  IS_CARRYING_N(golem) = 0;
+  SET_BIT_AR(AFF_FLAGS(golem), AFF_CHARM);
+  SET_BIT_AR(MOB_FLAGS(golem), MOB_GOLEM);
+  GET_REAL_RACE(golem) = RACE_TYPE_CONSTRUCT;
+
+  load_mtrigger(golem);
+  add_follower(golem, ch);
+
+  if (!GROUP(golem) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
+    join_group(golem, GROUP(ch));
   
   /* Update the stored golem size */
   ch->char_specials.saved.golem_stored_size = new_size;
