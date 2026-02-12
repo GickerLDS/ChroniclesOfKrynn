@@ -4455,6 +4455,7 @@ void load_class_list(void)
   spell_assignment(CLASS_WIZARD, SPELL_MASS_ENHANCE, 17);
   /*epic*/
   spell_assignment(CLASS_WIZARD, SPELL_MUMMY_DUST, 21);
+  spell_assignment(CLASS_WIZARD, SPELL_SUMMON_SOLAR, 21);
   spell_assignment(CLASS_WIZARD, SPELL_DRAGON_KNIGHT, 21);
   spell_assignment(CLASS_WIZARD, SPELL_GREATER_RUIN, 21);
   spell_assignment(CLASS_WIZARD, SPELL_HELLBALL, 21);
@@ -4533,6 +4534,7 @@ void load_class_list(void)
   /*epic*/
   feat_assignment(CLASS_CLERIC, FEAT_CLERIC_EPIC_SPELL, Y, 21, N);
   feat_assignment(CLASS_CLERIC, FEAT_MUMMY_DUST, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_CLERIC, FEAT_SUMMON_SOLAR, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_CLERIC, FEAT_GREAT_WISDOM, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_CLERIC, FEAT_GREAT_CHARISMA, Y, NOASSIGN_FEAT, N);
   /**** spell assign ****/
@@ -4726,6 +4728,7 @@ void load_class_list(void)
   // spell_assignment(CLASS_CLERIC, air walker, 17);
   /*epic spells*/
   spell_assignment(CLASS_CLERIC, SPELL_MUMMY_DUST, 21);
+  spell_assignment(CLASS_CLERIC, SPELL_SUMMON_SOLAR, 21);
   spell_assignment(CLASS_CLERIC, SPELL_DRAGON_KNIGHT, 21);
   spell_assignment(CLASS_CLERIC, SPELL_GREATER_RUIN, 21);
   spell_assignment(CLASS_CLERIC, SPELL_HELLBALL, 21);
@@ -5188,6 +5191,7 @@ void load_class_list(void)
   /*epic*/
   feat_assignment(CLASS_DRUID, FEAT_DRUID_EPIC_SPELL, Y, 21, N);
   feat_assignment(CLASS_DRUID, FEAT_MUMMY_DUST, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRUID, FEAT_SUMMON_SOLAR, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_DRUID, FEAT_WILD_SHAPE, Y, 22, Y);
   feat_assignment(CLASS_DRUID, FEAT_WILD_SHAPE, Y, 24, Y);
   feat_assignment(CLASS_DRUID, FEAT_WILD_SHAPE, Y, 26, Y);
@@ -5841,6 +5845,7 @@ void load_class_list(void)
   spell_assignment(CLASS_SORCERER, SPELL_MASS_ENHANCE, 18);
   /*epic*/
   spell_assignment(CLASS_SORCERER, SPELL_MUMMY_DUST, 21);
+  spell_assignment(CLASS_SORCERER, SPELL_SUMMON_SOLAR, 21);
   spell_assignment(CLASS_SORCERER, SPELL_DRAGON_KNIGHT, 21);
   spell_assignment(CLASS_SORCERER, SPELL_GREATER_RUIN, 21);
   spell_assignment(CLASS_SORCERER, SPELL_HELLBALL, 21);
@@ -6574,6 +6579,7 @@ void load_class_list(void)
   spell_assignment(CLASS_BARD, SPELL_MASS_CHARM_MONSTER, 16);
   /*epic*/
   spell_assignment(CLASS_BARD, SPELL_MUMMY_DUST, 21);
+  spell_assignment(CLASS_BARD, SPELL_SUMMON_SOLAR, 21);
   spell_assignment(CLASS_BARD, SPELL_GREATER_RUIN, 21);
   /* class prerequisites */
   class_prereq_align(CLASS_BARD, NEUTRAL_GOOD);
@@ -8595,6 +8601,7 @@ void load_class_list(void)
   /* this we may be taking away from them */
   spell_assignment(CLASS_ALCHEMIST, SPELL_GREATER_RUIN, 21);
   spell_assignment(CLASS_ALCHEMIST, SPELL_MUMMY_DUST, 21);
+  spell_assignment(CLASS_ALCHEMIST, SPELL_SUMMON_SOLAR, 21);
 
   // epic class feats
   feat_assignment(CLASS_ALCHEMIST, FEAT_GREAT_DEXTERITY, Y, NOASSIGN_FEAT, N);
@@ -8754,6 +8761,7 @@ void load_class_list(void)
   // spell_assignment(CLASS_INQUISITOR, SPELL_REPULSION, 16);
 
   spell_assignment(CLASS_INQUISITOR, SPELL_MUMMY_DUST, 21);
+  spell_assignment(CLASS_INQUISITOR, SPELL_SUMMON_SOLAR, 21);
   spell_assignment(CLASS_INQUISITOR, SPELL_GREATER_RUIN, 21);
 
   /* starting feats and proficiencies */

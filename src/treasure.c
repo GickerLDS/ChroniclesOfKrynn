@@ -289,6 +289,7 @@ bool valid_item_spell(int spellnum)
   {
   case SPELL_VENTRILOQUATE:
   case SPELL_MUMMY_DUST:
+  case SPELL_SUMMON_SOLAR:
   case SPELL_DRAGON_KNIGHT:
   case SPELL_GREATER_RUIN:
   case SPELL_HELLBALL:

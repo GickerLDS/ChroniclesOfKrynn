@@ -3475,6 +3475,8 @@ void save_char(struct char_data *ch, int mode)
       BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
     if ((pMudEvent = char_has_mud_event(ch, eMUMMYDUST)))
       BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
+    if ((pMudEvent = char_has_mud_event(ch, eSUMMONSOLAR)))
+      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
     if ((pMudEvent = char_has_mud_event(ch, eDRAGONKNIGHT)))
       BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
     if ((pMudEvent = char_has_mud_event(ch, eGREATERRUIN)))

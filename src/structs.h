@@ -1272,8 +1272,10 @@
   102                 /**< Prevents Ghost perk and similar abilities from bypassing mob blocking */
 #define MOB_GOLEM 103 /**< Mob is a constructed golem (for follower tracking) */
 #define MOB_NOTELEPORT 104 /**< Mob cannot be teleported */
+
+#define MOB_SUMMON_SOLAR 105
 /**********************/
-#define NUM_MOB_FLAGS 105
+#define NUM_MOB_FLAGS 106
 /**********************/
 /**********************/
 
@@ -1319,6 +1321,7 @@
 #define MOB_WIGHT 58                // great animation
 #define MOB_BLADE_OF_DISASTER 59    // black blade of disaster
 #define MOB_ECTOPLASMIC_SHAMBLER 93 // ectoplasmic shambler psionic ability
+#define MOB_SOLAR 94
 
 #if defined(CAMPAIGN_DL)
 
@@ -3074,10 +3077,12 @@
 #define FEAT_WOOD_GOLEM_IMMUNITY 1260
 #define FEAT_STONE_GOLEM_IMMUNITY 1261
 
+#define FEAT_SUMMON_SOLAR 1262
+
 /** reserved above feat# + 1**/
-#define FEAT_LAST_FEAT 1262
+#define FEAT_LAST_FEAT 1263
 /** FEAT_LAST_FEAT + 1 ***/
-#define NUM_FEATS 1263
+#define NUM_FEATS 1264
 /** absolute cap **/
 #define MAX_FEATS 1500
 /*****/

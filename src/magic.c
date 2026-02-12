@@ -46,6 +46,8 @@
 extern struct raff_node *raff_list;
 void save_char_pets(struct char_data *ch);
 void set_vampire_spawn_feats(struct char_data *mob);
+bool can_add_solar_follower(struct char_data *ch);
+bool can_add_mummy_dust_follower(struct char_data *ch);
 
 /* local file scope function prototypes */
 static int mag_materials(struct char_data *ch, IDXTYPE item0, IDXTYPE item1, IDXTYPE item2,
@@ -11821,10 +11823,31 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
     break;
 
   case SPELL_MUMMY_DUST: // epic
+    if (!can_add_solar_follower(ch))
+    {
+      send_to_char(ch, "You can't control a mummy and solar at the same time!\r\n");
+      return;
+    }
     handle_corpse = FALSE;
     msg = 13;
     fmsg = rand_number(2, 6); /* Random fail message. */
     mob_num = MOB_MUMMY_LORD;
+    pfail = 0;
+    mob_level = 30;
+    break;
+
+  case SPELL_SUMMON_SOLAR: // epic
+
+    if (!can_add_mummy_dust_follower(ch))
+    {
+      send_to_char(ch, "You can't control a mummy and solar at the same time!\r\n");
+      return;
+    }
+
+    handle_corpse = FALSE;
+    msg = 13;
+    fmsg = rand_number(2, 6); /* Random fail message. */
+    mob_num = MOB_SOLAR;
     pfail = 0;
     mob_level = 30;
     break;
@@ -12148,6 +12171,23 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
       send_to_char(ch, "You can't control more mummies via the mummy dust spell!\r\n");
       return;
     }
+    if (!can_add_follower_by_flag(ch, MOB_SUMMON_SOLAR))
+    {
+      send_to_char(ch, "You can't control mummies and solars at the same time!\r\n");
+      return;
+    }
+    break;
+  case SPELL_SUMMON_SOLAR:
+    if (!can_add_follower_by_flag(ch, MOB_MUMMY_DUST))
+    {
+      send_to_char(ch, "You can't control mummies and solars at the same time!\r\n");
+      return;
+    }
+    if (!can_add_follower_by_flag(ch, MOB_SUMMON_SOLAR))
+    {
+      send_to_char(ch, "You can't control more solars via the summon solar spell!\r\n");
+      return;
+    }
     break;
   case SPELL_DRAGON_KNIGHT:
     // if (check_npc_followers(ch, NPC_MODE_FLAG, MOB_DRAGON_KNIGHT))
@@ -12386,6 +12426,7 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
       GET_HIT(mob) = GET_MAX_HIT(mob);
       break;
     case SPELL_DRAGON_KNIGHT:
+    case SPELL_SUMMON_SOLAR:
     case SPELL_ELEMENTAL_SWARM:
     case SPELL_SHAMBLER:
     case SPELL_PHANTOM_STEED:

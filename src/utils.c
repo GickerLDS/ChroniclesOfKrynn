@@ -1049,6 +1049,8 @@ bool not_npc_limit(struct char_data *pet)
     counts = TRUE;
   if (MOB_FLAGGED(pet, MOB_MUMMY_DUST))
     counts = TRUE;
+  if (MOB_FLAGGED(pet, MOB_SUMMON_SOLAR))
+    counts = TRUE;
   if (MOB_FLAGGED(pet, MOB_SHADOW))
     counts = TRUE;
   /*
@@ -1117,8 +1119,10 @@ bool can_add_follower_by_flag(struct char_data *ch, int flag)
 {
   struct char_data *pet;
   struct follow_type *k, *next;
-  int undead = 0;
-  int undead_allowed = CLASS_LEVEL(ch, CLASS_NECROMANCER) ? 2 : 1;
+  int mobs = 0;
+  int mobs_allowed = CLASS_LEVEL(ch, CLASS_NECROMANCER) ? 2 : 1;
+  if (flag == MOB_SUMMON_SOLAR)
+    mobs_allowed = 1;
 
 
   /* loop through followers */
@@ -1131,8 +1135,58 @@ bool can_add_follower_by_flag(struct char_data *ch, int flag)
     {
       if (MOB_FLAGGED(pet, flag))
       {
-        undead++;
-        if (undead <= undead_allowed)
+        mobs++;
+        if (mobs <= mobs_allowed)
+          return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool can_add_solar_follower(struct char_data *ch)
+{
+  struct char_data *pet;
+  struct follow_type *k, *next;
+  int mobs = 0;
+
+  /* loop through followers */
+  for (k = ch->followers; k; k = next)
+  {
+    next = k->next;
+
+    pet = k->follower;
+    if (IS_PET(pet))
+    {
+      if (MOB_FLAGGED(pet, MOB_SUMMON_SOLAR))
+      {
+        mobs++;
+        if (mobs >= 1)
+          return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool can_add_mummy_dust_follower(struct char_data *ch)
+{
+  struct char_data *pet;
+  struct follow_type *k, *next;
+  int mobs = 0;
+
+  /* loop through followers */
+  for (k = ch->followers; k; k = next)
+  {
+    next = k->next;
+
+    pet = k->follower;
+    if (IS_PET(pet))
+    {
+      if (MOB_FLAGGED(pet, MOB_MUMMY_DUST))
+      {
+        mobs++;
+        if (mobs >= 1)
           return false;
       }
     }
@@ -1700,6 +1754,14 @@ void increase_skill(struct char_data *ch, int skillnum)
       ++;
     }
     break;
+  case SKILL_SUMMON_SOLAR:
+    if (!use)
+    {
+      notched = TRUE;
+      GET_SKILL(ch, skillnum)
+      ++;
+    }
+    break;
   case SKILL_KICK:
     if (!use)
     {
@@ -2142,14 +2204,6 @@ void increase_skill(struct char_data *ch, int skillnum)
     break;
   case SKILL_DEFENSIVE_STANCE:
     if (!use)
-    {
-      notched = TRUE;
-      GET_SKILL(ch, skillnum)
-      ++;
-    }
-    break;
-  case SKILL_PROF_MINIMAL:
-    if (!pass)
     {
       notched = TRUE;
       GET_SKILL(ch, skillnum)

@@ -496,6 +496,7 @@ struct mud_event_list mud_event_index[] = {
      "You can benefit from Legendary Resilience again", NULL, FEAT_UNDEFINED, 0},
     {"Perfect Adaptation Cooldown", event_daily_use_cooldown, EVENT_CHAR,
      "You can use Perfect Adaptation again.", NULL, FEAT_UNDEFINED, 0},
+    {"Summon Solar", event_countdown, EVENT_CHAR, "You are now able to cast Summon Solar again.", NULL, FEAT_UNDEFINED, 0},
 };
 
 /* Expose registry count for validation */

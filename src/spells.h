@@ -606,9 +606,10 @@
 #define SPELL_SPLINTER_STORM 525
 #define SPELL_SHOCKWAVE 526
 #define SPELL_POISON_BREATH 527
+#define SPELL_SUMMON_SOLAR 528
 
 /** Total Number of defined spells  */
-#define NUM_SPELLS 528
+#define NUM_SPELLS 529
 #define LAST_SPELL_DEFINE NUM_SPELLS + 1
 
 #define MAX_SPELL_AFFECTS 6 /* change if more needed */
@@ -1027,7 +1028,7 @@
 #define SKILL_EPIC_MAGE_ARMOR 2054  // implemented
 #define SKILL_EPIC_WARDING 2055     // implemented
 #define SKILL_RAGE 2056             // implemented
-#define SKILL_PROF_MINIMAL 2057     // implemented
+#define SKILL_SUMMON_SOLAR 2057     // implemented
 #define SKILL_PROF_BASIC 2058       // implemented
 #define SKILL_PROF_ADVANCED 2059    // implemented
 #define SKILL_PROF_MASTER 2060      // implemented

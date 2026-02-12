@@ -140,11 +140,6 @@ int meet_skill_reqs(struct char_data *ch, int skillnum)
   switch (skillnum)
   {
     /* proficiencies */
-  case SKILL_PROF_BASIC:
-    if (GET_SKILL(ch, SKILL_PROF_MINIMAL))
-      return TRUE;
-    else
-      return FALSE;
   case SKILL_PROF_ADVANCED:
     if (GET_SKILL(ch, SKILL_PROF_BASIC))
       return TRUE;
@@ -178,6 +173,11 @@ int meet_skill_reqs(struct char_data *ch, int skillnum)
 
     /* epic spells */
   case SKILL_MUMMY_DUST:
+    if (GET_ABILITY(ch, ABILITY_SPELLCRAFT) >= 23 && GET_LEVEL(ch) >= 20)
+      return TRUE;
+    else
+      return FALSE;
+  case SKILL_SUMMON_SOLAR:
     if (GET_ABILITY(ch, ABILITY_SPELLCRAFT) >= 23 && GET_LEVEL(ch) >= 20)
       return TRUE;
     else
@@ -480,7 +480,6 @@ int meet_skill_reqs(struct char_data *ch, int skillnum)
   case SKILL_KICK:
   case SKILL_IMPROVED_CRITICAL:
   case SKILL_PROWESS:
-  case SKILL_PROF_MINIMAL:
   case SKILL_PROF_SHIELDS:
   case SKILL_PROF_LIGHT_A:
   case SKILL_MINING:
@@ -2053,6 +2052,10 @@ void process_skill(struct char_data *ch, int skillnum)
   case SKILL_MUMMY_DUST:
     send_to_char(ch, "\tMYou gained Epic Spell:  Mummy Dust!\tn\r\n");
     SET_SKILL(ch, SPELL_MUMMY_DUST, 99);
+    return;
+  case SKILL_SUMMON_SOLAR:
+    send_to_char(ch, "\tMYou gained Epic Spell:  Summon Solar!\tn\r\n");
+    SET_SKILL(ch, SPELL_SUMMON_SOLAR, 99);
     return;
   case SKILL_DRAGON_KNIGHT:
     send_to_char(ch, "\tMYou gained Epic Spell:  Dragon Knight!\tn\r\n");

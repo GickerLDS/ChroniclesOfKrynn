@@ -6793,6 +6793,10 @@ void perform_do_copyover()
       {
         event_cancel_specific(och, eMUMMYDUST);
       }
+      if (char_has_mud_event(och, eSUMMONSOLAR))
+      {
+        event_cancel_specific(och, eSUMMONSOLAR);
+      }
       if (char_has_mud_event(och, eDRAGONKNIGHT))
       {
         event_cancel_specific(och, eDRAGONKNIGHT);

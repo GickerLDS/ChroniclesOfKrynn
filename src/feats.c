@@ -3455,9 +3455,17 @@ void assign_feats(void)
   feato(FEAT_MUMMY_DUST, "mummy dust", TRUE, TRUE, FALSE, FEAT_TYPE_SPELLCASTING,
         "gain access to epic spell - mummy dust",
         "Once per game day, you can cast a spell that will conjure a powerful Mummy "
-        "Lord to assist you in combat.");
+        "Lord to assist you in combat. Note: You cannot summon a solar and mummy at the same time.");
   feat_prereq_ability(FEAT_MUMMY_DUST, ABILITY_SPELLCRAFT, 23);
   feat_prereq_spellcasting(FEAT_MUMMY_DUST, CASTING_TYPE_DIVINE, 3, 9);
+
+  feato(FEAT_SUMMON_SOLAR, "summon solar", TRUE, TRUE, FALSE, FEAT_TYPE_SPELLCASTING,
+        "gain access to epic spell - summon solar",
+        "Once per game day, you can cast a spell that will conjure a powerful Solar "
+        "to assist you in combat. Note: You cannot summon a solar and mummy at the same time.");
+  feat_prereq_ability(FEAT_SUMMON_SOLAR, ABILITY_SPELLCRAFT, 23);
+  feat_prereq_spellcasting(FEAT_SUMMON_SOLAR, CASTING_TYPE_DIVINE, 3, 9);
+
   feato(FEAT_DRAGON_KNIGHT, "dragon knight", TRUE, TRUE, FALSE, FEAT_TYPE_SPELLCASTING,
         "gain access to epic spell - dragon knight",
         "Once per game day, you can cast a spell that will conjure a small red dragon"
@@ -3997,7 +4005,7 @@ void assign_feats(void)
         "This will not work on mobs with high hit pointds for their level or mobslevel 28 or "
         "higher.");
   feat_prereq_feat(FEAT_DEATH_OF_ENEMIES, FEAT_BANE_OF_ENEMIES, 1);
-  feat_prereq_feat(FEAT_DEATH_OF_ENEMIES, FEAT_FAVORED_ENEMY, 5);
+  feat_prereq_feat(FEAT_DEATH_OF_ENEMIES, FEAT_FAVORED_ENEMY_AVAILABLE, 5);
   feat_prereq_ability(FEAT_DEATH_OF_ENEMIES, ABILITY_NATURE, 30);
 
   feato(FEAT_EPIC_FAVORED_ENEMY, "epic favored enemy", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
@@ -6108,6 +6116,7 @@ void assign_feats(void)
   epicfeat(FEAT_DEAFENING_SONG);
   /* epic spell feats */
   epicfeat(FEAT_MUMMY_DUST);
+  epicfeat(FEAT_SUMMON_SOLAR);
   epicfeat(FEAT_DRAGON_KNIGHT);
   epicfeat(FEAT_GREATER_RUIN);
   epicfeat(FEAT_HELLBALL);
@@ -7273,6 +7282,10 @@ int feat_is_available(struct char_data *ch, int featnum, int iarg, char *sarg)
       return FALSE;
 
     case FEAT_MUMMY_DUST:
+      if (GET_ABILITY(ch, ABILITY_SPELLCRAFT) >= 23 && CASTER_LEVEL(ch) >= 20)
+        return TRUE;
+      return FALSE;
+    case FEAT_SUMMON_SOLAR:
       if (GET_ABILITY(ch, ABILITY_SPELLCRAFT) >= 23 && CASTER_LEVEL(ch) >= 20)
         return TRUE;
       return FALSE;

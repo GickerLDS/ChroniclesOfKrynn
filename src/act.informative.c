@@ -2310,6 +2310,9 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
   if ((pMudEvent = char_has_mud_event(k, eMUMMYDUST)))
     send_to_char(ch, "Epic Spell Cooldown :  Mummy Dust - Duration: %d seconds\r\n",
                  (int)(event_time(pMudEvent->pEvent) / 10));
+  if ((pMudEvent = char_has_mud_event(k, eSUMMONSOLAR)))
+    send_to_char(ch, "Epic Spell Cooldown :  Summon Solar - Duration: %d seconds\r\n",
+                 (int)(event_time(pMudEvent->pEvent) / 10));
   if ((pMudEvent = char_has_mud_event(k, eDRAGONKNIGHT)))
     send_to_char(ch, "Epic Spell Cooldown :  Dragon Knight - Duration: %d seconds\r\n",
                  (int)(event_time(pMudEvent->pEvent) / 10));

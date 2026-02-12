@@ -377,6 +377,7 @@ bool isEpicSpell(int spellnum)
   switch (spellnum)
   {
   case SPELL_MUMMY_DUST:
+  case SPELL_SUMMON_SOLAR:
   case SPELL_DRAGON_KNIGHT:
   case SPELL_GREATER_RUIN:
   case SPELL_HELLBALL:
@@ -699,6 +700,11 @@ int call_magic(struct char_data *caster, struct char_data *cvict, struct obj_dat
     attach_mud_event(new_mud_event(eMUMMYDUST, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_MUMMY_DUST);
+    break;
+  case SPELL_SUMMON_SOLAR:
+    attach_mud_event(new_mud_event(eSUMMONSOLAR, caster, NULL), 9 * SECS_PER_MUD_DAY);
+    if (!IS_NPC(caster))
+      increase_skill(caster, SKILL_SUMMON_SOLAR);
     break;
   case SPELL_DRAGON_KNIGHT:
     attach_mud_event(new_mud_event(eDRAGONKNIGHT, caster, NULL), 9 * SECS_PER_MUD_DAY);
@@ -2288,6 +2294,11 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
     send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
     return 0;
   }
+  if (char_has_mud_event(ch, eSUMMONSOLAR) && spellnum == SPELL_SUMMON_SOLAR)
+  {
+    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
+    return 0;
+  }
   if (char_has_mud_event(ch, eDRAGONKNIGHT) && spellnum == SPELL_DRAGON_KNIGHT)
   {
     send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
@@ -3321,6 +3332,13 @@ return;
         return;
       }
       break;
+    case SPELL_SUMMON_SOLAR:
+      if (!HAS_FEAT(ch, FEAT_SUMMON_SOLAR))
+      {
+        send_to_char(ch, "You do not have the 'summon solar' feat!!\r\n");
+        return;
+      }
+      break;
     case SPELL_DRAGON_KNIGHT:
       if (!HAS_FEAT(ch, FEAT_DRAGON_KNIGHT))
       {
@@ -4234,6 +4252,8 @@ void mag_assign_spells(void)
          EVOCATION, FALSE);
   spello(SPELL_MUMMY_DUST, "mummy dust", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_SUMMONS,
          NULL, 14, 1, NECROMANCY, FALSE);
+  spello(SPELL_SUMMON_SOLAR, "summon solar", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_SUMMONS,
+         NULL, 14, 1, CONJURATION, FALSE);
 
   // paladin
   /* = =  4th circle  = = */
@@ -5954,6 +5974,7 @@ spello(SPELL_IDENTIFY, "!UNUSED!", 0, 0, 0, 0,
   skillo(SKILL_BACKSTAB, "backstab", ACTIVE_SKILL); // 401
   skillo(SKILL_BASH, "bash", ACTIVE_SKILL);
   skillo(SKILL_MUMMY_DUST, "es mummy dust", CASTER_SKILL);
+  skillo(SKILL_SUMMON_SOLAR, "es summon solar", CASTER_SKILL);
   skillo(SKILL_KICK, "kick", ACTIVE_SKILL);
   skillo(SKILL_SLAM, "slam", ACTIVE_SKILL);
   skillo(SKILL_WEAPON_SPECIALIST, "weapon specialist", PASSIVE_SKILL); // 405
@@ -6008,7 +6029,6 @@ spello(SPELL_IDENTIFY, "!UNUSED!", 0, 0, 0, 0,
   skillo(SKILL_EPIC_MAGE_ARMOR, "es epic mage armor", CASTER_SKILL);
   skillo(SKILL_EPIC_WARDING, "es epic warding", CASTER_SKILL);                // 455
   skillo(SKILL_RAGE, "rage", ACTIVE_SKILL);                                   // 456
-  skillo(SKILL_PROF_MINIMAL, "minimal weapon prof", PASSIVE_SKILL);           // 457
   skillo(SKILL_PROF_BASIC, "basic weapon prof", PASSIVE_SKILL);               // 458
   skillo(SKILL_PROF_ADVANCED, "advanced weapon prof", PASSIVE_SKILL);         // 459
   skillo(SKILL_PROF_MASTER, "master weapon prof", PASSIVE_SKILL);             // 460

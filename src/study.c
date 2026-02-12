@@ -354,6 +354,10 @@ void finalize_study(struct descriptor_data *d)
         send_to_char(ch, "\tMYou gained Epic Spell:  Mummy Dust!\tn\r\n");
         SET_SKILL(ch, SPELL_MUMMY_DUST, 99);
         break;
+      case FEAT_SUMMON_SOLAR:
+        send_to_char(ch, "\tMYou gained Epic Spell:  Summon Solar!\tn\r\n");
+        SET_SKILL(ch, SPELL_SUMMON_SOLAR, 99);
+        break;
       case FEAT_DRAGON_KNIGHT:
         send_to_char(ch, "\tMYou gained Epic Spell:  Dragon Knight!\tn\r\n");
         SET_SKILL(ch, SPELL_DRAGON_KNIGHT, 99);
