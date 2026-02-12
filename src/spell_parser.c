@@ -5778,9 +5778,11 @@ void mag_assign_spells(void)
   spello(ABILITY_KAPAK_DRACONIAN_DEATH_THROES, "kapak draconian death throes", 0, 0, 0,
          POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
          "The pool of acid in the room dissolves to nothingness.", 5, 9, TRANSMUTATION, FALSE);
-  spello(ABILITY_KAPAK_ACID, "!UNUSED!", 79, 64, 1, POS_DEAD, TAR_IGNORE, TRUE, MAG_MASSES, NULL, 8,
-         12, EVOCATION, FALSE);
+
   spello(ABILITY_BOZAK_DRACONIAN_DEATH_THROES, "bozak draconian death throes", 0, 0, 0,
+         POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS, NULL, 5, 9, TRANSMUTATION, FALSE);
+  
+  spello(AFFECT_POOL_OF_ACID, "pool of acid", 0, 0, 0,
          POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS, NULL, 5, 9, TRANSMUTATION, FALSE);
 
   /*

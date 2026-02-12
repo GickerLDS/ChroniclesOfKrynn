@@ -2311,6 +2311,15 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
     bonus = level / 3;
     break;
 
+  case AFFECT_POOL_OF_ACID: // transmutation
+    save = SAVING_REFL;
+    mag_resist = FALSE;
+    element = DAM_ACID;
+    num_dice = 2;
+    size_dice = 6;
+    bonus = 0;
+    break;
+
   case SPELL_FIREBALL: // evocation
     // Nashak: make this dissipate obscuring mist when finished
     save = SAVING_REFL;
@@ -10782,9 +10791,6 @@ void mag_masses(int level, struct char_data *ch, struct obj_data *obj, int spell
   case SPELL_ACID:
     isDamage = true;
     break;
-  case ABILITY_KAPAK_ACID:
-    isDamage = true;
-    break;
   case SPELL_BLADES:
     isDamage = true;
     break;
@@ -11052,6 +11058,8 @@ void mag_areas(int level, struct char_data *ch, struct obj_data *obj, int spelln
    * the damaging part of the spell.   */
   switch (spellnum)
   {
+  case AFFECT_POOL_OF_ACID:
+    break;
   case WARLOCK_TENACIOUS_PLAGUE:
     break;
   case WARLOCK_ELDRITCH_BLAST:

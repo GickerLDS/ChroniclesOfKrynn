@@ -3386,3 +3386,19 @@ $N narrowly escapes the full force of the arcane explosion!
 Your magical death throe fails to affect the powerful $N!
 $n's arcane explosion dissipates around you harmlessly!
 $N's magical defenses nullify the arcane burst!
+
+* pool of acid 1311
+M
+1311
+	GA pool of acid dissolves $N into nothingness!	n
+	GYou are consumed by a caustic pool of acid!	n
+	GAn acid pool dissolves $N into a puddle of dissolved flesh!	n
+The acid pool under $N doesn't affect $M!
+The acid pool under $N doesn't affect You!
+The acid pool under $N doesn't affect $M!
+	GA bubbling acid pool eats away at $N's flesh!	n
+	GYou scream in agony as a pool of acid burns through your skin!	n
+	GA bubbling acid pool eats away at $N's flesh!	n
+The acid pool under $N doesn't affect $M!
+The acid pool under $N doesn't affect You!
+The acid pool under $N doesn't affect $M!

@@ -123,8 +123,7 @@ void room_aff_tick(struct raff_node *raff)
     caster->next_in_room = caster_room->people;
     caster_room->people = caster;
     caster->in_room = real_room(caster_room->number);
-    call_magic(caster, NULL, NULL, ABILITY_KAPAK_DRACONIAN_DEATH_THROES, 0, DG_SPELL_LEVEL,
-               CAST_SPELL);
+    call_magic(caster, NULL, NULL, AFFECT_POOL_OF_ACID, 0, DG_SPELL_LEVEL, CAST_SPELL);
     extract_char(caster);
     break;
 
