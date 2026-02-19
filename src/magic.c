@@ -12165,35 +12165,26 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
     }
     break;
   case SPELL_MUMMY_DUST:
-    // if (check_npc_followers(ch, NPC_MODE_FLAG, MOB_MUMMY_DUST))
+    /* Epic summons (mummy dust, summon solar, dragon knight) are mutually exclusive */
     if (!can_add_follower_by_flag(ch, MOB_MUMMY_DUST))
     {
-      send_to_char(ch, "You can't control more mummies via the mummy dust spell!\r\n");
-      return;
-    }
-    if (!can_add_follower_by_flag(ch, MOB_SUMMON_SOLAR))
-    {
-      send_to_char(ch, "You can't control mummies and solars at the same time!\r\n");
+      send_to_char(ch, "You can only control one epic summon at a time!\r\n");
       return;
     }
     break;
   case SPELL_SUMMON_SOLAR:
-    if (!can_add_follower_by_flag(ch, MOB_MUMMY_DUST))
-    {
-      send_to_char(ch, "You can't control mummies and solars at the same time!\r\n");
-      return;
-    }
+    /* Epic summons (mummy dust, summon solar, dragon knight) are mutually exclusive */
     if (!can_add_follower_by_flag(ch, MOB_SUMMON_SOLAR))
     {
-      send_to_char(ch, "You can't control more solars via the summon solar spell!\r\n");
+      send_to_char(ch, "You can only control one epic summon at a time!\r\n");
       return;
     }
     break;
   case SPELL_DRAGON_KNIGHT:
-    // if (check_npc_followers(ch, NPC_MODE_FLAG, MOB_DRAGON_KNIGHT))
+    /* Epic summons (mummy dust, summon solar, dragon knight) are mutually exclusive */
     if (!can_add_follower_by_flag(ch, MOB_DRAGON_KNIGHT))
     {
-      send_to_char(ch, "You can't control more dragons via the dragon knight spell!\r\n");
+      send_to_char(ch, "You can only control one epic summon at a time!\r\n");
       return;
     }
     break;
@@ -12216,9 +12207,28 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
   case SPELL_GENIEKIND:
     // this is handled in spells.c ASPELL(spell_geniekind)
     break;
+  /* Summon creature series (1-6) - uses new summon creature limit */
+  case SPELL_SUMMON_CREATURE_1:
+  case SPELL_SUMMON_CREATURE_2:
+  case SPELL_SUMMON_CREATURE_3:
+  case SPELL_SUMMON_CREATURE_4:
+  case SPELL_SUMMON_CREATURE_5:
+  case SPELL_SUMMON_CREATURE_6:
+  case SPELL_SUMMON_NATURES_ALLY_1:
+  case SPELL_SUMMON_NATURES_ALLY_2:
+  case SPELL_SUMMON_NATURES_ALLY_3:
+  case SPELL_SUMMON_NATURES_ALLY_4:
+  case SPELL_SUMMON_NATURES_ALLY_5:
+  case SPELL_SUMMON_NATURES_ALLY_6:
+    if (!can_add_follower(ch, mob_num))
+    {
+      send_to_char(ch, "You can't control more summon creatures!\r\n");
+      return;
+    }
+    break;
   default:
-    if (check_npc_followers(ch, NPC_MODE_SPARE, 0) <= 0)
-    // if (!can_add_follower(ch, mob_num));
+    /* All other summons use the general follower limit check */
+    if (!can_add_follower(ch, mob_num))
     {
       send_to_char(ch, "You can't control more followers!\r\n");
       return;

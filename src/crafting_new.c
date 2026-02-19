@@ -55,6 +55,7 @@ int get_rapid_talent_bonus(struct char_data *ch, int skill);
 int get_insightful_talent_bonus(struct char_data *ch, int skill);
 int get_efficient_talent_bonus(struct char_data *ch, int skill);
 void return_efficient_saved_materials(struct char_data *ch);
+void save_char_pets(struct char_data *ch);
 
 int materials_sort_info[NUM_CRAFT_MATS];
 
@@ -10979,6 +10980,498 @@ void upgrade_golem(struct char_data *ch, struct char_data *golem, int new_size)
   ch->char_specials.saved.golem_stored_size = new_size;
 }
 
+#define MAX_GOLEM_TRANSFER_REQUESTS 20
+#define GOLEM_TRANSFER_CODE_MIN 1000
+#define GOLEM_TRANSFER_CODE_MAX 9999
+#define GOLEM_TRANSFER_TIMEOUT 60
+
+struct golem_transfer_request
+{
+  bool in_use;
+  long sender_id;
+  long target_id;
+  int golem_vnum;
+  int code;
+  time_t created;
+  bool sender_confirmed;
+  bool target_confirmed;
+  char sender_name[MAX_INPUT_LENGTH];
+  char target_name[MAX_INPUT_LENGTH];
+};
+
+static struct golem_transfer_request golem_transfer_requests[MAX_GOLEM_TRANSFER_REQUESTS];
+
+static struct golem_transfer_request *find_golem_transfer_for_id(long idnum)
+{
+  int i;
+
+  for (i = 0; i < MAX_GOLEM_TRANSFER_REQUESTS; i++)
+  {
+    if (!golem_transfer_requests[i].in_use)
+      continue;
+    if (golem_transfer_requests[i].sender_id == idnum ||
+        golem_transfer_requests[i].target_id == idnum)
+      return &golem_transfer_requests[i];
+  }
+
+  return NULL;
+}
+
+static struct golem_transfer_request *alloc_golem_transfer_request(void)
+{
+  int i;
+
+  for (i = 0; i < MAX_GOLEM_TRANSFER_REQUESTS; i++)
+  {
+    if (!golem_transfer_requests[i].in_use)
+    {
+      memset(&golem_transfer_requests[i], 0, sizeof(golem_transfer_requests[i]));
+      golem_transfer_requests[i].in_use = true;
+      return &golem_transfer_requests[i];
+    }
+  }
+
+  return NULL;
+}
+
+static void clear_golem_transfer_request(struct golem_transfer_request *req)
+{
+  if (req)
+    memset(req, 0, sizeof(*req));
+}
+
+static bool is_golem_transfer_expired(struct golem_transfer_request *req)
+{
+  if (!req || !req->in_use)
+    return false;
+  return (time(NULL) - req->created) > GOLEM_TRANSFER_TIMEOUT;
+}
+
+static void notify_golem_transfer_expired(struct golem_transfer_request *req, struct char_data *ch)
+{
+  struct char_data *sender = NULL;
+  struct char_data *target = NULL;
+
+  if (!req)
+    return;
+
+  if (*req->sender_name)
+    sender = get_player_vis(ch, req->sender_name, NULL, FIND_CHAR_WORLD);
+  if (*req->target_name)
+    target = get_player_vis(ch, req->target_name, NULL, FIND_CHAR_WORLD);
+
+  if (sender)
+    send_to_char(sender, "Your golem transfer to %s has expired.\r\n", req->target_name);
+  if (target)
+    send_to_char(target, "The golem transfer from %s has expired.\r\n", req->sender_name);
+}
+
+static struct char_data *find_pc_in_room_by_id(struct char_data *ch, long idnum)
+{
+  struct char_data *tch;
+
+  if (!ch || IN_ROOM(ch) == NOWHERE)
+    return NULL;
+
+  for (tch = world[IN_ROOM(ch)].people; tch; tch = tch->next_in_room)
+  {
+    if (!IS_NPC(tch) && GET_IDNUM(tch) == idnum)
+      return tch;
+  }
+
+  return NULL;
+}
+
+static struct char_data *find_golem_in_room_by_master(room_rnum room, struct char_data *master)
+{
+  struct char_data *tch;
+
+  if (room == NOWHERE || !master)
+    return NULL;
+
+  for (tch = world[room].people; tch; tch = tch->next_in_room)
+  {
+    if (IS_NPC(tch) && MOB_FLAGGED(tch, MOB_GOLEM) && tch->master == master)
+      return tch;
+  }
+
+  return NULL;
+}
+
+void transfer_golem(struct char_data *ch, struct char_data *golem, struct char_data *target)
+{
+  int golem_vnum, golem_type, golem_size;
+  const char *golem_type_names[] = {"", "wood", "stone", "iron"};
+  const char *golem_size_names[] = {"small", "medium", "large", "huge"};
+
+  if (!ch || !golem || !target)
+    return;
+
+  if (!MOB_FLAGGED(golem, MOB_GOLEM))
+  {
+    send_to_char(ch, "That's not a golem!\r\n");
+    return;
+  }
+
+  if (golem->master != ch)
+  {
+    send_to_char(ch, "That golem doesn't belong to you!\r\n");
+    return;
+  }
+
+  if (IS_NPC(target) || target == ch)
+  {
+    send_to_char(ch, "You can only transfer a golem to another player.\r\n");
+    return;
+  }
+
+  if (IN_ROOM(golem) != IN_ROOM(ch) || IN_ROOM(target) != IN_ROOM(ch))
+  {
+    send_to_char(ch, "The golem and the recipient must be in the same room.\r\n");
+    return;
+  }
+
+  golem_vnum = GET_MOB_VNUM(golem);
+  golem_type = get_golem_type_from_vnum(golem_vnum);
+  golem_size = get_golem_size_from_vnum(golem_vnum);
+
+  if (golem_type < 0 || golem_size < 0)
+  {
+    send_to_char(ch, "That golem is invalid!\r\n");
+    return;
+  }
+
+  switch (golem_type)
+  {
+  case GOLEM_TYPE_WOOD:
+    if (!HAS_FEAT(ch, FEAT_CONSTRUCT_WOOD_GOLEM))
+    {
+      send_to_char(ch, "You must have the construct wood golem feat to transfer this golem.\r\n");
+      return;
+    }
+    break;
+  case GOLEM_TYPE_STONE:
+    if (!HAS_FEAT(ch, FEAT_CONSTRUCT_STONE_GOLEM))
+    {
+      send_to_char(ch, "You must have the construct stone golem feat to transfer this golem.\r\n");
+      return;
+    }
+    break;
+  case GOLEM_TYPE_IRON:
+    if (!HAS_FEAT(ch, FEAT_CONSTRUCT_IRON_GOLEM))
+    {
+      send_to_char(ch, "You must have the construct iron golem feat to transfer this golem.\r\n");
+      return;
+    }
+    break;
+  }
+
+  if (has_golem_follower(target))
+  {
+    send_to_char(ch, "That player already has an active golem.\r\n");
+    return;
+  }
+
+  if (target->char_specials.saved.golem_stored_type != GOLEM_TYPE_NONE)
+  {
+    send_to_char(ch, "That player already has a stored golem.\r\n");
+    return;
+  }
+
+  if (!can_add_follower(target, golem_vnum))
+  {
+    send_to_char(ch, "That player cannot control another follower right now.\r\n");
+    return;
+  }
+
+  if (GROUP(golem))
+    leave_group(golem);
+  stop_follower_engine(golem);
+  golem->master = NULL;
+
+  add_follower(golem, target);
+
+  if (!GROUP(golem) && GROUP(target) && GROUP_LEADER(GROUP(target)) == target)
+    join_group(golem, GROUP(target));
+
+  ch->char_specials.saved.golem_stored_type = GOLEM_TYPE_NONE;
+  ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
+  ch->char_specials.saved.golem_recall_cooldown = 0;
+
+  target->char_specials.saved.golem_stored_type = golem_type;
+  target->char_specials.saved.golem_stored_size = golem_size;
+  target->char_specials.saved.golem_recall_cooldown = 0;
+
+  send_to_char(ch, "You transfer your %s %s golem to %s.\r\n",
+               golem_size_names[golem_size], golem_type_names[golem_type], GET_NAME(target));
+  send_to_char(target, "%s transfers a %s %s golem to you.\r\n",
+               GET_NAME(ch), golem_size_names[golem_size], golem_type_names[golem_type]);
+  act("$n transfers a golem to $N.", TRUE, ch, 0, target, TO_NOTVICT);
+
+  save_char_pets(ch);
+  save_char_pets(target);
+  save_char(ch, 0);
+  save_char(target, 0);
+}
+
+void start_golem_transfer(struct char_data *ch, struct char_data *golem, struct char_data *target)
+{
+  int golem_vnum, golem_type, golem_size;
+  const char *golem_type_names[] = {"", "wood", "stone", "iron"};
+  const char *golem_size_names[] = {"small", "medium", "large", "huge"};
+  struct golem_transfer_request *req;
+
+  if (!ch || !golem || !target)
+    return;
+
+  if (!MOB_FLAGGED(golem, MOB_GOLEM))
+  {
+    send_to_char(ch, "That's not a golem!\r\n");
+    return;
+  }
+
+  if (golem->master != ch)
+  {
+    send_to_char(ch, "That golem doesn't belong to you!\r\n");
+    return;
+  }
+
+  if (IS_NPC(target) || target == ch)
+  {
+    send_to_char(ch, "You can only transfer a golem to another player.\r\n");
+    return;
+  }
+
+  if (IN_ROOM(golem) != IN_ROOM(ch) || IN_ROOM(target) != IN_ROOM(ch))
+  {
+    send_to_char(ch, "The golem and the recipient must be in the same room.\r\n");
+    return;
+  }
+
+  if (find_golem_transfer_for_id(GET_IDNUM(ch)) || find_golem_transfer_for_id(GET_IDNUM(target)))
+  {
+    struct golem_transfer_request *existing = NULL;
+
+    existing = find_golem_transfer_for_id(GET_IDNUM(ch));
+    if (existing && is_golem_transfer_expired(existing))
+    {
+      notify_golem_transfer_expired(existing, ch);
+      clear_golem_transfer_request(existing);
+    }
+
+    existing = find_golem_transfer_for_id(GET_IDNUM(target));
+    if (existing && is_golem_transfer_expired(existing))
+    {
+      notify_golem_transfer_expired(existing, ch);
+      clear_golem_transfer_request(existing);
+    }
+
+    if (find_golem_transfer_for_id(GET_IDNUM(ch)) || find_golem_transfer_for_id(GET_IDNUM(target)))
+    {
+      send_to_char(ch, "There is already a pending golem transfer involving one of you.\r\n");
+      return;
+    }
+  }
+
+  golem_vnum = GET_MOB_VNUM(golem);
+  golem_type = get_golem_type_from_vnum(golem_vnum);
+  golem_size = get_golem_size_from_vnum(golem_vnum);
+
+  if (golem_type < 0 || golem_size < 0)
+  {
+    send_to_char(ch, "That golem is invalid!\r\n");
+    return;
+  }
+
+  switch (golem_type)
+  {
+  case GOLEM_TYPE_WOOD:
+    if (!HAS_FEAT(ch, FEAT_CONSTRUCT_WOOD_GOLEM))
+    {
+      send_to_char(ch, "You must have the construct wood golem feat to transfer this golem.\r\n");
+      return;
+    }
+    break;
+  case GOLEM_TYPE_STONE:
+    if (!HAS_FEAT(ch, FEAT_CONSTRUCT_STONE_GOLEM))
+    {
+      send_to_char(ch, "You must have the construct stone golem feat to transfer this golem.\r\n");
+      return;
+    }
+    break;
+  case GOLEM_TYPE_IRON:
+    if (!HAS_FEAT(ch, FEAT_CONSTRUCT_IRON_GOLEM))
+    {
+      send_to_char(ch, "You must have the construct iron golem feat to transfer this golem.\r\n");
+      return;
+    }
+    break;
+  }
+
+  if (has_golem_follower(target))
+  {
+    send_to_char(ch, "That player already has an active golem.\r\n");
+    return;
+  }
+
+  if (target->char_specials.saved.golem_stored_type != GOLEM_TYPE_NONE)
+  {
+    send_to_char(ch, "That player already has a stored golem.\r\n");
+    return;
+  }
+
+  if (!can_add_follower(target, golem_vnum))
+  {
+    send_to_char(ch, "That player cannot control another follower right now.\r\n");
+    return;
+  }
+
+  req = alloc_golem_transfer_request();
+  if (!req)
+  {
+    send_to_char(ch, "Golem transfers are busy right now. Try again shortly.\r\n");
+    return;
+  }
+
+  req->sender_id = GET_IDNUM(ch);
+  req->target_id = GET_IDNUM(target);
+  req->golem_vnum = golem_vnum;
+  req->code = rand_number(GOLEM_TRANSFER_CODE_MIN, GOLEM_TRANSFER_CODE_MAX);
+  req->created = time(NULL);
+  req->sender_confirmed = false;
+  req->target_confirmed = false;
+  snprintf(req->sender_name, sizeof(req->sender_name), "%s", GET_NAME(ch));
+  snprintf(req->target_name, sizeof(req->target_name), "%s", GET_NAME(target));
+
+  send_to_char(ch,
+               "Transfer request created. Confirmation code: %d\r\n"
+               "Type 'craft golem confirm %d' to confirm your transfer.\r\n",
+               req->code, req->code);
+  send_to_char(target,
+               "%s wants to transfer a %s %s golem to you.\r\n"
+               "Ask them for the confirmation code and type 'craft golem confirm <code>' to accept.\r\n",
+               GET_NAME(ch), golem_size_names[golem_size], golem_type_names[golem_type]);
+}
+
+void confirm_golem_transfer(struct char_data *ch, const char *code_arg)
+{
+  struct golem_transfer_request *req;
+  struct char_data *sender = NULL;
+  struct char_data *target = NULL;
+  struct char_data *golem = NULL;
+  int code = 0;
+
+  if (!ch || !code_arg || !*code_arg || !is_number(code_arg))
+  {
+    send_to_char(ch, "Usage: craft golem confirm <code>\r\n");
+    return;
+  }
+
+  code = atoi(code_arg);
+  req = find_golem_transfer_for_id(GET_IDNUM(ch));
+  if (!req)
+  {
+    send_to_char(ch, "You have no pending golem transfer.\r\n");
+    return;
+  }
+
+  if (is_golem_transfer_expired(req))
+  {
+    notify_golem_transfer_expired(req, ch);
+    clear_golem_transfer_request(req);
+    return;
+  }
+
+  if (req->code != code)
+  {
+    send_to_char(ch, "That confirmation code is invalid.\r\n");
+    return;
+  }
+
+  if (GET_IDNUM(ch) == req->sender_id)
+  {
+    if (req->sender_confirmed)
+    {
+      send_to_char(ch, "You have already confirmed this transfer.\r\n");
+      return;
+    }
+    req->sender_confirmed = true;
+    send_to_char(ch, "You confirm the golem transfer.\r\n");
+  }
+  else if (GET_IDNUM(ch) == req->target_id)
+  {
+    if (req->target_confirmed)
+    {
+      send_to_char(ch, "You have already confirmed this transfer.\r\n");
+      return;
+    }
+    req->target_confirmed = true;
+    send_to_char(ch, "You accept the golem transfer.\r\n");
+  }
+  else
+  {
+    send_to_char(ch, "You are not part of that golem transfer.\r\n");
+    return;
+  }
+
+  if (!req->sender_confirmed || !req->target_confirmed)
+    return;
+
+  sender = find_pc_in_room_by_id(ch, req->sender_id);
+  target = find_pc_in_room_by_id(ch, req->target_id);
+
+  if (!sender || !target)
+  {
+    send_to_char(ch, "Both players must be in the same room to finalize the transfer.\r\n");
+    return;
+  }
+
+  golem = find_golem_in_room_by_master(IN_ROOM(ch), sender);
+  if (!golem)
+  {
+    send_to_char(ch, "The golem is not here. Transfer canceled.\r\n");
+    clear_golem_transfer_request(req);
+    return;
+  }
+
+  if (has_golem_follower(target) || target->char_specials.saved.golem_stored_type != GOLEM_TYPE_NONE)
+  {
+    send_to_char(ch, "The recipient already has a golem. Transfer canceled.\r\n");
+    clear_golem_transfer_request(req);
+    return;
+  }
+
+  transfer_golem(sender, golem, target);
+  clear_golem_transfer_request(req);
+}
+
+void cancel_golem_transfer(struct char_data *ch)
+{
+  struct golem_transfer_request *req;
+  struct char_data *sender = NULL;
+  struct char_data *target = NULL;
+
+  if (!ch)
+    return;
+
+  req = find_golem_transfer_for_id(GET_IDNUM(ch));
+  if (!req)
+  {
+    send_to_char(ch, "You have no pending golem transfer.\r\n");
+    return;
+  }
+
+  sender = get_player_vis(ch, req->sender_name, NULL, FIND_CHAR_WORLD);
+  target = get_player_vis(ch, req->target_name, NULL, FIND_CHAR_WORLD);
+
+  if (sender)
+    send_to_char(sender, "The golem transfer to %s has been canceled.\r\n", req->target_name);
+  if (target)
+    send_to_char(target, "The golem transfer from %s has been canceled.\r\n", req->sender_name);
+
+  clear_golem_transfer_request(req);
+}
+
 void newcraft_golem(struct char_data *ch, const char *argument)
 {
   char arg1[200], arg2[MAX_INPUT_LENGTH];
@@ -10996,6 +11489,9 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     send_to_char(ch, "  craft golem recall - Recall your destroyed golem (5 min cooldown)\r\n");
     send_to_char(ch, "  craft golem shutdown - Shutdown your golem to build a new type\r\n");
     send_to_char(ch, "  craft golem upgrade (small|medium|large|huge) - Upgrade golem to larger size\r\n");
+    send_to_char(ch, "  craft golem transfer <golem> <player> - Transfer your golem to another player\r\n");
+    send_to_char(ch, "  craft golem confirm <code> - Confirm a pending golem transfer\r\n");
+    send_to_char(ch, "  craft golem cancel - Cancel a pending golem transfer\r\n");
     return;
   }
 
@@ -11092,6 +11588,43 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     }
     
     upgrade_golem(ch, golem, new_size);
+  }
+  else if (is_abbrev(arg1, "transfer"))
+  {
+    char golem_arg[MAX_INPUT_LENGTH] = {'\0'};
+    char target_arg[MAX_INPUT_LENGTH] = {'\0'};
+    struct char_data *golem = NULL;
+    struct char_data *target = NULL;
+
+    two_arguments(arg2, golem_arg, sizeof(golem_arg), target_arg, sizeof(target_arg));
+
+    if (!*golem_arg || !*target_arg)
+    {
+      send_to_char(ch, "Usage: craft golem transfer <golem> <player>\r\n");
+      return;
+    }
+
+    if (!(golem = get_char_vis(ch, golem_arg, NULL, FIND_CHAR_ROOM)))
+    {
+      send_to_char(ch, "You don't see that golem here.\r\n");
+      return;
+    }
+
+    if (!(target = get_char_vis(ch, target_arg, NULL, FIND_CHAR_ROOM)))
+    {
+      send_to_char(ch, "You don't see that player here.\r\n");
+      return;
+    }
+
+    start_golem_transfer(ch, golem, target);
+  }
+  else if (is_abbrev(arg1, "confirm"))
+  {
+    confirm_golem_transfer(ch, arg2);
+  }
+  else if (is_abbrev(arg1, "cancel"))
+  {
+    cancel_golem_transfer(ch);
   }
   else
   {

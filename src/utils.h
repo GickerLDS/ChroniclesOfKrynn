@@ -181,8 +181,13 @@ bool is_selectable_region(int region);
 int get_knowledge_skill_from_creature_type(int race_type);
 bool has_fortune_of_many_bonus(struct char_data *ch);
 bool has_authoritative_bonus(struct char_data *ch);
+/* Follower/Pet limit system */
 bool can_add_follower(struct char_data *ch, int mob_vnum);
 bool can_add_follower_by_flag(struct char_data *ch, int flag);
+bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool show_msg);
+bool is_summon_creature_mob(int vnum);
+bool is_epic_summon_mob(struct char_data *mob);
+int get_follower_category(struct char_data *mob);
 char *apply_types_lowercase(int apply_type);
 bool can_learn_blackguard_cruelty(struct char_data *ch, int mercy);
 bool can_speak_language(struct char_data *ch, int language);

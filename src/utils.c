@@ -1032,74 +1032,378 @@ int is_immune_to_crits(struct char_data *attacker, struct char_data *target)
   return FALSE;
 }
 
-/* support function for check_npc_followers(), checks to see if this mobile should be counted
-   towards your npc pet/charmee limit */
-bool not_npc_limit(struct char_data *pet)
+/* ============================================================================
+ * NEW FOLLOWER/PET LIMIT SYSTEM
+ * 
+ * Limit rules:
+ * 1. 1 epic summon (dragon knight, mummy dust, summon solar) - mutually exclusive
+ * 2. 1 animal companion
+ * 3. 1 familiar
+ * 4. 1 paladin or blackguard mount
+ * 5. 1 shadow companion
+ * 6. 1 eidolon or undead cohort
+ * 7. 1 mercenary
+ * 8. 1 golem (crafted through craft command)
+ * 9. Any other mob vnum: only 1
+ *
+ * Bonuses:
+ * - Summoner (1+ level): 1 FREE summon creature mob (doesn't count against other limits)
+ * - Necromancer (1+ level): 1 FREE undead mob (doesn't count against other limits)
+ * ============================================================================
+ */
+
+/* Check if a mob is from the 'summon creature' series of spells */
+bool is_summon_creature_mob(int vnum)
 {
-  bool counts = FALSE;
-
-  /* we have a list of flags to reference, then specific VNUMS to check */
-
-  /* flags */
-  if (MOB_FLAGGED(pet, MOB_C_O_T_N))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_VAMP_SPWN))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_DRAGON_KNIGHT))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_MUMMY_DUST))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_SUMMON_SOLAR))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_SHADOW))
-    counts = TRUE;
-  /*
-  if (MOB_FLAGGED(pet, MOB_MERCENARY))
-    counts = TRUE;
-  */
-  if (MOB_FLAGGED(pet, MOB_PLANAR_ALLY))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_ANIMATED_DEAD))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_ELEMENTAL))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_C_ANIMAL))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_C_FAMILIAR))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_C_MOUNT))
-    counts = TRUE;
-  if (MOB_FLAGGED(pet, MOB_EIDOLON))
-    counts = TRUE;
-
-  /* vnums */
-  switch (GET_MOB_VNUM(pet))
+  switch (vnum)
   {
-  /* spirit eagle */
-  case 101225:
-    counts = TRUE;
-    break;
+  case MOB_DIRE_BADGER:     /* summon creature i */
+  case MOB_DIRE_BOAR:       /* summon creature ii */
+  case MOB_DIRE_WOLF:       /* summon creature iii */
+  case MOB_DIRE_SPIDER:     /* summon creature iv */
+  case MOB_DIRE_BEAR:       /* summon creature v */
+  case MOB_DIRE_TIGER:      /* summon creature vi */
+  case MOB_FIRE_ELEMENTAL:  /* summon creature vii-ix */
+  case MOB_EARTH_ELEMENTAL:
+  case MOB_AIR_ELEMENTAL:
+  case MOB_WATER_ELEMENTAL:
+#if defined(CAMPAIGN_DL)
+  case 40112: /* air elemental */
+  case 40113: /* earth elemental */
+  case 40114: /* fire elemental */
+  case 40115: /* water elemental */
+#else
+  case 9412: /* air elemental */
+  case 9413: /* earth elemental */
+  case 9414: /* fire elemental */
+  case 9415: /* water elemental */
+#endif
+    return true;
+  }
+  return false;
+}
 
-  /* large spirit eagle */
-  case 132131:
-    counts = TRUE;
-    break;
+/* Check if a mob is an epic summon (dragon knight, mummy dust, summon solar) */
+bool is_epic_summon_mob(struct char_data *mob)
+{
+  if (!mob || !IS_NPC(mob))
+    return false;
+    
+  return (MOB_FLAGGED(mob, MOB_DRAGON_KNIGHT) ||
+          MOB_FLAGGED(mob, MOB_MUMMY_DUST) ||
+          MOB_FLAGGED(mob, MOB_SUMMON_SOLAR));
+}
 
-  /* Fullstaff's horn */
-  case 11389:
-    counts = TRUE;
-    break;
+/* Check if a mob is a paladin or blackguard mount (by vnum) */
+bool is_paladin_blackguard_mount(int vnum)
+{
+  switch (vnum)
+  {
+  case MOB_PALADIN_MOUNT:
+  case MOB_PALADIN_MOUNT_SMALL:
+  case MOB_EPIC_PALADIN_MOUNT:
+  case MOB_EPIC_PALADIN_MOUNT_SMALL:
+  case MOB_EPIC_BLACKGUARD_MOUNT:
+  case MOB_BLACKGUARD_MOUNT:
+  case MOB_ADV_BLACKGUARD_MOUNT:
+    return true;
+  }
+  return false;
+}
 
-  /* small figurine carved in black stone */
-  case 132199:
-    counts = TRUE;
-    break;
+/* Check if a mob is a golem (crafted through craft command) */
+bool is_golem_mob(struct char_data *mob)
+{
+  if (!mob || !IS_NPC(mob))
+    return false;
+  return MOB_FLAGGED(mob, MOB_GOLEM);
+}
 
+/* Enumeration for follower categories */
+#define FOLLOWER_CAT_EPIC_SUMMON    0  /* dragon knight, mummy dust, summon solar */
+#define FOLLOWER_CAT_ANIMAL         1  /* animal companion */
+#define FOLLOWER_CAT_FAMILIAR       2  /* familiar */
+#define FOLLOWER_CAT_MOUNT          3  /* paladin/blackguard mount */
+#define FOLLOWER_CAT_SHADOW         4  /* shadow companion */
+#define FOLLOWER_CAT_EIDOLON        5  /* eidolon/undead cohort */
+#define FOLLOWER_CAT_MERCENARY      6  /* mercenary */
+#define FOLLOWER_CAT_SUMMON_CREATURE 7 /* summon creature series - FREE for summoners */
+#define FOLLOWER_CAT_NECRO_UNDEAD   8  /* FREE undead slot for necromancers */
+#define FOLLOWER_CAT_GOLEM          9  /* crafted golems */
+#define FOLLOWER_CAT_OTHER         10  /* charm victims, genies, any other mob */
+#define NUM_FOLLOWER_CATEGORIES    11
+
+/* Get the category of a follower mob */
+int get_follower_category(struct char_data *mob)
+{
+  if (!mob || !IS_NPC(mob))
+    return FOLLOWER_CAT_OTHER;
+    
+  /* Check in priority order */
+  if (is_epic_summon_mob(mob))
+    return FOLLOWER_CAT_EPIC_SUMMON;
+  if (MOB_FLAGGED(mob, MOB_C_ANIMAL))
+    return FOLLOWER_CAT_ANIMAL;
+  if (MOB_FLAGGED(mob, MOB_C_FAMILIAR))
+    return FOLLOWER_CAT_FAMILIAR;
+  if (is_paladin_blackguard_mount(GET_MOB_VNUM(mob)))
+    return FOLLOWER_CAT_MOUNT;
+  if (MOB_FLAGGED(mob, MOB_SHADOW))
+    return FOLLOWER_CAT_SHADOW;
+  if (MOB_FLAGGED(mob, MOB_EIDOLON))
+    return FOLLOWER_CAT_EIDOLON;
+  if (MOB_FLAGGED(mob, MOB_MERCENARY))
+    return FOLLOWER_CAT_MERCENARY;
+  if (is_summon_creature_mob(GET_MOB_VNUM(mob)))
+    return FOLLOWER_CAT_SUMMON_CREATURE;
+  if (is_golem_mob(mob))
+    return FOLLOWER_CAT_GOLEM;
+    
+  return FOLLOWER_CAT_OTHER;
+}
+
+/* Count followers by category and check limits
+ * Returns: true if can add more followers of that category, false otherwise
+ */
+bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool show_msg)
+{
+  struct follow_type *k, *next;
+  struct char_data *pet;
+  int counts[NUM_FOLLOWER_CATEGORIES] = {0};
+  int new_cat;
+  bool is_necro = (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1);
+  bool is_summoner = (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1);
+  bool necro_undead_slot_used = false;  /* Track if necro's free undead slot is filled */
+  bool summoner_free_slot_used = false;
+  
+  if (!ch || !new_mob)
+    return false;
+    
+  /* Get category for the new mob */
+  new_cat = get_follower_category(new_mob);
+  
+  /* Count current followers by category */
+  for (k = ch->followers; k; k = next)
+  {
+    next = k->next;
+    pet = k->follower;
+    
+    if (!IS_PET(pet))
+      continue;
+      
+    int cat = get_follower_category(pet);
+
+    if (cat == FOLLOWER_CAT_SUMMON_CREATURE)
+    {
+      if (is_summoner && !summoner_free_slot_used)
+      {
+        counts[FOLLOWER_CAT_SUMMON_CREATURE]++;
+        summoner_free_slot_used = true;
+        continue;
+      }
+
+      if (is_necro && IS_UNDEAD(pet) && !necro_undead_slot_used)
+      {
+        counts[FOLLOWER_CAT_NECRO_UNDEAD]++;
+        necro_undead_slot_used = true;
+        continue;
+      }
+
+      if (is_summoner)
+        counts[FOLLOWER_CAT_OTHER]++;
+      else
+        counts[FOLLOWER_CAT_SUMMON_CREATURE]++;
+
+      continue;
+    }
+
+    /* For necromancers, first undead in OTHER goes to NECRO_UNDEAD slot instead */
+    if (is_necro && cat == FOLLOWER_CAT_OTHER && IS_UNDEAD(pet) && !necro_undead_slot_used)
+    {
+      counts[FOLLOWER_CAT_NECRO_UNDEAD]++;
+      necro_undead_slot_used = true;
+      continue;
+    }
+
+    counts[cat]++;
+  }
+  
+  /* Check limits based on category */
+  switch (new_cat)
+  {
+  case FOLLOWER_CAT_EPIC_SUMMON:
+    /* Only 1 epic summon allowed, and they're mutually exclusive */
+    if (counts[FOLLOWER_CAT_EPIC_SUMMON] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only control one epic summon at a time!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_ANIMAL:
+    if (counts[FOLLOWER_CAT_ANIMAL] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one animal companion!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_FAMILIAR:
+    if (counts[FOLLOWER_CAT_FAMILIAR] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one familiar!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_MOUNT:
+    if (counts[FOLLOWER_CAT_MOUNT] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one mount!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_SHADOW:
+    if (counts[FOLLOWER_CAT_SHADOW] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one shadow companion!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_EIDOLON:
+    if (counts[FOLLOWER_CAT_EIDOLON] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one eidolon or undead cohort!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_MERCENARY:
+    if (counts[FOLLOWER_CAT_MERCENARY] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one mercenary!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_GOLEM:
+    if (counts[FOLLOWER_CAT_GOLEM] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one golem!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_SUMMON_CREATURE:
+    {
+      /* Summoners get 1 FREE summon creature mob (separate slot) */
+      if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1)
+      {
+        /* If free summoner slot is empty, use it */
+        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] < 1)
+        {
+          break;  /* Allow - uses free summoner slot */
+        }
+        
+        /* Free slot is full - check if we can use OTHER slot instead */
+        /* Necromancers: if it's undead and free necro slot is empty, use that */
+        if (is_necro && IS_UNDEAD(new_mob) && counts[FOLLOWER_CAT_NECRO_UNDEAD] < 1)
+        {
+          break;  /* Allow - uses free necro undead slot */
+        }
+        
+        /* Check OTHER slot - summon creatures beyond the first count toward OTHER */
+        /* Effective OTHER = actual OTHER + (summon creatures - 1 for free slot) */
+        int effective_other = counts[FOLLOWER_CAT_OTHER] + (counts[FOLLOWER_CAT_SUMMON_CREATURE] - 1);
+        if (effective_other >= 1)
+        {
+          if (show_msg)
+            send_to_char(ch, "You can't control more followers!\r\n");
+          return false;
+        }
+        /* Allow - will use OTHER slot */
+      }
+      else
+      {
+        /* Non-summoners: summon creatures count against their OTHER slot */
+        /* Necromancers: if the new summon creature is undead and free necro slot is empty, use that */
+        if (is_necro && IS_UNDEAD(new_mob) && counts[FOLLOWER_CAT_NECRO_UNDEAD] < 1)
+        {
+          /* Use the free necro undead slot */
+          break;
+        }
+        
+        /* Check combined count of OTHER + SUMMON_CREATURE */
+        int combined_count = counts[FOLLOWER_CAT_OTHER] + counts[FOLLOWER_CAT_SUMMON_CREATURE];
+        if (combined_count >= 1)
+        {
+          if (show_msg)
+            send_to_char(ch, "You can't control more followers!\r\n");
+          return false;
+        }
+      }
+    }
+    break;
+    
+  case FOLLOWER_CAT_OTHER:
   default:
+    {
+      /* Necromancers: if the new mob is undead and free necro slot is empty, use that */
+      if (is_necro && IS_UNDEAD(new_mob) && counts[FOLLOWER_CAT_NECRO_UNDEAD] < 1)
+      {
+        /* Use the free necro undead slot */
+        break;
+      }
+      
+      /* Calculate effective OTHER count:
+       * - For summoners: summon creatures beyond the first (free) one count as OTHER
+       * - For non-summoners: all summon creatures count as OTHER
+       */
+      int summon_creature_in_other = 0;
+      if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1)
+      {
+        /* Summoners: only summon creatures beyond the first count toward OTHER */
+        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] > 1)
+          summon_creature_in_other = counts[FOLLOWER_CAT_SUMMON_CREATURE] - 1;
+      }
+      else
+      {
+        /* Non-summoners: all summon creatures count toward OTHER */
+        summon_creature_in_other = counts[FOLLOWER_CAT_SUMMON_CREATURE];
+      }
+      int effective_other_count = counts[FOLLOWER_CAT_OTHER] + summon_creature_in_other;
+      
+      /* Base limit: 1 other follower */
+      if (effective_other_count >= 1)
+      {
+        if (show_msg)
+          send_to_char(ch, "You can't control more followers!\r\n");
+        return false;
+      }
+    }
     break;
   }
+  
+  return true;
+}
 
-  return counts;
+/* Legacy support function - kept for compatibility but uses new system */
+bool not_npc_limit(struct char_data *pet)
+{
+  /* In the new system, everything has a dedicated category with limits */
+  /* This function now just returns false - all pets count towards limits */
+  /* The actual limits are handled by can_add_follower_new() */
+  return FALSE;
 }
 
 bool isGenieKind(int vnum)
@@ -1115,176 +1419,188 @@ bool isGenieKind(int vnum)
   return false;
 }
 
+/* NEW IMPLEMENTATION: Check if can add a follower by mob flag
+ * Uses the new category-based limit system
+ */
 bool can_add_follower_by_flag(struct char_data *ch, int flag)
 {
   struct char_data *pet;
   struct follow_type *k, *next;
-  int mobs = 0;
-  int mobs_allowed = CLASS_LEVEL(ch, CLASS_NECROMANCER) ? 2 : 1;
-  if (flag == MOB_SUMMON_SOLAR)
-    mobs_allowed = 1;
+  int count = 0;
+  int limit = 1;
+  
+  /* Epic summons are mutually exclusive - only 1 total from the three types */
+  if (flag == MOB_DRAGON_KNIGHT || flag == MOB_MUMMY_DUST || flag == MOB_SUMMON_SOLAR)
+  {
+    for (k = ch->followers; k; k = next)
+    {
+      next = k->next;
+      pet = k->follower;
+      if (IS_PET(pet) && is_epic_summon_mob(pet))
+        count++;
+    }
+    return (count < 1);
+  }
+  
+  /* Animal companion - limit 1 */
+  if (flag == MOB_C_ANIMAL)
+    limit = 1;
+  /* Familiar - limit 1 */
+  else if (flag == MOB_C_FAMILIAR)
+    limit = 1;
+  /* Shadow - limit 1 */
+  else if (flag == MOB_SHADOW)
+    limit = 1;
+  /* Eidolon - limit 1 */
+  else if (flag == MOB_EIDOLON)
+    limit = 1;
+  /* Mercenary - limit 1 */
+  else if (flag == MOB_MERCENARY)
+    limit = 1;
+  /* Animated dead - uses necro's free undead slot if available, otherwise OTHER slot */
+  else if (flag == MOB_ANIMATED_DEAD)
+  {
+    bool is_necro = (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1);
+    bool necro_undead_slot_used = false;
+    bool summoner_free_slot_used = false;
+    bool is_summoner = (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1);
+    int other_count = 0;
+    
+    /* Count existing followers */
+    for (k = ch->followers; k; k = next)
+    {
+      next = k->next;
+      pet = k->follower;
+      if (IS_PET(pet))
+      {
+        int cat = get_follower_category(pet);
+        if (cat == FOLLOWER_CAT_SUMMON_CREATURE)
+        {
+          if (is_summoner && !summoner_free_slot_used)
+          {
+            summoner_free_slot_used = true;
+            continue;
+          }
 
+          if (is_necro && IS_UNDEAD(pet) && !necro_undead_slot_used)
+          {
+            necro_undead_slot_used = true;
+            continue;
+          }
 
-  /* loop through followers */
+          other_count++;
+          continue;
+        }
+
+        if (cat == FOLLOWER_CAT_OTHER)
+        {
+          /* For necros, first undead OTHER goes to necro undead slot */
+          if (is_necro && IS_UNDEAD(pet) && !necro_undead_slot_used)
+            necro_undead_slot_used = true;
+          else
+            other_count++;
+        }
+      }
+    }
+    
+    /* Animated dead are undead - check necro slot first */
+    if (is_necro && !necro_undead_slot_used)
+      return true;  /* Free necro undead slot available */
+    
+    /* Otherwise check OTHER slot */
+    return (other_count < 1);
+  }
+  /* Elemental (summon creature) - summoners get FREE slot, non-summoners share with OTHER */
+  else if (flag == MOB_ELEMENTAL)
+  {
+    if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1)
+    {
+      /* Summoner gets 1 free summon creature slot */
+      limit = 1;
+    }
+    else
+    {
+      /* Non-summoners: summon creatures share the OTHER slot */
+      bool is_necro = (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1);
+      int necro_undead_count = 0;
+      int other_count = 0;
+      
+      for (k = ch->followers; k; k = next)
+      {
+        next = k->next;
+        pet = k->follower;
+        if (IS_PET(pet))
+        {
+          int cat = get_follower_category(pet);
+          if (cat == FOLLOWER_CAT_OTHER)
+          {
+            if (is_necro && IS_UNDEAD(pet) && necro_undead_count == 0)
+              necro_undead_count++;
+            else
+              other_count++;
+          }
+          else if (cat == FOLLOWER_CAT_SUMMON_CREATURE)
+            other_count++;
+        }
+      }
+      
+      return (other_count < 1);
+    }
+  }
+  /* Default - limit 1 */
+  else
+    limit = 1;
+  
+  /* Count followers with this flag */
   for (k = ch->followers; k; k = next)
   {
     next = k->next;
-
     pet = k->follower;
-    if (IS_PET(pet))
-    {
-      if (MOB_FLAGGED(pet, flag))
-      {
-        mobs++;
-        if (mobs <= mobs_allowed)
-          return false;
-      }
-    }
+    if (IS_PET(pet) && MOB_FLAGGED(pet, flag))
+      count++;
   }
-  return true;
+  
+  return (count < limit);
 }
 
+/* Check if can add epic summon (solar) - uses new unified epic limit */
 bool can_add_solar_follower(struct char_data *ch)
 {
-  struct char_data *pet;
-  struct follow_type *k, *next;
-  int mobs = 0;
-
-  /* loop through followers */
-  for (k = ch->followers; k; k = next)
-  {
-    next = k->next;
-
-    pet = k->follower;
-    if (IS_PET(pet))
-    {
-      if (MOB_FLAGGED(pet, MOB_SUMMON_SOLAR))
-      {
-        mobs++;
-        if (mobs >= 1)
-          return false;
-      }
-    }
-  }
-  return true;
+  return can_add_follower_by_flag(ch, MOB_SUMMON_SOLAR);
 }
 
+/* Check if can add epic summon (mummy dust) - uses new unified epic limit */
 bool can_add_mummy_dust_follower(struct char_data *ch)
 {
-  struct char_data *pet;
-  struct follow_type *k, *next;
-  int mobs = 0;
-
-  /* loop through followers */
-  for (k = ch->followers; k; k = next)
-  {
-    next = k->next;
-
-    pet = k->follower;
-    if (IS_PET(pet))
-    {
-      if (MOB_FLAGGED(pet, MOB_MUMMY_DUST))
-      {
-        mobs++;
-        if (mobs >= 1)
-          return false;
-      }
-    }
-  }
-  return true;
+  return can_add_follower_by_flag(ch, MOB_MUMMY_DUST);
 }
 
+/* NEW IMPLEMENTATION: Check if player can add a follower by vnum
+ * Uses the new category-based limit system
+ */
 bool can_add_follower(struct char_data *ch, int mob_vnum)
 {
-  struct char_data *pet;
-  struct follow_type *k, *next;
-
-  int summons_allowed = 1, pets_allowed = 1, mercs_allowed = 1, genie_allowed = 1,
-      golems_allowed = 1;
-
-  if (IS_SUMMONER(ch))
-    summons_allowed++;
-
-  /* loop through followers */
-  for (k = ch->followers; k; k = next)
-  {
-    next = k->next;
-
-    pet = k->follower;
-    if (IS_PET(pet))
-    {
-      if (isGenieKind(mob_vnum))
-      {
-        genie_allowed--;
-      }
-      else if (isSummonMob(mob_vnum))
-      {
-        summons_allowed--;
-      }
-      else if (MOB_FLAGGED(pet, MOB_MERCENARY))
-      {
-        mercs_allowed--;
-      }
-      else if (MOB_FLAGGED(pet, MOB_GOLEM))
-      {
-        golems_allowed--;
-      }
-      else
-      {
-        pets_allowed--;
-      }
-    }
-  }
-
-  struct char_data *mob = read_mobile(mob_vnum, VIRTUAL);
-
+  struct char_data *mob;
+  bool result;
+  
+  /* Create temporary mob to check its properties */
+  mob = read_mobile(mob_vnum, VIRTUAL);
   if (!mob)
   {
     send_to_char(ch, "Mob vnum %d not found.\r\n", mob_vnum);
     return false;
   }
-
+  
+  /* Place in limbo temporarily */
   char_to_room(mob, 0);
-
-  // there's probably a better way of doing this, but this will ensure they can only have 1 of each
-  // except in special circumstances. Eg. summoner can have 2 summons instead of 1.
-  if (isGenieKind(mob_vnum))
-  {
-    extract_char(mob);
-    if (genie_allowed > 0)
-      return true;
-    return false;
-  }
-  else if (isSummonMob(mob_vnum))
-  {
-    extract_char(mob);
-    if (summons_allowed > 0)
-      return true;
-    return false;
-  }
-  else if (MOB_FLAGGED(mob, MOB_MERCENARY))
-  {
-    extract_char(mob);
-    if (mercs_allowed > 0)
-      return true;
-    return false;
-  }
-  else if (MOB_FLAGGED(mob, MOB_GOLEM))
-  {
-    extract_char(mob);
-    if (golems_allowed > 0)
-      return true;
-    return false;
-  }
-  else
-  {
-    extract_char(mob);
-    if (pets_allowed > 0)
-      return true;
-    return false;
-  }
+  
+  /* Use the new unified limit system */
+  result = can_add_follower_new(ch, mob, false);
+  
+  /* Clean up */
   extract_char(mob);
-  return false;
+  
+  return result;
 }
 
 /*
@@ -1305,13 +1621,34 @@ int check_npc_followers(struct char_data *ch, int mode, int variable)
 {
   struct follow_type *k = NULL, *next = NULL;
   struct char_data *pet = NULL;
-  int total_count = 0, flag_count = 0, vnum_count = 0, merc_slot = 0, paid_slot = 0, free_slot = 0,
-      summon_slot = 0, spare = 0;
+  int total_count = 0, flag_count = 0, vnum_count = 0;
+  int counts[NUM_FOLLOWER_CATEGORIES] = {0};
+  
+  const char *category_names[] = {
+    "Epic Summon",
+    "Animal Companion",
+    "Familiar",
+    "Paladin/Blackguard Mount",
+    "Shadow",
+    "Eidolon/Cohort",
+    "Mercenary",
+    "Summon Creature",
+    "Necromancer Undead",
+    "Golem",
+    "Other"
+  };
 
   if (mode == NPC_MODE_DISPLAY)
   {
-    text_line(ch, "\tYPets Charmees NPC Followers\tn", 80, '-', '-');
+    text_line(ch, "\tYPets Charmees NPC Followers\tn", 90, '-', '-');
+    send_to_char(ch, "\tCName                               \tw| \tCLocation                     \tw| \tCCategory\tn\r\n");
+    send_to_char(ch, "------------------------------------+------------------------------+--------------------\r\n");
   }
+
+  bool is_necro = (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1);
+  bool is_summoner = (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1);
+  bool necro_undead_slot_used = false;
+  bool summoner_free_slot_used = false;
 
   /* loop through followers */
   for (k = ch->followers; k; k = next)
@@ -1325,16 +1662,49 @@ int check_npc_followers(struct char_data *ch, int mode, int variable)
     {
       /* found a pet!  this is our total # of followers*/
       total_count++;
+      
+      /* Count by category */
+      int cat = get_follower_category(pet);
+      int display_cat = cat;
 
-      /* we differentiate between npc's that don't take up slots vs every other form of charmee here */
-      if (not_npc_limit(pet))
-        free_slot++;
-      else if (MOB_FLAGGED(pet, MOB_MERCENARY))
-        merc_slot++;
-      else if (isSummonMob(GET_MOB_VNUM(pet)))
-        summon_slot++;
+      if (cat == FOLLOWER_CAT_SUMMON_CREATURE)
+      {
+        if (is_summoner && !summoner_free_slot_used)
+        {
+          counts[FOLLOWER_CAT_SUMMON_CREATURE]++;
+          summoner_free_slot_used = true;
+          display_cat = FOLLOWER_CAT_SUMMON_CREATURE;
+        }
+        else if (is_necro && IS_UNDEAD(pet) && !necro_undead_slot_used)
+        {
+          counts[FOLLOWER_CAT_NECRO_UNDEAD]++;
+          necro_undead_slot_used = true;
+          display_cat = FOLLOWER_CAT_NECRO_UNDEAD;
+        }
+        else
+        {
+          if (is_summoner)
+          {
+            counts[FOLLOWER_CAT_OTHER]++;
+            display_cat = FOLLOWER_CAT_OTHER;
+          }
+          else
+          {
+            counts[FOLLOWER_CAT_SUMMON_CREATURE]++;
+            display_cat = FOLLOWER_CAT_SUMMON_CREATURE;
+          }
+        }
+      }
+      else if (is_necro && cat == FOLLOWER_CAT_OTHER && IS_UNDEAD(pet) && !necro_undead_slot_used)
+      {
+        counts[FOLLOWER_CAT_NECRO_UNDEAD]++;
+        necro_undead_slot_used = true;
+        display_cat = FOLLOWER_CAT_NECRO_UNDEAD;
+      }
       else
-        paid_slot++;
+      {
+        counts[cat]++;
+      }
 
       switch (mode)
       {
@@ -1353,26 +1723,21 @@ int check_npc_followers(struct char_data *ch, int mode, int variable)
         break;
 
       case NPC_MODE_DISPLAY:
-        send_to_char(ch, "\tC%-2d\tw)\tC %-8s \tw-\tC %s \tw-\tC Slot?: %s\r\n", total_count,
-                     GET_NAME(pet), world[IN_ROOM(pet)].name,
-                     not_npc_limit(pet) ? "\tWNo\tn" : "\tRYes\tn");
+        {
+          char pet_name[MAX_STRING_LENGTH];
+          char pet_loc[MAX_STRING_LENGTH];
+          snprintf(pet_name, sizeof(pet_name), "%s", GET_NAME(pet));
+          snprintf(pet_loc, sizeof(pet_loc), "%s", world[IN_ROOM(pet)].name);
+          strip_colors(pet_name);
+          strip_colors(pet_loc);
+          send_to_char(ch, "\tC%-35.35s \tw| \tC%-28.28s \tw| \tC%s\tn\r\n",
+                       pet_name, pet_loc, category_names[display_cat]);
+        }
         break;
 
       } /* end switch */
     } /* end charmee check */
   } /* end for */
-
-#if !defined(CAMPAIGN_FR) && !defined(CAMPAIGN_DL)
-  /* charisma bonus, spare represents our extra slots */
-  if (GET_CHA_BONUS(ch) <= 0)
-    spare = 0;
-  else
-    spare = GET_CHA_BONUS(ch);
-#endif
-
-  spare++; /* base 1 */
-
-  spare = spare - paid_slot - (MAX(0, summon_slot - 1));
 
   /* out we go! */
   switch (mode)
@@ -1384,21 +1749,57 @@ int check_npc_followers(struct char_data *ch, int mode, int variable)
     return vnum_count;
 
   case NPC_MODE_DISPLAY:
-    draw_line(ch, 80, '-', '-');
-
-    if (mode == NPC_MODE_DISPLAY)
-    {
-      send_to_char(ch,
-                   "\tCYou have %d pets, %d of them don't take slots, %d do...  your Charisma "
-                   "allows for %d more.  (minimum 1 extra)\tn\r\n",
-                   total_count, free_slot, paid_slot, spare);
+    draw_line(ch, 90, '-', '-');
+    
+    send_to_char(ch, "\tCTotal Followers: %d\tn\r\n", total_count);
+    send_to_char(ch, "\r\n\tYCategory Limits:\tn\r\n");
+    
+    send_to_char(ch, "  Epic Summons            : %d/1 (only one active at a time)\r\n", counts[FOLLOWER_CAT_EPIC_SUMMON]);
+    send_to_char(ch, "  Animal Companion        : %d/1\r\n", counts[FOLLOWER_CAT_ANIMAL]);
+    send_to_char(ch, "  Familiar                : %d/1\r\n", counts[FOLLOWER_CAT_FAMILIAR]);
+    send_to_char(ch, "  Paladin/Blackguard Mount: %d/1\r\n", counts[FOLLOWER_CAT_MOUNT]);
+    send_to_char(ch, "  Shadow                  : %d/1\r\n", counts[FOLLOWER_CAT_SHADOW]);
+    send_to_char(ch, "  Eidolon/Cohort          : %d/1\r\n", counts[FOLLOWER_CAT_EIDOLON]);
+    send_to_char(ch, "  Mercenary               : %d/1\r\n", counts[FOLLOWER_CAT_MERCENARY]);
+    send_to_char(ch, "  Golem                   : %d/1\r\n", counts[FOLLOWER_CAT_GOLEM]);
+    
+    /* Summon Creature - summoners get a free slot, extras count toward OTHER */
+    if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1) {
+      send_to_char(ch, "  Summon Creature         : %d/1 (FREE - summoner only, extras count toward Other)\r\n", 
+                   counts[FOLLOWER_CAT_SUMMON_CREATURE] > 0 ? 1 : 0);
+    } else {
+      /* Non-summoners: summon creatures count toward OTHER, show combined */
+      send_to_char(ch, "  Summon Creature         : (counts toward Other slot for non-summoners)\r\n");
     }
-
+    
+    /* Necro Undead - necromancers get a free undead slot */
+    if (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1) {
+      send_to_char(ch, "  Necro Undead            : %d/1 (FREE - necromancer only)\r\n", counts[FOLLOWER_CAT_NECRO_UNDEAD]);
+    } else {
+      send_to_char(ch, "  Necro Undead            : (requires necromancer class)\r\n");
+    }
+    
+    /* Other - summon creatures beyond the free slot also count here */
+    {
+      int effective_other = counts[FOLLOWER_CAT_OTHER];
+      /* For summoners: summon creatures beyond the first count toward OTHER */
+      if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1) {
+        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] > 1)
+          effective_other += counts[FOLLOWER_CAT_SUMMON_CREATURE] - 1;
+      } else {
+        /* For non-summoners: all summon creatures count toward OTHER */
+        effective_other += counts[FOLLOWER_CAT_SUMMON_CREATURE];
+      }
+      
+      send_to_char(ch, "  Other                   : %d/1\r\n", effective_other);
+    }
     break;
 
   case NPC_MODE_SPARE:
-
-    return (spare);
+    /* Return remaining "other" slots - this is legacy compatibility */
+    {
+      return (1 - counts[FOLLOWER_CAT_OTHER]);
+    }
 
   } /* end switch */
 
@@ -3342,8 +3743,20 @@ void add_follower(struct char_data *ch, struct char_data *leader)
     act("$n starts following you.", TRUE, ch, 0, leader, TO_VICT);
   act("$n starts to follow $N.", TRUE, ch, 0, leader, TO_NOTVICT);
 
-  if (!IS_NPC(leader) && PRF_FLAGGED(leader, PRF_AUTO_GROUP) && GROUP(leader) && !GROUP(ch))
-    join_group(ch, GROUP(leader));
+  /* If leader is in a group and follower isn't grouped yet, add to group */
+  if (GROUP(leader) && !GROUP(ch))
+  {
+    /* For NPC followers (pets), always add to owner's group */
+    if (IS_NPC(ch))
+    {
+      join_group(ch, GROUP(leader));
+    }
+    /* For PC followers, only auto-group if leader has PRF_AUTO_GROUP */
+    else if (!IS_NPC(leader) && PRF_FLAGGED(leader, PRF_AUTO_GROUP))
+    {
+      join_group(ch, GROUP(leader));
+    }
+  }
 }
 
 /** Reads the next non-blank line off of the input stream. Empty lines are
