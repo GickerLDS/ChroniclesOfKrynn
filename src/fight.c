@@ -2571,7 +2571,7 @@ void die(struct char_data *ch, struct char_data *killer)
   if (!killer)
     return;
 
-  struct char_data *temp;
+  struct char_data *temp, *temp_next;
   struct descriptor_data *pt;
   int xp_to_lvl = level_exp(ch, GET_LEVEL(ch) + 1) - level_exp(ch, GET_LEVEL(ch));
   int penalty = xp_to_lvl / XP_LOSS_FACTOR;
@@ -2613,8 +2613,9 @@ void die(struct char_data *ch, struct char_data *killer)
   {
     GRAPPLE_TARGET(ch) = NULL;
   }
-  for (temp = character_list; temp; temp = temp->next)
+  for (temp = character_list; temp; temp = temp_next)
   {
+    temp_next = temp->next;
     if (GRAPPLE_TARGET(temp) == ch)
     {
       clear_grapple(temp, ch);
@@ -2626,8 +2627,10 @@ void die(struct char_data *ch, struct char_data *killer)
   {
     GUARDING(ch) = NULL;
   }
-  for (temp = character_list; temp; temp = temp->next)
+  temp_next = NULL;
+  for (temp = character_list; temp; temp = temp_next)
   {
+    temp_next = temp->next;
     if (GUARDING(temp) == ch)
     {
       GUARDING(temp) = NULL;

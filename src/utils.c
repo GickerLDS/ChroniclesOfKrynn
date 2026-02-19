@@ -1044,7 +1044,8 @@ int is_immune_to_crits(struct char_data *attacker, struct char_data *target)
  * 6. 1 eidolon or undead cohort
  * 7. 1 mercenary
  * 8. 1 golem (crafted through craft command)
- * 9. Any other mob vnum: only 1
+ * 9. 1 dragon rider class dragon (separate from dragon knight epic summon)
+ * 10. Any other mob vnum: only 1
  *
  * Bonuses:
  * - Summoner (1+ level): 1 FREE summon creature mob (doesn't count against other limits)
@@ -1130,8 +1131,9 @@ bool is_golem_mob(struct char_data *mob)
 #define FOLLOWER_CAT_SUMMON_CREATURE 7 /* summon creature series - FREE for summoners */
 #define FOLLOWER_CAT_NECRO_UNDEAD   8  /* FREE undead slot for necromancers */
 #define FOLLOWER_CAT_GOLEM          9  /* crafted golems */
-#define FOLLOWER_CAT_OTHER         10  /* charm victims, genies, any other mob */
-#define NUM_FOLLOWER_CATEGORIES    11
+#define FOLLOWER_CAT_DRAGON_RIDER  10  /* dragon rider class dragon */
+#define FOLLOWER_CAT_OTHER         11  /* charm victims, genies, any other mob */
+#define NUM_FOLLOWER_CATEGORIES    12
 
 /* Get the category of a follower mob */
 int get_follower_category(struct char_data *mob)
@@ -1158,6 +1160,8 @@ int get_follower_category(struct char_data *mob)
     return FOLLOWER_CAT_SUMMON_CREATURE;
   if (is_golem_mob(mob))
     return FOLLOWER_CAT_GOLEM;
+  if (is_dragon_rider_mount(mob))
+    return FOLLOWER_CAT_DRAGON_RIDER;
     
   return FOLLOWER_CAT_OTHER;
 }
@@ -1300,6 +1304,15 @@ bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool 
     {
       if (show_msg)
         send_to_char(ch, "You can only have one golem!\r\n");
+      return false;
+    }
+    break;
+    
+  case FOLLOWER_CAT_DRAGON_RIDER:
+    if (counts[FOLLOWER_CAT_DRAGON_RIDER] >= 1)
+    {
+      if (show_msg)
+        send_to_char(ch, "You can only have one dragon rider dragon!\r\n");
       return false;
     }
     break;
@@ -1635,6 +1648,7 @@ int check_npc_followers(struct char_data *ch, int mode, int variable)
     "Summon Creature",
     "Necromancer Undead",
     "Golem",
+    "Dragon Rider",
     "Other"
   };
 
@@ -1762,6 +1776,7 @@ int check_npc_followers(struct char_data *ch, int mode, int variable)
     send_to_char(ch, "  Eidolon/Cohort          : %d/1\r\n", counts[FOLLOWER_CAT_EIDOLON]);
     send_to_char(ch, "  Mercenary               : %d/1\r\n", counts[FOLLOWER_CAT_MERCENARY]);
     send_to_char(ch, "  Golem                   : %d/1\r\n", counts[FOLLOWER_CAT_GOLEM]);
+    send_to_char(ch, "  Dragon Rider Dragon     : %d/1\r\n", counts[FOLLOWER_CAT_DRAGON_RIDER]);
     
     /* Summon Creature - summoners get a free slot, extras count toward OTHER */
     if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1) {

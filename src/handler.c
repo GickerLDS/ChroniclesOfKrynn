@@ -2926,6 +2926,36 @@ void extract_pending_chars(void)
 
 /* Here follows high-level versions of some earlier routines, ie functions
  * which incorporate the actual player-data */
+
+/* Version of get_player_vis that does not require visibility */
+struct char_data *get_player_no_vis(struct char_data *ch, char *name, int *number, int inroom)
+{
+  struct char_data *i;
+  int num;
+
+  if (!number)
+  {
+    number = &num;
+    num = get_number(&name);
+  }
+
+  for (i = character_list; i; i = i->next)
+  {
+    if (IS_NPC(i))
+      continue;
+    if (inroom == FIND_CHAR_ROOM && IN_ROOM(i) != IN_ROOM(ch))
+      continue;
+    if (str_cmp(i->player.name, name)) /* If not same, continue */
+      continue;
+    /* No visibility check here - that's the key difference */
+    if (--(*number) != 0)
+      continue;
+    return (i);
+  }
+
+  return (NULL);
+}
+
 struct char_data *get_player_vis(struct char_data *ch, char *name, int *number, int inroom)
 {
   struct char_data *i;
@@ -2950,6 +2980,70 @@ struct char_data *get_player_vis(struct char_data *ch, char *name, int *number, 
     if (--(*number) != 0)
       continue;
     return (i);
+  }
+
+  return (NULL);
+}
+
+/* Version of get_char_room_vis that does not require visibility */
+struct char_data *get_char_room_no_vis(struct char_data *ch, char *name, int *number)
+{
+  struct char_data *i;
+  int num;
+
+  if (!number)
+  {
+    number = &num;
+    num = get_number(&name);
+  }
+
+  /* JE */
+  if (!str_cmp(name, "self") || !str_cmp(name, "me"))
+    return (ch);
+
+  /* 0.<name> means PC with name */
+  if (*number == 0)
+    return (get_player_no_vis(ch, name, NULL, FIND_CHAR_ROOM));
+
+  for (i = world[IN_ROOM(ch)].people; i && *number; i = i->next_in_room)
+  {
+    /* we have to handle disguises */
+    if (GET_DISGUISE_RACE(i))
+    {
+      if (is_abbrev(name, race_list[GET_DISGUISE_RACE(i)].name))
+      {
+        return (i);
+      }
+    }
+
+    /* First try to match by actual name */
+    if (isname(name, i->player.name))
+    {
+      /* No visibility check - just decrement and return */
+      if (--(*number) == 0)
+      {
+        return (i);
+      }
+    }
+    /* If ch doesn't know i's name, try matching against short description keywords */
+    else if (!IS_NPC(i) && !has_intro(ch, i))
+    {
+      char *short_desc = which_desc(ch, i);
+      if (short_desc && isname(name, short_desc))
+      {
+        /* No visibility check - just decrement and return */
+        if (--(*number) == 0)
+        {
+          /* Note: which_desc returns strdup'd memory for non-NPC short descs */
+          if (!IS_NPC(i))
+            free(short_desc);
+          return (i);
+        }
+      }
+      /* Free the allocated memory if we didn't return */
+      if (!IS_NPC(i) && short_desc)
+        free(short_desc);
+    }
   }
 
   return (NULL);
@@ -3019,6 +3113,63 @@ struct char_data *get_char_room_vis(struct char_data *ch, char *name, int *numbe
     }
   }
 
+  return (NULL);
+}
+
+/* Version of get_char_world_vis that does not require visibility */
+struct char_data *get_char_world_no_vis(struct char_data *ch, char *name, int *number)
+{
+  struct char_data *i;
+  int num;
+
+  if (!number)
+  {
+    number = &num;
+    num = get_number(&name);
+  }
+
+  if ((i = get_char_room_no_vis(ch, name, number)) != NULL)
+    return (i);
+
+  if (*number == 0)
+    return (get_player_no_vis(ch, name, NULL, 0));
+
+  for (i = character_list; i && *number; i = i->next)
+  {
+    bool matched = FALSE;
+    char *short_desc = NULL;
+
+    if (IN_ROOM(ch) == IN_ROOM(i))
+      continue;
+    /* No visibility check - that's the key difference */
+
+    /* Try matching by actual name first */
+    if (isname(name, i->player.name))
+    {
+      matched = TRUE;
+    }
+    /* If ch doesn't know i's name, try matching against short description keywords */
+    else if (!IS_NPC(i) && !has_intro(ch, i))
+    {
+      short_desc = which_desc(ch, i);
+      if (short_desc && isname(name, short_desc))
+      {
+        matched = TRUE;
+      }
+    }
+
+    /* Free allocated memory for short_desc */
+    if (!IS_NPC(i) && short_desc)
+      free(short_desc);
+
+    if (!matched)
+      continue;
+
+    if (--(*number) != 0)
+      continue;
+
+    return (i);
+  }
   return (NULL);
 }
 
@@ -3097,6 +3248,31 @@ struct char_data *get_char_vis(struct char_data *ch, char *name, int *number, in
     else
     {
       return get_player_vis(ch, name, NULL, FIND_CHAR_WORLD);
+    }
+  }
+  else
+    return (NULL);
+}
+
+/* Version of get_char_vis that does not require visibility */
+struct char_data *get_char_no_vis(struct char_data *ch, char *name, int *number, int where)
+{
+  if (where == FIND_CHAR_ROOM)
+  {
+    if (get_player_no_vis(ch, name, NULL, FIND_CHAR_ROOM) == NULL)
+      return get_char_room_no_vis(ch, name, number);
+    else
+      return get_player_no_vis(ch, name, NULL, FIND_CHAR_ROOM);
+  }
+  else if (where == FIND_CHAR_WORLD)
+  {
+    if (get_player_no_vis(ch, name, NULL, FIND_CHAR_WORLD) == NULL)
+    {
+      return get_char_world_no_vis(ch, name, number);
+    }
+    else
+    {
+      return get_player_no_vis(ch, name, NULL, FIND_CHAR_WORLD);
     }
   }
   else

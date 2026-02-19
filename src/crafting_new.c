@@ -70,6 +70,7 @@ int materials_sort_info[NUM_CRAFT_MATS];
 #define NEWCRAFT_CREATE_NOARG1                                                                     \
   "See HELP CRAFTING for more information on how to craft new items.\r\n"                          \
   "Options are:\r\n"                                                                               \
+  "craft tutorial\r\n"                                                                             \
   "craft itemtype (weapon|armor|jewelry|instrument|misc)\r\n"                                      \
   "craft specifictype (type)\r\n"                                                                  \
   "craft variant (variant name)\r\n"                                                               \
@@ -93,6 +94,227 @@ int materials_sort_info[NUM_CRAFT_MATS];
   "Other commands:\r\n"                                                                            \
   "craft equipment - Show your equipped crafting gear\r\n"                                         \
   "craft tools - Show your equipped crafting/harvesting tools\r\n"
+
+#define CRAFT_TUTORIAL_FILE "docs/CRAFTING_TUTORIAL.md"
+#define CRAFT_TUTORIAL_FILE_ALT "../docs/CRAFTING_TUTORIAL.md"
+#define CRAFT_TUTORIAL_MAX_WIDTH 90
+
+static void append_tutorial_output(char **buf, size_t *buf_size, size_t *buf_len, const char *text)
+{
+  size_t add_len = strlen(text);
+  size_t needed = *buf_len + add_len + 1;
+
+  if (needed > *buf_size)
+  {
+    size_t new_size = (*buf_size == 0) ? 4096 : *buf_size;
+    while (new_size < needed)
+      new_size *= 2;
+    *buf = realloc(*buf, new_size);
+    *buf_size = new_size;
+  }
+
+  memcpy(*buf + *buf_len, text, add_len);
+  *buf_len += add_len;
+  (*buf)[*buf_len] = '\0';
+}
+
+static void append_wrapped_tutorial_line(char **buf, size_t *buf_size, size_t *buf_len,
+                                         const char *line, int width)
+{
+  char current[MAX_STRING_LENGTH];
+  char prefix_first[16];
+  char prefix_next[16];
+  char word[256];
+  const char *p = line;
+  int prefix_len = 0;
+  int line_len = 0;
+  bool first_word = true;
+
+  prefix_first[0] = '\0';
+  prefix_next[0] = '\0';
+
+  if (!p || !*p)
+  {
+    append_tutorial_output(buf, buf_size, buf_len, "\r\n");
+    return;
+  }
+
+  if (strncmp(p, "- ", 2) == 0)
+  {
+    strcpy(prefix_first, "- ");
+    strcpy(prefix_next, "  ");
+    p += 2;
+  }
+  else
+  {
+    while (*p == ' ' && prefix_len < (int)sizeof(prefix_first) - 1)
+    {
+      prefix_first[prefix_len++] = ' ';
+      p++;
+    }
+    prefix_first[prefix_len] = '\0';
+    strcpy(prefix_next, prefix_first);
+  }
+
+  while (*p == ' ')
+    p++;
+
+  snprintf(current, sizeof(current), "%s", prefix_first);
+  line_len = strlen(current);
+
+  while (*p)
+  {
+    int wlen = 0;
+
+    while (*p == ' ')
+      p++;
+    if (!*p)
+      break;
+
+    while (*p && *p != ' ' && wlen < (int)sizeof(word) - 1)
+      word[wlen++] = *p++;
+    word[wlen] = '\0';
+
+    if (!first_word && (line_len + 1 + wlen) > width)
+    {
+      append_tutorial_output(buf, buf_size, buf_len, current);
+      append_tutorial_output(buf, buf_size, buf_len, "\r\n");
+      snprintf(current, sizeof(current), "%s", prefix_next);
+      line_len = strlen(current);
+      first_word = true;
+    }
+
+    if (!first_word)
+    {
+      current[line_len++] = ' ';
+      current[line_len] = '\0';
+    }
+
+    if (line_len + wlen >= (int)sizeof(current))
+      wlen = (int)sizeof(current) - line_len - 1;
+
+    memcpy(current + line_len, word, wlen);
+    line_len += wlen;
+    current[line_len] = '\0';
+    first_word = false;
+  }
+
+  append_tutorial_output(buf, buf_size, buf_len, current);
+  append_tutorial_output(buf, buf_size, buf_len, "\r\n");
+}
+
+static void show_craft_tutorial(struct char_data *ch)
+{
+  FILE *fp = NULL;
+  char line[MAX_STRING_LENGTH];
+  char cleaned[MAX_STRING_LENGTH];
+  char *out = NULL;
+  size_t out_size = 0;
+  size_t out_len = 0;
+  bool in_code_block = false;
+
+  if (!ch)
+    return;
+
+  fp = fopen(CRAFT_TUTORIAL_FILE, "r");
+  if (!fp)
+    fp = fopen(CRAFT_TUTORIAL_FILE_ALT, "r");
+
+  if (!fp)
+  {
+    send_to_char(ch, "Crafting tutorial file not found.\r\n");
+    return;
+  }
+
+  while (fgets(line, sizeof(line), fp))
+  {
+    size_t len = strlen(line);
+    int header_level = 0;
+    while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
+      line[--len] = '\0';
+
+    if (strncmp(line, "```", 3) == 0)
+    {
+      in_code_block = !in_code_block;
+      continue;
+    }
+
+    if (!*line)
+    {
+      append_tutorial_output(&out, &out_size, &out_len, "\r\n");
+      continue;
+    }
+
+    if (in_code_block)
+    {
+      append_wrapped_tutorial_line(&out, &out_size, &out_len, line, CRAFT_TUTORIAL_MAX_WIDTH);
+      continue;
+    }
+
+    {
+      const char *p = line;
+      int i = 0;
+
+      if (*p == '#')
+      {
+        while (*p == '#')
+        {
+          header_level++;
+          p++;
+        }
+        while (*p == ' ')
+          p++;
+      }
+
+      while (*p && i < (int)sizeof(cleaned) - 1)
+      {
+        if (*p != '`')
+          cleaned[i++] = *p;
+        p++;
+      }
+      cleaned[i] = '\0';
+    }
+
+    if (header_level > 0)
+    {
+      append_tutorial_output(&out, &out_size, &out_len,
+                             (header_level <= 2) ? "\tY" : "\tC");
+      append_tutorial_output(&out, &out_size, &out_len, cleaned);
+      append_tutorial_output(&out, &out_size, &out_len, "\tn\r\n");
+      continue;
+    }
+
+    if (*cleaned)
+    {
+      size_t clen = strlen(cleaned);
+      if (clen > 0 && cleaned[clen - 1] == ':')
+      {
+        append_tutorial_output(&out, &out_size, &out_len, "\tC");
+        append_tutorial_output(&out, &out_size, &out_len, cleaned);
+        append_tutorial_output(&out, &out_size, &out_len, "\tn\r\n");
+        continue;
+      }
+    }
+
+    append_wrapped_tutorial_line(&out, &out_size, &out_len, cleaned, CRAFT_TUTORIAL_MAX_WIDTH);
+  }
+
+  fclose(fp);
+
+  if (!out || !*out)
+  {
+    send_to_char(ch, "Crafting tutorial is empty.\r\n");
+    free(out);
+    return;
+  }
+
+  if (ch->desc)
+    page_string(ch->desc, out, TRUE);
+  else
+    send_to_char(ch, "%s", out);
+
+  free(out);
+}
 
 #define NEWCRAFT_CREATE_TYPES                                                                      \
   ("What item type do you wish to make?\r\n"                                                       \
@@ -4663,6 +4885,11 @@ void newcraft_create(struct char_data *ch, const char *argument)
   if (!*arg1)
   {
     send_to_char(ch, "%s", NEWCRAFT_CREATE_NOARG1);
+    return;
+  }
+  else if (is_abbrev(arg1, "tutorial"))
+  {
+    show_craft_tutorial(ch);
     return;
   }
   else if (is_abbrev(arg1, "golem"))

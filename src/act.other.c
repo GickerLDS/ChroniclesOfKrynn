@@ -2054,6 +2054,14 @@ void perform_call(struct char_data *ch, int call_type, int level)
 
   affect_total(mob);
 
+  /* Check follower limits before adding */
+  if (!can_add_follower_new(ch, mob, TRUE))
+  {
+    /* Limit exceeded - extract the mob and return */
+    extract_char(mob);
+    return;
+  }
+
   SET_BIT_AR(AFF_FLAGS(mob), AFF_CHARM);
   act("$n calls $N!", FALSE, ch, 0, mob, TO_ROOM);
   act("You call forth $N!", FALSE, ch, 0, mob, TO_CHAR);
@@ -2329,7 +2337,7 @@ ACMD(do_dismiss)
     return;
   }
 
-  if (!(vict = get_char_vis(ch, arg, NULL, FIND_CHAR_ROOM)))
+  if (!(vict = get_char_no_vis(ch, arg, NULL, FIND_CHAR_ROOM)))
   {
     send_to_char(ch, "Whom do you want to dismiss?\r\n");
     return;
