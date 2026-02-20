@@ -1056,8 +1056,9 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
                  dirs[dir]);
         act(open_cmd, FALSE, ch, 0, 0, TO_CHAR);
         ch->char_specials.autodoor_message = false;
+        /* Retry movement after opening the door, preserving walkto status */
+        return perform_move_full(ch, dir, need_specials_check, false);
       }
-      // return perform_move_full(ch, dir, need_specials_check, false);
     }
     else
     {
@@ -1065,6 +1066,35 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
         send_to_char(ch, "The %s seems to be closed.\r\n", fname(EXIT(ch, dir)->keyword));
       else
         send_to_char(ch, "It seems to be closed.\r\n");
+    }
+  }
+  else if (EXIT_FLAGGED(EXIT(ch, dir), EX_LOCKED) &&
+           (GET_LEVEL(ch) < LVL_IMMORT || (!IS_NPC(ch) && !PRF_FLAGGED(ch, PRF_NOHASSLE))))
+  {
+    /* Handle locked doors with autokey flag */
+    if ((!IS_NPC(ch)) && (PRF_FLAGGED(ch, PRF_AUTOKEY)) && recursive)
+    {
+      ch->char_specials.autodoor_message = false;
+      snprintf(open_cmd, sizeof(open_cmd), " %s", dirs[dir]);
+      /* Try to unlock and open the door */
+      do_gen_door(ch, open_cmd, 0, SCMD_UNLOCK);
+      do_gen_door(ch, open_cmd, 0, SCMD_OPEN);
+      if (ch->char_specials.autodoor_message)
+      {
+        snprintf(open_cmd, sizeof(open_cmd), "You unlock and open the %s to the %s.", 
+                 EXIT(ch, dir)->keyword, dirs[dir]);
+        act(open_cmd, FALSE, ch, 0, 0, TO_CHAR);
+        ch->char_specials.autodoor_message = false;
+        /* Retry movement after unlocking/opening the door, preserving walkto status */
+        return perform_move_full(ch, dir, need_specials_check, false);
+      }
+    }
+    else
+    {
+      if (EXIT(ch, dir)->keyword)
+        send_to_char(ch, "The %s seems to be locked.\r\n", fname(EXIT(ch, dir)->keyword));
+      else
+        send_to_char(ch, "It seems to be locked.\r\n");
     }
   }
   else if (in_encounter_room(ch) && !is_peaceful_encounter(ch))
