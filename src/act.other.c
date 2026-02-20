@@ -9524,12 +9524,12 @@ static const char *const hints[] = {
     /*39*/
     "\tR[HINT]:\tn \ty"
 #if defined(CAMPAIGN_DL)
-    "To help navigate the massively expansiave surface wilderness, there is a CARRIAGE system "
+    "To help navigate the massively expansive surface wilderness, there is a CARRIAGE system "
     "that can quickly and safely get you between major locations in the world (help carriage).  "
     "There is also a seaport system allowing you to travel by sea to different, far-reching "
     "locales. "
 #else
-    "To help navigate the massively expansiave surface wilderness, there is a CARRIAGE system "
+    "To help navigate the massively expansive surface wilderness, there is a CARRIAGE system "
     "that can quickly and safely get you between major locations in the wilderness (help "
     "carriage).  "
     "There are also plenty of zone connections in the wilderness that you can not reach via "

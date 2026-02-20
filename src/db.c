@@ -6846,6 +6846,10 @@ void init_char(struct char_data *ch)
   if (ch->player_specials == NULL)
     CREATE(ch->player_specials, struct player_special_data, 1);
 
+  /* Initialize crafting data */
+  ch->player_specials->saved.craft_data.craft_variant = -1; /* -1 means no variant set */
+  ch->player_specials->saved.craft_data.supply_active_slot = -1; /* -1 means no active slot */
+
   /* Initialize inquisitor perk tracking */
   ch->player_specials->saved.inq_favored_terrain = -1;
   ch->player_specials->saved.inq_favored_terrain_reset = 0;

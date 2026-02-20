@@ -4430,8 +4430,8 @@ void mag_assign_spells(void)
   spello(SPELL_ENTANGLE, "entangle", 0, 0, 0, POS_FIGHTING,
          TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
          "The vines around your feet turn to dust.", 3, 7, TRANSMUTATION, FALSE);
-  spello(SPELL_MAGIC_STONE, "magic stone", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_CREATIONS,
-         NULL, 3, 7, TRANSMUTATION, FALSE);
+  spello(SPELL_MAGIC_STONE, "magic stone", 0, 0, 0, POS_FIGHTING, 
+         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE, MAG_LOOPS, NULL, 0, 7, TRANSMUTATION, FALSE);
   spello(SPELL_SHIELD, "mage shield", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,
          "Your magical shield fades away.", 3, 7, ABJURATION, FALSE);
   spello(SPELL_ANT_HAUL, "ant haul", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,

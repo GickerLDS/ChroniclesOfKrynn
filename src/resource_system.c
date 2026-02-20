@@ -2250,6 +2250,12 @@ ACMD(do_wilderness_harvest)
   char arg[MAX_INPUT_LENGTH];
   int resource_type = -1;
 
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can harvest.\r\n");
+    return;
+  }
+
   one_argument(argument, arg, sizeof(arg));
 
   /* Validate wilderness location */
@@ -2284,6 +2290,12 @@ ACMD(do_wilderness_gather)
   char arg[MAX_INPUT_LENGTH];
   int resource_type = -1;
 
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can gather.\r\n");
+    return;
+  }
+
   one_argument(argument, arg, sizeof(arg));
 
   /* Validate wilderness location */
@@ -2317,6 +2329,12 @@ ACMD(do_wilderness_mine)
 {
   char arg[MAX_INPUT_LENGTH];
   int resource_type = -1;
+
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can mine.\r\n");
+    return;
+  }
 
   one_argument(argument, arg, sizeof(arg));
 

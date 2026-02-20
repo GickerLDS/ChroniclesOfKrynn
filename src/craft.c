@@ -3198,6 +3198,12 @@ ACMD(do_harvest)
   char buf[MEDIUM_STRING] = {'\0'};
   int sub_command = SCMD_CRAFT_UNDF;
 
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can harvest.\r\n");
+    return;
+  }
+
   if (IS_CARRYING_N(ch) >= CAN_CARRY_N(ch))
   {
     send_to_char(ch, "You must drop something before you can harvest anything else.\r\n");

@@ -7937,6 +7937,12 @@ ACMD(do_newcraft)
 {
   char arg[MAX_INPUT_LENGTH];
 
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can craft.\r\n");
+    return;
+  }
+
   if (IS_NPC(ch))
   {
     send_to_char(ch, "NPCs cannot craft.\r\n");
@@ -8277,16 +8283,24 @@ int select_random_craft_recipe(void)
 {
   int type = 0;
   int choice = 0;
+  int attempts = 0;
 
   // -2 insteadf of -1 for now, as we're not including instruments yet
   type = craft_recipe_by_type(dice(CRAFT_TYPE_NONE + 1, NUM_CRAFT_TYPES - 2));
 
   choice = dice(1, NUM_CRAFTING_RECIPES - 1);
 
-  while (type != crafting_recipes[choice].object_type)
+  while ((type != crafting_recipes[choice].object_type || 
+          crafting_recipes[choice].object_type == ITEM_INSTRUMENT) &&
+         attempts < 100)
   {
     choice = dice(1, NUM_CRAFTING_RECIPES - 1);
+    attempts++;
   }
+
+  /* Return -1 if we couldn't find a non-instrument recipe */
+  if (crafting_recipes[choice].object_type == ITEM_INSTRUMENT)
+    return CRAFT_RECIPE_NONE;
 
   return choice;
 }
@@ -8466,7 +8480,7 @@ void request_new_supply_order(struct char_data *ch)
   }
 
   if (GET_CRAFT(ch).crafting_item_type > CRAFT_TYPE_NONE || GET_CRAFT(ch).crafting_specific > 0 ||
-      GET_CRAFT(ch).craft_variant >= 0)
+      GET_CRAFT(ch).craft_variant != -1)
   {
     send_to_char(ch, "You already have a supply order going. Type supplyorder show to see the "
                      "details or supplyorder reset to start over.\r\n");

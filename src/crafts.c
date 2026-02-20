@@ -740,6 +740,12 @@ EVENTFUNC(event_craft)
 
 ACMDU(do_craft)
 {
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can craft.\r\n");
+    return;
+  }
+
   switch (CONFIG_CRAFTING_SYSTEM)
   {
   case CRAFTING_SYSTEM_KITS:
@@ -759,6 +765,12 @@ ACMDU(do_craft_with_kits)
   struct craft_data *craft;
   struct obj_data *obj;
   int missing;
+
+  if (!IS_HUMANOID(ch))
+  {
+    send_to_char(ch, "Only humanoids can craft.\r\n");
+    return;
+  }
 
   if (IS_NPC(ch))
     return;

@@ -1459,10 +1459,10 @@ void mag_loops(int level, struct char_data *ch, struct char_data *victim, struct
     num_times = (level - 2) / 3;
     dam = true;
     break;
-    /*   case SPELL_MAGIC_STONE:
-        num_times = MIN(5, (level + 1) / 2);
-        dam = true;
-        break; */
+  case SPELL_MAGIC_STONE:
+      num_times = MIN(5, (level + 1) / 2);
+      dam = true;
+      break; 
   }
 
   for (i = 0; i < num_times; i++)
@@ -2536,6 +2536,14 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       bonus = 1;
     }
     element = DAM_ENERGY;
+    break;
+  case SPELL_MAGIC_STONE: // transmutation
+    mag_resist = TRUE;
+    save = SAVING_REFL;
+    num_dice = 1;
+    size_dice = 6;
+    bonus = 1;
+    element = DAM_BLUDGEON;
     break;
 
   case SPELL_LESSER_MISSILE_STORM: // evocation
@@ -13827,15 +13835,7 @@ void mag_creations(int level, struct char_data *ch, struct char_data *vict, stru
     to_room = "$n summons $p.";
     object_vnum = 20897;
     break;
-  case SPELL_MAGIC_STONE:
-    to_char = "You create $p.";
-    to_room = "$n creates $p.";
-#if defined(CAMPAIGN_DL)
-    object_vnum = 20871;
-#else
-    object_vnum = 9401;
-#endif
-    break;
+
   case SPELL_PORTAL:
 
     if (vict == NULL)
