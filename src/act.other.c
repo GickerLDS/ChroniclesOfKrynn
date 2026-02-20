@@ -1951,7 +1951,7 @@ void perform_call(struct char_data *ch, int call_type, int level)
   case MOB_C_ANIMAL:
     GET_LEVEL(mob) = MIN(20, level);
     if (HAS_FEAT(ch, FEAT_BOON_COMPANION))
-      level += 5;
+      GET_LEVEL(mob) += 5;
     autoroll_mob(mob, true, true);
     GET_REAL_MAX_HIT(mob) += 20;
 

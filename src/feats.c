@@ -3672,13 +3672,6 @@ void assign_feats(void)
         "in all weapons except for exotic ones.  In addition you get a +1 to all "
         "attack rolls when wielding a weapon.");
 
-  /* Wild Feats (druid) */
-  feato(FEAT_NATURAL_SPELL, "natural spell", TRUE, TRUE, FALSE, FEAT_TYPE_WILD,
-        "allows casting of spells while wildshaped",
-        "Upon selecting this feat, the character is able to cast spells while wildshaped.");
-  feat_prereq_attribute(FEAT_NATURAL_SPELL, AB_WIS, 13);
-  feat_prereq_feat(FEAT_NATURAL_SPELL, FEAT_WILD_SHAPE, 1);
-
   /*****/
   /* Class ability feats */
 
@@ -4078,6 +4071,13 @@ void assign_feats(void)
         "Allows the ability to wild shape into a colossal animal, plant or elemental.",
         "Allows the ability to wild shape into a colossal animal, plant or elemental.");
   feat_prereq_feat(FEAT_COLOSSAL_WILD_SHAPE, FEAT_GARGANTUAN_WILD_SHAPE, 1);
+
+    /* Wild Feats (druid) */
+  feato(FEAT_NATURAL_SPELL, "natural spell", TRUE, TRUE, FALSE, FEAT_TYPE_WILD,
+        "allows casting of spells while wildshaped",
+        "Upon selecting this feat, the character is able to cast spells while wildshaped.");
+  feat_prereq_attribute(FEAT_NATURAL_SPELL, AB_WIS, 13);
+  feat_prereq_feat(FEAT_NATURAL_SPELL, FEAT_WILD_SHAPE, 1);
 
   /* Druid / Monk */
   /* feat-number | name | in game? | learnable? | stackable? | feat-type | short-descrip | long descrip */
