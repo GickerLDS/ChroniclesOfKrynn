@@ -9279,6 +9279,7 @@ void load_class_list(void)
   /* starting feats and proficiencies */
   feat_assignment(CLASS_WARLOCK, FEAT_SIMPLE_WEAPON_PROFICIENCY, Y, 1, N);
   feat_assignment(CLASS_WARLOCK, FEAT_ARMOR_PROFICIENCY_LIGHT, Y, 1, N);
+  feat_assignment(CLASS_WARLOCK, FEAT_SUMMON_FAMILIAR, Y, 1, N);
 
   feat_assignment(CLASS_WARLOCK, FEAT_ELDRITCH_BLAST, Y, 1, Y);
   feat_assignment(CLASS_WARLOCK, FEAT_ELDRITCH_LORE, Y, 2, N);

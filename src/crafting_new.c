@@ -6175,6 +6175,11 @@ void craft_update(void)
     if (!ch)
       continue;
 
+    if (IN_ROOM(ch) == NOWHERE)
+    {
+      continue;
+    }
+
     if (GET_CRAFT(ch).craft_duration > 0)
     {
       GET_CRAFT(ch).craft_duration--;
