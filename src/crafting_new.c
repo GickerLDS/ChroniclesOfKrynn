@@ -8477,10 +8477,34 @@ void request_new_supply_order(struct char_data *ch)
 {
   int recipe = 0;
   int variant = 0;
+  time_t now = time(NULL);
+  int request_count = 0;
+  int i;
 
   if (!has_quartermaster_in_room(ch))
   {
     send_to_char(ch, "You must be in a room with a quartermaster to request a supply order.\r\n");
+    return;
+  }
+
+  /* Check supply order request cooldown: max 3 per 2 hours */
+  for (i = 0; i < 3; i++)
+  {
+    if (GET_CRAFT(ch).supply_request_times[i] > 0 && now - GET_CRAFT(ch).supply_request_times[i] < 7200)
+    {
+      request_count++;
+    }
+  }
+
+  if (request_count >= 3)
+  {
+    int oldest_time = GET_CRAFT(ch).supply_request_times[0];
+    int cooldown_remaining = 7200 - (now - oldest_time);
+    int hours = cooldown_remaining / 3600;
+    int minutes = (cooldown_remaining % 3600) / 60;
+    
+    send_to_char(ch, "You have already requested 3 supply orders in the last 2 hours.\r\n");
+    send_to_char(ch, "Next request available in approximately %d hours and %d minutes.\r\n", hours, minutes);
     return;
   }
 
@@ -8530,6 +8554,12 @@ void request_new_supply_order(struct char_data *ch)
     GET_CRAFT(ch).crafting_method = SCMD_NEWCRAFT_SUPPLYORDER;
     GET_CRAFT(ch).supply_num_required = quantity;
     GET_CRAFT(ch).skill_type = crafting_recipes[recipe].variant_skill[variant];
+    
+    /* Track request timestamp for cooldown (shift old times and add new one) */
+    GET_CRAFT(ch).supply_request_times[0] = GET_CRAFT(ch).supply_request_times[1];
+    GET_CRAFT(ch).supply_request_times[1] = GET_CRAFT(ch).supply_request_times[2];
+    GET_CRAFT(ch).supply_request_times[2] = now;
+    
     send_to_char(ch, "You've requested a new supply order to make %d %ss.\r\n", quantity,
                  crafting_recipes[recipe].variant_descriptions[variant]);
     send_to_char(ch, "Complete this order to earn \tCartisan points\tn!\r\n");
@@ -9653,6 +9683,7 @@ void update_supply_slots_for_all_players(void)
 {
   struct descriptor_data *d;
   struct char_data *ch;
+  time_t now = time(NULL);
 
   for (d = descriptor_list; d; d = d->next)
   {
@@ -9666,6 +9697,38 @@ void update_supply_slots_for_all_players(void)
     if (should_refresh_supply_slots(ch))
     {
       refresh_supply_slots(ch);
+    }
+
+    /* Check if oldest supply order request cooldown has expired and notify player */
+    if (GET_CRAFT(ch).supply_request_times[0] > 0)
+    {
+      /* When the oldest request is older than 2 hours, the window has shifted */
+      if (now - GET_CRAFT(ch).supply_request_times[0] >= 7200)
+      {
+        /* Check how many requests are still within the 2-hour window */
+        int active_requests = 0;
+        int i;
+        for (i = 0; i < 3; i++)
+        {
+          if (GET_CRAFT(ch).supply_request_times[i] > 0 && 
+              now - GET_CRAFT(ch).supply_request_times[i] < 7200)
+          {
+            active_requests++;
+          }
+        }
+
+        /* If we have room again, notify the player */
+        if (active_requests < 3)
+        {
+          send_to_char(ch, "\tgYour supply order request cooldown window has shifted!\tn\r\n");
+          send_to_char(ch, "\tYYou now have available quota for more supply orders.\tn\r\n");
+        }
+
+        /* Shift the window: remove oldest expired request */
+        GET_CRAFT(ch).supply_request_times[0] = GET_CRAFT(ch).supply_request_times[1];
+        GET_CRAFT(ch).supply_request_times[1] = GET_CRAFT(ch).supply_request_times[2];
+        GET_CRAFT(ch).supply_request_times[2] = 0;
+      }
     }
   }
 }
@@ -10000,6 +10063,37 @@ void show_supply_order_cooldowns(struct char_data *ch)
   else
   {
     send_to_char(ch, "Special Event Status: Inactive\r\n");
+  }
+
+  /* Supply order request rate limit (3 per 2 hours) */
+  send_to_char(ch, "\r\nSupply Order Request Limit (3 per 2 hours):\r\n");
+  int request_count = 0;
+  int i;
+  for (i = 0; i < 3; i++)
+  {
+    if (GET_CRAFT(ch).supply_request_times[i] > 0 && now - GET_CRAFT(ch).supply_request_times[i] < 7200)
+    {
+      request_count++;
+      int age_minutes = (now - GET_CRAFT(ch).supply_request_times[i]) / 60;
+      send_to_char(ch, "  Request %d: %d minutes ago\r\n", i + 1, age_minutes);
+    }
+  }
+
+  if (request_count >= 3)
+  {
+    int oldest_time = GET_CRAFT(ch).supply_request_times[0];
+    int cooldown_remaining = 7200 - (now - oldest_time);
+    int hours = cooldown_remaining / 3600;
+    int minutes = (cooldown_remaining % 3600) / 60;
+    send_to_char(ch, "  \trRequests at limit\tn - Next available in %d hours, %d minutes\r\n", hours, minutes);
+  }
+  else if (request_count > 0)
+  {
+    send_to_char(ch, "  \tyUsed %d of 3 requests in current 2-hour window\tn\r\n", request_count);
+  }
+  else
+  {
+    send_to_char(ch, "  \tgNo recent requests - full quota available\tn\r\n");
   }
 
   send_to_char(ch, "\r\n");
@@ -12793,6 +12887,67 @@ void handle_artisan_buy(struct char_data *ch, const char *argument)
   
   /* Save character */
   save_char(ch, 0);
+}
+
+/* Login-time notification for supply order cooldowns */
+void notify_supply_order_cooldown_on_login(struct char_data *ch)
+{
+  time_t now = time(NULL);
+  int any_cooldowns = 0;
+  int any_refresh_pending = 0;
+  int slot;
+
+  if (!ch)
+    return;
+
+  /* Check for slot cooldowns */
+  for (slot = 0; slot < 5; slot++)
+  {
+    if (GET_CRAFT(ch).supply_slot_cooldowns[slot] > 0 && now < GET_CRAFT(ch).supply_slot_cooldowns[slot])
+    {
+      any_cooldowns = 1;
+      break;
+    }
+  }
+
+  /* Check for refresh cooldown */
+  if (GET_CRAFT(ch).supply_slots_next_refresh > 0 && now < GET_CRAFT(ch).supply_slots_next_refresh)
+  {
+    any_refresh_pending = 1;
+  }
+
+  /* Only display notification if there are active cooldowns */
+  if (any_cooldowns || any_refresh_pending)
+  {
+    send_to_char(ch, "\r\n\t[Supply Order Status]\r\n");
+
+    if (any_refresh_pending)
+    {
+      int refresh_hours = (GET_CRAFT(ch).supply_slots_next_refresh - now) / 3600;
+      int refresh_minutes = ((GET_CRAFT(ch).supply_slots_next_refresh - now) % 3600) / 60;
+      send_to_char(ch, "  Contract slots refresh in: %d hours, %d minutes\r\n", refresh_hours, refresh_minutes);
+    }
+
+    if (any_cooldowns)
+    {
+      send_to_char(ch, "  Slot cooldowns:\r\n");
+      for (slot = 0; slot < 5; slot++)
+      {
+        if (GET_CRAFT(ch).supply_slot_cooldowns[slot] > 0 &&
+            now < GET_CRAFT(ch).supply_slot_cooldowns[slot])
+        {
+          int cooldown_hours = (GET_CRAFT(ch).supply_slot_cooldowns[slot] - now) / 3600;
+          int cooldown_minutes = ((GET_CRAFT(ch).supply_slot_cooldowns[slot] - now) % 3600) / 60;
+          send_to_char(ch, "    Slot %d: %d hour%s, %d minute%s\r\n", 
+                       slot + 1, 
+                       cooldown_hours, (cooldown_hours != 1 ? "s" : ""),
+                       cooldown_minutes, (cooldown_minutes != 1 ? "s" : ""));
+        }
+      }
+    }
+
+    send_to_char(ch, "  Type 'supplyorder cooldown' for detailed timing information.\r\n\r\n");
+  }
 }
 
 /**

@@ -5888,6 +5888,7 @@ struct crafting_data_info
   time_t supply_slot_cooldowns[5];  // Individual cooldowns for each slot (when taken/abandoned)
   time_t supply_slots_last_refresh; // When slots were last refreshed
   time_t supply_slots_next_refresh; // When next refresh is available
+  time_t supply_request_times[3];   // Timestamps of last 3 supply order requests (for rate limiting)
 
   // surveying;
   int survey_rooms;

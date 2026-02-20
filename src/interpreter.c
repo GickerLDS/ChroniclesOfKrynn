@@ -2432,6 +2432,9 @@ int enter_player_game(struct descriptor_data *d)
 
   new_mail_alert(d->character, FALSE);
 
+  /* Notify about supply order cooldowns on login */
+  notify_supply_order_cooldown_on_login(d->character);
+
   /* START PLAYER STAT HACKS */
 
   /* movement hack.  We changed movement to be out of 1,000

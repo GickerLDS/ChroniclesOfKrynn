@@ -326,6 +326,7 @@ bool is_special_event_active(void);
 void generate_prestige_contract(struct supply_contract *contract, struct char_data *ch);
 void generate_event_contract(struct supply_contract *contract, struct char_data *ch);
 void show_supply_order_cooldowns(struct char_data *ch);
+void notify_supply_order_cooldown_on_login(struct char_data *ch);
 SPECIAL_DECL(new_supply_orders);
 int material_type_to_crafting_skill(int material);
 

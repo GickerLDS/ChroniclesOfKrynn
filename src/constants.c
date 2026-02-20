@@ -1983,7 +1983,8 @@ const char *extra_bits[] = {
     "Has-Been-Downgraded", "Item-Has-Been-Identified", "Crafted-Item", "Can-Only-Equip-One",
     "Can-Only-Possess-One", "Crafting-Smelter", "Crafting-Loom", "Crafting-Forge",
     "Crafting-Alchemy-Lab", "Crafting-Jewelcrafting-Station", "Crafting-Tannery",
-    "Crafting-Carpentry-Table", "Trapped", "Costs-Account-Experience", "Can-Be-Reforged", "\n"};
+    "Crafting-Carpentry-Table", "Trapped", "Costs-Account-Experience", "Can-Be-Reforged",
+    "Costs-Artisan-Points", "\n"};
 CHECK_TABLE_SIZE(extra_bits, NUM_ITEM_FLAGS + 1);
 
 /** Describes the apply types.

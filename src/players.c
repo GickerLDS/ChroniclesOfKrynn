@@ -1797,6 +1797,19 @@ int load_char(const char *name, struct char_data *ch)
             }
           }
         }
+        else if (!strcmp(tag, "SuRT"))
+        {
+          /* Load supply order request times: req_idx timestamp */
+          int req_idx;
+          long timestamp;
+          if (sscanf(line, "%d %ld", &req_idx, &timestamp) == 2)
+          {
+            if (req_idx >= 0 && req_idx < 3)
+            {
+              GET_CRAFT(ch).supply_request_times[req_idx] = (time_t)timestamp;
+            }
+          }
+        }
         break;
 
       case 'T':
@@ -2921,6 +2934,19 @@ void save_char(struct char_data *ch, int mode)
       {
         BUFFER_WRITE("SuCD: %d %ld\n", slot_idx,
                      (long)GET_CRAFT(ch).supply_slot_cooldowns[slot_idx]);
+      }
+    }
+  }
+
+  /* Save supply order request times for rate limiting */
+  {
+    int req_idx;
+    for (req_idx = 0; req_idx < 3; req_idx++)
+    {
+      if (GET_CRAFT(ch).supply_request_times[req_idx] > 0)
+      {
+        BUFFER_WRITE("SuRT: %d %ld\n", req_idx,
+                     (long)GET_CRAFT(ch).supply_request_times[req_idx]);
       }
     }
   }
