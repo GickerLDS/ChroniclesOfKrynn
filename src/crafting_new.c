@@ -336,8 +336,6 @@ static void show_craft_tutorial(struct char_data *ch)
 
 #define SUPPLY_ORDER_NOARG1                                                                        \
   "Please specify what supply order action you'd like to take.\r\n"                                \
-  "supplyorder list       : List all available supply order contracts.\r\n"                        \
-  "supplyorder select <id>: Select a specific contract by ID number.\r\n"                          \
   "supplyorder request    : Request a random supply order project.\r\n"                            \
   "supplyorder show       : Show information on current supply order project.\r\n"                 \
   "supplyorder start      : Begin working on your supply order.\r\n"                               \
@@ -6333,9 +6331,12 @@ void craft_update(void)
           case SCMD_NEWCRAFT_SUPPLYORDER:
             if (GET_CRAFT(ch).craft_duration % 5 == 0)
             {
-              send_to_char(ch, "Supply Order Requistion #%d. ",
-                           GET_CRAFT(ch).supply_num_required -
-                               num_supply_order_requisitions_to_go(ch) + 1);
+              int current_item = GET_CRAFT(ch).supply_num_required -
+                                 num_supply_order_requisitions_to_go(ch) + 1;
+              int total_items = GET_CRAFT(ch).supply_num_required;
+              
+              send_to_char(ch, "Supply order for %s %d of %d. ",
+                           get_supply_order_item_desc(ch), current_item, total_items);
               for (i = 0; i < GET_CRAFT(ch).craft_duration; i++)
                 send_to_char(ch, "*");
               send_to_char(ch, "\r\n");
@@ -7249,24 +7250,31 @@ void craft_supplyorder_complete(struct char_data *ch)
   {
     send_to_char(
         ch, "You don't have enough materials to complete this item. Supply order cancelled.\r\n");
-    reset_supply_order(ch);
+    abandon_supply_order(ch);
     return;
   }
 
   GET_NSUPPLY_NUM_MADE(ch)++;
 
-  send_to_char(ch, "You've completed part of your supply order for %ss.",
-               get_supply_order_item_desc(ch));
+  {
+    const char *desc = get_supply_order_item_desc(ch);
+    send_to_char(ch, "You've completed part of your supply order for %s%s.",
+                 desc,
+                 (desc[strlen(desc) - 1] == 's' ? "" : "s"));
+  }
 
   if ((GET_CRAFT(ch).supply_num_required - GET_NSUPPLY_NUM_MADE(ch)) > 0)
   {
-    send_to_char(ch, " %d to go.", num_supply_order_requisitions_to_go(ch));
+    send_to_char(ch, " %d to go.\r\n", num_supply_order_requisitions_to_go(ch));
+    /* Stop crafting - player must manually restart for next item */
+    GET_CRAFT(ch).craft_duration = 0;
   }
   else
   {
-    send_to_char(ch, " Supply order complete! Visit a supply order NPC to collect your reward.");
+    send_to_char(ch, "\r\nSupply order complete! Visit a supply order NPC to collect your reward.\r\n");
+    /* All items complete, stop crafting */
+    GET_CRAFT(ch).craft_duration = 0;
   }
-  send_to_char(ch, "\r\n");
 
   exp = determine_supply_order_exp(ch);
 
@@ -7400,6 +7408,7 @@ void complete_supply_order(struct char_data *ch)
   int artisan_points = 0;
   int skill = 0;
   int recipe = 0;
+  int i = 0;
 
   if (!has_quartermaster_in_room(ch))
   {
@@ -7433,6 +7442,14 @@ void complete_supply_order(struct char_data *ch)
   // Award artisan points based on quantity completed
   artisan_points = GET_CRAFT(ch).supply_num_required * 10;
 
+  // Apply happy hour bonus to artisan points
+  int happy_hour_artisan_bonus = 0;
+  if (HAPPY_CRAFTING_EXP > 0)
+  {
+    happy_hour_artisan_bonus = (artisan_points * HAPPY_CRAFTING_EXP) / 100;
+    artisan_points += happy_hour_artisan_bonus;
+  }
+
   // Award rewards
   GET_GOLD(ch) += gold_reward;
   recipe = get_current_craft_project_recipe(ch);
@@ -7442,16 +7459,65 @@ void complete_supply_order(struct char_data *ch)
   GET_ARTISAN_EXP(ch) += artisan_points;
 
   send_to_char(ch, "Congratulations! You have completed your supply order.\r\n");
-  send_to_char(
-      ch, "You receive %d gold coins, %d bonus experience points, and \tC%d artisan points\tn!\r\n",
-      gold_reward, bonus_exp, artisan_points);
+  if (happy_hour_artisan_bonus > 0)
+  {
+    send_to_char(
+        ch, "You receive %d gold coins, %d bonus experience points, and \tC%d artisan points\tn (\tY+%d happy hour bonus\tn)!\r\n",
+        gold_reward, bonus_exp, artisan_points - happy_hour_artisan_bonus, happy_hour_artisan_bonus);
+  }
+  else
+  {
+    send_to_char(
+        ch, "You receive %d gold coins, %d bonus experience points, and \tC%d artisan points\tn!\r\n",
+        gold_reward, bonus_exp, artisan_points);
+  }
   send_to_char(ch, "You now have \tC%d total artisan points\tn.\r\n", GET_ARTISAN_EXP(ch));
 
-  // Clear the supply order
-  reset_supply_order(ch);
+  /* Clear supply order data without penalty/cooldown since it was completed successfully */
+  GET_CRAFT(ch).crafting_method = 0;
+  GET_CRAFT(ch).crafting_item_type = 0;
+  GET_CRAFT(ch).crafting_specific = 0;
+  GET_CRAFT(ch).craft_variant = -1;
+  GET_CRAFT(ch).supply_num_required = 0;
+  GET_CRAFT(ch).supply_active_slot = -1;
+  GET_CRAFT(ch).skill_type = 0;
+  GET_CRAFT(ch).craft_duration = 0;
   GET_NSUPPLY_NUM_MADE(ch) = 0;
+  
+  /* Clear materials (already consumed during crafting) */
+  for (i = 0; i < NUM_CRAFT_GROUPS; i++)
+  {
+    GET_CRAFT(ch).materials[i][0] = 0;
+    GET_CRAFT(ch).materials[i][1] = 0;
+  }
 
-  send_to_char(ch, "You are now free to request a new supply order.\r\n");
+  /* Check if player can request a new order or if rate-limited */
+  time_t now = time(NULL);
+  int request_count = 0;
+  
+  for (i = 0; i < 3; i++)
+  {
+    if (GET_CRAFT(ch).supply_request_times[i] > 0 && now - GET_CRAFT(ch).supply_request_times[i] < 7200)
+    {
+      request_count++;
+    }
+  }
+
+  if (request_count >= 3)
+  {
+    int oldest_time = GET_CRAFT(ch).supply_request_times[0];
+    int cooldown_remaining = 7200 - (now - oldest_time);
+    int hours = cooldown_remaining / 3600;
+    int minutes = (cooldown_remaining % 3600) / 60;
+    
+    send_to_char(ch, "Next supply order request available in approximately %d hour%s and %d minute%s.\r\n", 
+                 hours, (hours != 1 ? "s" : ""), 
+                 minutes, (minutes != 1 ? "s" : ""));
+  }
+  else
+  {
+    send_to_char(ch, "You are now free to request a new supply order.\r\n");
+  }
 }
 
 int calculate_supply_order_reward(struct char_data *ch)
@@ -7557,7 +7623,7 @@ bool validate_supply_order_materials(struct char_data *ch)
     return FALSE;
   }
 
-  // Check if we have enough materials for ONE item (not all remaining items)
+  /* Check if we have enough materials for the NEXT item (not all remaining items) */
   for (i = 0; i < 3; i++)
   {
     mat_type = crafting_recipes[recipe].materials[i][variant][0];
@@ -7834,68 +7900,6 @@ void newcraft_supplyorder(struct char_data *ch, const char *argument)
     return;
   }
 
-  if (is_abbrev(arg1, "list") || is_abbrev(arg1, "available"))
-  {
-    if (!has_quartermaster_in_room(ch))
-    {
-      send_to_char(ch, "You must be in a room with a quartermaster to view supply orders.\r\n");
-      return;
-    }
-    show_available_contracts(ch);
-    return;
-  }
-
-  if (is_abbrev(arg1, "select") || is_abbrev(arg1, "choose"))
-  {
-    int contract_id = 0;
-
-    if (!has_quartermaster_in_room(ch))
-    {
-      send_to_char(ch, "You must be in a room with a quartermaster to select a supply order.\r\n");
-      return;
-    }
-
-    if (!*arg2)
-    {
-      send_to_char(ch, "Which contract would you like to select? Use 'supplyorder list' to see "
-                       "available contracts.\r\n");
-      return;
-    }
-
-    if (!is_number(arg2))
-    {
-      send_to_char(ch, "Please specify a valid contract number.\r\n");
-      return;
-    }
-
-    contract_id = atoi(arg2);
-    if (contract_id < 1)
-    {
-      send_to_char(ch, "Please specify a valid contract number.\r\n");
-      return;
-    }
-
-    if (GET_CRAFT(ch).crafting_method != 0)
-    {
-      send_to_char(
-          ch,
-          "You are already working on a crafting project. Please finish or reset it first.\r\n");
-      return;
-    }
-
-    if (select_contract_by_id(ch, contract_id))
-    {
-      send_to_char(ch, "Contract successfully selected! Use 'supplyorder show' to see details or "
-                       "'supplyorder start' to begin.\r\n");
-    }
-    else
-    {
-      send_to_char(
-          ch, "Invalid contract selection. Use 'supplyorder list' to see available contracts.\r\n");
-    }
-    return;
-  }
-
   if (is_abbrev(arg1, "request"))
   {
     request_new_supply_order(ch);
@@ -7929,14 +7933,12 @@ void newcraft_supplyorder(struct char_data *ch, const char *argument)
   if (is_abbrev(arg1, "reset"))
   {
     reset_supply_order(ch);
-    send_to_char(ch, "Supply order project has been reset.\r\n");
     return;
   }
 
   if (is_abbrev(arg1, "abandon") || is_abbrev(arg1, "cancel"))
   {
-    reset_supply_order(ch);
-    send_to_char(ch, "Supply order project has been abandoned.\r\n");
+    abandon_supply_order(ch);
     return;
   }
 
@@ -8612,7 +8614,9 @@ void start_supply_order(struct char_data *ch)
     }
 
     GET_CRAFT(ch).craft_duration = NSUPPLY_ORDER_DURATION;
-    send_to_char(ch, "You begin working on your supply order.\r\n");
+    send_to_char(ch, "You begin working on your supply order for %s %s.\r\n", 
+      AN(crafting_recipes[GET_CRAFT(ch).crafting_recipe].variant_descriptions[GET_CRAFT(ch).craft_variant]),
+      crafting_recipes[GET_CRAFT(ch).crafting_recipe].variant_descriptions[GET_CRAFT(ch).craft_variant]);
   }
 }
 
@@ -8674,38 +8678,6 @@ void show_supply_order(struct char_data *ch)
     return;
   }
 
-  // Show contract type
-  const char *contract_type_str = "Basic";
-  const char *contract_color = "\tc";
-  switch (GET_CRAFT(ch).supply_contract_type)
-  {
-  case SUPPLY_CONTRACT_RUSH:
-    contract_type_str = "Rush Order";
-    contract_color = "\ty";
-    break;
-  case SUPPLY_CONTRACT_BULK:
-    contract_type_str = "Bulk Contract";
-    contract_color = "\tb";
-    break;
-  case SUPPLY_CONTRACT_QUALITY:
-    contract_type_str = "Quality Contract";
-    contract_color = "\tm";
-    break;
-  case SUPPLY_CONTRACT_PRESTIGE:
-    contract_type_str = "Prestige Contract";
-    contract_color = "\tM";
-    break;
-  case SUPPLY_CONTRACT_EVENT:
-    contract_type_str = "Event Contract";
-    contract_color = "\tR";
-    break;
-  default:
-    contract_type_str = "Basic Contract";
-    contract_color = "\tc";
-    break;
-  }
-  send_to_char(ch, "-- Contract Type: %s%s\tn\r\n", contract_color, contract_type_str);
-
   // Show expiration info if applicable
   if (GET_CRAFT(ch).supply_contract_expiration > 0)
   {
@@ -8765,29 +8737,90 @@ void show_supply_order(struct char_data *ch)
 
 void reset_supply_order(struct char_data *ch)
 {
-  int i = 0;
-
-  /* Set cooldown for abandoned slot if one was being worked on */
-  if (GET_CRAFT(ch).supply_active_slot >= 0 && GET_CRAFT(ch).supply_active_slot < 5)
+  if (GET_CRAFT(ch).crafting_method != SCMD_NEWCRAFT_SUPPLYORDER)
   {
-    GET_CRAFT(ch).supply_slot_cooldowns[GET_CRAFT(ch).supply_active_slot] =
-        time(NULL) + 3600; /* 1 hour cooldown */
+    send_to_char(ch, "You don't have an active supply order to reset.\r\n");
+    return;
   }
 
+  /* Refund any materials that were added for the current item */
+  if (remove_supply_order_materials(ch))
+  {
+    send_to_char(ch, "Materials have been refunded. You can add materials and continue with your supply order.\r\n");
+  }
+  else
+  {
+    send_to_char(ch, "No materials were assigned to refund.\r\n");
+  }
+
+  /* Stop current crafting work */
+  GET_CRAFT(ch).craft_duration = 0;
+}
+
+void abandon_supply_order(struct char_data *ch)
+{
+  int i = 0;
+
+  if (GET_CRAFT(ch).crafting_method != SCMD_NEWCRAFT_SUPPLYORDER)
+  {
+    send_to_char(ch, "You don't have an active supply order to abandon.\r\n");
+    return;
+  }
+
+  /* Refund any materials that were added */
+  remove_supply_order_materials(ch);
+
+  /* Clear all supply order data */
   GET_CRAFT(ch).crafting_method = 0;
   GET_CRAFT(ch).crafting_item_type = 0;
   GET_CRAFT(ch).crafting_specific = 0;
   GET_CRAFT(ch).craft_variant = -1;
   GET_CRAFT(ch).supply_num_required = 0;
-  GET_CRAFT(ch).supply_active_slot = -1; /* Reset active slot tracking */
+  GET_CRAFT(ch).supply_active_slot = -1;
   GET_CRAFT(ch).skill_type = 0;
+  GET_CRAFT(ch).craft_duration = 0;
+  
+  /* Materials already refunded above */
   for (i = 0; i < NUM_CRAFT_GROUPS; i++)
   {
     GET_CRAFT(ch).materials[i][0] = 0;
     GET_CRAFT(ch).materials[i][1] = 0;
   }
-  send_to_char(ch, "You have reset your supply order, have lost all progress, and will need to "
-                   "request a new one.\r\n");
+  
+  send_to_char(ch, "You have abandoned your supply order and lost all progress.\r\n");
+}
+
+/**
+ * @brief Clear or set supply order cooldowns for a character
+ * @param ch The character whose cooldowns to clear/set
+ * @param cooldown_seconds Number of seconds for cooldown (0 to clear immediately)
+ */
+void clear_supply_order_cooldowns(struct char_data *ch, int cooldown_seconds)
+{
+  int slot;
+  time_t cooldown_time = 0;
+
+  if (!ch)
+    return;
+
+  /* Calculate cooldown expiration time */
+  if (cooldown_seconds > 0)
+    cooldown_time = time(NULL) + cooldown_seconds;
+
+  /* Reset all individual slot cooldowns */
+  for (slot = 0; slot < 5; slot++)
+  {
+    GET_CRAFT(ch).supply_slot_cooldowns[slot] = cooldown_time;
+  }
+
+  /* Reset slot refresh timer */
+  GET_CRAFT(ch).supply_slots_next_refresh = cooldown_time;
+
+  /* Reset supply request rate limit timestamps */
+  for (slot = 0; slot < 3; slot++)
+  {
+    GET_CRAFT(ch).supply_request_times[slot] = 0;
+  }
 }
 
 
@@ -8844,6 +8877,7 @@ SPECIAL(new_supply_orders)
   }
   else if (is_abbrev(arg1, "abandon"))
   {
+    abandon_supply_order(ch);
   }
   else
   {
@@ -9949,122 +9983,6 @@ void show_supply_order_cooldowns(struct char_data *ch)
 
   text_line(ch, "SUPPLY ORDER TIMING INFORMATION", 90, '-', '-');
 
-  /* Active contract expiration */
-  if (GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_SUPPLYORDER &&
-      GET_CRAFT(ch).supply_contract_expiration > 0)
-  {
-    time_t expires = GET_CRAFT(ch).supply_contract_expiration;
-
-    if (now < expires)
-    {
-      int hours_left = (expires - now) / 3600;
-      int minutes_left = ((expires - now) % 3600) / 60;
-
-      const char *urgency_color;
-      if (hours_left <= 6)
-      {
-        urgency_color = "\tr"; /* Red for urgent */
-      }
-      else if (hours_left <= 24)
-      {
-        urgency_color = "\ty"; /* Yellow for warning */
-      }
-      else
-      {
-        urgency_color = "\tg"; /* Green for safe */
-      }
-
-      send_to_char(ch, "Active Contract Expiration: %s%d hours, %d minutes\tn\r\n", urgency_color,
-                   hours_left, minutes_left);
-    }
-    else
-    {
-      send_to_char(ch, "Active Contract Status: \trEXPIRED\tn\r\n");
-    }
-  }
-  else if (GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_SUPPLYORDER)
-  {
-    send_to_char(ch, "Active Contract: No expiration set\r\n");
-  }
-  else
-  {
-    send_to_char(ch, "Active Contract: None\r\n");
-  }
-
-  /* Contract slot refresh timing */
-  if (GET_CRAFT(ch).supply_slots_next_refresh > 0)
-  {
-    if (now < GET_CRAFT(ch).supply_slots_next_refresh)
-    {
-      int refresh_hours = (GET_CRAFT(ch).supply_slots_next_refresh - now) / 3600;
-      int refresh_minutes = ((GET_CRAFT(ch).supply_slots_next_refresh - now) % 3600) / 60;
-
-      send_to_char(ch, "Contract Slots Refresh: \tc%d hours, %d minutes\tn\r\n", refresh_hours,
-                   refresh_minutes);
-    }
-    else
-    {
-      send_to_char(ch, "Contract Slots Refresh: \tgAvailable now\tn\r\n");
-    }
-  }
-  else
-  {
-    send_to_char(ch, "Contract Slots Refresh: \tgNever refreshed - available now\tn\r\n");
-  }
-
-  /* Last refresh time */
-  if (GET_CRAFT(ch).supply_slots_last_refresh > 0)
-  {
-    int last_refresh_hours = (now - GET_CRAFT(ch).supply_slots_last_refresh) / 3600;
-    int last_refresh_minutes = ((now - GET_CRAFT(ch).supply_slots_last_refresh) % 3600) / 60;
-
-    send_to_char(ch, "Last Slot Refresh: %d hours, %d minutes ago\r\n", last_refresh_hours,
-                 last_refresh_minutes);
-  }
-  else
-  {
-    send_to_char(ch, "Last Slot Refresh: Never\r\n");
-  }
-
-  /* Individual slot cooldowns */
-  send_to_char(ch, "\r\nIndividual Slot Cooldowns:\r\n");
-  int any_cooldowns = 0;
-  int slot;
-  for (slot = 0; slot < 5; slot++)
-  {
-    if (GET_CRAFT(ch).supply_slot_cooldowns[slot] > 0)
-    {
-      if (now < GET_CRAFT(ch).supply_slot_cooldowns[slot])
-      {
-        int cooldown_hours = (GET_CRAFT(ch).supply_slot_cooldowns[slot] - now) / 3600;
-        int cooldown_minutes = ((GET_CRAFT(ch).supply_slot_cooldowns[slot] - now) % 3600) / 60;
-
-        send_to_char(ch, "  Slot %d: \tr%d hours, %d minutes remaining\tn\r\n", slot + 1,
-                     cooldown_hours, cooldown_minutes);
-        any_cooldowns = 1;
-      }
-      else
-      {
-        send_to_char(ch, "  Slot %d: \tgCooldown expired\tn\r\n", slot + 1);
-      }
-    }
-  }
-
-  if (!any_cooldowns)
-  {
-    send_to_char(ch, "  \tgNo active cooldowns\tn\r\n");
-  }
-
-  /* Special event timing */
-  if (is_special_event_active())
-  {
-    send_to_char(ch, "Special Event Status: \tgActive\tn (Event contracts available)\r\n");
-  }
-  else
-  {
-    send_to_char(ch, "Special Event Status: Inactive\r\n");
-  }
-
   /* Supply order request rate limit (3 per 2 hours) */
   send_to_char(ch, "\r\nSupply Order Request Limit (3 per 2 hours):\r\n");
   int request_count = 0;
@@ -10097,8 +10015,6 @@ void show_supply_order_cooldowns(struct char_data *ch)
   }
 
   send_to_char(ch, "\r\n");
-  send_to_char(ch,
-               "Use '\tchelp supplyorder\tn' for more information on supply order commands.\r\n");
 }
 
 // Function to get the display name for each crafting tool slot
@@ -12605,17 +12521,17 @@ int get_material_cost(int material_id)
   switch (grade)
   {
   case 1:
-    return 5;
-  case 2:
     return 10;
+  case 2:
+    return 25;
   case 3:
-    return 20;
-  case 4:
     return 50;
-  case 5:
+  case 4:
     return 100;
+  case 5:
+    return 200;
   case 6: /* Dragon metal - even higher */
-    return 150;
+    return 250;
   default:
     return 0;
   }
@@ -12627,7 +12543,7 @@ int get_material_cost(int material_id)
  */
 int get_mote_cost(void)
 {
-  return 20;
+  return 25;
 }
 
 /**
@@ -12919,7 +12835,7 @@ void notify_supply_order_cooldown_on_login(struct char_data *ch)
   /* Only display notification if there are active cooldowns */
   if (any_cooldowns || any_refresh_pending)
   {
-    send_to_char(ch, "\r\n\t[Supply Order Status]\r\n");
+    send_to_char(ch, "\r\n[Supply Order Status]\r\n");
 
     if (any_refresh_pending)
     {

@@ -306,6 +306,8 @@ void start_supply_order(struct char_data *ch);
 void show_supply_order_materials(struct char_data *ch, int recipe, int variant);
 void show_supply_order(struct char_data *ch);
 void reset_supply_order(struct char_data *ch);
+void abandon_supply_order(struct char_data *ch);
+void clear_supply_order_cooldowns(struct char_data *ch, int cooldown_seconds);
 int calculate_supply_order_reward(struct char_data *ch);
 bool consume_supply_order_materials(struct char_data *ch);
 void complete_supply_order(struct char_data *ch);

@@ -71,6 +71,7 @@
 #include "mob_spellslots.h" /* for show_mob_spell_slots */
 #include "genshp.h"
 #include "treasure.h"
+#include "crafting_new.h"
 
 /* External variables and functions */
 extern MYSQL *conn;
@@ -4412,7 +4413,8 @@ const struct set_struct
     {"talents", LVL_GRSTAFF, PC, NUMBER},       /* 109 */
     {"addtalents", LVL_GRSTAFF, PC, NUMBER},    /* 110 */
     {"artisanexperience", LVL_GRSTAFF, PC, NUMBER},    /* 111 */
-    {"artisanpoints", LVL_GRSTAFF, PC, NUMBER},    /* 112 */
+    {"artisanpoints", LVL_GRSTAFF, PC, NUMBER}, /* 112 */
+    {"supplyordercooldown", LVL_GRSTAFF, PC, NUMBER}, /* 113 */
 
     {"\n", 0, BOTH, MISC},
 };
@@ -5370,6 +5372,30 @@ static int perform_set(struct char_data *ch, struct char_data *vict, int mode, c
       send_to_char(vict, "%s has adjusted your artisan experience by %d.\r\n",
                    CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", artexp);
       break;
+
+   case 113:
+    {
+      int cooldown_value = RANGE(0, 86400); /* Max 24 hours */
+      
+      clear_supply_order_cooldowns(vict, cooldown_value);
+            
+      if (cooldown_value == 0)
+      {
+        send_to_char(ch, "%s's supply order cooldowns have been cleared.\r\n", GET_NAME(vict));
+        send_to_char(vict, "%s has cleared your supply order cooldowns.\r\n",
+                     CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone");
+      }
+      else
+      {
+        int hours = cooldown_value / 3600;
+        int minutes = (cooldown_value % 3600) / 60;
+        send_to_char(ch, "%s's supply order cooldowns set to %d hours, %d minutes.\r\n", 
+                     GET_NAME(vict), hours, minutes);
+        send_to_char(vict, "%s has set your supply order cooldowns to %d hours, %d minutes.\r\n",
+                     CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", hours, minutes);
+      }
+    }
+    break; 
 
   default:
     send_to_char(ch, "Can't set that!\r\n");
