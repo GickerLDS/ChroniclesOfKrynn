@@ -372,8 +372,16 @@ ACMD_DECL(do_craft_score);
 ACMD_DECL(do_motes);
 ACMD_DECL(do_craft_score_new);
 ACMD_DECL(do_reforge_new);
+SPECIAL_DECL(artisan_shop);
 
 extern int materials_sort_info[NUM_CRAFT_MATS];
+
+/* Artisan point spending functions */
+int get_material_cost(int material_id);
+int get_mote_cost(void);
+void handle_artisan_buy(struct char_data *ch, const char *argument);
+void show_artisan_shop(struct char_data *ch);
+int get_material_by_name(const char *name);
 
 // Supply order slot management functions
 void initialize_supply_slots(struct char_data *ch);

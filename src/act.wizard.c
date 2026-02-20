@@ -4411,6 +4411,8 @@ const struct set_struct
     {"arcaneschool", LVL_STAFF, PC, MISC},      /* 108 */
     {"talents", LVL_GRSTAFF, PC, NUMBER},       /* 109 */
     {"addtalents", LVL_GRSTAFF, PC, NUMBER},    /* 110 */
+    {"artisanexperience", LVL_GRSTAFF, PC, NUMBER},    /* 111 */
+    {"artisanpoints", LVL_GRSTAFF, PC, NUMBER},    /* 112 */
 
     {"\n", 0, BOTH, MISC},
 };
@@ -5359,6 +5361,15 @@ static int perform_set(struct char_data *ch, struct char_data *vict, int mode, c
     send_to_char(vict, "%s has adjusted your talent points by %d.\r\n",
                  CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", talents);
     break;
+
+  case 111:
+  case 112:
+      int artexp = RANGE(-100000, 100000);
+      GET_ARTISAN_EXP(vict) += artexp;
+      send_to_char(ch, "%s's artisan experience adjusted by %d.\r\n", GET_NAME(vict), artexp);
+      send_to_char(vict, "%s has adjusted your artisan experience by %d.\r\n",
+                   CAN_SEE(vict, ch) ? GET_NAME(ch) : "Someone", artexp);
+      break;
 
   default:
     send_to_char(ch, "Can't set that!\r\n");

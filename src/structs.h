@@ -4824,8 +4824,9 @@
 #define ITEM_TRAPPED 113     // This object has a trap attached
 #define ITEM_ACCOUNT_EXP 114 // item is bought for account exp
 #define ITEM_REFORGEABLE 115 // item can be reforged
+#define ITEM_ARTISANPOINTS 116 // item is purchased with artisan points
 /** Total number of item flags */
-#define NUM_ITEM_FLAGS 116
+#define NUM_ITEM_FLAGS 117
 
 /* homeland-port */
 /*

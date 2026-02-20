@@ -5044,7 +5044,7 @@ void newcraft_survey(struct char_data *ch, const char *argument)
 
 void craft_refine_complete(struct char_data *ch)
 {
-  int roll, dc, skill, skill_type, num = 0;
+  int roll, dc, skill, skill_type, num = 0, exp = 0, happy_hour_bonus = 0;
 
   if (GET_CRAFT(ch).refining_result[0] == 0 || GET_CRAFT(ch).refining_result[1] == 0)
   {
@@ -5082,7 +5082,16 @@ void craft_refine_complete(struct char_data *ch)
                  "succeeded and you gained an extra unit of %s.\r\n",
                  crafting_materials[GET_CRAFT(ch).refining_result[0]]);
     num++;
-    gain_craft_exp(ch, (REFINE_BASE_EXP + dc) * num, skill_type, TRUE);
+    exp = (REFINE_BASE_EXP + dc) * num;
+    
+    /* Apply happy hour bonus */
+    if (HAPPY_CRAFTING_EXP > 0)
+    {
+      happy_hour_bonus = (exp * HAPPY_CRAFTING_EXP) / 100;
+      send_to_char(ch, "\tY*HAPPY HOUR*\tn You gain %d bonus experience!\r\n", happy_hour_bonus);
+    }
+    
+    gain_craft_exp(ch, exp + happy_hour_bonus, skill_type, TRUE);
   }
   else if ((roll + skill) < dc)
   {
@@ -5096,7 +5105,16 @@ void craft_refine_complete(struct char_data *ch)
   {
     send_to_char(ch, "You rolled %d + skill %d for a total of %d >= dc of %d. You succeed!\r\n",
                  roll, skill, roll + skill, dc);
-    gain_craft_exp(ch, (REFINE_BASE_EXP)*num, skill_type, TRUE);
+    exp = (REFINE_BASE_EXP) * num;
+    
+    /* Apply happy hour bonus */
+    if (HAPPY_CRAFTING_EXP > 0)
+    {
+      happy_hour_bonus = (exp * HAPPY_CRAFTING_EXP) / 100;
+      send_to_char(ch, "\tY*HAPPY HOUR*\tn You gain %d bonus experience!\r\n", happy_hour_bonus);
+    }
+    
+    gain_craft_exp(ch, exp + happy_hour_bonus, skill_type, TRUE);
   }
 
   GET_CRAFT_MAT(ch, GET_CRAFT(ch).refining_result[0]) += num;
@@ -12472,4 +12490,352 @@ static void impl_do_reforge_new_(struct char_data *ch, char *argument,
   save_char(ch, 0);
   Crash_crashsave(ch);
   NEW_EVENT(eCRAFTING, ch, NULL, 1 * PASSES_PER_SEC);
+}
+
+/**
+ * ============================================================================
+ * ARTISAN POINT SPENDING SYSTEM
+ * Allows crafters to spend artisan points on materials and motes
+ * ============================================================================
+ */
+
+/**
+ * @brief Get the cost in artisan points for a material based on its grade
+ * @param material_id The material ID (CRAFT_MAT_*)
+ * @return The AP cost (5, 10, 20, 50, 100, or 150)
+ */
+int get_material_cost(int material_id)
+{
+  int grade = material_grade(material_id);
+  
+  switch (grade)
+  {
+  case 1:
+    return 5;
+  case 2:
+    return 10;
+  case 3:
+    return 20;
+  case 4:
+    return 50;
+  case 5:
+    return 100;
+  case 6: /* Dragon metal - even higher */
+    return 150;
+  default:
+    return 0;
+  }
+}
+
+/**
+ * @brief Get the cost in artisan points for a mote
+ * @return The AP cost (20)
+ */
+int get_mote_cost(void)
+{
+  return 20;
+}
+
+/**
+ * @brief Display available materials and motes for purchase
+ * Materials are ordered by grade (1-6) then alphabetically
+ * Color coded by material type (hard metal, wood, cloth, etc)
+ */
+void show_artisan_shop(struct char_data *ch)
+{
+  int i, j, grade, cost, mat_group;
+  char type_color[10];
+  
+  send_to_char(ch, "\tCArtisan Shop - Materials & Motes\tn\r\n");
+  send_to_char(ch, "Your Artisan Points: \tC%d\tn\r\n\r\n", GET_ARTISAN_EXP(ch));
+  
+  send_to_char(ch, "\tW=== MATERIALS ===\tn\r\n");
+  send_to_char(ch, "Format: artisan buy <quantity> <name>\r\n\r\n");
+  
+  /* Sort materials by grade, then display alphabetically within each grade */
+  for (grade = 1; grade <= 6; grade++)
+  {
+    int materials_in_grade[NUM_CRAFT_MATS];
+    int count = 0;
+    
+    /* Collect all materials of this grade */
+    for (i = 1; i < NUM_CRAFT_MATS; i++)
+    {
+      if (material_grade(i) == grade)
+      {
+        materials_in_grade[count++] = i;
+      }
+    }
+    
+    /* Sort collected materials alphabetically */
+    for (i = 0; i < count - 1; i++)
+    {
+      for (j = i + 1; j < count; j++)
+      {
+        if (strcasecmp(crafting_materials[materials_in_grade[i]],
+                       crafting_materials[materials_in_grade[j]]) > 0)
+        {
+          int temp = materials_in_grade[i];
+          materials_in_grade[i] = materials_in_grade[j];
+          materials_in_grade[j] = temp;
+        }
+      }
+    }
+    
+    /* Display materials in this grade */
+    if (count > 0)
+    {
+      send_to_char(ch, "\t\tGrade %d Materials\tn\r\n", grade);
+      
+      for (i = 0; i < count; i++)
+      {
+        int mat_id = materials_in_grade[i];
+        mat_group = craft_group_by_material(mat_id);
+        cost = get_material_cost(mat_id);
+        
+        /* Color code by material type */
+        switch (mat_group)
+        {
+        case CRAFT_GROUP_HARD_METALS:
+          snprintf(type_color, sizeof(type_color), "\tR"); /* Red for hard metals */
+          break;
+        case CRAFT_GROUP_SOFT_METALS:
+          snprintf(type_color, sizeof(type_color), "\tY"); /* Yellow for soft metals */
+          break;
+        case CRAFT_GROUP_WOOD:
+          snprintf(type_color, sizeof(type_color), "\tw"); /* White for wood */
+          break;
+        case CRAFT_GROUP_HIDES:
+          snprintf(type_color, sizeof(type_color), "\tB"); /* Black for hides */
+          break;
+        case CRAFT_GROUP_CLOTH:
+          snprintf(type_color, sizeof(type_color), "\tC"); /* Cyan for cloth */
+          break;
+        case CRAFT_GROUP_STONE:
+          snprintf(type_color, sizeof(type_color), "\tG"); /* Green for stone */
+          break;
+        default:
+          snprintf(type_color, sizeof(type_color), "\tw"); /* White default */
+          break;
+        }
+        
+        send_to_char(ch, "  %s%-28s\tn %3d AP each\r\n", 
+                     type_color, crafting_materials[mat_id], cost);
+      }
+      send_to_char(ch, "\r\n");
+    }
+  }
+  
+  send_to_char(ch, "\tW=== MOTES ===\tn\r\n");
+  send_to_char(ch, "All Mote Types: %d AP each\r\n", get_mote_cost());
+  send_to_char(ch, "Format: artisan buy <quantity> <mote name>\r\n\r\n");
+  send_to_char(ch, "Types: air, dark, earth, fire, ice, light, lightning, water\r\n");
+}
+
+/**
+ * @brief Get material ID from name
+ */
+int get_material_by_name(const char *name)
+{
+  int i;
+  
+  for (i = 1; i < NUM_CRAFT_MATS; i++)
+  {
+    if (is_abbrev(name, crafting_materials[i]))
+      return i;
+  }
+  
+  return CRAFT_MAT_NONE;
+}
+
+/**
+ * @brief Get mote type from name (air, dark, earth, fire, ice, light, lightning, water)
+ */
+int get_mote_type_by_name(const char *name)
+{
+  if (is_abbrev(name, "air"))
+    return CRAFTING_MOTE_AIR;
+  if (is_abbrev(name, "dark"))
+    return CRAFTING_MOTE_DARK;
+  if (is_abbrev(name, "earth"))
+    return CRAFTING_MOTE_EARTH;
+  if (is_abbrev(name, "fire"))
+    return CRAFTING_MOTE_FIRE;
+  if (is_abbrev(name, "ice"))
+    return CRAFTING_MOTE_ICE;
+  if (is_abbrev(name, "light"))
+    return CRAFTING_MOTE_LIGHT;
+  if (is_abbrev(name, "lightning"))
+    return CRAFTING_MOTE_LIGHTNING;
+  if (is_abbrev(name, "water"))
+    return CRAFTING_MOTE_WATER;
+  
+  return CRAFTING_MOTE_NONE;  /* Invalid mote type */
+}
+
+/**
+ * @brief Handle buying materials with artisan points
+ */
+void handle_artisan_buy(struct char_data *ch, const char *argument)
+{
+  char arg1[100], arg2[200], item_name[200], buf[500];
+  int material_id, quantity, cost, total_cost, mote_type;
+  size_t len;
+  
+  if (!*argument)
+  {
+    show_artisan_shop(ch);
+    return;
+  }
+  
+  /* Parse: quantity and item name */
+  half_chop_c(argument, arg1, sizeof(arg1), buf, sizeof(buf)); // chopping off first argument because we don't need it.
+  half_chop_c(buf, arg1, sizeof(arg1), arg2, sizeof(arg2));
+  
+  if (!*arg1 || !*arg2)
+  {
+    send_to_char(ch, "Usage: artisan buy <quantity> <material or mote name>\r\n");
+    send_to_char(ch, "Examples:\r\n");
+    send_to_char(ch, "  artisan buy 10 iron ore\r\n");
+    send_to_char(ch, "  artisan buy 5 fire\r\n");
+    send_to_char(ch, "  artisan buy 5 fire mote\r\n");
+    return;
+  }
+  
+  quantity = atoi(arg1);
+  if (quantity <= 0)
+  {
+    send_to_char(ch, "Quantity must be a number above zero.\r\n");
+    return;
+  }
+  else if (quantity > 1000)
+    quantity = 1000;
+  
+  /* Copy arg2 to item_name for modification */
+  snprintf(item_name, sizeof(item_name), "%s", arg2);
+  
+  /* Check if item_name ends with " mote" and strip it if present */
+  len = strlen(item_name);
+  if (len > 5 && !strcasecmp(item_name + len - 5, " mote"))
+  {
+    item_name[len - 5] = '\0';  /* Strip " mote" from end */
+  }
+  
+  /* Try to match as a mote type (by name or number) */
+  if (is_number(item_name))
+  {
+    send_to_char(ch, "Please specify the mote type you would like to buy.\r\n");
+    return;
+  }
+  else
+  {
+    mote_type = get_mote_type_by_name(item_name);
+  }
+  
+  if (mote_type >= 1 && mote_type <= 8)
+  {
+    /* It's a mote purchase */
+    cost = get_mote_cost();
+    total_cost = cost * quantity;
+    
+    if (GET_ARTISAN_EXP(ch) < total_cost)
+    {
+      send_to_char(ch, "You don't have enough artisan points. You need %d AP but only have %d AP.\r\n",
+                   total_cost, GET_ARTISAN_EXP(ch));
+      return;
+    }
+    
+    /* Purchase motes */
+    GET_ARTISAN_EXP(ch) -= total_cost;
+    GET_CRAFT_MOTES(ch, mote_type) += quantity;
+    
+    send_to_char(ch, "\tYSale Complete!\tn\r\n");
+    send_to_char(ch, "You purchased %d %s(s) for %d AP.\r\n", quantity, crafting_motes[mote_type], total_cost);
+    send_to_char(ch, "You now have %d artisan points.\r\n", GET_ARTISAN_EXP(ch));
+    
+    /* Save character */
+    save_char(ch, 0);
+    return;
+  }
+  
+  /* Not a mote, try as a material - use original arg2 in case the material name has "mote" in it */
+  material_id = get_material_by_name(arg2);
+  if (material_id == CRAFT_MAT_NONE)
+  {
+    send_to_char(ch, "That item is not available. Type 'artisan shop' to see available items.\r\n");
+    return;
+  }
+  
+  cost = get_material_cost(material_id);
+  if (cost == 0)
+  {
+    send_to_char(ch, "That material cannot be purchased.\r\n");
+    return;
+  }
+  
+  total_cost = cost * quantity;
+  
+  if (GET_ARTISAN_EXP(ch) < total_cost)
+  {
+    send_to_char(ch, "You don't have enough artisan points. You need %d AP but only have %d AP.\r\n",
+                 total_cost, GET_ARTISAN_EXP(ch));
+    return;
+  }
+  
+  /* Purchase materials */
+  GET_ARTISAN_EXP(ch) -= total_cost;
+  GET_CRAFT_MAT(ch, material_id) += quantity;
+  
+  send_to_char(ch, "\tYSale Complete!\tn\r\n");
+  send_to_char(ch, "You purchased %d %s for %d AP.\r\n",
+               quantity, crafting_materials[material_id], total_cost);
+  send_to_char(ch, "You now have %d artisan points.\r\n", GET_ARTISAN_EXP(ch));
+  
+  /* Save character */
+  save_char(ch, 0);
+}
+
+/**
+ * @brief Spec proc for artisan shop - allows NPC to sell materials and motes
+ * Usage: Attach to an NPC to allow players to buy materials with artisan points
+ * Commands: artisan shop, artisan buy <item> [qty]
+ */
+SPECIAL(artisan_shop)
+{
+  char arg[200];
+  
+  if (!CMD_IS("artisanshop"))
+    return 0;
+  
+  if (FIGHTING(ch))
+  {
+    send_to_char(ch, "You're too busy fighting!\r\n");
+    return 1;
+  }
+  
+  one_argument(argument, arg, sizeof(arg));
+  
+  if (!*arg)
+  {
+    show_artisan_shop(ch);
+    return 1;
+  }
+  
+  if (is_abbrev(arg, "shop"))
+  {
+    show_artisan_shop(ch);
+    return 1;
+  }
+  
+  if (is_abbrev(arg, "buy"))
+  {
+    skip_spaces(&argument);
+    handle_artisan_buy(ch, argument);
+    return 1;
+  }
+  
+  send_to_char(ch, "Usage:\r\n");
+  send_to_char(ch, "  artisan shop                     - View materials and motes for sale\r\n");
+  send_to_char(ch, "  artisan buy <qty> <name>        - Purchase any material or mote by name\r\n");
+  return 1;
 }

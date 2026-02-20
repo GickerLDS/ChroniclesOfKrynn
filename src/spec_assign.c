@@ -1182,6 +1182,7 @@ struct spec_func_data
 /** !!MAKE SURE TO ADD TO: spec_procs.h!!!  **/
 static const struct spec_func_data spec_func_list[] = {
 
+    {"Artisan Shop", artisan_shop, ""},  
     {"Bank", bank, ""},
     {"Bazaar", bazaar, ""},
     {"Bounty Missions", faction_mission, ""},
