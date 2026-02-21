@@ -5630,14 +5630,22 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
       do_split(ch, local_buf, 0, 0);
     }
   }
-  else if (IS_NPC(ch) && GROUP(ch) && (local_gold > 0) && ch->master && !IS_NPC(ch->master) &&
-           PRF_FLAGGED(ch->master, PRF_AUTOSPLIT))
+  else if (IS_NPC(ch) && GROUP(ch) && (local_gold > 0) && ch->master)
   {
     generic_find("corpse", FIND_OBJ_ROOM, ch->master, &tmp_char, &corpse_obj);
     if (corpse_obj)
     {
-      do_get(ch->master, "all.coin corpse", 0, 0);
-      do_split(ch->master, local_buf, 0, 0);
+      if (!IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOSPLIT))
+      {
+        do_get(ch->master, "all.coin corpse", 0, 0);
+        do_split(ch->master, local_buf, 0, 0);
+      }
+      else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
+          PRF_FLAGGED(ch->master->master, PRF_AUTOSPLIT))
+      {
+        do_get(ch->master->master, "all.coin corpse", 0, 0);
+        do_split(ch->master->master, local_buf, 0, 0);
+      }
     }
   }
   else if (!IS_NPC(ch) && (ch != victim) && PRF_FLAGGED(ch, PRF_AUTOGOLD))
@@ -5645,11 +5653,19 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
     do_get(ch, "all.coin corpse", 0, 0);
     do_get(ch, "all.coin", 0, 0); // added for incorporeal - no corpse -zusuk
   }
-  else if (IS_NPC(ch) && ch->master && (ch != victim) && (ch->master != victim) &&
-           !IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOGOLD))
+  else if (IS_NPC(ch) && ch->master && (ch != victim) && (ch->master != victim))
   {
-    do_get(ch->master, "all.coin corpse", 0, 0);
-    do_get(ch->master, "all.coin", 0, 0); // added for incorporeal - no corpse -zusuk
+    if (!IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOGOLD))
+    {
+      do_get(ch->master, "all.coin corpse", 0, 0);
+      do_get(ch->master, "all.coin", 0, 0); // added for incorporeal - no corpse -zusuk
+    }
+    else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
+        PRF_FLAGGED(ch->master->master, PRF_AUTOGOLD))
+    {
+      do_get(ch->master->master, "all.coin corpse", 0, 0);
+      do_get(ch->master->master, "all.coin", 0, 0); // added for incorporeal - no corpse -zusuk
+    }
   }
 
   struct group_data *group = GROUP(ch);
@@ -5669,10 +5685,13 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
       do_get(ch, "all corpse", 0, 0);
       // do_get(ch, "all.coin", 0, 0);  //added for incorporeal - no corpse
     }
-    else if (IS_NPC(ch) && (ch != victim) && ch->master && (IN_ROOM(ch) == IN_ROOM(ch->master)) &&
-             !IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOLOOT))
+    else if (IS_NPC(ch) && (ch != victim) && ch->master && (IN_ROOM(ch) == IN_ROOM(ch->master)))
     {
-      do_get(ch->master, "all corpse", 0, 0);
+      if (!IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOLOOT))
+        do_get(ch->master, "all corpse", 0, 0);
+      else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
+          PRF_FLAGGED(ch->master->master, PRF_AUTOLOOT))
+        do_get(ch->master->master, "all corpse", 0, 0);
     }
   }
 
@@ -5681,10 +5700,13 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
   {
     do_sac(ch, "corpse", 0, 0);
   }
-  else if (IS_NPC(ch) && (ch != victim) && ch->master && (IN_ROOM(ch) == IN_ROOM(ch->master)) &&
-           !IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOSAC))
+  else if (IS_NPC(ch) && (ch != victim) && ch->master && (IN_ROOM(ch) == IN_ROOM(ch->master)))
   {
-    do_sac(ch->master, "corpse", 0, 0);
+    if (!IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOSAC))
+      do_sac(ch->master, "corpse", 0, 0);
+    else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
+        PRF_FLAGGED(ch->master->master, PRF_AUTOSAC))
+      do_sac(ch->master, "corpse", 0, 0);
   }
 
 
