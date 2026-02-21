@@ -7333,7 +7333,7 @@ void craft_supplyorder_complete(struct char_data *ch)
   }
   else
   {
-    send_to_char(ch, "\r\nSupply order complete! Visit a supply order NPC to collect your reward.\r\n");
+    send_to_char(ch, "\r\n\tGSupply order complete!\tn Visit a supply order NPC to collect your reward.\r\n");
     /* All items complete, stop crafting */
     GET_CRAFT(ch).craft_duration = 0;
   }
@@ -7535,6 +7535,40 @@ void complete_supply_order(struct char_data *ch)
   }
   send_to_char(ch, "You now have \tC%d total artisan points\tn.\r\n", GET_ARTISAN_EXP(ch));
 
+  /* Start the cooldown window if it hasn't been started yet */
+  time_t now = time(NULL);
+  
+  if (GET_CRAFT(ch).supply_cooldown_start_time == 0 || 
+      (now - GET_CRAFT(ch).supply_cooldown_start_time >= 7200))
+  {
+    /* Start a new cooldown window or restart if expired */
+    GET_CRAFT(ch).supply_cooldown_start_time = now;
+    GET_CRAFT(ch).supply_orders_completed_count = 1;
+    send_to_char(ch, "\tY[Cooldown Started]\tn You can now complete up to 3 supply orders before the cooldown limit is reached.\r\n");
+  }
+  else
+  {
+    /* Cooldown window is active, increment counter */
+    GET_CRAFT(ch).supply_orders_completed_count++;
+    int remaining = 3 - GET_CRAFT(ch).supply_orders_completed_count;
+    
+    if (remaining > 0)
+    {
+      send_to_char(ch, "\tY[Cooldown Active]\tn You can complete %d more supply order%s before hitting the limit.\r\n",
+                   remaining, (remaining > 1 ? "s" : ""));
+    }
+    else if (remaining == 0)
+    {
+      time_t cooldown_remaining = 7200 - (now - GET_CRAFT(ch).supply_cooldown_start_time);
+      int hours = cooldown_remaining / 3600;
+      int minutes = (cooldown_remaining % 3600) / 60;
+      
+      send_to_char(ch, "\tR[Cooldown Limit Reached]\tn You have completed 3 supply orders. Your supply orders will refresh in approximately %d hour%s and %d minute%s.\r\n",
+                   hours, (hours != 1 ? "s" : ""),
+                   minutes, (minutes != 1 ? "s" : ""));
+    }
+  }
+
   /* Clear supply order data without penalty/cooldown since it was completed successfully */
   GET_CRAFT(ch).crafting_method = 0;
   GET_CRAFT(ch).crafting_item_type = 0;
@@ -7551,34 +7585,6 @@ void complete_supply_order(struct char_data *ch)
   {
     GET_CRAFT(ch).materials[i][0] = 0;
     GET_CRAFT(ch).materials[i][1] = 0;
-  }
-
-  /* Check if player can request a new order or if rate-limited */
-  time_t now = time(NULL);
-  int request_count = 0;
-  
-  for (i = 0; i < 3; i++)
-  {
-    if (GET_CRAFT(ch).supply_request_times[i] > 0 && now - GET_CRAFT(ch).supply_request_times[i] < 7200)
-    {
-      request_count++;
-    }
-  }
-
-  if (request_count >= 3)
-  {
-    int oldest_time = GET_CRAFT(ch).supply_request_times[0];
-    int cooldown_remaining = 7200 - (now - oldest_time);
-    int hours = cooldown_remaining / 3600;
-    int minutes = (cooldown_remaining % 3600) / 60;
-    
-    send_to_char(ch, "Next supply order request available in approximately %d hour%s and %d minute%s.\r\n", 
-                 hours, (hours != 1 ? "s" : ""), 
-                 minutes, (minutes != 1 ? "s" : ""));
-  }
-  else
-  {
-    send_to_char(ch, "You are now free to request a new supply order.\r\n");
   }
 }
 
@@ -8224,6 +8230,29 @@ int get_num_mats_required_by_material_type_and_craft_recipe(struct char_data *ch
   return num_mats;
 }
 
+/* Find the lowest grade material of a given group that the player has */
+int find_lowest_grade_material_in_group(struct char_data *ch, int material_group)
+{
+  int mat = 0;
+  int lowest_grade = INT_MAX;
+  int lowest_material = CRAFT_MAT_NONE;
+
+  for (mat = 1; mat < NUM_CRAFT_MATS; mat++)
+  {
+    if (craft_group_by_material(mat) == material_group && GET_CRAFT_MAT(ch, mat) > 0)
+    {
+      int grade = material_grade(mat);
+      if (grade < lowest_grade)
+      {
+        lowest_grade = grade;
+        lowest_material = mat;
+      }
+    }
+  }
+
+  return lowest_material;
+}
+
 bool remove_supply_order_materials(struct char_data *ch)
 {
   bool found = FALSE;
@@ -8271,6 +8300,7 @@ void set_supply_order_materials(struct char_data *ch, char *arg, char *arg2)
   {
     send_to_char(ch, "You have already completed your supply order. Go to a supply order "
                      "requisition NPC and type 'supplyorder complete' for your reward.\r\n");
+    return;
   }
 
   if (!*arg)
@@ -8286,7 +8316,7 @@ void set_supply_order_materials(struct char_data *ch, char *arg, char *arg2)
 
   if (!*arg2 && is_abbrev(arg, "add"))
   {
-    send_to_char(ch, "You need to specify a material type.\r\n");
+    send_to_char(ch, "You need to specify a material type or 'all'.\r\n");
     return;
   }
 
@@ -8299,6 +8329,90 @@ void set_supply_order_materials(struct char_data *ch, char *arg, char *arg2)
       send_to_char(ch, "You don't have any materials assigned to your supply order.\r\n");
       return;
     }
+    return;
+  }
+
+  /* Handle "add all" case */
+  if (is_abbrev(arg2, "all"))
+  {
+    int i;
+    int variant = 0;
+    int required_group = 0;
+    int lowest_material = 0;
+    int required_amount = 0;
+    bool can_fill = TRUE;
+    int num_filled = 0;
+
+    if ((recipe = get_current_craft_project_recipe(ch)) <= CRAFT_RECIPE_NONE)
+    {
+      send_to_char(ch,
+                   "You need to set the supply order item type, specific type and variant type first.\r\n");
+      return;
+    }
+
+    if ((variant = GET_CRAFT(ch).craft_variant) == -1)
+    {
+      send_to_char(ch, "You need to set the variant type first.\r\n");
+      return;
+    }
+
+    /* Check if any materials already assigned */
+    for (i = 1; i < NUM_CRAFT_GROUPS; i++)
+    {
+      if (GET_CRAFT(ch).materials[i][0] > CRAFT_MAT_NONE)
+      {
+        send_to_char(ch, "You already have materials assigned. Please remove them first.\r\n");
+        return;
+      }
+    }
+
+    /* First pass: verify player has all required materials */
+    for (i = 0; i < 3; i++)
+    {
+      if (crafting_recipes[recipe].materials[i][variant][0] != CRAFT_GROUP_NONE)
+      {
+        required_group = crafting_recipes[recipe].materials[i][variant][0];
+        required_amount = crafting_recipes[recipe].materials[i][variant][1];
+
+        lowest_material = find_lowest_grade_material_in_group(ch, required_group);
+
+        if (lowest_material == CRAFT_MAT_NONE || GET_CRAFT_MAT(ch, lowest_material) < required_amount)
+        {
+          send_to_char(ch, "You don't have enough materials to fill all slots. Missing %s.\r\n",
+                       crafting_material_groups[required_group]);
+          can_fill = FALSE;
+          break;
+        }
+      }
+    }
+
+    if (!can_fill)
+    {
+      return;
+    }
+
+    /* Second pass: add all materials */
+    for (i = 0; i < 3; i++)
+    {
+      if (crafting_recipes[recipe].materials[i][variant][0] != CRAFT_GROUP_NONE)
+      {
+        required_group = crafting_recipes[recipe].materials[i][variant][0];
+        required_amount = crafting_recipes[recipe].materials[i][variant][1];
+
+        lowest_material = find_lowest_grade_material_in_group(ch, required_group);
+
+        GET_CRAFT(ch).materials[required_group][0] = lowest_material;
+        GET_CRAFT(ch).materials[required_group][1] = required_amount;
+        GET_CRAFT_MAT(ch, lowest_material) -= required_amount;
+
+        send_to_char(ch, "Added %d unit%s of %s (%s).\r\n", required_amount,
+                     required_amount > 1 ? "s" : "", crafting_materials[lowest_material],
+                     crafting_material_groups[required_group]);
+        num_filled++;
+      }
+    }
+
+    send_to_char(ch, "\tgSuccessfully filled all %d material slots!\tn\r\n", num_filled);
     return;
   }
 
@@ -8542,34 +8656,34 @@ void request_new_supply_order(struct char_data *ch)
   int recipe = 0;
   int variant = 0;
   time_t now = time(NULL);
-  int request_count = 0;
-  int i;
-
+  
   if (!has_quartermaster_in_room(ch))
   {
     send_to_char(ch, "You must be in a room with a quartermaster to request a supply order.\r\n");
     return;
   }
 
-  /* Check supply order request cooldown: max 3 per 2 hours */
-  for (i = 0; i < 3; i++)
+  /* Check if cooldown window is active and whether it has expired */
+  if (GET_CRAFT(ch).supply_cooldown_start_time > 0)
   {
-    if (GET_CRAFT(ch).supply_request_times[i] > 0 && now - GET_CRAFT(ch).supply_request_times[i] < 7200)
-    {
-      request_count++;
-    }
-  }
-
-  if (request_count >= 3)
-  {
-    int oldest_time = GET_CRAFT(ch).supply_request_times[0];
-    int cooldown_remaining = 7200 - (now - oldest_time);
-    int hours = cooldown_remaining / 3600;
-    int minutes = (cooldown_remaining % 3600) / 60;
+    time_t time_elapsed = now - GET_CRAFT(ch).supply_cooldown_start_time;
     
-    send_to_char(ch, "You have already requested 3 supply orders in the last 2 hours.\r\n");
-    send_to_char(ch, "Next request available in approximately %d hours and %d minutes.\r\n", hours, minutes);
-    return;
+    if (time_elapsed >= 7200) /* 2 hours have passed, reset cooldown */
+    {
+      GET_CRAFT(ch).supply_cooldown_start_time = 0;
+      GET_CRAFT(ch).supply_orders_completed_count = 0;
+    }
+    else if (GET_CRAFT(ch).supply_orders_completed_count >= 3)
+    {
+      /* Cooldown is active and they've used all 3 slots */
+      int cooldown_remaining = 7200 - time_elapsed;
+      int hours = cooldown_remaining / 3600;
+      int minutes = (cooldown_remaining % 3600) / 60;
+      
+      send_to_char(ch, "You have already completed 3 supply orders. The cooldown is active.\r\n");
+      send_to_char(ch, "Your supply orders will refresh in approximately %d hours and %d minutes.\r\n", hours, minutes);
+      return;
+    }
   }
 
   if (GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_SUPPLYORDER)
@@ -8618,11 +8732,6 @@ void request_new_supply_order(struct char_data *ch)
     GET_CRAFT(ch).crafting_method = SCMD_NEWCRAFT_SUPPLYORDER;
     GET_CRAFT(ch).supply_num_required = quantity;
     GET_CRAFT(ch).skill_type = crafting_recipes[recipe].variant_skill[variant];
-    
-    /* Track request timestamp for cooldown (shift old times and add new one) */
-    GET_CRAFT(ch).supply_request_times[0] = GET_CRAFT(ch).supply_request_times[1];
-    GET_CRAFT(ch).supply_request_times[1] = GET_CRAFT(ch).supply_request_times[2];
-    GET_CRAFT(ch).supply_request_times[2] = now;
     
     send_to_char(ch, "You've requested a new supply order to make %d %ss.\r\n", quantity,
                  crafting_recipes[recipe].variant_descriptions[variant]);
@@ -8886,11 +8995,9 @@ void clear_supply_order_cooldowns(struct char_data *ch, int cooldown_seconds)
   /* Reset slot refresh timer */
   GET_CRAFT(ch).supply_slots_next_refresh = cooldown_time;
 
-  /* Reset supply request rate limit timestamps */
-  for (slot = 0; slot < 3; slot++)
-  {
-    GET_CRAFT(ch).supply_request_times[slot] = 0;
-  }
+  /* Reset supply order completion cooldown */
+  GET_CRAFT(ch).supply_cooldown_start_time = 0;
+  GET_CRAFT(ch).supply_orders_completed_count = 0;
 }
 
 
@@ -9803,35 +9910,20 @@ void update_supply_slots_for_all_players(void)
       refresh_supply_slots(ch);
     }
 
-    /* Check if oldest supply order request cooldown has expired and notify player */
-    if (GET_CRAFT(ch).supply_request_times[0] > 0)
+    /* Check if supply order cooldown window has expired and notify player */
+    if (GET_CRAFT(ch).supply_cooldown_start_time > 0)
     {
-      /* When the oldest request is older than 2 hours, the window has shifted */
-      if (now - GET_CRAFT(ch).supply_request_times[0] >= 7200)
+      time_t elapsed = now - GET_CRAFT(ch).supply_cooldown_start_time;
+      
+      if (elapsed >= 7200)
       {
-        /* Check how many requests are still within the 2-hour window */
-        int active_requests = 0;
-        int i;
-        for (i = 0; i < 3; i++)
-        {
-          if (GET_CRAFT(ch).supply_request_times[i] > 0 && 
-              now - GET_CRAFT(ch).supply_request_times[i] < 7200)
-          {
-            active_requests++;
-          }
-        }
-
-        /* If we have room again, notify the player */
-        if (active_requests < 3)
-        {
-          send_to_char(ch, "\tgYour supply order request cooldown window has shifted!\tn\r\n");
-          send_to_char(ch, "\tYYou now have available quota for more supply orders.\tn\r\n");
-        }
-
-        /* Shift the window: remove oldest expired request */
-        GET_CRAFT(ch).supply_request_times[0] = GET_CRAFT(ch).supply_request_times[1];
-        GET_CRAFT(ch).supply_request_times[1] = GET_CRAFT(ch).supply_request_times[2];
-        GET_CRAFT(ch).supply_request_times[2] = 0;
+        /* Cooldown window has expired */
+        send_to_char(ch, "\tgYour supply order cooldown window has expired!\tn\r\n");
+        send_to_char(ch, "\tYYou can now request new supply orders.\tn\r\n");
+        
+        /* Reset cooldown */
+        GET_CRAFT(ch).supply_cooldown_start_time = 0;
+        GET_CRAFT(ch).supply_orders_completed_count = 0;
       }
     }
   }
@@ -10053,35 +10145,44 @@ void show_supply_order_cooldowns(struct char_data *ch)
 
   text_line(ch, "SUPPLY ORDER TIMING INFORMATION", 90, '-', '-');
 
-  /* Supply order request rate limit (3 per 2 hours) */
-  send_to_char(ch, "\r\nSupply Order Request Limit (3 per 2 hours):\r\n");
-  int request_count = 0;
-  int i;
-  for (i = 0; i < 3; i++)
-  {
-    if (GET_CRAFT(ch).supply_request_times[i] > 0 && now - GET_CRAFT(ch).supply_request_times[i] < 7200)
-    {
-      request_count++;
-      int age_minutes = (now - GET_CRAFT(ch).supply_request_times[i]) / 60;
-      send_to_char(ch, "  Request %d: %d minutes ago\r\n", i + 1, age_minutes);
-    }
-  }
+  /* Supply order completion cooldown (3 per 2 hours) */
+  send_to_char(ch, "\r\nSupply Order Completion Cooldown (3 per 2 hours):\r\n");
 
-  if (request_count >= 3)
+  if (GET_CRAFT(ch).supply_cooldown_start_time == 0)
   {
-    int oldest_time = GET_CRAFT(ch).supply_request_times[0];
-    int cooldown_remaining = 7200 - (now - oldest_time);
-    int hours = cooldown_remaining / 3600;
-    int minutes = (cooldown_remaining % 3600) / 60;
-    send_to_char(ch, "  \trRequests at limit\tn - Next available in %d hours, %d minutes\r\n", hours, minutes);
-  }
-  else if (request_count > 0)
-  {
-    send_to_char(ch, "  \tyUsed %d of 3 requests in current 2-hour window\tn\r\n", request_count);
+    send_to_char(ch, "  \tgNo cooldown active - you can start a new supply order immediately.\tn\r\n");
   }
   else
   {
-    send_to_char(ch, "  \tgNo recent requests - full quota available\tn\r\n");
+    time_t elapsed = now - GET_CRAFT(ch).supply_cooldown_start_time;
+    
+    if (elapsed >= 7200)
+    {
+      /* Cooldown has expired */
+      send_to_char(ch, "  \tgCooldown expired - you can start a new supply order cycle.\tn\r\n");
+    }
+    else
+    {
+      /* Cooldown is active */
+      int remaining_seconds = 7200 - elapsed;
+      int hours = remaining_seconds / 3600;
+      int minutes = (remaining_seconds % 3600) / 60;
+      
+      send_to_char(ch, "  \tyActive Cooldown Window\tn\r\n");
+      send_to_char(ch, "  Supply orders completed: %d/3\r\n", GET_CRAFT(ch).supply_orders_completed_count);
+      send_to_char(ch, "  Time remaining: %d hours, %d minutes\r\n", hours, minutes);
+      
+      if (GET_CRAFT(ch).supply_orders_completed_count < 3)
+      {
+        int remaining_orders = 3 - GET_CRAFT(ch).supply_orders_completed_count;
+        send_to_char(ch, "  Can complete %d more order%s before hitting limit\r\n",
+                     remaining_orders, (remaining_orders > 1 ? "s" : ""));
+      }
+      else
+      {
+        send_to_char(ch, "  \trLimit reached\tn - Must wait for cooldown to expire\r\n");
+      }
+    }
   }
 
   send_to_char(ch, "\r\n");

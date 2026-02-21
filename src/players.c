@@ -1655,6 +1655,8 @@ int load_char(const char *name, struct char_data *ch)
           GET_CRAFT(ch).refining_result[0] = atoi(line);
         else if (!strcmp(tag, "RRs1"))
           GET_CRAFT(ch).refining_result[1] = atoi(line);
+        else if (!strcmp(tag, "RfBQ"))
+          GET_CRAFT(ch).refining_batch_quantity = atoi(line);
         else if (!strcmp(tag, "RSSz"))
           GET_CRAFT(ch).new_size = atoi(line);
         else if (!strcmp(tag, "RSMT"))
@@ -1799,16 +1801,39 @@ int load_char(const char *name, struct char_data *ch)
         }
         else if (!strcmp(tag, "SuRT"))
         {
-          /* Load supply order request times: req_idx timestamp */
+          /* Old format - supply order request times - convert to new cooldown system */
+          /* When loading old data, if any timestamps exist within 2 hours, set cooldown */
           int req_idx;
           long timestamp;
           if (sscanf(line, "%d %ld", &req_idx, &timestamp) == 2)
           {
-            if (req_idx >= 0 && req_idx < 3)
+            time_t now = time(NULL);
+            time_t req_time = (time_t)timestamp;
+            if (req_time > 0 && (now - req_time) < 7200)
             {
-              GET_CRAFT(ch).supply_request_times[req_idx] = (time_t)timestamp;
+              /* Old request is still within cooldown window */
+              if (GET_CRAFT(ch).supply_cooldown_start_time == 0 ||
+                  req_time < GET_CRAFT(ch).supply_cooldown_start_time)
+              {
+                GET_CRAFT(ch).supply_cooldown_start_time = req_time;
+              }
+              GET_CRAFT(ch).supply_orders_completed_count++;
             }
           }
+        }
+        else if (!strcmp(tag, "SuCS"))
+        {
+          /* Load supply order cooldown start time */
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            GET_CRAFT(ch).supply_cooldown_start_time = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "SuCC"))
+        {
+          /* Load supply order completion count */
+          GET_CRAFT(ch).supply_orders_completed_count = atoi(line);
         }
         break;
 
@@ -2913,6 +2938,8 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("RM21: %d\n", GET_CRAFT(ch).refining_materials[2][1]);
   BUFFER_WRITE("RRs0: %d\n", GET_CRAFT(ch).refining_result[0]);
   BUFFER_WRITE("RRs1: %d\n", GET_CRAFT(ch).refining_result[1]);
+  if (GET_CRAFT(ch).refining_batch_quantity > 0)
+    BUFFER_WRITE("RfBQ: %d\n", GET_CRAFT(ch).refining_batch_quantity);
 
   // resizing stuff
   BUFFER_WRITE("RSSz: %d\n", GET_CRAFT(ch).new_size);
@@ -2938,17 +2965,14 @@ void save_char(struct char_data *ch, int mode)
     }
   }
 
-  /* Save supply order request times for rate limiting */
+  /* Save supply order cooldown information (new system) */
+  if (GET_CRAFT(ch).supply_cooldown_start_time > 0)
   {
-    int req_idx;
-    for (req_idx = 0; req_idx < 3; req_idx++)
-    {
-      if (GET_CRAFT(ch).supply_request_times[req_idx] > 0)
-      {
-        BUFFER_WRITE("SuRT: %d %ld\n", req_idx,
-                     (long)GET_CRAFT(ch).supply_request_times[req_idx]);
-      }
-    }
+    BUFFER_WRITE("SuCS: %ld\n", (long)GET_CRAFT(ch).supply_cooldown_start_time);
+  }
+  if (GET_CRAFT(ch).supply_orders_completed_count > 0)
+  {
+    BUFFER_WRITE("SuCC: %d\n", GET_CRAFT(ch).supply_orders_completed_count);
   }
 
   BUFFER_WRITE("CrSR: %d\n", GET_SURVEY_ROOMS(ch));
