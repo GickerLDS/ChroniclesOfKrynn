@@ -2833,6 +2833,7 @@ void reset_current_craft(struct char_data *ch, char *arg2, bool verbose, bool re
     }
 
     GET_CRAFT(ch).refining_result[0] = GET_CRAFT(ch).refining_result[1] = 0;
+    GET_CRAFT(ch).refining_batch_quantity = 1;
     if (verbose && mode != CR_RESET_ALL)
       send_to_char(ch, "You have reset refining values to the default.\r\n");
   }
@@ -5042,7 +5043,7 @@ void newcraft_survey(struct char_data *ch, const char *argument)
 
 void craft_refine_complete(struct char_data *ch)
 {
-  int roll, dc, skill, skill_type, num = 0, exp = 0, happy_hour_bonus = 0;
+  int roll, dc, skill, skill_type, num = 0, exp = 0, happy_hour_bonus = 0, batch_quantity = 1;
 
   if (GET_CRAFT(ch).refining_result[0] == 0 || GET_CRAFT(ch).refining_result[1] == 0)
   {
@@ -5059,6 +5060,7 @@ void craft_refine_complete(struct char_data *ch)
   skill += get_proficient_talent_bonus(ch, skill_type);
 
   num = GET_CRAFT(ch).refining_result[1];
+  batch_quantity = GET_CRAFT(ch).refining_batch_quantity;
 
   if ((20 + skill) < dc)
   {
@@ -5103,7 +5105,7 @@ void craft_refine_complete(struct char_data *ch)
   {
     send_to_char(ch, "You rolled %d + skill %d for a total of %d >= dc of %d. You succeed!\r\n",
                  roll, skill, roll + skill, dc);
-    exp = (REFINE_BASE_EXP) * num;
+    exp = (REFINE_BASE_EXP + dc) * num;
     
     /* Apply happy hour bonus */
     if (HAPPY_CRAFTING_EXP > 0)
@@ -5116,9 +5118,19 @@ void craft_refine_complete(struct char_data *ch)
   }
 
   GET_CRAFT_MAT(ch, GET_CRAFT(ch).refining_result[0]) += num;
-  send_to_char(ch, "You refine %d unit%s of %s.\r\n", num,
-               num > 1 ? "s" : "",
-               crafting_materials[GET_CRAFT(ch).refining_result[0]]);
+  if (batch_quantity == 1)
+  {
+    send_to_char(ch, "You refine %d unit%s of %s.\r\n", num,
+                 num > 1 ? "s" : "",
+                 crafting_materials[GET_CRAFT(ch).refining_result[0]]);
+  }
+  else
+  {
+    send_to_char(ch, "You complete the refining of %d batches, producing %d unit%s of %s.\r\n",
+                 batch_quantity, num,
+                 num > 1 ? "s" : "",
+                 crafting_materials[GET_CRAFT(ch).refining_result[0]]);
+  }
   reset_current_craft(ch, NULL, FALSE, FALSE);
   act("$n finishes refining.", FALSE, ch, 0, 0, TO_ROOM);
 }
@@ -5594,8 +5606,11 @@ void show_refine_noargs(struct char_data *ch)
 
   send_to_char(ch, "To refine you need to add materials and have the appropriate refining "
                    "equipment in the same room as you.\r\n"
-                   "You need to specify one of the following command parameters: refine add "
-                   "(refine type), refine remove or refine begin.\r\n"
+                   "You need to specify one of the following command parameters:\r\n"
+                   "- refine add (refine type) [quantity] - Add materials (optional quantity for batches)\r\n"
+                   "- refine remove - Cancel your refining project\r\n"
+                   "- refine show - Display your current refining project\r\n"
+                   "- refine begin - Start the refining process\r\n"
                    "Here are the available refining recipes:\r\n");
   for (i = 1; i < NUM_REFINING_RECIPES; i++)
   {
@@ -5617,12 +5632,12 @@ void show_refine_noargs(struct char_data *ch)
 
 void newcraft_refine(struct char_data *ch, const char *argument)
 {
-  char arg1[50], arg2[50], output[200];
-  int i = 0, recipe = 0, material = 0;
+  char arg1[50], arg2[50], arg3[50], output[200];
+  int i = 0, recipe = 0, material = 0, batch_quantity = 1;
   struct obj_data *obj;
   bool fail = FALSE, station = FALSE;
 
-  two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+  three_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2), arg3, sizeof(arg3));
 
   if (!*arg1)
   {
@@ -5663,6 +5678,22 @@ void newcraft_refine(struct char_data *ch, const char *argument)
 
     recipe = i;
 
+    /* Check if a quantity was specified */
+    if (*arg3)
+    {
+      batch_quantity = atoi(arg3);
+      if (batch_quantity < 1)
+      {
+        send_to_char(ch, "You must refine at least 1 batch.\r\n");
+        return;
+      }
+      if (batch_quantity > 20)
+      {
+        send_to_char(ch, "You cannot refine more than 20 batches at once.\r\n");
+        return;
+      }
+    }
+
     for (i = 0; i < 3; i++)
     {
       if ((material = refining_recipes[recipe].materials[i][0]) != 0)
@@ -5673,11 +5704,12 @@ void newcraft_refine(struct char_data *ch, const char *argument)
           /* Check for any grade 2+ hard metal */
           int has_hard_metal_grade2 = 0;
           int j = 0;
+          int materials_needed = refining_recipes[recipe].materials[i][1] * batch_quantity;
 
           for (j = CRAFT_MAT_COPPER; j < NUM_CRAFT_MATS; j++)
           {
             if (craft_group_by_material(j) == CRAFT_GROUP_HARD_METALS && material_grade(j) >= 3 &&
-                GET_CRAFT_MAT(ch, j) >= refining_recipes[recipe].materials[i][1])
+                GET_CRAFT_MAT(ch, j) >= materials_needed)
             {
               has_hard_metal_grade2 = 1;
               break;
@@ -5688,20 +5720,23 @@ void newcraft_refine(struct char_data *ch, const char *argument)
           {
             send_to_char(
                 ch,
-                "You need %d units of a grade 3 or higher hard metal to make %d units of %s.\r\n",
-                refining_recipes[recipe].materials[i][1], refining_recipes[recipe].result[1],
+                "You need %d units of a grade 3 or higher hard metal to make %d batches of %d units each (%d total units) of %s.\r\n",
+                materials_needed, batch_quantity, refining_recipes[recipe].result[1],
+                refining_recipes[recipe].result[1] * batch_quantity,
                 crafting_materials[refining_recipes[recipe].result[0]]);
             fail = TRUE;
           }
         }
         else
         {
-          if (GET_CRAFT_MAT(ch, material) < refining_recipes[recipe].materials[i][1])
+          int materials_needed = refining_recipes[recipe].materials[i][1] * batch_quantity;
+          if (GET_CRAFT_MAT(ch, material) < materials_needed)
           {
-            send_to_char(ch, "You need %d units of %s to make %d units of %s.\r\n",
-                         refining_recipes[recipe].materials[i][1],
+            send_to_char(ch, "You need %d units of %s to make %d batches of %d units each (%d total units) of %s.\r\n",
+                         materials_needed,
                          crafting_materials[refining_recipes[recipe].materials[i][0]],
-                         refining_recipes[recipe].result[1],
+                         batch_quantity, refining_recipes[recipe].result[1],
+                         refining_recipes[recipe].result[1] * batch_quantity,
                          crafting_materials[refining_recipes[recipe].result[0]]);
             fail = TRUE;
           }
@@ -5737,6 +5772,8 @@ void newcraft_refine(struct char_data *ch, const char *argument)
     {
       if ((material = refining_recipes[recipe].materials[i][0]) != 0)
       {
+        int materials_to_deduct = refining_recipes[recipe].materials[i][1] * batch_quantity;
+
         /* Special handling for dragonmetal: second material can be any hard metal grade 2+ */
         if (recipe == REFINE_RECIPE_DRAGONMETAL && i == 1)
         {
@@ -5745,16 +5782,16 @@ void newcraft_refine(struct char_data *ch, const char *argument)
           for (j = CRAFT_MAT_COPPER; j < NUM_CRAFT_MATS; j++)
           {
             if (craft_group_by_material(j) == CRAFT_GROUP_HARD_METALS && material_grade(j) >= 3 &&
-                GET_CRAFT_MAT(ch, j) >= refining_recipes[recipe].materials[i][1])
+                GET_CRAFT_MAT(ch, j) >= materials_to_deduct)
             {
               material = j;
-              GET_CRAFT_MAT(ch, material) -= refining_recipes[recipe].materials[i][1];
+              GET_CRAFT_MAT(ch, material) -= materials_to_deduct;
               GET_CRAFT(ch).refining_materials[i][0] = material;
-              GET_CRAFT(ch).refining_materials[i][1] = refining_recipes[recipe].materials[i][1];
+              GET_CRAFT(ch).refining_materials[i][1] = materials_to_deduct;
               send_to_char(ch,
-                           "You allocate %d units of %s to your refining of %d units of %s.\r\n",
-                           refining_recipes[recipe].materials[i][1], crafting_materials[material],
-                           refining_recipes[recipe].result[1],
+                           "You allocate %d units of %s to your refining of %d batches (%d total units) of %s.\r\n",
+                           materials_to_deduct, crafting_materials[material],
+                           batch_quantity, refining_recipes[recipe].result[1] * batch_quantity,
                            crafting_materials[refining_recipes[recipe].result[0]]);
               break;
             }
@@ -5762,13 +5799,13 @@ void newcraft_refine(struct char_data *ch, const char *argument)
         }
         else
         {
-          GET_CRAFT_MAT(ch, material) -= refining_recipes[recipe].materials[i][1];
+          GET_CRAFT_MAT(ch, material) -= materials_to_deduct;
           GET_CRAFT(ch).refining_materials[i][0] = material;
-          GET_CRAFT(ch).refining_materials[i][1] = refining_recipes[recipe].materials[i][1];
-          send_to_char(ch, "You allocate %d units of %s to your refining of %d units of %s.\r\n",
-                       refining_recipes[recipe].materials[i][1],
+          GET_CRAFT(ch).refining_materials[i][1] = materials_to_deduct;
+          send_to_char(ch, "You allocate %d units of %s to your refining of %d batches (%d total units) of %s.\r\n",
+                       materials_to_deduct,
                        crafting_materials[refining_recipes[recipe].materials[i][0]],
-                       refining_recipes[recipe].result[1],
+                       batch_quantity, refining_recipes[recipe].result[1] * batch_quantity,
                        crafting_materials[refining_recipes[recipe].result[0]]);
         }
       }
@@ -5777,10 +5814,20 @@ void newcraft_refine(struct char_data *ch, const char *argument)
     GET_CRAFT(ch).crafting_recipe = recipe;
     GET_CRAFT(ch).dc = refining_recipes[recipe].dc;
     GET_CRAFT(ch).refining_result[0] = refining_recipes[recipe].result[0];
-    GET_CRAFT(ch).refining_result[1] = refining_recipes[recipe].result[1];
+    GET_CRAFT(ch).refining_result[1] = refining_recipes[recipe].result[1] * batch_quantity;
+    GET_CRAFT(ch).refining_batch_quantity = batch_quantity;
 
-    send_to_char(ch, "You are ready to begin refining your %s. Type 'refine begin' to execute.\r\n",
-                 crafting_materials[refining_recipes[recipe].result[0]]);
+    if (batch_quantity == 1)
+    {
+      send_to_char(ch, "You are ready to begin refining your %s. Type 'refine begin' to execute.\r\n",
+                   crafting_materials[refining_recipes[recipe].result[0]]);
+    }
+    else
+    {
+      send_to_char(ch, "You are ready to begin refining %d batches of %s (%d total units). Type 'refine begin' to execute.\r\n",
+                   batch_quantity, crafting_materials[refining_recipes[recipe].result[0]],
+                   refining_recipes[recipe].result[1] * batch_quantity);
+    }
     return;
   }
   else if (is_abbrev(arg1, "remove"))
@@ -5830,9 +5877,22 @@ void newcraft_refine(struct char_data *ch, const char *argument)
 
     // result
     send_to_char(ch, "RESULT:\r\n");
-    send_to_char(ch, "-- %d unit%s of %s.\r\n", GET_CRAFT(ch).refining_result[1],
-                 GET_CRAFT(ch).refining_result[1] > 1 ? "" : "s",
-                 crafting_materials[GET_CRAFT(ch).refining_result[0]]);
+    if (GET_CRAFT(ch).refining_batch_quantity == 1)
+    {
+      send_to_char(ch, "-- %d unit%s of %s.\r\n", GET_CRAFT(ch).refining_result[1],
+                   GET_CRAFT(ch).refining_result[1] > 1 ? "s" : "",
+                   crafting_materials[GET_CRAFT(ch).refining_result[0]]);
+    }
+    else
+    {
+      int per_batch = GET_CRAFT(ch).refining_result[1] / GET_CRAFT(ch).refining_batch_quantity;
+      send_to_char(ch, "-- %d batches x %d units = %d total unit%s of %s.\r\n",
+                   GET_CRAFT(ch).refining_batch_quantity,
+                   per_batch,
+                   GET_CRAFT(ch).refining_result[1],
+                   GET_CRAFT(ch).refining_result[1] > 1 ? "s" : "",
+                   crafting_materials[GET_CRAFT(ch).refining_result[0]]);
+    }
     send_to_char(ch, "\r\n");
 
     // dc and skill
@@ -5895,7 +5955,9 @@ void newcraft_refine(struct char_data *ch, const char *argument)
 
     GET_CRAFT(ch).crafting_method = SCMD_NEWCRAFT_REFINE;
     GET_CRAFT(ch).craft_duration = 10 * GET_CRAFT(ch).refining_result[1];
-    send_to_char(ch, "You begin refining %s.\r\n",
+    send_to_char(ch, "You begin refining %d unit%s of %s.\r\n",
+                 GET_CRAFT(ch).refining_result[1],
+                 GET_CRAFT(ch).refining_result[1] > 1 ? "s" : "",
                  crafting_materials[GET_CRAFT(ch).refining_result[0]]);
     act("$n starts refining.", FALSE, ch, 0, 0, TO_ROOM);
     return;

@@ -5867,6 +5867,7 @@ struct crafting_data_info
   // refining info
   int refining_materials[3][2];
   int refining_result[2];
+  int refining_batch_quantity; // Number of result units being crafted in this batch
 
   // resize info
   int new_size;
