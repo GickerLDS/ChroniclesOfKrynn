@@ -131,7 +131,7 @@ void assign_mobiles(void)
   ASSIGNMOB(13802, buyweapons);
   ASSIGNMOB(13803, buyarmor);
   ASSIGNMOB(13810, faction_mission);
-  ASSIGNMOB(13808, crafting_quest);
+  ASSIGNMOB(13808, new_supply_orders);
   ASSIGNMOB(13809, buymolds);
   ASSIGNMOB(13822, identify_mob);
   ASSIGNMOB(13811, huntsmaster);

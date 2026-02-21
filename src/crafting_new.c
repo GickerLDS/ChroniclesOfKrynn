@@ -8688,8 +8688,7 @@ void request_new_supply_order(struct char_data *ch)
 
   if (GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_SUPPLYORDER)
   {
-    send_to_char(ch, "You are already working on a supply order. Type supplyorder show to see the "
-                     "details or supplyorder reset to start over.\r\n");
+    send_to_char(ch, "You are already working on a supply order. Type supplyorder show to see the details or supplyorder reset to start over.\r\n");
     return;
   }
 
@@ -8702,8 +8701,7 @@ void request_new_supply_order(struct char_data *ch)
   if (GET_CRAFT(ch).crafting_item_type > CRAFT_TYPE_NONE || GET_CRAFT(ch).crafting_specific > 0 ||
       GET_CRAFT(ch).craft_variant != -1)
   {
-    send_to_char(ch, "You already have a supply order going. Type supplyorder show to see the "
-                     "details or supplyorder reset to start over.\r\n");
+    send_to_char(ch, "You already have a supply order going. Type supplyorder show to see the details or supplyorder reset to start over.\r\n");
     return;
   }
 
@@ -8940,15 +8938,6 @@ void abandon_supply_order(struct char_data *ch)
 
   reset_acraft(ch);
 
-  if (GET_CRAFT(ch).crafting_method != SCMD_NEWCRAFT_SUPPLYORDER)
-  {
-    send_to_char(ch, "You don't have an active supply order to abandon.\r\n");
-    return;
-  }
-
-  /* Refund any materials that were added */
-  remove_supply_order_materials(ch);
-
   /* Clear all supply order data */
   GET_CRAFT(ch).crafting_method = 0;
   GET_CRAFT(ch).crafting_item_type = 0;
@@ -8965,6 +8954,15 @@ void abandon_supply_order(struct char_data *ch)
     GET_CRAFT(ch).materials[i][0] = 0;
     GET_CRAFT(ch).materials[i][1] = 0;
   }
+
+  if (GET_CRAFT(ch).crafting_method != SCMD_NEWCRAFT_SUPPLYORDER)
+  {
+    send_to_char(ch, "You don't have an active supply order to abandon.\r\n");
+    return;
+  }
+
+  /* Refund any materials that were added */
+  remove_supply_order_materials(ch);
   
   send_to_char(ch, "You have abandoned your supply order and lost all progress.\r\n");
 }

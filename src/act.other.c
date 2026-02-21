@@ -2157,7 +2157,7 @@ ACMD(do_call)
   }
   else if (is_abbrev(argument, "familiar"))
   {
-    level = CLASS_LEVEL(ch, CLASS_SORCERER) + CLASS_LEVEL(ch, CLASS_WIZARD);
+    level = CLASS_LEVEL(ch, CLASS_SORCERER) + CLASS_LEVEL(ch, CLASS_WIZARD) + CLASS_LEVEL(ch, CLASS_WARLOCK);
 
     if (!HAS_FEAT(ch, FEAT_SUMMON_FAMILIAR))
     {
