@@ -230,6 +230,111 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
     }
   }
 
+  /* Show mob feats if NPC */
+  if (IS_NPC(tch))
+  {
+    bool found_feats = FALSE;
+    int feat_count = 0;
+
+    text_line(ch, "\tYFeats\tC", 80, '-', '-');
+
+    for (i = 0; i < NUM_FEATS; i++)
+    {
+      if (HAS_FEAT(tch, i))
+      {
+        if (!found_feats)
+          found_feats = TRUE;
+
+        send_to_char(ch, "  %-38s", feat_list[i].name);
+        feat_count++;
+        if (feat_count % 2 == 0)
+          send_to_char(ch, "\r\n");
+      }
+    }
+
+    if (feat_count % 2 != 0)
+      send_to_char(ch, "\r\n");
+
+    if (!found_feats)
+      send_to_char(ch, "  No feats.\r\n");
+
+    /* Show mob known spells and spell slots */
+    bool found_spells = FALSE;
+    int total_spells = 0;
+    int total_slots_used = 0;
+    int total_slots_max = 0;
+
+    text_line(ch, "\tYAssigned Spells\tC", 80, '-', '-');
+
+    for (i = 0; i < MAX_SPELLS; i++)
+    {
+      if (MOB_KNOWS_SPELL(tch, i))
+      {
+        if (!found_spells)
+          found_spells = TRUE;
+
+        int slots_remaining = tch->mob_specials.known_spell_slots[i];
+        int slots_max = 2; /* Max slots per spell */
+        int slots_used = slots_max - slots_remaining;
+
+        send_to_char(ch, "  %-35s [%d/%d]\r\n", 
+                     spell_info[i].name, 
+                     slots_used, 
+                     slots_max);
+
+        total_spells++;
+        total_slots_used += slots_used;
+        total_slots_max += slots_max;
+      }
+    }
+
+    if (!found_spells)
+      send_to_char(ch, "  No assigned spells.\r\n");
+
+    /* Show class-based spell slots if mob has any */
+    bool has_class_slots = FALSE;
+    int circle;
+    
+    for (circle = 0; circle < 10; circle++)
+    {
+      if (tch->mob_specials.max_spell_slots[circle] > 0)
+      {
+        has_class_slots = TRUE;
+        break;
+      }
+    }
+
+    if (has_class_slots)
+    {
+      const char *circle_suffix[] = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
+      
+      text_line(ch, "\tYClass Spell Slots\tC", 80, '-', '-');
+
+      if (MOB_FLAGGED(tch, MOB_UNLIMITED_SPELL_SLOTS))
+      {
+        send_to_char(ch, "  Unlimited spell slots (slot system disabled)\r\n");
+      }
+      else
+      {
+        for (circle = 0; circle < 10; circle++)
+        {
+          if (tch->mob_specials.max_spell_slots[circle] > 0)
+          {
+            int current = tch->mob_specials.spell_slots[circle];
+            int maximum = tch->mob_specials.max_spell_slots[circle];
+            int used = maximum - current;
+
+            send_to_char(ch, "  %d%s Circle: %d/%d used\r\n", 
+                         circle, 
+                         circle_suffix[circle], 
+                         used, 
+                         maximum);
+          }
+        }
+      }
+    }
+  }
+
   /* Inquisitor Monster Knowledge: Show all active effects on target */
   if (!IS_NPC(ch) && has_inquisitor_monster_knowledge(ch))
   {
