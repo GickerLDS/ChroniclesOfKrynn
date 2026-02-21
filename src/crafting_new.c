@@ -7936,7 +7936,7 @@ void newcraft_supplyorder(struct char_data *ch, const char *argument)
     return;
   }
 
-  if (is_abbrev(arg1, "abandon") || is_abbrev(arg1, "cancel"))
+  if (is_abbrev(arg1, "abandon"))
   {
     abandon_supply_order(ch);
     return;
@@ -8699,6 +8699,12 @@ void show_supply_order(struct char_data *ch)
   // show the type of item being created
   send_to_char(ch, "-- Item: %s\r\n", get_supply_order_item_desc(ch));
 
+  // Show the required crafting station
+  {
+    int actual_skill = recipe_skill_to_actual_crafting_skill(GET_CRAFT(ch).skill_type);
+    send_to_char(ch, "-- Crafting Station: %s\r\n", get_crafting_station_name(actual_skill));
+  }
+
   // Show progress
   send_to_char(ch, "-- Progress: %d of %d items completed\r\n", GET_NSUPPLY_NUM_MADE(ch),
                GET_CRAFT(ch).supply_num_required);
@@ -8760,6 +8766,8 @@ void reset_supply_order(struct char_data *ch)
 void abandon_supply_order(struct char_data *ch)
 {
   int i = 0;
+
+  reset_acraft(ch);
 
   if (GET_CRAFT(ch).crafting_method != SCMD_NEWCRAFT_SUPPLYORDER)
   {
@@ -12525,13 +12533,13 @@ int get_material_cost(int material_id)
   case 2:
     return 25;
   case 3:
-    return 50;
+    return 40;
   case 4:
-    return 100;
+    return 75;
   case 5:
-    return 200;
+    return 180;
   case 6: /* Dragon metal - even higher */
-    return 250;
+    return 300;
   default:
     return 0;
   }
@@ -12543,7 +12551,7 @@ int get_material_cost(int material_id)
  */
 int get_mote_cost(void)
 {
-  return 25;
+  return 20;
 }
 
 /**

@@ -283,6 +283,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"check", "ch", POS_STANDING, do_not_here, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"checkload", "checkl", POS_DEAD, do_checkloadstatus, LVL_IMMORT, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"childrenofthenight", "children", POS_DEAD, do_children_of_the_night, 1, 0, FALSE, ACTION_STANDARD, {0, 0}, can_children_of_the_night},
+    {"chimericbreath", "chimericbreath", POS_FIGHTING, do_chimericbreath, 1, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
     {"close", "clo", POS_SITTING, do_gen_door, 0, SCMD_CLOSE, FALSE, ACTION_MOVE, {0, 6}, NULL},
     {"clans", "cla", POS_DEAD, do_clan, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"clanset", "clans", POS_DEAD, do_clanset, LVL_IMPL, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -990,14 +991,11 @@ cpp_extern const struct command_info cmd_info[] = {
     {"shadowwalk", "shadoww", POS_STANDING, do_shadowwalk, 1, 0, FALSE, ACTION_NONE, {0, 0}, can_shadowwalk},
     {"study", "study", POS_RECLINING, do_study, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"sunder", "sunder", POS_FIGHTING, do_process_attack, 1, AA_SUNDER, FALSE, ACTION_STANDARD, {0, 0}, can_sunder},
+    {"supplyorder", "supplyorder", POS_STANDING, do_newcraft, 0, SCMD_NEWCRAFT_SUPPLYORDER, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"supremacy", "supremacy", POS_FIGHTING, do_supremacy_perk, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
     {"strength", "strength", POS_FIGHTING, do_strength, 1, 0, FALSE, ACTION_MOVE, {0, 0}, NULL},
     {"strengthofhonor", "strengthofhonor", POS_FIGHTING, do_strength_of_honor, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"swallow", "swallow", POS_RECLINING, do_swallow, 1, 0, FALSE, ACTION_STANDARD, {0, 0}, NULL},
-    {"unstablemutagen", "unstablemutagen", POS_RECLINING, do_unstablemutagen, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
-    {"volatilecatalyst", "volatilecatalyst", POS_RECLINING, do_volatilecatalyst, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
-    {"universalmutagen", "universalmutagen", POS_RECLINING, do_universalmutagen, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
-    {"chimericbreath", "chimericbreath", POS_FIGHTING, do_chimericbreath, 1, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
     {"sweepingcinder", "sweepingc", POS_STANDING, do_sweepingcinder, 1, 0, FALSE, ACTION_SWIFT, {3, 0}, can_sweepingcinder},
     {"sweepingstrike", "sweepings", POS_DEAD, do_gen_tog, 0, SCMD_SWEEPING_STRIKE, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"switch", "switch", POS_DEAD, do_switch, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -1005,7 +1003,6 @@ cpp_extern const struct command_info cmd_info[] = {
     {"shapechange", "shapechange", POS_FIGHTING, do_wildshape, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"skills", "skills", POS_RECLINING, do_train, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"skillcheck", "skillch", POS_RECLINING, do_skillcheck, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
-    {"supplyorder", "supplyorder", POS_STANDING, do_newcraft, 0, SCMD_NEWCRAFT_SUPPLYORDER, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"spellbattle", "spellbattle", POS_STANDING, do_spellbattle, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"spellquests", "spellquests", POS_DEAD, do_spellquests, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"singlefile", "singlefile", POS_DEAD, do_singlefile, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -1078,8 +1075,9 @@ cpp_extern const struct command_info cmd_info[] = {
 
 
     /* {"command", "sort_as", minimum_position, *command_pointer, minimum_level, subcmd, ignore_wait, actions_required, {action_cooldowns}, *command_check_pointer},*/
-
+    
     {"unholyweapon", "unholyw", POS_DEAD, do_holyweapon, 1, 1, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"universalmutagen", "universalmutagen", POS_RECLINING, do_universalmutagen, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"unlock", "unlock", POS_SITTING, do_gen_door, 0, SCMD_UNLOCK, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"unban", "unban", POS_DEAD, do_unban, LVL_GRSTAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"unaffect", "unaffect", POS_DEAD, do_wizutil, LVL_STAFF, SCMD_UNAFFECT, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -1088,6 +1086,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"undeath", "undeath", POS_FIGHTING, do_touch_of_undeath, 0, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
     {"unsheath", "unshe", POS_SITTING, do_unsheath, 1, 0, FALSE, ACTION_NONE, {0, 6}, NULL},
     {"unstore", "unstore", POS_FIGHTING, do_unstore, 1, 0, FALSE, ACTION_MOVE, {0, 0}, NULL},
+    {"unstablemutagen", "unstablemutagen", POS_RECLINING, do_unstablemutagen, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"unstuck", "unstuck", POS_DEAD, do_unstuck, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"uptime", "uptime", POS_DEAD, do_date, 1, SCMD_UPTIME, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"use", "use", POS_FIGHTING, do_use_consumable, 0, SCMD_USE, FALSE, ACTION_SWIFT, {0, 6}, NULL},
@@ -1110,6 +1109,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"vitalstrike", "vitalstrike", POS_FIGHTING, do_vital_strike, 0, 0, FALSE, ACTION_STANDARD | ACTION_MOVE, {6, 6}, NULL},
     {"vnum", "vnum", POS_DEAD, do_vnum, LVL_IMMORT, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"voidstrike", "voidstrike", POS_STANDING, do_voidstrike, 1, 0, FALSE, ACTION_NONE, {0, 0}, can_voidstrike},
+    {"volatilecatalyst", "volatilecatalyst", POS_RECLINING, do_volatilecatalyst, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"vstat", "vstat", POS_DEAD, do_vstat, LVL_IMMORT, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"vdelete", "vdelete", POS_DEAD, do_vdelete, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"vanish", "vanish", POS_DEAD, do_vanish, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
