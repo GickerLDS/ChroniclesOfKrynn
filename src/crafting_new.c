@@ -5407,7 +5407,7 @@ void harvest_complete(struct char_data *ch)
                    "\tM[CRITICAL SUCCESS!]\tn You rolled a natural 20! You've harvested %d units "
                    "of %s, plus an extra %d units!\r\n",
                    amount, crafting_materials[world[IN_ROOM(ch)].harvest_material], bonus);
-      gain_craft_exp(ch, HARVEST_BASE_EXP + (HARVEST_BASE_EXP * harvest_level), skill, TRUE);
+      gain_craft_exp(ch, HARVEST_BASE_EXP + (HARVEST_BASE_EXP * harvest_level / 2), skill, TRUE);
       motes_found = TRUE;
     }
     else
@@ -5426,7 +5426,7 @@ void harvest_complete(struct char_data *ch)
                    roll, base_skill, bonus_text, roll + skill_roll + prof_bonus, dc, amount,
                    crafting_materials[world[IN_ROOM(ch)].harvest_material],
                    crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
-      gain_craft_exp(ch, HARVEST_BASE_EXP + ((HARVEST_BASE_EXP / 2) * harvest_level), skill, TRUE);
+      gain_craft_exp(ch, HARVEST_BASE_EXP + ((HARVEST_BASE_EXP / 2) * harvest_level / 2), skill, TRUE);
     }
 
     /* Check for efficient talent - chance to gain 2 extra units */
@@ -5435,8 +5435,7 @@ void harvest_complete(struct char_data *ch)
     if (efficient_chance > 0 && rand_number(1, 100) <= efficient_chance)
     {
       efficient_bonus = 2;
-      send_to_char(ch,
-                   "\tC*EFFICIENT*\tn You gain 2 extra units from your efficient harvesting!\r\n");
+      send_to_char(ch, "\tC*EFFICIENT*\tn You gain 2 extra units from your efficient harvesting!\r\n");
     }
 
     world[IN_ROOM(ch)].harvest_material_amount -= amount;

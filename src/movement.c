@@ -446,7 +446,7 @@ int do_simple_move(struct char_data *ch, int dir, int need_specials_check)
       SECT(was_in) == SECT_UNDERWATER || SECT(going_to) == SECT_WATER_SWIM ||
       SECT(going_to) == SECT_UD_WATER || SECT(going_to) == SECT_UNDERWATER)
   {
-    if ((riding && !has_boat(RIDING(ch), going_to)) || !has_boat(ch, going_to))
+    if ((riding && RIDING(ch) && !has_boat(RIDING(ch), going_to)) || !has_boat(ch, going_to))
     {
       if (GET_MOVE(ch) < 20)
       {
