@@ -567,6 +567,10 @@ int load_char(const char *name, struct char_data *ch)
     init_known_spells(ch);
     reset_current_craft(ch, NULL, false, false);
 
+    /* Initialize crafting specializations */
+    GET_CRAFT(ch).craft_specialization[0] = -1;
+    GET_CRAFT(ch).craft_specialization[1] = -1;
+
     /* Initialize introduction list */
     for (i = 0; i < MAX_INTROS; i++)
       ch->player_specials->saved.intro_list[i] = NULL;
@@ -1663,6 +1667,10 @@ int load_char(const char *name, struct char_data *ch)
           GET_CRAFT(ch).resize_mat_type = atoi(line);
         else if (!strcmp(tag, "RSMN"))
           GET_CRAFT(ch).resize_mat_num = atoi(line);
+        else if (!strcmp(tag, "CSp1"))
+          GET_CRAFT(ch).craft_specialization[0] = atoi(line);
+        else if (!strcmp(tag, "CSp2"))
+          GET_CRAFT(ch).craft_specialization[1] = atoi(line);
         break;
 
       case 'S':
@@ -2945,6 +2953,12 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("RSSz: %d\n", GET_CRAFT(ch).new_size);
   BUFFER_WRITE("RSMT: %d\n", GET_CRAFT(ch).resize_mat_type);
   BUFFER_WRITE("RSMN: %d\n", GET_CRAFT(ch).resize_mat_num);
+
+  // craft specializations
+  if (GET_CRAFT(ch).craft_specialization[0] >= 0)
+    BUFFER_WRITE("CSp1: %d\n", GET_CRAFT(ch).craft_specialization[0]);
+  if (GET_CRAFT(ch).craft_specialization[1] >= 0)
+    BUFFER_WRITE("CSp2: %d\n", GET_CRAFT(ch).craft_specialization[1]);
 
   BUFFER_WRITE("CrOL: %d\n", GET_CRAFT(ch).obj_level);
   BUFFER_WRITE("CrLA: %d\n", GET_CRAFT(ch).level_adjust);

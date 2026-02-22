@@ -85,6 +85,7 @@ int materials_sort_info[NUM_CRAFT_MATS];
   "craft motes (add|remove) (enhancement|quality|effectiveness|breakability|bonus slot #)\r\n"     \
   "craft leveladjust (level adjustment)\r\n"                                                       \
   "craft score\r\n"                                                                                \
+  "craft specialize (skill name) - Choose up to 2 skills for +5 bonus and 2x exp\r\n"             \
   "craft show\r\n"                                                                                 \
   "craft check\r\n"                                                                                \
   "craft reset (no "                                                                               \
@@ -3635,9 +3636,19 @@ bool create_craft_skill_check(struct char_data *ch, struct obj_data *obj, int sk
   if (!ch || !obj)
     return FALSE;
   int roll, skill_mod, proficiency_bonus = 0;
+  int base_skill = GET_ABILITY(ch, skill);
+  int specialization_bonus = 0;
+  int elbow_grease_bonus = 0;
 
   roll = d20(ch);
   skill_mod = get_craft_skill_value(ch, skill);
+  
+  /* Check if specialized for message display */
+  if (GET_CRAFT(ch).craft_specialization[0] == skill || 
+      GET_CRAFT(ch).craft_specialization[1] == skill)
+  {
+    specialization_bonus = 5;
+  }
 
   /* Add proficient talent bonus */
   proficiency_bonus += get_proficient_talent_bonus(ch, skill);
@@ -3656,6 +3667,20 @@ bool create_craft_skill_check(struct char_data *ch, struct obj_data *obj, int sk
        GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR))
   {
     skill_mod += 5;
+  }
+
+  /* Add elbow grease bonus for artificers */
+  if (HAS_FEAT(ch, FEAT_ELBOW_GREASE))
+  {
+    int artificer_level = CLASS_LEVEL(ch, CLASS_ARTIFICER);
+    if (artificer_level >= 10)
+      elbow_grease_bonus = 6;
+    else if (artificer_level >= 5)
+      elbow_grease_bonus = 4;
+    else
+      elbow_grease_bonus = 2;
+    
+    skill_mod += elbow_grease_bonus;
   }
 
   if ((20 + skill_mod) < dc)
@@ -3686,60 +3711,66 @@ bool create_craft_skill_check(struct char_data *ch, struct obj_data *obj, int sk
   }
   else if ((roll + skill_mod) < dc)
   {
-    int base_skill = get_craft_skill_value(ch, skill);
-    const char *feat_bonus_desc = "";
-    char proficiency_desc[50] = "";
+    char bonus_text[256];
+    char *ptr = bonus_text;
+    
+    if (specialization_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + specialization [%d]", specialization_bonus);
+    if (proficiency_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + proficiency [%d]", proficiency_bonus);
     
     if (HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM) &&
         GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_MISC)
     {
-      feat_bonus_desc = " (+5 Craft Wondrous Item)";
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + Craft Wondrous Item [5]");
     }
     else if (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR) &&
              (GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_WEAPON ||
               GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR))
     {
-      feat_bonus_desc = " (+5 Craft Magical Arms and Armor)";
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + Craft Magical Arms and Armor [5]");
     }
-
-    if (proficiency_bonus > 0)
-      snprintf(proficiency_desc, sizeof(proficiency_desc), " (+%d proficiency)", proficiency_bonus);
+    
+    if (elbow_grease_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + elbow grease [%d]", elbow_grease_bonus);
 
     send_to_char(ch,
-                 "You rolled %d + your skill in %s of %d%s%s = total of %d vs. dc %d. The %s "
+                 "You rolled %d + base skill %d%s = total of %d vs. dc %d. The %s "
                  "attempt failed, but you may try again.\r\n",
-                 roll, ability_names[skill], base_skill, proficiency_desc,
-                 feat_bonus_desc,
+                 roll, base_skill, bonus_text,
                  roll + skill_mod, dc, method);
     gain_craft_exp(ch, exp, skill, TRUE);
     return FALSE;
   }
   else
   {
-    int base_skill = get_craft_skill_value(ch, skill);
-    const char *feat_bonus_desc = "";
-    char proficiency_desc[50] = "";
+    char bonus_text[256];
+    char *ptr = bonus_text;
+    
+    if (specialization_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + specialization [%d]", specialization_bonus);
+    if (proficiency_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + proficiency [%d]", proficiency_bonus);
     
     if (HAS_FEAT(ch, FEAT_CRAFT_WONDEROUS_ITEM) &&
         GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_MISC)
     {
-      feat_bonus_desc = " (+5 Craft Wondrous Item)";
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + Craft Wondrous Item [5]");
     }
     else if (HAS_FEAT(ch, FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR) &&
              (GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_WEAPON ||
               GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR))
     {
-      feat_bonus_desc = " (+5 Craft Magical Arms and Armor)";
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + Craft Magical Arms and Armor [5]");
     }
-
-    if (proficiency_bonus > 0)
-      snprintf(proficiency_desc, sizeof(proficiency_desc), " (+%d proficiency)", proficiency_bonus);
+    
+    if (elbow_grease_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + elbow grease [%d]", elbow_grease_bonus);
 
     send_to_char(ch,
-                 "You rolled %d + your skill in %s of %d%s%s = total of %d vs. dc %d. The %s "
+                 "You rolled %d + base skill %d%s = total of %d vs. dc %d. The %s "
                  "attempt succeeded!\r\n",
-                 roll, ability_names[skill], base_skill, proficiency_desc,
-                 feat_bonus_desc,
+                 roll, base_skill, bonus_text,
                  roll + skill_mod, dc, method);
     return TRUE;
   }
@@ -4813,6 +4844,42 @@ void show_craft_score(struct char_data *ch, const char *arg2)
   send_to_char(ch, "\tCTalent Points (TP):\tn %d unspent\r\n", GET_TALENT_POINTS(ch));
   send_to_char(ch, "\tCArtisan Points (AP):\tn %d total\r\n", GET_ARTISAN_EXP(ch));
   send_to_char(ch, "\r\n");
+
+  /* Display crafting specializations */
+  send_to_char(ch, "\tc");
+  draw_line(ch, 90, '-', '-');
+  send_to_char(ch, "\tn");
+  send_to_char(ch, "\tYCrafting Specializations:\tn\r\n");
+  
+  if (GET_CRAFT(ch).craft_specialization[0] == -1 && GET_CRAFT(ch).craft_specialization[1] == -1)
+  {
+    send_to_char(ch, "  You have not yet chosen your specializations.\r\n");
+    send_to_char(ch, "  Use 'craft specialize <skill>' to choose up to 2 crafting/harvesting skills.\r\n");
+    send_to_char(ch, "  Specialized skills gain +5 to skill checks and double experience.\r\n");
+  }
+  else
+  {
+    int spec_count = 0;
+    if (GET_CRAFT(ch).craft_specialization[0] >= 0)
+    {
+      send_to_char(ch, "  \tC1.\tn %s (+5 skill, 2x exp)\r\n", 
+                   ability_names[GET_CRAFT(ch).craft_specialization[0]]);
+      spec_count++;
+    }
+    if (GET_CRAFT(ch).craft_specialization[1] >= 0)
+    {
+      send_to_char(ch, "  \tC2.\tn %s (+5 skill, 2x exp)\r\n", 
+                   ability_names[GET_CRAFT(ch).craft_specialization[1]]);
+      spec_count++;
+    }
+    if (spec_count < 2)
+    {
+      send_to_char(ch, "  You have %d specialization slot%s remaining.\r\n", 
+                   2 - spec_count, (2 - spec_count == 1) ? "" : "s");
+      send_to_char(ch, "  Use 'craft specialize <skill>' to choose another skill.\r\n");
+    }
+  }
+  send_to_char(ch, "\r\n");
 }
 
 void set_crafting_enhancement(struct char_data *ch, const char *arg2)
@@ -4873,6 +4940,79 @@ void set_crafting_enhancement(struct char_data *ch, const char *arg2)
 
   GET_CRAFT(ch).enhancement = amount;
   send_to_char(ch, "You set your project's enhancement bonus to %d.\r\n", amount);
+}
+
+void set_craft_specialization(struct char_data *ch, const char *arg)
+{
+  int skill_num = -1;
+  int i;
+  bool is_craft_or_harvest = FALSE;
+
+  if (!*arg)
+  {
+    send_to_char(ch, "Syntax: craft specialize <skill name>\r\n");
+    send_to_char(ch, "You can specialize in up to 2 crafting or harvesting skills.\r\n");
+    send_to_char(ch, "Specialized skills receive +5 to skill checks and double experience.\r\n");
+    send_to_char(ch, "Use 'craft score' to see available skills and your current specializations.\r\n");
+    return;
+  }
+
+  /* Check if both specialization slots are already filled */
+  if (GET_CRAFT(ch).craft_specialization[0] >= 0 && GET_CRAFT(ch).craft_specialization[1] >= 0)
+  {
+    send_to_char(ch, "You have already specialized in two skills:\r\n");
+    send_to_char(ch, "  1. %s\r\n", ability_names[GET_CRAFT(ch).craft_specialization[0]]);
+    send_to_char(ch, "  2. %s\r\n", ability_names[GET_CRAFT(ch).craft_specialization[1]]);
+    send_to_char(ch, "Specializations are permanent and cannot be changed.\r\n");
+    return;
+  }
+
+  /* Find the skill by name */
+  for (i = START_CRAFT_ABILITIES; i < END_HARVEST_ABILITIES; i++)
+  {
+    if (is_abbrev(arg, ability_names[i]))
+    {
+      skill_num = i;
+      is_craft_or_harvest = TRUE;
+      break;
+    }
+  }
+
+  if (!is_craft_or_harvest || skill_num == -1)
+  {
+    send_to_char(ch, "'%s' is not a valid crafting or harvesting skill.\r\n", arg);
+    send_to_char(ch, "Use 'craft score' to see the list of available skills.\r\n");
+    return;
+  }
+
+  /* Check if already specialized in this skill */
+  if (GET_CRAFT(ch).craft_specialization[0] == skill_num || 
+      GET_CRAFT(ch).craft_specialization[1] == skill_num)
+  {
+    send_to_char(ch, "You are already specialized in %s.\r\n", ability_names[skill_num]);
+    return;
+  }
+
+  /* Add the specialization to the first available slot */
+  if (GET_CRAFT(ch).craft_specialization[0] == -1)
+  {
+    GET_CRAFT(ch).craft_specialization[0] = skill_num;
+    send_to_char(ch, "\tGYou have specialized in %s!\tn\r\n", ability_names[skill_num]);
+    send_to_char(ch, "You now receive +5 to %s skill checks and double experience.\r\n", 
+                 ability_names[skill_num]);
+    if (GET_CRAFT(ch).craft_specialization[1] == -1)
+    {
+      send_to_char(ch, "You have 1 specialization slot remaining.\r\n");
+    }
+  }
+  else if (GET_CRAFT(ch).craft_specialization[1] == -1)
+  {
+    GET_CRAFT(ch).craft_specialization[1] = skill_num;
+    send_to_char(ch, "\tGYou have specialized in %s!\tn\r\n", ability_names[skill_num]);
+    send_to_char(ch, "You now receive +5 to %s skill checks and double experience.\r\n", 
+                 ability_names[skill_num]);
+    send_to_char(ch, "\tYYou have used both specialization slots.\tn\r\n");
+  }
 }
 
 void newcraft_create(struct char_data *ch, const char *argument)
@@ -4988,6 +5128,10 @@ void newcraft_create(struct char_data *ch, const char *argument)
   {
     show_craft_score(ch, arg2);
   }
+  else if (is_abbrev(arg1, "specialize"))
+  {
+    set_craft_specialization(ch, arg2);
+  }
   else if (is_abbrev(arg1, "display") || is_abbrev(arg1, "show") || is_abbrev(arg1, "review") ||
            is_abbrev(arg1, "information"))
   {
@@ -5095,16 +5239,40 @@ void craft_refine_complete(struct char_data *ch)
   }
   else if ((roll + skill) < dc)
   {
+    /* Check for specialization */
+    int base_skill = GET_ABILITY(ch, skill_type);
+    int spec_bonus = 0;
+    bool is_specialized = (GET_CRAFT(ch).craft_specialization[0] == skill_type || 
+                          GET_CRAFT(ch).craft_specialization[1] == skill_type);
+    if (is_specialized)
+      spec_bonus = 5;
+    
+    char bonus_text[128] = "";
+    if (spec_bonus > 0)
+      snprintf(bonus_text, sizeof(bonus_text), " + specialization [%d]", spec_bonus);
+    
     send_to_char(ch,
-                 "You rolled %d + skill %d for a total of %d < dc of %d. You failed your refining "
+                 "You rolled %d + base skill %d%s for a total of %d < dc of %d. You failed your refining "
                  "attempt but may try again.\r\n",
-                 roll, skill, roll + skill, dc);
+                 roll, base_skill, bonus_text, roll + skill, dc);
     return;
   }
   else
   {
-    send_to_char(ch, "You rolled %d + skill %d for a total of %d >= dc of %d. You succeed!\r\n",
-                 roll, skill, roll + skill, dc);
+    /* Check for specialization */
+    int base_skill = GET_ABILITY(ch, skill_type);
+    int spec_bonus = 0;
+    bool is_specialized = (GET_CRAFT(ch).craft_specialization[0] == skill_type || 
+                          GET_CRAFT(ch).craft_specialization[1] == skill_type);
+    if (is_specialized)
+      spec_bonus = 5;
+    
+    char bonus_text[128] = "";
+    if (spec_bonus > 0)
+      snprintf(bonus_text, sizeof(bonus_text), " + specialization [%d]", spec_bonus);
+    
+    send_to_char(ch, "You rolled %d + base skill %d%s for a total of %d >= dc of %d. You succeed!\r\n",
+                 roll, base_skill, bonus_text, roll + skill, dc);
     exp = (REFINE_BASE_EXP + dc) * num;
     
     /* Apply happy hour bonus */
@@ -5164,6 +5332,14 @@ void harvest_complete(struct char_data *ch)
   /* Add proficient talent bonus */
   prof_bonus = get_proficient_talent_bonus(ch, skill);
 
+  /* Check for specialization */
+  int base_skill = GET_ABILITY(ch, skill);
+  int spec_bonus = 0;
+  bool is_specialized = (GET_CRAFT(ch).craft_specialization[0] == skill || 
+                        GET_CRAFT(ch).craft_specialization[1] == skill);
+  if (is_specialized)
+    spec_bonus = 5;
+
   harvest_level = MAX(1, material_grade(world[IN_ROOM(ch)].harvest_material) * 5);
   dc = HARVEST_BASE_DC + (harvest_level);
 
@@ -5198,16 +5374,18 @@ void harvest_complete(struct char_data *ch)
   }
   else if ((roll + skill_roll + prof_bonus) < dc)
   {
-    char prof_bonus_text[128];
+    char bonus_text[256];
+    char *ptr = bonus_text;
+    
+    if (spec_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + specialization [%d]", spec_bonus);
     if (prof_bonus > 0)
-      snprintf(prof_bonus_text, sizeof(prof_bonus_text), " + proficiency bonus [%d]", prof_bonus);
-    else
-      prof_bonus_text[0] = '\0';
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + proficiency [%d]", prof_bonus);
     
     send_to_char(ch,
-                 "Roll [%d] + Skill [%d]%s = Total [%d] vs. DC [%d]. Failure. You have failed to "
+                 "Roll [%d] + Base Skill [%d]%s = Total [%d] vs. DC [%d]. Failure. You have failed to "
                  "harvest %s.\r\n",
-                 roll, skill_roll, prof_bonus_text, roll + skill_roll + prof_bonus, dc,
+                 roll, base_skill, bonus_text, roll + skill_roll + prof_bonus, dc,
                  crafting_materials[world[IN_ROOM(ch)].harvest_material]);
     GET_CRAFT(ch).craft_duration = 0;
     GET_CRAFT(ch).crafting_method = 0;
@@ -5234,16 +5412,18 @@ void harvest_complete(struct char_data *ch)
     }
     else
     {
-      char prof_bonus_text[128];
+      char bonus_text[256];
+      char *ptr = bonus_text;
+      
+      if (spec_bonus > 0)
+        ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + specialization [%d]", spec_bonus);
       if (prof_bonus > 0)
-        snprintf(prof_bonus_text, sizeof(prof_bonus_text), " + proficiency bonus [%d]", prof_bonus);
-      else
-        prof_bonus_text[0] = '\0';
+        ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + proficiency [%d]", prof_bonus);
       
       send_to_char(ch,
-                   "Roll [%d] + Skill [%d]%s = Total [%d] vs. DC [%d]. Success!\r\nYou have harvested "
+                   "Roll [%d] + Base Skill [%d]%s = Total [%d] vs. DC [%d]. Success!\r\nYou have harvested "
                    "%d %s from %s.\r\n",
-                   roll, skill_roll, prof_bonus_text, roll + skill_roll + prof_bonus, dc, amount,
+                   roll, base_skill, bonus_text, roll + skill_roll + prof_bonus, dc, amount,
                    crafting_materials[world[IN_ROOM(ch)].harvest_material],
                    crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
       gain_craft_exp(ch, HARVEST_BASE_EXP + ((HARVEST_BASE_EXP / 2) * harvest_level), skill, TRUE);
@@ -5525,6 +5705,7 @@ void gain_craft_exp(struct char_data *ch, int exp, int abil, bool verbose)
   int bonus_exp = 0;
   int total_exp = exp;
   int happy_hour_bonus = 0;
+  int specialization_bonus = 0;
 
   // Validate ability/skill type to prevent array out-of-bounds crashes
   if (abil < 0 || abil > NUM_ABILITIES)
@@ -5536,12 +5717,20 @@ void gain_craft_exp(struct char_data *ch, int exp, int abil, bool verbose)
     return;
   }
 
+  /* Check for specialization bonus (2x experience) */
+  if (GET_CRAFT(ch).craft_specialization[0] == abil || 
+      GET_CRAFT(ch).craft_specialization[1] == abil)
+  {
+    specialization_bonus = exp; /* Double the base exp */
+    total_exp += specialization_bonus;
+  }
+
   /* Check for insightful talent bonus */
   bonus_percentage = get_insightful_talent_bonus(ch, abil);
   if (bonus_percentage > 0)
   {
     bonus_exp = (exp * bonus_percentage) / 100;
-    total_exp = exp + bonus_exp;
+    total_exp += bonus_exp;
   }
 
   /* Check for happy hour bonus */
@@ -5567,15 +5756,17 @@ void gain_craft_exp(struct char_data *ch, int exp, int abil, bool verbose)
   GET_CRAFT_SKILL_EXP(ch, abil) += total_exp;
   if (verbose)
   {
-    if (bonus_exp > 0 || happy_hour_bonus > 0)
+    if (specialization_bonus > 0 || bonus_exp > 0 || happy_hour_bonus > 0)
     {
       send_to_char(ch,
                    "You've gained %d experience points in the '%s' skill",
                    total_exp, ability_names[abil]);
+      if (specialization_bonus > 0)
+        send_to_char(ch, " (+%d specialization bonus)", specialization_bonus);
       if (bonus_exp > 0)
-        send_to_char(ch, " (+%d bonus from insightful talent)", bonus_exp);
+        send_to_char(ch, " (+%d insightful talent)", bonus_exp);
       if (happy_hour_bonus > 0)
-        send_to_char(ch, " (+%d happy hour bonus)", happy_hour_bonus);
+        send_to_char(ch, " (+%d happy hour)", happy_hour_bonus);
       send_to_char(ch, ".\r\n");
     }
     else
@@ -5971,7 +6162,17 @@ void newcraft_refine(struct char_data *ch, const char *argument)
 
 int get_craft_skill_value(struct char_data *ch, int skill_num)
 {
-  return GET_ABILITY(ch, skill_num);
+  int base_value = GET_ABILITY(ch, skill_num);
+  int specialization_bonus = 0;
+
+  /* Check if this skill is specialized (+5 bonus) */
+  if (GET_CRAFT(ch).craft_specialization[0] == skill_num || 
+      GET_CRAFT(ch).craft_specialization[1] == skill_num)
+  {
+    specialization_bonus = 5;
+  }
+
+  return base_value + specialization_bonus;
 }
 
 bool is_refine_ready(struct char_data *ch, bool verbose)

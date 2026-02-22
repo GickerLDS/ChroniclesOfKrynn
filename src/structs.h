@@ -5910,6 +5910,9 @@ struct crafting_data_info
   int golem_size;                            // GOLEM_SIZE_SMALL, MEDIUM, LARGE, HUGE
   int golem_materials[NUM_CRAFT_GROUPS][2];  // 0 = mat type, 1 = mat amount for golem
   int golem_motes_required[NUM_CRAFT_MOTES]; // motes needed for golem
+
+  // specialization info
+  int craft_specialization[2]; // Two crafting/harvesting skills to specialize in (ABILITY_* values, -1 if unset)
 };
 
 /* ============================================================================ */
