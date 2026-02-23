@@ -164,6 +164,11 @@ EVENTFUNC(event_falling)
       dam /= 2;
     }
 
+    if (AFF_FLAGGED(ch, AFF_BLINKING))
+    {
+      dam /= 2;
+    }
+
     if (dam <= 0)
     { /* woo! avoided damage */
       send_to_char(ch, "You gracefully land on your feet from your perilous fall!\r\n");

@@ -309,6 +309,8 @@ int count_color_chars(char *string);
 bool char_has_infra(struct char_data *ch);
 bool char_has_ultra(struct char_data *ch);
 bool has_true_sight(struct char_data *ch);
+bool can_see_invisible_creatures(struct char_data *ch);
+bool can_strike_ethereal_creatures(struct char_data *ch);
 bool room_is_dark(room_rnum room);
 bool room_is_daylit(room_rnum room);
 bool can_naturally_stealthy(struct char_data *ch);

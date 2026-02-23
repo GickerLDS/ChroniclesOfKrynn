@@ -607,9 +607,10 @@
 #define SPELL_SHOCKWAVE 526
 #define SPELL_POISON_BREATH 527
 #define SPELL_SUMMON_SOLAR 528
+#define SPELL_BLINK 529
 
 /** Total Number of defined spells  */
-#define NUM_SPELLS 529
+#define NUM_SPELLS 530
 #define LAST_SPELL_DEFINE NUM_SPELLS + 1
 
 #define MAX_SPELL_AFFECTS 6 /* change if more needed */

@@ -603,6 +603,27 @@ int call_magic(struct char_data *caster, struct char_data *cvict, struct obj_dat
     return (0);
   }
 
+  if (caster && AFF_FLAGGED(caster, AFF_BLINKING) && rand_number(1, 100) <= 20)
+  {
+    send_to_char(caster, "Your spell flickers into the Ethereal Plane and fails.\r\n");
+    act("$n's spell flickers out as $e blinks.", FALSE, caster, 0, 0, TO_ROOM);
+    return (0);
+  }
+
+  if (cvict && cvict != caster && AFF_FLAGGED(cvict, AFF_BLINKING) &&
+      !IS_SET(spell_info[spellnum].routines, MAG_AREAS) &&
+      !(can_see_invisible_creatures(caster) && can_strike_ethereal_creatures(caster)) &&
+      rand_number(1, 100) <= 50)
+  {
+    act("Your spell passes harmlessly through $N's blinking form.", FALSE, caster, NULL, cvict,
+        TO_CHAR);
+    act("You blink out of phase, and $n's spell passes through you.", FALSE, caster, NULL, cvict,
+        TO_VICT);
+    act("$n's spell passes harmlessly through $N's blinking form.", FALSE, caster, NULL, cvict,
+        TO_NOTVICT);
+    return (0);
+  }
+
   if ((casttype != CAST_WEAPON_POISON) && caster && caster->in_room && caster->in_room != NOWHERE &&
       caster->in_room < top_of_world && ROOM_FLAGGED(IN_ROOM(caster), ROOM_NOMAGIC))
   {
@@ -4814,6 +4835,8 @@ void mag_assign_spells(void)
   /* illusion */
   spello(SPELL_DISPLACEMENT, "displacement", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
          FALSE, MAG_AFFECTS, "You feel your displacement spell wear off.", 6, 19, ILLUSION, FALSE);
+  spello(SPELL_BLINK, "blink", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
+         FALSE, MAG_AFFECTS, "You feel your blink spell wear off.", 6, 19, TRANSMUTATION, FALSE);
   spello(SPELL_PRISMATIC_SPRAY, "prismatic spray", 79, 64, 1, POS_FIGHTING, TAR_IGNORE, TRUE,
          MAG_AREAS, NULL, 7, 19, ILLUSION, FALSE);
   /* divination */

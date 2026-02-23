@@ -4102,6 +4102,31 @@ bool has_true_sight(struct char_data *ch)
   return FALSE;
 }
 
+bool can_see_invisible_creatures(struct char_data *ch)
+{
+  if (!ch)
+    return FALSE;
+
+  return (AFF_FLAGGED(ch, AFF_DETECT_INVIS) || has_true_sight(ch));
+}
+
+bool can_strike_ethereal_creatures(struct char_data *ch)
+{
+  if (!ch)
+    return FALSE;
+
+  if (IS_INCORPOREAL(ch))
+    return TRUE;
+  if (AFF_FLAGGED(ch, AFF_BLINKING))
+    return TRUE;
+  if (is_using_ghost_touch_weapon(ch))
+    return TRUE;
+  if (IN_ROOM(ch) != NOWHERE && ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_ETH_PLANE))
+    return TRUE;
+
+  return FALSE;
+}
+
 /* test to see if a given room is "daylit", useful for dayblind races, etc
  rules detailed in code comments -zusuk */
 bool room_is_daylit(room_rnum room)
@@ -8135,6 +8160,7 @@ bool can_spell_be_revoked(int spellnum)
   case SPELL_RAGE:
   case SPELL_CAUSTIC_BLOOD:
   case SPELL_HOLY_AURA:
+  case SPELL_BLINK:
 
   // psionic powers
   case PSIONIC_BROKER:

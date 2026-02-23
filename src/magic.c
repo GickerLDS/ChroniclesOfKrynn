@@ -3628,17 +3628,11 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       dam /= 2;
   }
 
-  /* blinking between prime and ethereal planes - 20% dodge AoE spells */
+  /* blinking between prime and ethereal planes - reduced AoE damage */
   if (IS_SET(spell_info[spellnum].routines, MAG_AREAS) && AFF_FLAGGED(victim, AFF_BLINKING) &&
-      rand_number(1, 100) <= 20)
+      !ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(victim)), ZONE_ETH_PLANE))
   {
-    act("$n watches as $N blinks out of existence to avoid the spell!", FALSE, ch, NULL, victim,
-        TO_NOTVICT);
-    act("You watch as $N briefly blinks out of existence to avoid your spell!", FALSE, ch, NULL,
-        victim, TO_CHAR);
-    act("You quickly blink out of existence avoiding the harmful spell from $n!", FALSE, ch, NULL,
-        victim, TO_VICT);
-    return 0;
+    dam /= 2;
   }
 
   /* surprise spell feat */
@@ -7787,6 +7781,16 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     to_room = "$n's images becomes displaced!";
     to_vict = "You observe as your image becomes displaced!";
     SET_BIT_AR(af[0].bitvector, AFF_DISPLACE);
+    accum_duration = FALSE;
+    break;
+
+  case SPELL_BLINK:       // transmutation
+    af[0].location = APPLY_SPECIAL; /* this is just a tag */
+    af[0].modifier = 0;
+    af[0].duration = level;
+    to_room = "$n's form blinks in and out of existence!";
+    to_vict = "You observe as your form blinks in and out of existence!";
+    SET_BIT_AR(af[0].bitvector, AFF_BLINKING);
     accum_duration = FALSE;
     break;
 

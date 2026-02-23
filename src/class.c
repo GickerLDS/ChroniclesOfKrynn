@@ -4305,6 +4305,7 @@ void load_class_list(void)
   spell_assignment(CLASS_WIZARD, SPELL_COMMUNAL_RESIST_ENERGY, 5);
   spell_assignment(CLASS_WIZARD, SPELL_COMMUNAL_SPIDER_CLIMB, 5);
   spell_assignment(CLASS_WIZARD, SPELL_MASS_IDENTIFY, 5);
+  spell_assignment(CLASS_WIZARD, SPELL_BLINK, 5);
   /*              class num      spell                   level acquired */
   /* 4th circle */
   spell_assignment(CLASS_WIZARD, SPELL_FIRE_SHIELD, 7);
@@ -5695,6 +5696,7 @@ void load_class_list(void)
   spell_assignment(CLASS_SORCERER, SPELL_COMMUNAL_RESIST_ENERGY, 6);
   spell_assignment(CLASS_SORCERER, SPELL_COMMUNAL_SPIDER_CLIMB, 6);
   spell_assignment(CLASS_SORCERER, SPELL_MASS_IDENTIFY, 6);
+  spell_assignment(CLASS_SORCERER, SPELL_BLINK, 5);
   /*              class num      spell                   level acquired */
   /* 4th circle */
   spell_assignment(CLASS_SORCERER, SPELL_LESSER_MISSILE_STORM, 8);
@@ -6546,6 +6548,7 @@ void load_class_list(void)
   spell_assignment(CLASS_BARD, SPELL_GASEOUS_FORM, 7);
   spell_assignment(CLASS_BARD, SPELL_CONTROL_SUMMONED_CREATURE, 7);
   spell_assignment(CLASS_BARD, SPELL_CHARM_MONSTER, 7);
+  spell_assignment(CLASS_BARD, SPELL_BLINK, 7);
   /*              class num      spell                   level acquired */
   /* 4th circle */
   spell_assignment(CLASS_BARD, SPELL_SUMMON_CREATURE_4, 10);

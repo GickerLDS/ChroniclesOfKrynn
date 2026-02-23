@@ -4827,7 +4827,18 @@ int compute_concealment(struct char_data *ch, struct char_data *attacker)
       concealment += 20;
   }
   else if (AFF_FLAGGED(ch, AFF_BLINKING))
-    concealment += 20;
+  {
+    int blink_concealment = 50;
+    bool can_see_invis = (attacker != NULL) && can_see_invisible_creatures(attacker);
+    bool can_strike_ethereal = (attacker != NULL) && can_strike_ethereal_creatures(attacker);
+
+    if (can_see_invis && can_strike_ethereal)
+      blink_concealment = 0;
+    else if (can_see_invis || can_strike_ethereal)
+      blink_concealment = 20;
+
+    concealment += blink_concealment;
+  }
   else if (
       affected_by_spell(
           ch,
@@ -4922,6 +4933,14 @@ int damage_handling(struct char_data *ch, struct char_data *victim, int dam, int
   {
     if (dam_type == DAM_POISON && !can_poison(victim))
       return 0;
+
+    if (!is_spell && AFF_FLAGGED(ch, AFF_BLINKING) && rand_number(1, 100) <= 20)
+    {
+      act("$n blinks out just as $e strikes, missing $N!", FALSE, ch, NULL, victim, TO_NOTVICT);
+      act("You blink out just as you strike, missing $N!", FALSE, ch, NULL, victim, TO_CHAR);
+      act("$n blinks out just as $e strikes, missing you!", FALSE, ch, NULL, victim, TO_VICT);
+      return 0;
+    }
 
     /* handle concealment */
     int concealment = compute_concealment(victim, ch);
@@ -5288,7 +5307,7 @@ int damage_handling(struct char_data *ch, struct char_data *victim, int dam, int
       if (IS_INCORPOREAL(victim))
       {
         // damage is normal if you're using a ghost touch weapon, or you're incorporeal yourself
-        if (is_using_ghost_touch_weapon(ch) || IS_INCORPOREAL(ch))
+        if (is_using_ghost_touch_weapon(ch) || IS_INCORPOREAL(ch) || AFF_FLAGGED(ch, AFF_BLINKING))
           ;
         else
           dam /= 2;
@@ -10776,6 +10795,13 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
       bonuses[BONUS_TYPE_UNDEFINED] += 4;
       if (display)
         send_to_char(ch, " 4: %-50s\r\n", "Blind Fight");
+    }
+
+    if (AFF_FLAGGED(ch, AFF_BLINKING) && !can_see_invisible_creatures(victim))
+    {
+      bonuses[BONUS_TYPE_UNDEFINED] += 2;
+      if (display)
+        send_to_char(ch, " 2: %-50s\r\n", "Blink vs. No See Invis");
     }
 
     /* point blank shot will give +1 bonus to hitroll if you are using a ranged

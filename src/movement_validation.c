@@ -194,6 +194,9 @@ int can_climb(struct char_data *ch)
       dam = dice(3, dam);
       dam -= HAS_FEAT(ch, FEAT_SLOW_FALL) * 3;
 
+      if (AFF_FLAGGED(ch, AFF_BLINKING))
+        dam /= 2;
+
       if (affected_by_spell(ch, PSIONIC_CATFALL))
       {
         send_to_char(ch, "Your psionic catfall ability allows you to float down gently.\r\n");
