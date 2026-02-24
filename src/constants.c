@@ -1984,7 +1984,7 @@ const char *extra_bits[] = {
     "Can-Only-Possess-One", "Crafting-Smelter", "Crafting-Loom", "Crafting-Forge",
     "Crafting-Alchemy-Lab", "Crafting-Jewelcrafting-Station", "Crafting-Tannery",
     "Crafting-Carpentry-Table", "Trapped", "Costs-Account-Experience", "Can-Be-Reforged",
-    "Costs-Artisan-Points", "\n"};
+    "Costs-Artisan-Points", "Butchered", "\n"};
 CHECK_TABLE_SIZE(extra_bits, NUM_ITEM_FLAGS + 1);
 
 /** Describes the apply types.
@@ -3083,7 +3083,7 @@ const char *ability_names[] = {
     "jewelcrafting", "leatherworking", "trapmaking", "poisonmaking", "metalworking", "fishing",
     "cooking", "brewing",
     // harvesting
-    "mining", "hunting", "forestry", "gathering", "surveying", "\n"};
+    "mining", "hunting", "forestry", "gathering", "surveying", "butchering", "\n"};
 CHECK_TABLE_SIZE(ability_names, NUM_ABILITIES - START_GENERAL_ABILITIES + 3);
 
 #if defined(CAMPAIGN_DL)
@@ -4999,7 +4999,8 @@ const char *crafting_methods[] = {"",         "crafting", "surveying",          
                                   "refining", "resizing", "doing a supplyorder", "\n"};
 
 const char *crafting_methods_short[] = {"",       "craft",  "survey",      "harvest",
-                                        "refine", "resize", "supplyorder", "\n"};
+                                        "refine", "resize", "supplyorder", "equipment",
+                                        "golem",  "butcher", "\n"};
 
 const char *campaigns[] = {"Default (Luminari)", "Dragonlance", "Forgotten Realms", "\n"};
 

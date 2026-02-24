@@ -1507,10 +1507,11 @@
 #define ABILITY_HARVEST_FORESTRY 50
 #define ABILITY_HARVEST_GATHERING 51
 #define ABILITY_HARVEST_SURVEYING 52
+#define ABILITY_HARVEST_BUTCHERING 53
 
-#define END_HARVEST_ABILITIES 52
+#define END_HARVEST_ABILITIES 53
 
-#define NUM_ABILITIES 52
+#define NUM_ABILITIES 53
 
 /* End Crafting Abilities */
 /*-------------------------------------------------------------------------*/

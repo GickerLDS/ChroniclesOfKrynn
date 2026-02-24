@@ -268,6 +268,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"battlerage", "battlerage", POS_FIGHTING, do_battlerage, 0, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
     {"bazaar", "bazaar", POS_STANDING, do_not_here, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"bullrush", "bullrush", POS_STANDING, do_bullrush, 0, 0, FALSE, ACTION_STANDARD, {0, 6}, NULL},
+    {"butcher", "butcher", POS_STANDING, do_newcraft, 0, SCMD_NEWCRAFT_BUTCHER, TRUE, ACTION_STANDARD, {0, 0}, NULL},
 
     /* {"command", "sort_as", minimum_position, *command_pointer, minimum_level, subcmd, ignore_wait, actions_required, {action_cooldowns}, *command_check_pointer},*/
     {"cast", "c", POS_SITTING, do_gen_cast, 1, SCMD_CAST_SPELL, FALSE, ACTION_MOVE, {0, 6}, NULL},
@@ -4253,7 +4254,6 @@ void nanny(struct descriptor_data *d, char *arg)
 
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOLOOT);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOGOLD);
-      SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOSAC);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOASSIST);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOKEY);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOSPLIT);

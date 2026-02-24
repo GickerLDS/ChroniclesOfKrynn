@@ -30,7 +30,8 @@ struct talent_info talent_list[TALENT_MAX];
 const char *talent_category_names[NUM_TALENT_CATEGORIES] = {
     "General",   "Woodworking",   "Tailoring",      "Alchemy",    "Armorsmithing", "Weaponsmithing",
     "Bowmaking", "Jewelcrafting", "Leatherworking", "Trapmaking", "Poisonmaking",  "Metalworking",
-    "Fishing",   "Cooking",       "Mining",         "Hunting",    "Forestry",      "Gathering"};
+    "Fishing",   "Cooking",       "Mining",         "Hunting",    "Forestry",      "Gathering",
+    "Butchering"};
 
 /* Structure for sorting talents */
 struct talent_sort_entry
@@ -561,6 +562,31 @@ void init_talents(void)
           "+5% experience per rank on gathering tasks",
           "Each rank gives a 5% bonus to experience gained when performing gathering tasks.", TRUE,
           TALENT_CAT_GATHERING);
+
+  /* Butchering talents (harvesting) */
+  talento(TALENT_PROFICIENT_BUTCHERING, "proficient butchering", 1, 1000, 5,
+          "+1 to skill checks for the butchering skill",
+          "Each rank gives +1 to skill checks made with the butchering skill.", TRUE,
+          TALENT_CAT_BUTCHERING);
+  talento(
+      TALENT_RAPID_BUTCHERING, "rapid butchering", 1, 1000, 5,
+      "-1 second on butchering skill task completion per rank",
+      "Reduces completion time for tasks performed with the butchering skill by 1 second per rank.",
+      TRUE, TALENT_CAT_BUTCHERING);
+  talento(
+      TALENT_BUTCHERING_EXPERTISE, "butchering expertise", 2, 2500, 5,
+      "On critical success, chance to gain extra materials",
+      "On critical success when butchering there's a 10% chance per rank to gain extra materials.",
+      TRUE, TALENT_CAT_BUTCHERING);
+  talento(
+      TALENT_EFFICIENT_BUTCHERING, "efficient butchering", 1, 2500, 10,
+      "3% chance per rank to gain 2 extra units",
+      "Each rank gives a 3% chance to gain 2 extra units when butchering.",
+      TRUE, TALENT_CAT_BUTCHERING);
+  talento(TALENT_INSIGHTFUL_BUTCHERING, "insightful butchering", 2, 5000, 5,
+          "+5% experience per rank on butchering tasks",
+          "Each rank gives a 5% bonus to experience gained when performing butchering tasks.", TRUE,
+          TALENT_CAT_BUTCHERING);
 }
 
 /* Player data integration helpers */
@@ -827,10 +853,10 @@ void list_all_talents(struct char_data *ch)
     char line[256];
 
     if (rank >= maxr)
-      snprintf(line, sizeof(line), "\tW%2d\tn) %-24s %d/%-2d \tR[MAX]\tn", i, talent_list[i].name,
+      snprintf(line, sizeof(line), "\tW%3d\tn) %-24s %d/%-2d \tR[MAX]\tn", i, talent_list[i].name,
                rank, maxr);
     else
-      snprintf(line, sizeof(line), "\tW%2d\tn) %-24s %d/%-2d %2dpt/%4dgp", i, talent_list[i].name,
+      snprintf(line, sizeof(line), "\tW%3d\tn) %-24s %d/%-2d %2dpt/%4dgp", i, talent_list[i].name,
                rank, maxr, p_cost, g_cost);
 
     if (col_toggle == 0)
@@ -1000,13 +1026,13 @@ void list_talents_by_category(struct char_data *ch, int category)
     int g_cost = talent_next_gold_cost(ch, i);
 
     if (rank >= maxr)
-      send_to_char(ch, "\tW%2d\tn) %-32s %d/%-2d \tR[MAX]\tn\r\n", i, talent_list[i].name, rank,
+      send_to_char(ch, "\tW%3d\tn) %-32s %d/%-2d \tR[MAX]\tn\r\n", i, talent_list[i].name, rank,
                    maxr);
     else if (rank > 0)
-      send_to_char(ch, "\tW%2d\tn) %-32s %d/%-2d  Next: %2dpt/%5dgp\r\n", i, talent_list[i].name,
+      send_to_char(ch, "\tW%3d\tn) %-32s %d/%-2d  Next: %2dpt/%5dgp\r\n", i, talent_list[i].name,
                    rank, maxr, p_cost, g_cost);
     else
-      send_to_char(ch, "\tW%2d\tn) %-32s \tD%d/%-2d\tn  Cost: %2dpt/%5dgp\r\n", i,
+      send_to_char(ch, "\tW%3d\tn) %-32s \tD%d/%-2d\tn  Cost: %2dpt/%5dgp\r\n", i,
                    talent_list[i].name, rank, maxr, p_cost, g_cost);
   }
 

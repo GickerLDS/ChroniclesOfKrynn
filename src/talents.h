@@ -130,6 +130,7 @@ struct char_data;
 #define TALENT_EFFICIENT_GATHERING 85
 #define TALENT_INSIGHTFUL_GATHERING 86
 
+
 /* Mote Synergy Talents (General Category) */
 #define TALENT_AIR_MOTE_SYNERGY 87
 #define TALENT_DARK_MOTE_SYNERGY 88
@@ -143,7 +144,14 @@ struct char_data;
 /* Misc/General Talents */
 #define TALENT_SURVEYOR 95
 
-#define TALENT_MAX 96 /* one past highest */
+/* Butchering */
+#define TALENT_PROFICIENT_BUTCHERING 96
+#define TALENT_RAPID_BUTCHERING 97
+#define TALENT_BUTCHERING_EXPERTISE 98
+#define TALENT_EFFICIENT_BUTCHERING 99
+#define TALENT_INSIGHTFUL_BUTCHERING 100
+
+#define TALENT_MAX 101 /* one past highest */
 
 /* Talent Categories */
 #define TALENT_CAT_GENERAL 0
@@ -164,7 +172,8 @@ struct char_data;
 #define TALENT_CAT_HUNTING 15
 #define TALENT_CAT_FORESTRY 16
 #define TALENT_CAT_GATHERING 17
-#define NUM_TALENT_CATEGORIES 18
+#define TALENT_CAT_BUTCHERING 18
+#define NUM_TALENT_CATEGORIES 19
 
 /* Data definition structure for each talent */
 struct talent_info

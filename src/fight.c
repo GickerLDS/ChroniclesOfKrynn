@@ -2083,8 +2083,12 @@ static void make_corpse(struct char_data *ch)
   SET_BIT_AR(GET_OBJ_WEAR(corpse), ITEM_WEAR_TAKE);
   SET_BIT_AR(GET_OBJ_EXTRA(corpse), ITEM_NODONATE);
   GET_OBJ_VAL(corpse, 0) = 0; /* You can't store stuff in a corpse */
+  GET_OBJ_VAL(corpse, 1) = IS_NPC(ch) ? GET_NPC_RACE(ch) : 0; /* race type/family */
+  GET_OBJ_VAL(corpse, 2) = GET_SIZE(ch); /* size */
   GET_OBJ_VAL(corpse, 3) = 1; /* corpse identifier */
-  /* todo for players: save id onto corpse, and save race, etc */
+  GET_OBJ_VAL(corpse, 4) = IS_NPC(ch) ? 0 : GET_IDNUM(ch); /* player ID if PC, 0 if NPC */
+  GET_OBJ_VAL(corpse, 6) = IS_NPC(ch) ? GET_LEVEL(ch) : 0; /* mob level */
+  GET_OBJ_VAL(corpse, 7) = (IS_NPC(ch) && AFF_FLAGGED(ch, AFF_CHARM) && ch->master && !IS_NPC(ch->master)) ? 1 : 0; /* player charmed */
   GET_OBJ_WEIGHT(corpse) = GET_WEIGHT(ch) + IS_CARRYING_W(ch);
   GET_OBJ_RENT(corpse) = 100000;
   if (IS_NPC(ch))

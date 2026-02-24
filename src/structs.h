@@ -4825,8 +4825,9 @@
 #define ITEM_ACCOUNT_EXP 114 // item is bought for account exp
 #define ITEM_REFORGEABLE 115 // item can be reforged
 #define ITEM_ARTISANPOINTS 116 // item is purchased with artisan points
+#define ITEM_BUTCHERED 117   // corpse has been butchered
 /** Total number of item flags */
-#define NUM_ITEM_FLAGS 117
+#define NUM_ITEM_FLAGS 118
 
 /* homeland-port */
 /*
@@ -5910,6 +5911,10 @@ struct crafting_data_info
   int golem_size;                            // GOLEM_SIZE_SMALL, MEDIUM, LARGE, HUGE
   int golem_materials[NUM_CRAFT_GROUPS][2];  // 0 = mat type, 1 = mat amount for golem
   int golem_motes_required[NUM_CRAFT_MOTES]; // motes needed for golem
+
+  // butchering info
+  int butcher_material; // Material being extracted from corpse (separate from room harvesting)
+  char *butcher_corpse_desc; // Temporary description of corpse being butchered
 
   // specialization info
   int craft_specialization[2]; // Two crafting/harvesting skills to specialize in (ABILITY_* values, -1 if unset)

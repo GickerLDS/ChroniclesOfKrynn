@@ -45,8 +45,8 @@
 /************************/
 /************************/
 
-#define MAX_QUEST_NAME 40  /* Length of quest name                 */
-#define MAX_QUEST_DESC 75  /* Length of quest description          */
+#define MAX_QUEST_NAME 120  /* Length of quest name                 */
+#define MAX_QUEST_DESC 120  /* Length of quest description          */
 #define MAX_QUEST_MSG 4096 /* Length of quest message strings      */
 
 #define SCMD_QUEST_LIST 0     /* List quests available at questmaster */

@@ -617,7 +617,6 @@ int harvesting_skill_by_material(int material)
   case CRAFT_MAT_MEDIUM_GRADE_HIDE:
   case CRAFT_MAT_HIGH_GRADE_HIDE:
   case CRAFT_MAT_PRISTINE_GRADE_HIDE:
-  case CRAFT_MAT_DRAGONSCALE:
     return ABILITY_HARVEST_HUNTING;
 
   case CRAFT_MAT_ASH_WOOD:
@@ -625,7 +624,6 @@ int harvesting_skill_by_material(int material)
   case CRAFT_MAT_MAHAGONY_WOOD:
   case CRAFT_MAT_VALENWOOD:
   case CRAFT_MAT_IRONWOOD:
-  case CRAFT_MAT_DRAGONBONE:
     return ABILITY_HARVEST_FORESTRY;
 
   case CRAFT_MAT_HEMP:
@@ -636,6 +634,11 @@ int harvesting_skill_by_material(int material)
   case CRAFT_MAT_COTTON:
   case CRAFT_MAT_SILK:
     return ABILITY_HARVEST_GATHERING;
+
+  case CRAFT_MAT_DRAGONSCALE:
+  case CRAFT_MAT_DRAGONBONE:
+  case CRAFT_MAT_DRAGONBLOOD:
+    return ABILITY_HARVEST_BUTCHERING;
   }
   return 0;
 }
@@ -988,6 +991,104 @@ int craft_group_by_material(int material)
     return CRAFT_GROUP_REFINING;
   }
   return CRAFT_GROUP_NONE;
+}
+
+/* Check if a corpse can be butchered */
+static bool can_butcher_corpse(struct obj_data *corpse)
+{
+  if (!IS_CORPSE(corpse))
+    return false;
+
+  /* Check if PC corpse (can't butcher PC corpses) */
+  if (GET_OBJ_VAL(corpse, 4) != 0)
+    return false;
+
+  /* Check if player charmed creature (can't butcher player pets) */
+  if (GET_OBJ_VAL(corpse, 7) != 0)
+    return false;
+
+  /* Check if already butchered */
+  if (OBJ_FLAGGED(corpse, ITEM_BUTCHERED))
+    return false;
+
+  /* Check if the corpse race type is butcherable */
+  int race_type = GET_OBJ_VAL(corpse, 1);
+  if (race_type == RACE_TYPE_DRAGON || race_type == RACE_TYPE_ANIMAL || race_type == RACE_TYPE_MAGICAL_BEAST)
+    return true;
+
+  return false;
+}
+
+/* Get the level from corpse */
+static int get_corpse_level(struct obj_data *corpse)
+{
+  /* Level is stored in val[6] */
+  int level = GET_OBJ_VAL(corpse, 6);
+  
+  /* Sanity check - if level is 0 or invalid, return a default */
+  if (level <= 0)
+    return 10;
+  
+  return level;
+}
+
+/* Get race type from corpse */
+static int get_corpse_race_type(struct obj_data *corpse)
+{
+  return GET_OBJ_VAL(corpse, 1);
+}
+
+/* Determine hide quality based on level */
+static int get_hide_quality_by_level(int level)
+{
+  if (level <= 5)
+    return CRAFT_MAT_LOW_GRADE_HIDE;
+  else if (level <= 10)
+    return CRAFT_MAT_MEDIUM_GRADE_HIDE;
+  else if (level <= 20)
+    return CRAFT_MAT_HIGH_GRADE_HIDE;
+  else
+    return CRAFT_MAT_PRISTINE_GRADE_HIDE;
+}
+
+/* Determine material based on corpse race and level */
+static int determine_butcher_material(struct obj_data *corpse)
+{
+  int race_type = get_corpse_race_type(corpse);
+  int level = get_corpse_level(corpse);
+  
+  if (race_type == RACE_TYPE_DRAGON)
+  {
+    switch(dice(1, 3))
+    {
+    case 1:
+      return CRAFT_MAT_DRAGONBLOOD;
+    case 2:
+      return CRAFT_MAT_DRAGONBONE;
+    case 3:
+      return CRAFT_MAT_DRAGONSCALE;
+    }
+  }
+  else if (race_type == RACE_TYPE_ANIMAL || race_type == RACE_TYPE_MAGICAL_BEAST)
+  {
+    /* Return hide based on level */
+    return get_hide_quality_by_level(level);
+  }
+  
+  return CRAFT_MAT_NONE;
+}
+
+/* Find any butcherable corpse in the room */
+static struct obj_data *find_butcherable_corpse_in_room(struct char_data *ch)
+{
+  struct obj_data *obj;
+
+  for (obj = world[IN_ROOM(ch)].contents; obj; obj = obj->next_content)
+  {
+    if (can_butcher_corpse(obj))
+      return obj;
+  }
+  return NULL;
 }
 
 void survey_complete(struct char_data *ch)
@@ -3364,6 +3465,9 @@ int get_proficient_talent_bonus(struct char_data *ch, int skill)
   case ABILITY_HARVEST_GATHERING:
     talent = TALENT_PROFICIENT_GATHERING;
     break;
+  case ABILITY_HARVEST_BUTCHERING:
+    talent = TALENT_PROFICIENT_BUTCHERING;
+    break;
   default:
     return 0;
   }
@@ -3452,6 +3556,10 @@ int get_rapid_talent_bonus(struct char_data *ch, int skill)
     talent = TALENT_RAPID_GATHERING;
     seconds_per_rank = 1;
     break;
+  case ABILITY_HARVEST_BUTCHERING:
+    talent = TALENT_RAPID_BUTCHERING;
+    seconds_per_rank = 1;
+    break;
   default:
     return 0;
   }
@@ -3522,6 +3630,9 @@ int get_insightful_talent_bonus(struct char_data *ch, int skill)
   case ABILITY_HARVEST_GATHERING:
     talent = TALENT_INSIGHTFUL_GATHERING;
     break;
+  case ABILITY_HARVEST_BUTCHERING:
+    talent = TALENT_INSIGHTFUL_BUTCHERING;
+    break;
   default:
     return 0;
   }
@@ -3591,6 +3702,9 @@ int get_efficient_talent_bonus(struct char_data *ch, int skill)
     break;
   case ABILITY_HARVEST_GATHERING:
     talent = TALENT_EFFICIENT_GATHERING;
+    break;
+  case ABILITY_HARVEST_BUTCHERING:
+    talent = TALENT_EFFICIENT_BUTCHERING;
     break;
   default:
     return 0;
@@ -4769,6 +4883,7 @@ void process_crafting_materials(struct char_data *ch, int group, int mat_type, i
 
 const int craft_skills_alphabetic[END_HARVEST_ABILITIES - START_CRAFT_ABILITIES + 1] = {
     ABILITY_CRAFT_ALCHEMY,        ABILITY_CRAFT_ARMORSMITHING, ABILITY_CRAFT_BOWMAKING,
+    ABILITY_HARVEST_BUTCHERING,
     ABILITY_CRAFT_COOKING,        ABILITY_CRAFT_FISHING,       ABILITY_HARVEST_FORESTRY,
     ABILITY_HARVEST_GATHERING,    ABILITY_HARVEST_HUNTING,     ABILITY_CRAFT_JEWELCRAFTING,
     ABILITY_CRAFT_LEATHERWORKING, ABILITY_CRAFT_METALWORKING,  ABILITY_HARVEST_MINING,
@@ -4788,7 +4903,7 @@ void show_craft_score(struct char_data *ch, const char *arg2)
   draw_line(ch, 90, '-', '-');
   send_to_char(ch, "\tn");
 
-  for (i = START_CRAFT_ABILITIES; i < END_HARVEST_ABILITIES; i++)
+  for (i = START_CRAFT_ABILITIES; i <= END_HARVEST_ABILITIES; i++)
   {
     abil = craft_skills_alphabetic[i - START_CRAFT_ABILITIES];
     if (crafting_skill_type(abil) != CRAFT_SKILL_TYPE_CRAFT)
@@ -5340,6 +5455,7 @@ void harvest_complete(struct char_data *ch)
   if (is_specialized)
     spec_bonus = 5;
 
+  /* DC based on material grade */
   harvest_level = MAX(1, material_grade(world[IN_ROOM(ch)].harvest_material) * 5);
   dc = HARVEST_BASE_DC + (harvest_level);
 
@@ -5352,6 +5468,7 @@ void harvest_complete(struct char_data *ch)
 
   if (roll == 1)
   {
+    /* Critical failure */
     amount = dice(1, 6);
     amount = MIN(amount, world[IN_ROOM(ch)].harvest_material_amount);
     send_to_char(ch,
@@ -5400,6 +5517,7 @@ void harvest_complete(struct char_data *ch)
     amount = HARVEST_BASE_AMOUNT;
     amount = MIN(amount, world[IN_ROOM(ch)].harvest_material_amount);
 
+    /* Harvesting success */
     if (roll == 20)
     {
       bonus = HARVEST_BASE_AMOUNT;
@@ -5600,6 +5718,308 @@ void newcraft_harvest(struct char_data *ch, const char *argument)
                harvesting_messages[world[IN_ROOM(ch)].harvest_material],
                GET_SURVEY_ROOMS(ch));
   act("$n starts harvesting.", FALSE, ch, 0, 0, TO_ROOM);
+}
+
+void newcraft_butcher(struct char_data *ch, const char *argument)
+{
+  char arg[MAX_INPUT_LENGTH];
+  struct obj_data *corpse = NULL;
+  int material = CRAFT_MAT_NONE;
+  int race_type = 0;
+  
+  /* Parse the argument to find target corpse */
+  one_argument(argument, arg, sizeof(arg));
+  
+  if (!*arg)
+  {
+    send_to_char(ch, "Butcher what corpse?\r\n");
+    return;
+  }
+  
+  /* Find the corpse in the room */
+  if (!(corpse = get_obj_in_list_vis(ch, arg, NULL, world[IN_ROOM(ch)].contents)))
+  {
+    send_to_char(ch, "You don't see that here.\r\n");
+    return;
+  }
+  
+  /* Check if it's actually a corpse */
+  if (!IS_CORPSE(corpse))
+  {
+    send_to_char(ch, "That's not a corpse!\r\n");
+    return;
+  }
+  
+  /* Check if it can be butchered */
+  if (!can_butcher_corpse(corpse))
+  {
+    if (GET_OBJ_VAL(corpse, 4) != 0)
+      send_to_char(ch, "You cannot butcher a player's corpse!\r\n");
+    else if (GET_OBJ_VAL(corpse, 7) != 0)
+      send_to_char(ch, "You cannot butcher someone's pet!\r\n");
+    else if (OBJ_FLAGGED(corpse, ITEM_BUTCHERED))
+      send_to_char(ch, "That corpse has already been butchered.\r\n");
+    else
+    {
+      race_type = get_corpse_race_type(corpse);
+      send_to_char(ch, "That corpse cannot be butchered for useful materials.\r\n");
+    }
+    return;
+  }
+  
+  /* Check if player is already busy */
+  if (GET_CRAFT(ch).craft_duration > 0)
+  {
+    send_to_char(ch, "You cannot butcher until you complete your current task. To cancel, type "
+                     "'cancel craft'.\r\n");
+    return;
+  }
+  
+  /* Determine what material we'll get from this corpse */
+  material = determine_butcher_material(corpse);
+  
+  if (material == CRAFT_MAT_NONE)
+  {
+    send_to_char(ch, "You can't figure out how to butcher this corpse.\r\n");
+    return;
+  }
+  
+  /* Require skinning knife for butchering */
+  if (!GET_EQ(ch, WEAR_CRAFT_KNIFE))
+  {
+    send_to_char(ch, "You need a skinning knife equipped to butcher corpses.\r\n");
+    return;
+  }
+  
+  /* Set up the butchering process */
+  GET_CRAFT(ch).butcher_material = material;
+  
+  /* Store the corpse description for progress display */
+  if (GET_CRAFT(ch).butcher_corpse_desc)
+    free(GET_CRAFT(ch).butcher_corpse_desc);
+  GET_CRAFT(ch).butcher_corpse_desc = strdup(corpse->short_description);
+  
+  /* Start the butchering process */
+  int seconds = HARVEST_BASE_TIME;
+  int harvest_skill = harvesting_skill_by_material(material);
+  
+  if (GET_LEVEL(ch) >= LVL_IMMORT)
+    seconds = 1;
+  else if (harvest_skill > 0)
+  {
+    int rapid_reduction = get_rapid_talent_bonus(ch, harvest_skill);
+    seconds -= rapid_reduction;
+    if (seconds < 1)
+      seconds = 1;
+  }
+  
+  GET_CRAFT(ch).crafting_method = SCMD_NEWCRAFT_BUTCHER;
+  GET_CRAFT(ch).craft_duration = seconds;
+  
+  race_type = get_corpse_race_type(corpse);
+  if (race_type == RACE_TYPE_DRAGON)
+    send_to_char(ch, "You begin carefully butchering the dragon corpse...\r\n");
+  else if (race_type == RACE_TYPE_MAGICAL_BEAST)
+    send_to_char(ch, "You begin skinning the magical beast for its hide...\r\n");
+  else
+    send_to_char(ch, "You begin skinning the corpse...\r\n");
+  
+  act("$n starts butchering a corpse.", FALSE, ch, 0, 0, TO_ROOM);
+}
+
+void butcher_complete(struct char_data *ch)
+{
+  int skill = 0, skill_roll = 0, roll = 0, dc = 0;
+  int prof_bonus = 0;
+  int tool_bonus = 0;
+  struct obj_data *skinning_knife = NULL;
+  struct obj_data *butcher_corpse = NULL;
+  int corpse_level = 0;
+  int corpse_race_type = 0;
+  int material = GET_CRAFT(ch).butcher_material;
+  
+  /* Check for skinning knife bonus */
+  skinning_knife = GET_EQ(ch, WEAR_CRAFT_KNIFE);
+  if (skinning_knife && GET_OBJ_TYPE(skinning_knife) == ITEM_CRAFTING_TOOL)
+  {
+    /* Tool bonus is stored in value[1] */
+    tool_bonus = MAX(0, GET_OBJ_VAL(skinning_knife, 1));
+  }
+
+  /* Find a butcherable corpse in the room */
+  butcher_corpse = find_butcherable_corpse_in_room(ch);
+  if (!butcher_corpse)
+  {
+    send_to_char(ch, "The corpse you were butchering is gone!\r\n");
+    GET_CRAFT(ch).craft_duration = 0;
+    GET_CRAFT(ch).crafting_method = 0;
+    GET_CRAFT(ch).butcher_material = CRAFT_MAT_NONE;
+    if (GET_CRAFT(ch).butcher_corpse_desc)
+    {
+      free(GET_CRAFT(ch).butcher_corpse_desc);
+      GET_CRAFT(ch).butcher_corpse_desc = NULL;
+    }
+    return;
+  }
+
+  corpse_level = get_corpse_level(butcher_corpse);
+  corpse_race_type = get_corpse_race_type(butcher_corpse);
+  bool is_dragon = (corpse_race_type == RACE_TYPE_DRAGON);
+
+  skill = ABILITY_HARVEST_BUTCHERING;
+
+  roll = d20(ch);
+  skill_roll = get_craft_skill_value(ch, skill);
+  prof_bonus = get_proficient_talent_bonus(ch, skill);
+  
+  /* Total skill bonus includes proficiency and tool bonus */
+  int total_bonus = prof_bonus + tool_bonus;
+
+  int base_skill = GET_ABILITY(ch, skill);
+  int spec_bonus = 0;
+  bool is_specialized = (GET_CRAFT(ch).craft_specialization[0] == skill || 
+                        GET_CRAFT(ch).craft_specialization[1] == skill);
+  if (is_specialized)
+    spec_bonus = 5;
+
+  /* DC based on corpse level */
+  dc = 10 + corpse_level;
+
+  if ((20 + skill_roll + total_bonus) < dc)
+  {
+    send_to_char(ch, "You don't have the skill to butcher this corpse.\r\n");
+    GET_CRAFT(ch).craft_duration = 0;
+    GET_CRAFT(ch).crafting_method = 0;
+    GET_CRAFT(ch).butcher_material = CRAFT_MAT_NONE;
+    if (GET_CRAFT(ch).butcher_corpse_desc)
+    {
+      free(GET_CRAFT(ch).butcher_corpse_desc);
+      GET_CRAFT(ch).butcher_corpse_desc = NULL;
+    }
+    return;
+  }
+
+  /* Critical failure */
+  if (roll == 1)
+  {
+    send_to_char(ch, "\tM[CRITICAL FAILURE]\tn You rolled a natural 1! You have completely ruined "
+                 "the corpse!\r\n");
+    SET_BIT_AR(GET_OBJ_EXTRA(butcher_corpse), ITEM_BUTCHERED);
+    GET_CRAFT(ch).craft_duration = 0;
+    GET_CRAFT(ch).crafting_method = 0;
+    GET_CRAFT(ch).butcher_material = CRAFT_MAT_NONE;
+    if (GET_CRAFT(ch).butcher_corpse_desc)
+    {
+      free(GET_CRAFT(ch).butcher_corpse_desc);
+      GET_CRAFT(ch).butcher_corpse_desc = NULL;
+    }
+    return;
+  }
+
+  /* Failure */
+  if ((roll + skill_roll + total_bonus) < dc)
+  {
+    char bonus_text[512];
+    char *ptr = bonus_text;
+    
+    if (spec_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + specialization [%d]", spec_bonus);
+    if (prof_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + proficiency [%d]", prof_bonus);
+    if (tool_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + tool [%d]", tool_bonus);
+    
+    send_to_char(ch,
+                 "Roll [%d] + Base Skill [%d]%s = Total [%d] vs. DC [%d]. Failure. You have failed to "
+                 "butcher the corpse.\r\n",
+                 roll, base_skill, bonus_text, roll + skill_roll + total_bonus, dc);
+    GET_CRAFT(ch).craft_duration = 0;
+    GET_CRAFT(ch).crafting_method = 0;
+    GET_CRAFT(ch).butcher_material = CRAFT_MAT_NONE;
+    if (GET_CRAFT(ch).butcher_corpse_desc)
+    {
+      free(GET_CRAFT(ch).butcher_corpse_desc);
+      GET_CRAFT(ch).butcher_corpse_desc = NULL;
+    }
+    gain_craft_exp(ch, HARVEST_BASE_EXP / 2, skill, TRUE);
+    return;
+  }
+
+  /* Success */
+  int material_amount = 1 + (roll == 20 ? 1 : 0); /* Crit gives bonus material */
+  int efficient_bonus = 0;
+  int expertise_bonus = 0;
+  
+  /* Check for efficient talent - chance to gain 2 extra units */
+  int efficient_chance = get_efficient_talent_bonus(ch, skill);
+  if (efficient_chance > 0 && rand_number(1, 100) <= efficient_chance)
+  {
+    efficient_bonus = 2;
+    send_to_char(ch, "\tC*EFFICIENT*\tn You gain 2 extra units from your efficient butchering!\r\n");
+  }
+  
+  /* Check for expertise talent - on critical success, chance for extra materials */
+  int expertise_rank = 0;
+  if (roll == 20)
+  {
+    expertise_rank = get_talent_rank(ch, TALENT_BUTCHERING_EXPERTISE);
+    if (expertise_rank > 0 && rand_number(1, 100) <= (expertise_rank * 10))
+    {
+      expertise_bonus = 1;
+      send_to_char(ch, "\tC*EXPERTISE*\tn You gain an extra material from your expertise!\r\n");
+    }
+  }
+  
+  if (roll == 20)
+  {
+    send_to_char(ch, "\tM[CRITICAL SUCCESS!]\tn You rolled a natural 20! You've harvested %d units of %s!\r\n",
+                 material_amount + expertise_bonus, crafting_materials[material]);
+    gain_craft_exp(ch, HARVEST_BASE_EXP + (HARVEST_BASE_EXP * corpse_level / 10), skill, TRUE);
+  }
+  else
+  {
+    char bonus_text[512];
+    char *ptr = bonus_text;
+    
+    if (spec_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + specialization [%d]", spec_bonus);
+    if (prof_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + proficiency [%d]", prof_bonus);
+    if (tool_bonus > 0)
+      ptr += snprintf(ptr, sizeof(bonus_text) - (ptr - bonus_text), " + tool [%d]", tool_bonus);
+    
+    send_to_char(ch, "Roll [%d] + Base Skill [%d]%s = Total [%d] vs. DC [%d]. Success!\r\n",
+                 roll, base_skill, bonus_text, roll + skill_roll + total_bonus, dc);
+    send_to_char(ch, "You have harvested %d %s from the corpse.\r\n",
+                 material_amount + efficient_bonus, crafting_materials[material]);
+    gain_craft_exp(ch, HARVEST_BASE_EXP + ((HARVEST_BASE_EXP / 2) * corpse_level / 10), skill, TRUE);
+  }
+  
+  GET_CRAFT_MAT(ch, material) += material_amount + efficient_bonus + expertise_bonus;
+  
+  if (is_dragon)
+  {
+    act("$n carefully harvests materials from the dragon corpse.", TRUE, ch, 0, 0, TO_ROOM);
+  }
+  else
+  {
+    act("$n carefully skins the corpse.", TRUE, ch, 0, 0, TO_ROOM);
+  }
+
+  /* Mark corpse as butchered */
+  SET_BIT_AR(GET_OBJ_EXTRA(butcher_corpse), ITEM_BUTCHERED);
+  send_to_char(ch, "The corpse has been fully butchered.\r\n");
+
+  GET_CRAFT(ch).craft_duration = 0;
+  GET_CRAFT(ch).crafting_method = 0;
+  GET_CRAFT(ch).butcher_material = CRAFT_MAT_NONE;
+  
+  /* Free the corpse description */
+  if (GET_CRAFT(ch).butcher_corpse_desc)
+  {
+    free(GET_CRAFT(ch).butcher_corpse_desc);
+    GET_CRAFT(ch).butcher_corpse_desc = NULL;
+  }
 }
 
 void show_harvesting_tool_needed(struct char_data *ch)
@@ -6292,6 +6712,7 @@ int crafting_skill_type(int skill)
   case ABILITY_HARVEST_FORESTRY:
   case ABILITY_HARVEST_GATHERING:
   case ABILITY_HARVEST_SURVEYING:
+  case ABILITY_HARVEST_BUTCHERING:
     return CRAFT_SKILL_TYPE_HARVEST;
 
   case ABILITY_CRAFT_BOWMAKING:
@@ -6517,6 +6938,19 @@ void craft_update(void)
             harvest_complete(ch);
           }
           break;
+        case SCMD_NEWCRAFT_BUTCHER:
+          if (GET_CRAFT(ch).craft_duration && !PRF_FLAGGED(ch, PRF_NO_CRAFT_PROGRESS))
+          {
+            send_to_char(ch, "Butchering. ");
+            for (i = 0; i < GET_CRAFT(ch).craft_duration; i++)
+              send_to_char(ch, "*");
+            send_to_char(ch, "\r\n");
+          }
+          else
+          {
+            butcher_complete(ch);
+          }
+          break;
         case SCMD_NEWCRAFT_SUPPLYORDER:
           craft_supplyorder_complete(ch);
           break;
@@ -6572,6 +7006,35 @@ void craft_update(void)
             }
           }
           break;
+          case SCMD_NEWCRAFT_BUTCHER:
+            if (GET_CRAFT(ch).butcher_material == CRAFT_MAT_NONE)
+            {
+              send_to_char(ch, "The corpse is gone.\r\n");
+              GET_CRAFT(ch).crafting_method = 0;
+              GET_CRAFT(ch).craft_duration = 0;
+              if (GET_CRAFT(ch).butcher_corpse_desc)
+              {
+                free(GET_CRAFT(ch).butcher_corpse_desc);
+                GET_CRAFT(ch).butcher_corpse_desc = NULL;
+              }
+            }
+            else if (GET_CRAFT(ch).craft_duration % 2 == 0)
+            {
+              if (GET_CRAFT(ch).butcher_corpse_desc)
+              {
+                send_to_char(ch, "Butchering %s. ",
+                             GET_CRAFT(ch).butcher_corpse_desc);
+              }
+              else
+              {
+                send_to_char(ch, "Butchering %s. ",
+                             crafting_materials[GET_CRAFT(ch).butcher_material]);
+              }
+              for (i = 0; i < GET_CRAFT(ch).craft_duration; i++)
+                send_to_char(ch, "*");
+              send_to_char(ch, "\r\n");
+            }
+            break;
           case SCMD_NEWCRAFT_HARVEST:
             if (crafting_material_nodes[world[IN_ROOM(ch)].harvest_material_amount] <= 0)
             {
@@ -8294,6 +8757,11 @@ ACMD(do_newcraft)
   else if (subcmd == SCMD_NEWCRAFT_GOLEM)
   {
     newcraft_golem(ch, argument);
+    return;
+  }
+  else if (subcmd == SCMD_NEWCRAFT_BUTCHER)
+  {
+    newcraft_butcher(ch, argument);
     return;
   }
 }
