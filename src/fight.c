@@ -2083,8 +2083,8 @@ static void make_corpse(struct char_data *ch)
   SET_BIT_AR(GET_OBJ_WEAR(corpse), ITEM_WEAR_TAKE);
   SET_BIT_AR(GET_OBJ_EXTRA(corpse), ITEM_NODONATE);
   GET_OBJ_VAL(corpse, 0) = 0; /* You can't store stuff in a corpse */
-  GET_OBJ_VAL(corpse, 1) = IS_NPC(ch) ? GET_NPC_RACE(ch) : 0; /* race type/family */
-  GET_OBJ_VAL(corpse, 2) = GET_SIZE(ch); /* size */
+  GET_OBJ_VAL(corpse, 8) = IS_NPC(ch) ? GET_NPC_RACE(ch) : 0; /* race type/family */
+  GET_OBJ_VAL(corpse, 9) = GET_SIZE(ch); /* size */
   GET_OBJ_VAL(corpse, 3) = 1; /* corpse identifier */
   GET_OBJ_VAL(corpse, 4) = IS_NPC(ch) ? 0 : GET_IDNUM(ch); /* player ID if PC, 0 if NPC */
   GET_OBJ_VAL(corpse, 6) = IS_NPC(ch) ? GET_LEVEL(ch) : 0; /* mob level */

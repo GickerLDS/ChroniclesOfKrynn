@@ -1435,9 +1435,9 @@ void assign_feats(void)
   feat_prereq_attribute(FEAT_OVERWHELMING_CRITICAL, AB_STR, 23);
   feat_prereq_feat(FEAT_OVERWHELMING_CRITICAL, FEAT_CLEAVE, 1);
   feat_prereq_feat(FEAT_OVERWHELMING_CRITICAL, FEAT_GREAT_CLEAVE, 1);
-  feat_prereq_feat(FEAT_OVERWHELMING_CRITICAL, FEAT_IMPROVED_CRITICAL, 1);
+  feat_prereq_cfeat(FEAT_OVERWHELMING_CRITICAL, FEAT_IMPROVED_CRITICAL);
   feat_prereq_feat(FEAT_OVERWHELMING_CRITICAL, FEAT_POWER_ATTACK, 1);
-  feat_prereq_feat(FEAT_OVERWHELMING_CRITICAL, FEAT_WEAPON_FOCUS, 1);
+  feat_prereq_cfeat(FEAT_OVERWHELMING_CRITICAL, FEAT_WEAPON_FOCUS);
 
   feato(FEAT_DEVASTATING_CRITICAL, "devastating critical", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
         "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multiplier is x3, and "
@@ -1449,12 +1449,12 @@ void assign_feats(void)
         " Feat prerequisites must be in the same weapon type as this feat for this effect to "
         "function.");
   feat_prereq_attribute(FEAT_DEVASTATING_CRITICAL, AB_STR, 25);
-  feat_prereq_feat(FEAT_DEVASTATING_CRITICAL, FEAT_OVERWHELMING_CRITICAL, 1);
   feat_prereq_feat(FEAT_DEVASTATING_CRITICAL, FEAT_CLEAVE, 1);
   feat_prereq_feat(FEAT_DEVASTATING_CRITICAL, FEAT_GREAT_CLEAVE, 1);
-  feat_prereq_feat(FEAT_DEVASTATING_CRITICAL, FEAT_IMPROVED_CRITICAL, 1);
+  feat_prereq_cfeat(FEAT_DEVASTATING_CRITICAL, FEAT_IMPROVED_CRITICAL);
   feat_prereq_feat(FEAT_DEVASTATING_CRITICAL, FEAT_POWER_ATTACK, 1);
-  feat_prereq_feat(FEAT_DEVASTATING_CRITICAL, FEAT_WEAPON_FOCUS, 1);
+  feat_prereq_cfeat(FEAT_DEVASTATING_CRITICAL, FEAT_WEAPON_FOCUS);
+  feat_prereq_cfeat(FEAT_DEVASTATING_CRITICAL, FEAT_OVERWHELMING_CRITICAL);
 
   /* feat-number | name | in game? | learnable? | stackable? | feat-type | short-descrip | long descrip */
   /* ranged attack feats */
@@ -6378,6 +6378,21 @@ bool meets_prerequisite(struct char_data *ch, struct feat_prerequisite *prereq, 
     /*  SPECIAL CASE - You must have a feat, and it must be the cfeat for the chosen weapon. */
     if (w_type && !has_combat_feat(ch, feat_to_cfeat(prereq->values[0]), w_type))
       return FALSE;
+    /* If no weapon type specified, check if they have it for ANY weapon type */
+    if (!w_type)
+    {
+      int j, found = FALSE;
+      for (j = 1; j < NUM_WEAPON_FAMILIES; j++)
+      {
+        if (has_combat_feat(ch, feat_to_cfeat(prereq->values[0]), j))
+        {
+          found = TRUE;
+          break;
+        }
+      }
+      if (!found)
+        return FALSE;
+    }
     break;
   case FEAT_PREREQ_WEAPON_PROFICIENCY:
     if (w_type && !is_proficient_with_weapon(ch, w_type))
@@ -7105,11 +7120,11 @@ int feat_is_available(struct char_data *ch, int featnum, int iarg, char *sarg)
         return TRUE;
       return FALSE;
 
-//     case FEAT_OVERWHELMING_CRITICAL:
-//     case FEAT_DEVASTATING_CRITICAL:
-//       if (!iarg || is_proficient_with_weapon(ch, iarg))
-//         return TRUE;
-//       return FALSE;
+    case FEAT_OVERWHELMING_CRITICAL:
+    case FEAT_DEVASTATING_CRITICAL:
+      if (!iarg || is_proficient_with_weapon(ch, iarg))
+        return TRUE;
+      return FALSE;
 
     case FEAT_POWER_CRITICAL:
       if (ACTUAL_BAB(ch) < 4)
@@ -9313,7 +9328,7 @@ bool display_feat_info(struct char_data *ch, const char *featname)
   draw_line(ch, line_length, '-', '-');
 
   /*  Here display the prerequisites */
-  if (feat_list[feat].prerequisite_list == NULL)
+  if (feat_list[feat].prerequisite_list == NULL && IS_EPIC_FEAT(feat) == FALSE)
   {
     snprintf(buf, sizeof(buf), "\tCPrerequisites : \tnnone\r\n");
   }
@@ -9346,6 +9361,12 @@ bool display_feat_info(struct char_data *ch, const char *featname)
                  "\tn");
         strlcat(buf, buf2, sizeof(buf));
       }
+    }
+    if (IS_EPIC_FEAT(feat))
+    {
+      snprintf(buf2, sizeof(buf2), "%s%s%s\tn", first ? "\tcPrerequisites : " : ", ", 
+                  GET_LEVEL(ch) >= 21 ? "\tn" : "\tr", "level 21+");
+      strlcat(buf, buf2, sizeof(buf));
     }
   }
   send_to_char(ch, "%s", strfrmt(buf, line_length, 1, FALSE, FALSE, FALSE));

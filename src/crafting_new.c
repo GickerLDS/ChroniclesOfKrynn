@@ -1012,7 +1012,7 @@ static bool can_butcher_corpse(struct obj_data *corpse)
     return false;
 
   /* Check if the corpse race type is butcherable */
-  int race_type = GET_OBJ_VAL(corpse, 1);
+  int race_type = GET_OBJ_VAL(corpse, 8);
   if (race_type == RACE_TYPE_DRAGON || race_type == RACE_TYPE_ANIMAL || race_type == RACE_TYPE_MAGICAL_BEAST)
     return true;
 
@@ -1035,7 +1035,7 @@ static int get_corpse_level(struct obj_data *corpse)
 /* Get race type from corpse */
 static int get_corpse_race_type(struct obj_data *corpse)
 {
-  return GET_OBJ_VAL(corpse, 1);
+  return GET_OBJ_VAL(corpse, 8);
 }
 
 /* Determine hide quality based on level */
