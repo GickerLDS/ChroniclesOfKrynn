@@ -1426,9 +1426,9 @@ void assign_feats(void)
   feat_prereq_bab(FEAT_SICKENING_CRITICAL, 11);
 
   feato(FEAT_OVERWHELMING_CRITICAL, "overwhelming critical", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
-        "Critical hits now deal an extra 1d6 damage, or +2d6 if the critical multipler is x3, and "
+        "Critical hits now deal an extra 1d6 damage, or +2d6 if the critical multiplier is x3, and "
         "+3d6 if the criticaal multiplier is x4.",
-        "Critical hits now deal an extra 1d6 damage, or +2d6 if the critical multipler is x3, and "
+        "Critical hits now deal an extra 1d6 damage, or +2d6 if the critical multiplier is x3, and "
         "+3d6 if the criticaal multiplier is x4."
         " Feat prerequisites must be in the same weapon type as this feat for this effect to "
         "function.");
@@ -1440,10 +1440,10 @@ void assign_feats(void)
   feat_prereq_feat(FEAT_OVERWHELMING_CRITICAL, FEAT_WEAPON_FOCUS, 1);
 
   feato(FEAT_DEVASTATING_CRITICAL, "devastating critical", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
-        "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multipler is x3, and "
+        "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multiplier is x3, and "
         "+6d6 if the criticaal multiplier is x4. "
         "This extra damage stacks with overwhelming critical.",
-        "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multipler is x3, and "
+        "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multiplier is x3, and "
         "+6d6 if the criticaal multiplier is x4. "
         "This extra damage stacks with overwhelming critical."
         " Feat prerequisites must be in the same weapon type as this feat for this effect to "
@@ -7105,11 +7105,11 @@ int feat_is_available(struct char_data *ch, int featnum, int iarg, char *sarg)
         return TRUE;
       return FALSE;
 
-    case FEAT_OVERWHELMING_CRITICAL:
-    case FEAT_DEVASTATING_CRITICAL:
-      if (!iarg || is_proficient_with_weapon(ch, iarg))
-        return TRUE;
-      return FALSE;
+//     case FEAT_OVERWHELMING_CRITICAL:
+//     case FEAT_DEVASTATING_CRITICAL:
+//       if (!iarg || is_proficient_with_weapon(ch, iarg))
+//         return TRUE;
+//       return FALSE;
 
     case FEAT_POWER_CRITICAL:
       if (ACTUAL_BAB(ch) < 4)
