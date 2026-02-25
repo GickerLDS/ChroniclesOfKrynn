@@ -1149,7 +1149,7 @@ void survey_complete(struct char_data *ch)
   {
     /* Cooldown has expired or doesn't exist, set new cooldown (2 minutes) */
     GET_SURVEY_EXP_COOLDOWN(ch) = now + (2 * 60);
-    gain_craft_exp(ch, 10 + GET_SURVEY_ROOMS(ch), ABILITY_HARVEST_SURVEYING, TRUE);
+    gain_craft_exp(ch, (10 + GET_SURVEY_ROOMS(ch)) * 2, ABILITY_HARVEST_SURVEYING, TRUE);
   }
   
   act("$n finishes surveying.", FALSE, ch, 0, 0, TO_ROOM);
@@ -5883,20 +5883,11 @@ void butcher_complete(struct char_data *ch)
     spec_bonus = 5;
 
   /* DC based on corpse level */
-  dc = 10 + corpse_level;
+  dc = 10 + (corpse_level / 2);
 
   if ((20 + skill_roll + total_bonus) < dc)
   {
-    send_to_char(ch, "You don't have the skill to butcher this corpse.\r\n");
-    GET_CRAFT(ch).craft_duration = 0;
-    GET_CRAFT(ch).crafting_method = 0;
-    GET_CRAFT(ch).butcher_material = CRAFT_MAT_NONE;
-    if (GET_CRAFT(ch).butcher_corpse_desc)
-    {
-      free(GET_CRAFT(ch).butcher_corpse_desc);
-      GET_CRAFT(ch).butcher_corpse_desc = NULL;
-    }
-    return;
+    send_to_char(ch, "Your skill is too low to butcher this corpse. You will only succeed on a natural 20.\r\n");
   }
 
   /* Critical failure */

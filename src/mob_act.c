@@ -119,7 +119,7 @@ void mobile_activity(void)
     /* If the mob has no specproc, do the default actions */
 
     // entry point for npc race and class behaviour in combat -zusuk
-    if (GET_LEVEL(ch) > NEWBIE_LEVEL)
+    if (GET_LEVEL(ch) > NEWBIE_LEVEL && !MOB_FLAGGED(ch, MOB_NO_AI))
     {
       if (FIGHTING(ch))
       {
