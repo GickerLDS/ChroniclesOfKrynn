@@ -1012,7 +1012,7 @@ static bool can_butcher_corpse(struct obj_data *corpse)
     return false;
 
   /* Check if the corpse race type is butcherable */
-  int race_type = GET_OBJ_VAL(corpse, 8);
+  int race_type = GET_OBJ_VAL(corpse, 1);
   if (race_type == RACE_TYPE_DRAGON || race_type == RACE_TYPE_ANIMAL || race_type == RACE_TYPE_MAGICAL_BEAST)
     return true;
 
@@ -1035,7 +1035,7 @@ static int get_corpse_level(struct obj_data *corpse)
 /* Get race type from corpse */
 static int get_corpse_race_type(struct obj_data *corpse)
 {
-  return GET_OBJ_VAL(corpse, 8);
+  return GET_OBJ_VAL(corpse, 1);
 }
 
 /* Determine hide quality based on level */
@@ -8169,8 +8169,7 @@ void complete_supply_order(struct char_data *ch)
   // Award rewards
   GET_GOLD(ch) += gold_reward;
   recipe = get_current_craft_project_recipe(ch);
-  skill = recipe_skill_to_actual_crafting_skill(
-      crafting_recipes[recipe].variant_skill[GET_CRAFT(ch).craft_variant]);
+  skill = recipe_skill_to_actual_crafting_skill(crafting_recipes[recipe].variant_skill[GET_CRAFT(ch).craft_variant]);
   gain_craft_exp(ch, bonus_exp, skill, TRUE);
   GET_ARTISAN_EXP(ch) += artisan_points;
 

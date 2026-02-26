@@ -1427,9 +1427,9 @@ void assign_feats(void)
 
   feato(FEAT_OVERWHELMING_CRITICAL, "overwhelming critical", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
         "Critical hits now deal an extra 1d6 damage, or +2d6 if the critical multiplier is x3, and "
-        "+3d6 if the criticaal multiplier is x4.",
+        "+3d6 if the critical multiplier is x4.",
         "Critical hits now deal an extra 1d6 damage, or +2d6 if the critical multiplier is x3, and "
-        "+3d6 if the criticaal multiplier is x4."
+        "+3d6 if the critical multiplier is x4."
         " Feat prerequisites must be in the same weapon type as this feat for this effect to "
         "function.");
   feat_prereq_attribute(FEAT_OVERWHELMING_CRITICAL, AB_STR, 23);
@@ -1441,10 +1441,10 @@ void assign_feats(void)
 
   feato(FEAT_DEVASTATING_CRITICAL, "devastating critical", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
         "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multiplier is x3, and "
-        "+6d6 if the criticaal multiplier is x4. "
+        "+6d6 if the critical multiplier is x4. "
         "This extra damage stacks with overwhelming critical.",
         "Critical hits now deal an extra 2d6 damage, or +4d6 if the critical multiplier is x3, and "
-        "+6d6 if the criticaal multiplier is x4. "
+        "+6d6 if the critical multiplier is x4. "
         "This extra damage stacks with overwhelming critical."
         " Feat prerequisites must be in the same weapon type as this feat for this effect to "
         "function.");

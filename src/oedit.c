@@ -347,12 +347,16 @@ void oedit_disp_weapon_spells(struct descriptor_data *d)
 
   for (counter = 0; counter < MAX_WEAPON_SPELLS; counter++)
   {
-    snprintf(buf, sizeof(buf),
-             "[%s%d%s] Spell: %s%20s%s Level: %s%3d%s Percent: %s%3d%s Combat: %s%3d%s\r\n", cyn,
-             counter + 1, nrm, cyn, spell_info[OLC_OBJ(d)->wpn_spells[counter].spellnum].name, nrm,
-             cyn, OLC_OBJ(d)->wpn_spells[counter].level, nrm, cyn,
-             OLC_OBJ(d)->wpn_spells[counter].percent, nrm, cyn,
-             OLC_OBJ(d)->wpn_spells[counter].inCombat, nrm);
+    snprintf(buf, sizeof(buf), "[%s%d%s] ", cyn, counter + 1, nrm);
+    send_to_char(d->character, "%s", buf);
+    snprintf(buf, sizeof(buf), "Spell: %s%20s%s ", cyn, 
+      (OLC_OBJ(d)->wpn_spells[counter].spellnum > 0) ? spell_info[OLC_OBJ(d)->wpn_spells[counter].spellnum].name : "none", nrm);
+    send_to_char(d->character, "%s", buf);
+    snprintf(buf, sizeof(buf), "Level: %s%3d%s ", cyn, OLC_OBJ(d)->wpn_spells[counter].level, nrm);
+    send_to_char(d->character, "%s", buf);
+    snprintf(buf, sizeof(buf), "Percent: %s%3d%s ", cyn, OLC_OBJ(d)->wpn_spells[counter].percent, nrm);
+    send_to_char(d->character, "%s", buf);
+    snprintf(buf, sizeof(buf), "Combat: %s%3d%s\r\n", cyn, OLC_OBJ(d)->wpn_spells[counter].inCombat, nrm);
     send_to_char(d->character, "%s", buf);
   }
   send_to_char(d->character, "Enter spell to edit : ");
