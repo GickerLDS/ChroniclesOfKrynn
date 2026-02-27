@@ -733,8 +733,8 @@ void boot_world(void)
   log("Loading quests.");
   index_boot(DB_BOOT_QST);
 
-  log("Loading Homeland quests.");
-  index_boot(DB_BOOT_HLQST);
+  // log("Loading Homeland quests.");
+  // index_boot(DB_BOOT_HLQST);
 
   log("Loading Deities.");
   assign_deities();

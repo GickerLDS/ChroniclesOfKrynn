@@ -552,8 +552,8 @@ cpp_extern const struct command_info cmd_info[] = {
 #else
     {"harvest", "harvest", POS_STANDING, do_wilderness_harvest, 0, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
 #endif
-    {"hlqedit", "hlqedit", POS_DEAD, do_hlqedit, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
-    {"hlqlist", "hlqlist", POS_DEAD, do_hlqlist, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    // {"hlqedit", "hlqedit", POS_DEAD, do_hlqedit, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    // {"hlqlist", "hlqlist", POS_DEAD, do_hlqlist, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"headbutt", "headbutt", POS_FIGHTING, do_process_attack, 1, AA_HEADBUTT, FALSE, ACTION_NONE, {0, 0}, can_headbutt},
     {"hitall", "hitall", POS_FIGHTING, do_hitall, 1, 0, FALSE, ACTION_STANDARD | ACTION_MOVE, {6, 6}, NULL},
     {"handleanimal", "handleanimal", POS_STANDING, do_handleanimal, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
