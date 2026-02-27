@@ -60,7 +60,7 @@ void save_char_pets(struct char_data *ch);
 int materials_sort_info[NUM_CRAFT_MATS];
 
 #define NEWCRAFT_RESIZE_SYNTAX                                                                     \
-  "Syntax is as follows: resize (object-name|add|remove|show|bagin) (new-size)\r\n"
+  "Syntax is as follows: resize (object-name|show|check|begin|start|reset) (new-size)\r\n"
 
 #define CRAFT_MOTE_NOARG                                                                           \
   "Please specity add or remove, and the bonus slot.\r\n"                                          \
@@ -353,13 +353,11 @@ static void show_craft_tutorial(struct char_data *ch)
 #define SURVEY_BASE_TIME 3
 #define HARVEST_BASE_DC 5
 #define CREATE_BASE_DC 10
-#define RESIZE_BASE_DC 10
 #define HARVEST_MOTE_DICE_SIZE 4
 #define HARVEST_MOTE_CHANCE 20
 #define HARVEST_BASE_AMOUNT dice(2, 2)
 #define HARVEST_BASE_EXP 20
 #define CREATE_BASE_EXP 50
-#define RESIZE_BASE_EXP 10
 #define REFINE_BASE_EXP 10
 #define NSUPPLY_ORDER_DURATION 60
 #define NSUPPLY_ORDER_NUM_REQUIRED 5
@@ -2940,21 +2938,11 @@ void reset_current_craft(struct char_data *ch, char *arg2, bool verbose, bool re
       send_to_char(ch, "You have reset refining values to the default.\r\n");
   }
 
-  if (mode == CR_RESET_ALL || mode == CR_RESET_MATERIALS || mode == CR_RESET_RESIZE)
+  if (mode == CR_RESET_ALL || mode == CR_RESET_RESIZE)
   {
     if (GET_CRAFT(ch).new_size)
     {
-      if (reimburse)
-      {
-        GET_CRAFT_MAT(ch, GET_CRAFT(ch).resize_mat_type) += GET_CRAFT(ch).resize_mat_num;
-        if (verbose)
-        {
-          send_to_char(ch, "You have recovered %d %s.\r\n", GET_CRAFT(ch).resize_mat_num,
-                       crafting_materials[GET_CRAFT(ch).resize_mat_type]);
-        }
-      }
-
-      GET_CRAFT(ch).new_size = GET_CRAFT(ch).resize_mat_type, GET_CRAFT(ch).resize_mat_num = 0;
+      GET_CRAFT(ch).new_size = 0;
       reset_crafting_obj(ch);
 
       if (verbose && mode != CR_RESET_ALL)
@@ -7847,7 +7835,7 @@ struct obj_data *find_obj_rnum_in_inventory(struct char_data *ch, obj_rnum obj_r
 
 void craft_resize_complete(struct char_data *ch)
 {
-  int skill, cmat, size, dc;
+  int size;
   struct obj_data *obj = find_obj_rnum_in_inventory(ch, GET_CRAFT(ch).craft_obj_rnum);
 
   if (!obj)
@@ -7857,25 +7845,12 @@ void craft_resize_complete(struct char_data *ch)
     return;
   }
 
-  cmat = GET_CRAFT(ch).resize_mat_type;
   size = GET_CRAFT(ch).new_size;
-  skill = harvesting_skill_by_material(cmat);
-
-  dc = MAX(RESIZE_BASE_DC, GET_OBJ_LEVEL(obj));
-
-  // skill check to determine success or failure
-  if (!create_craft_skill_check(ch, obj, skill, "resize", RESIZE_BASE_EXP / 2, dc))
-  {
-    // failure means we end things here.
-    return;
-  }
-
-  gain_craft_exp(ch, MAX(RESIZE_BASE_EXP, GET_OBJ_LEVEL(obj) * RESIZE_BASE_EXP / 5), skill, TRUE);
 
   send_to_char(ch, "You've resized %s to %s!\r\n", obj->short_description, sizes[size]);
   GET_OBJ_SIZE(obj) = size;
   reset_crafting_obj(ch);
-  GET_CRAFT(ch).new_size = GET_CRAFT(ch).resize_mat_type = GET_CRAFT(ch).resize_mat_num = 0;
+  GET_CRAFT(ch).new_size = 0;
   reset_current_craft(ch, NULL, FALSE, FALSE);
 }
 
@@ -8397,15 +8372,6 @@ bool check_resize(struct char_data *ch, bool verbose)
     fail = TRUE;
   }
 
-  if (GET_CRAFT(ch).resize_mat_type == 0)
-  {
-    if (verbose)
-    {
-      send_to_char(ch, "You haven't set your resize materials. Use 'resize add'.\r\n");
-    }
-    fail = TRUE;
-  }
-
   if (verbose)
   {
     send_to_char(ch, "\tn");
@@ -8417,7 +8383,7 @@ bool check_resize(struct char_data *ch, bool verbose)
 void newcraft_resize(struct char_data *ch, const char *argument)
 {
   struct obj_data *obj;
-  int i, size, mat, cmat, num, mod, old_size, total;
+  int i, size;
   char arg1[200], arg2[200], buf[200];
 
   two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -8428,78 +8394,16 @@ void newcraft_resize(struct char_data *ch, const char *argument)
     return;
   }
 
-  if (is_abbrev(arg1, "add"))
-  {
-    if (!(obj = find_obj_rnum_in_inventory(ch, GET_CRAFT(ch).craft_obj_rnum)))
-    {
-      send_to_char(ch, "You need to set an object to resize first.\r\n");
-      send_to_char(ch, NEWCRAFT_RESIZE_SYNTAX);
-      return;
-    }
-
-    mat = GET_OBJ_MATERIAL(obj);
-
-    cmat = obj_material_to_craft_material(mat);
-    old_size = GET_OBJ_SIZE(obj);
-    size = GET_CRAFT(ch).new_size;
-    num = MAX(1, GET_OBJ_WEIGHT(obj) / 10);
-    mod = MAX(1, size - old_size);
-    total = num * mod;
-
-    if (cmat == CRAFT_MAT_NONE)
-    {
-      send_to_char(ch,
-                   "That object is made of %s, which is not a valid resize material. Please inform "
-                   "a staff member if you feel it should be added.\r\n",
-                   material_name[mat]);
-      return;
-    }
-
-    if (GET_CRAFT_MAT(ch, cmat) < total)
-    {
-      send_to_char(ch, "You need %d unit%s of %s, but only have %d.\r\n", total,
-                   total > 1 ? "s" : "", crafting_materials[cmat], GET_CRAFT_MAT(ch, cmat));
-      return;
-    }
-
-    send_to_char(ch, "You've added %d unit%s of %s to resize %s from %s to %s.\r\n", total,
-                 total > 1 ? "s" : "", crafting_materials[cmat], obj->short_description,
-                 sizes[old_size], sizes[size]);
-    send_to_char(ch, "Type: resize begin to execute.\r\n");
-
-    GET_CRAFT(ch).resize_mat_type = cmat;
-    GET_CRAFT(ch).resize_mat_num = total;
-    GET_CRAFT_MAT(ch, cmat) -= total;
-    return;
-  }
-  else if (is_abbrev(arg1, "remove") || is_abbrev(arg1, "reset"))
+  if (is_abbrev(arg1, "reset"))
   {
     if (!(obj = find_obj_rnum_in_inventory(ch, GET_CRAFT(ch).craft_obj_rnum)))
     {
       send_to_char(ch, "You don't have any object set to resize.\r\n");
-      send_to_char(ch, NEWCRAFT_RESIZE_SYNTAX);
       return;
     }
 
-    if (!GET_CRAFT(ch).resize_mat_type)
-    {
-      send_to_char(ch, "No materials have been allocated for the resizing, however your crafting "
-                       "object and size have been reset\r\n");
-      GET_CRAFT(ch).new_size = GET_CRAFT(ch).resize_mat_type = GET_CRAFT(ch).resize_mat_num = 0;
-    }
-    else if (GET_CRAFT(ch).new_size)
-    {
-      send_to_char(ch, "You recover %d unit%s of %s and cancel your resizing of %s.\r\n",
-                   GET_CRAFT(ch).resize_mat_num, GET_CRAFT(ch).resize_mat_num > 1 ? "s" : "",
-                   crafting_materials[GET_CRAFT(ch).resize_mat_type], obj->short_description);
-      GET_CRAFT_MAT(ch, GET_CRAFT(ch).resize_mat_type) += GET_CRAFT(ch).resize_mat_num;
-      GET_CRAFT(ch).new_size = GET_CRAFT(ch).resize_mat_type = GET_CRAFT(ch).resize_mat_num = 0;
-    }
-    else
-    {
-      send_to_char(ch, "There seems to be an error with recovering your resizing materials. Please "
-                       "inform a staff member. We will reimburse lost materials.\r\n");
-    }
+    send_to_char(ch, "You cancel your resizing of %s.\r\n", obj->short_description);
+    GET_CRAFT(ch).new_size = 0;
     reset_crafting_obj(ch);
     return;
   }
@@ -8519,10 +8423,6 @@ void newcraft_resize(struct char_data *ch, const char *argument)
       send_to_char(ch, "-- Existing Size : %s\r\n", sizes[GET_OBJ_SIZE(obj)]);
       send_to_char(ch, "-- New Size      : %s\r\n",
                    GET_CRAFT(ch).new_size ? sizes[GET_CRAFT(ch).new_size] : "Not Set");
-      send_to_char(ch, "-- Material Type : %s\r\n",
-                   GET_CRAFT(ch).resize_mat_type ? crafting_materials[GET_CRAFT(ch).resize_mat_type]
-                                                 : "Not Set");
-      send_to_char(ch, "-- Material Amount: %d\r\n", GET_CRAFT(ch).resize_mat_num);
       send_to_char(ch, "\tc");
       draw_line(ch, 80, '-', '-');
       send_to_char(ch, "\tn");

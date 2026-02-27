@@ -4826,8 +4826,9 @@
 #define ITEM_REFORGEABLE 115 // item can be reforged
 #define ITEM_ARTISANPOINTS 116 // item is purchased with artisan points
 #define ITEM_BUTCHERED 117   // corpse has been butchered
+#define ITEM_NO_SALVAGE 118   // item cannot be salvaged for crafting materials
 /** Total number of item flags */
-#define NUM_ITEM_FLAGS 118
+#define NUM_ITEM_FLAGS 119
 
 /* homeland-port */
 /*

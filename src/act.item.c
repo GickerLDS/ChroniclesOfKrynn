@@ -9445,6 +9445,12 @@ ACMD(do_salvage)
     return;
   }
 
+  if (OBJ_FLAGGED(obj, ITEM_NO_SALVAGE))
+  {
+    send_to_char(ch, "That item cannot be salvaged.\r\n");
+    return;
+  }
+
   /* Check if the object can be taken (and thus salvaged) */
   if (!CAN_WEAR(obj, ITEM_WEAR_TAKE))
   {

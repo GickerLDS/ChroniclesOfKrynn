@@ -1984,7 +1984,7 @@ const char *extra_bits[] = {
     "Can-Only-Possess-One", "Crafting-Smelter", "Crafting-Loom", "Crafting-Forge",
     "Crafting-Alchemy-Lab", "Crafting-Jewelcrafting-Station", "Crafting-Tannery",
     "Crafting-Carpentry-Table", "Trapped", "Costs-Account-Experience", "Can-Be-Reforged",
-    "Costs-Artisan-Points", "Butchered", "\n"};
+    "Costs-Artisan-Points", "Butchered", "Cannot-be-Salvaged", "\n"};
 CHECK_TABLE_SIZE(extra_bits, NUM_ITEM_FLAGS + 1);
 
 /** Describes the apply types.
