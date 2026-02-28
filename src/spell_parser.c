@@ -4743,7 +4743,7 @@ void mag_assign_spells(void)
   /* conjuration */
   spello(SPELL_SUMMON_NATURES_ALLY_6, "natures ally vi", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
          MAG_SUMMONS, NULL, 8, 17, CONJURATION, FALSE);
-  spello(SPELL_ACID_FOG, "acid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
+  spello(SPELL_ACID_FOG, "acid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS | MAG_ROOM,
          "You watch as the acid fog dissipates.", 7, 17, CONJURATION, FALSE);
   spello(SPELL_FIRE_SEEDS, "fire seeds", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
          NULL, 7, 17, CONJURATION, FALSE);
@@ -4840,6 +4840,12 @@ void mag_assign_spells(void)
          FALSE, MAG_AFFECTS, "You feel your displacement spell wear off.", 6, 19, ILLUSION, FALSE);
   spello(SPELL_BLINK, "blink", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
          FALSE, MAG_AFFECTS, "You feel your blink spell wear off.", 6, 19, TRANSMUTATION, FALSE);
+  spello(SPELL_FOG_CLOUD, "fog cloud", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
+         "The fog cloud begins to dissipate.", 2, 7, CONJURATION, FALSE);
+  spello(SPELL_SOLID_FOG, "solid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
+         "The solid fog begins to dissipate.", 4, 13, CONJURATION, FALSE);
+  spello(SPELL_GUST_OF_WIND, "gust of wind", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
+         NULL, 2, 7, EVOCATION, FALSE);
   spello(SPELL_PRISMATIC_SPRAY, "prismatic spray", 79, 64, 1, POS_FIGHTING, TAR_IGNORE, TRUE,
          MAG_AREAS, NULL, 7, 19, ILLUSION, FALSE);
   /* divination */

@@ -4230,6 +4230,8 @@ void load_class_list(void)
   spell_assignment(CLASS_WIZARD, SPELL_SHOCKING_GRASP, 3);
   spell_assignment(CLASS_WIZARD, SPELL_SCORCHING_RAY, 3);
   spell_assignment(CLASS_WIZARD, SPELL_CONTINUAL_FLAME, 3);
+  spell_assignment(CLASS_WIZARD, SPELL_FOG_CLOUD, 3);
+  spell_assignment(CLASS_WIZARD, SPELL_GUST_OF_WIND, 3);
   spell_assignment(CLASS_WIZARD, SPELL_SUMMON_CREATURE_2, 3);
   spell_assignment(CLASS_WIZARD, SPELL_WEB, 3);
   spell_assignment(CLASS_WIZARD, SPELL_ACID_ARROW, 3);
@@ -4313,6 +4315,7 @@ void load_class_list(void)
   spell_assignment(CLASS_WIZARD, SPELL_COLD_SHIELD, 7);
   spell_assignment(CLASS_WIZARD, SPELL_ICE_STORM, 7);
   spell_assignment(CLASS_WIZARD, SPELL_BILLOWING_CLOUD, 7);
+  spell_assignment(CLASS_WIZARD, SPELL_SOLID_FOG, 7);
   spell_assignment(CLASS_WIZARD, SPELL_SUMMON_CREATURE_4, 7);
   spell_assignment(CLASS_WIZARD, SPELL_ANIMATE_DEAD, 7);
   spell_assignment(CLASS_WIZARD, SPELL_CURSE, 7);
@@ -5234,6 +5237,8 @@ void load_class_list(void)
   spell_assignment(CLASS_DRUID, SPELL_ENDURANCE, 3);
   spell_assignment(CLASS_DRUID, SPELL_STRENGTH, 3);
   spell_assignment(CLASS_DRUID, SPELL_GRACE, 3);
+  spell_assignment(CLASS_DRUID, SPELL_FOG_CLOUD, 3);
+  spell_assignment(CLASS_DRUID, SPELL_GUST_OF_WIND, 3);
   spell_assignment(CLASS_DRUID, SPELL_FLAME_BLADE, 3);
   spell_assignment(CLASS_DRUID, SPELL_FLAMING_SPHERE, 3);
   spell_assignment(CLASS_DRUID, SPELL_HOLD_ANIMAL, 3);
@@ -5275,6 +5280,7 @@ void load_class_list(void)
   spell_assignment(CLASS_DRUID, SPELL_ICE_STORM, 7);
   spell_assignment(CLASS_DRUID, SPELL_SPLINTER_STORM, 5);
   spell_assignment(CLASS_DRUID, SPELL_SHOCKWAVE, 9);
+  spell_assignment(CLASS_DRUID, SPELL_SOLID_FOG, 7);
   spell_assignment(CLASS_DRUID, SPELL_LOCATE_CREATURE, 7);
   spell_assignment(CLASS_DRUID, SPELL_SPIKE_STONES, 7);
   spell_assignment(CLASS_DRUID, SPELL_SUMMON_NATURES_ALLY_4, 7);
@@ -5621,6 +5627,8 @@ void load_class_list(void)
   spell_assignment(CLASS_SORCERER, SPELL_SHOCKING_GRASP, 4);
   spell_assignment(CLASS_SORCERER, SPELL_SCORCHING_RAY, 4);
   spell_assignment(CLASS_SORCERER, SPELL_CONTINUAL_FLAME, 4);
+  spell_assignment(CLASS_SORCERER, SPELL_FOG_CLOUD, 4);
+  spell_assignment(CLASS_SORCERER, SPELL_GUST_OF_WIND, 4);
   spell_assignment(CLASS_SORCERER, SPELL_SUMMON_CREATURE_2, 4);
   spell_assignment(CLASS_SORCERER, SPELL_WEB, 4);
   spell_assignment(CLASS_SORCERER, SPELL_ACID_ARROW, 4);
@@ -5704,6 +5712,7 @@ void load_class_list(void)
   spell_assignment(CLASS_SORCERER, SPELL_COLD_SHIELD, 8);
   spell_assignment(CLASS_SORCERER, SPELL_ICE_STORM, 8);
   spell_assignment(CLASS_SORCERER, SPELL_BILLOWING_CLOUD, 8);
+  spell_assignment(CLASS_SORCERER, SPELL_SOLID_FOG, 8);
   spell_assignment(CLASS_SORCERER, SPELL_SUMMON_CREATURE_4, 8);
   spell_assignment(CLASS_SORCERER, SPELL_ANIMATE_DEAD, 8);
   spell_assignment(CLASS_SORCERER, SPELL_CURSE, 8);

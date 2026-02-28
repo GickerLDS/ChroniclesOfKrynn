@@ -3896,9 +3896,9 @@ EVENTFUNC(event_concussive_onslaught)
       continue;
     GET_DC_BONUS(ch) = ch->player_specials->save_co_holder_dc_bonus;
     if (savingthrow(ch, victim, SAVING_FORT, 0, casttype, level, EVOCATION))
-      damage(ch, victim, (dice(ndice, sdice) / 2), PSIONIC_CONCUSSIVE_ONSLAUGHT, DAM_FORCE, FALSE);
+      damage(ch, victim, (dice(ndice, sdice) / 2), PSIONIC_CONCUSSIVE_ONSLAUGHT, DAM_BLUDGEON, FALSE);
     else
-      damage(ch, victim, dice(ndice, sdice), PSIONIC_CONCUSSIVE_ONSLAUGHT, DAM_FORCE, FALSE);
+      damage(ch, victim, dice(ndice, sdice), PSIONIC_CONCUSSIVE_ONSLAUGHT, DAM_BLUDGEON, FALSE);
     update_pos(victim);
   }
 
@@ -4096,11 +4096,11 @@ EVENTFUNC(event_spiritual_weapon)
 
   if (attack_roll >= ac)
   {
-    damage(ch, victim, dam, SPELL_SPIRITUAL_WEAPON, DAM_FORCE, FALSE);
+    damage(ch, victim, dam, SPELL_SPIRITUAL_WEAPON, DAM_BLUDGEON, FALSE);
   }
   else
   {
-    damage(ch, victim, 0, SPELL_SPIRITUAL_WEAPON, DAM_FORCE, FALSE);
+    damage(ch, victim, 0, SPELL_SPIRITUAL_WEAPON, DAM_BLUDGEON, FALSE);
   }
 
   update_pos(victim);
@@ -4205,11 +4205,11 @@ EVENTFUNC(event_dancing_weapon)
 
   if (attack_roll >= ac)
   {
-    damage(ch, victim, dam, SPELL_DANCING_WEAPON, DAM_FORCE, FALSE);
+    damage(ch, victim, dam, SPELL_DANCING_WEAPON, DAM_BLUDGEON, FALSE);
   }
   else
   {
-    damage(ch, victim, 0, SPELL_DANCING_WEAPON, DAM_FORCE, FALSE);
+    damage(ch, victim, 0, SPELL_DANCING_WEAPON, DAM_BLUDGEON, FALSE);
   }
 
   update_pos(victim);

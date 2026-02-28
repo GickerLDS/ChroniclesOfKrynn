@@ -122,6 +122,8 @@ int get_speed(struct char_data *ch, sbyte to_display)
     speed /= 2;
   else if (affected_by_spell(ch, PSIONIC_BODY_OF_IRON))
     speed /= 2;
+  else if (IN_ROOM(ch) != NOWHERE && ROOM_AFFECTED(IN_ROOM(ch), RAFF_SOLID_FOG))
+    speed /= 2;
 
   // Fleet of Foot perk bonus (Shadow Scout tree)
   if (!IS_NPC(ch))

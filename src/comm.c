@@ -1894,6 +1894,14 @@ static char *make_prompt(struct descriptor_data *d)
         {
           seesExits = 0;
         }
+        else if (ROOM_AFFECTED(ch->in_room, RAFF_FOG_CLOUD))
+        {
+          seesExits = 0;
+        }
+        else if (ROOM_AFFECTED(ch->in_room, RAFF_SOLID_FOG))
+        {
+          seesExits = 0;
+        }
 
         if (count >= 0)
           len += count;

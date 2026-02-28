@@ -1430,6 +1430,15 @@ void find_replacement(void *go, struct script_data *sc, trig_data *trig, int typ
           }
           snprintf(str, slen, "%d", GET_RESISTANCES(c, DAM_FORCE));
         }
+        else if (!str_cmp(field, "resist_bludgeon"))
+        {
+          if (subfield && *subfield)
+          {
+            int addition = atoi(subfield);
+            GET_RESISTANCES(c, DAM_BLUDGEON) += addition;
+          }
+          snprintf(str, slen, "%d", GET_RESISTANCES(c, DAM_BLUDGEON));
+        }
         else if (!str_cmp(field, "resist_sound"))
         {
           if (subfield && *subfield)

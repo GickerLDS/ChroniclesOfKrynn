@@ -845,6 +845,8 @@ int do_simple_move(struct char_data *ch, int dir, int need_specials_check)
     return 0;
   }
 
+  
+
   /*---------------------------------------------------------------------*/
   /* End checks that can prevent a character from leaving the was_in room. */
 

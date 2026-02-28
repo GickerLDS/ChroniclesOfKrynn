@@ -201,7 +201,7 @@ EVENTFUNC(event_falling)
       }
       else
       {
-        damage(ch, ch, dam, TYPE_UNDEFINED, DAM_FORCE, FALSE);
+        damage(ch, ch, dam, TYPE_UNDEFINED, DAM_BLUDGEON, FALSE);
         return 0; // end event
       }
     }

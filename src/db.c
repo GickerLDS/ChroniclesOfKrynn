@@ -3077,6 +3077,12 @@ static void interpret_espec(const char *keyword, const char *value, int i, int n
     GET_REAL_RESISTANCES(mob_proto + i, DAM_FORCE) = num_arg;
   }
 
+  CASE("ResBludgeon")
+  {
+    RANGE(-100, 100);
+    GET_REAL_RESISTANCES(mob_proto + i, DAM_BLUDGEON) = num_arg;
+  }
+
   CASE("ResSound")
   {
     RANGE(-100, 100);

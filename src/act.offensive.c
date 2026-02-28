@@ -1928,7 +1928,7 @@ bool perform_knockdown(struct char_data *ch, struct char_data *vict, int skill, 
       /* bodyslam with a skilled monk */
       if (skill == SKILL_BODYSLAM && skilled_monk)
       {
-        damage(ch, vict, dice(MONK_TYPE(ch), 8) + GET_WIS_BONUS(ch), SKILL_BODYSLAM, DAM_FORCE,
+        damage(ch, vict, dice(MONK_TYPE(ch), 8) + GET_WIS_BONUS(ch), SKILL_BODYSLAM, DAM_BLUDGEON,
                FALSE);
       }
 
@@ -1943,7 +1943,7 @@ bool perform_knockdown(struct char_data *ch, struct char_data *vict, int skill, 
 
   /* fire-shield, etc check */
   if (success && skill != SKILL_SHIELD_CHARGE)
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
 
   /* make sure combat starts */
   if (vict != ch)
@@ -2010,17 +2010,17 @@ bool perform_shieldpunch(struct char_data *ch, struct char_data *vict)
   /*  Use an attack mechanic to determine success. */
   if (attack_roll(ch, vict, ATTACK_TYPE_OFFHAND, FALSE, 1) <= 0)
   {
-    damage(ch, vict, 0, SKILL_SHIELD_PUNCH, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_SHIELD_PUNCH, DAM_BLUDGEON, FALSE);
   }
   else
   {
-    damage(ch, vict, dice(1, 6) + (GET_STR_BONUS(ch) / 2), SKILL_SHIELD_PUNCH, DAM_FORCE, FALSE);
+    damage(ch, vict, dice(1, 6) + (GET_STR_BONUS(ch) / 2), SKILL_SHIELD_PUNCH, DAM_BLUDGEON, FALSE);
     name = obj_index[GET_OBJ_RNUM(shield)].func;
     if (name)
       (name)(ch, shield, 0, "shieldpunch");
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
 
   return TRUE;
@@ -2076,11 +2076,11 @@ bool perform_shieldcharge(struct char_data *ch, struct char_data *vict)
    *  Add 2 for the charge bonus!  */
   if (attack_roll(ch, vict, ATTACK_TYPE_OFFHAND, FALSE, 1) + 2 <= 0)
   {
-    damage(ch, vict, 0, SKILL_SHIELD_CHARGE, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_SHIELD_CHARGE, DAM_BLUDGEON, FALSE);
   }
   else
   {
-    damage(ch, vict, dice(1, 6) + GET_STR_BONUS(ch), SKILL_SHIELD_CHARGE, DAM_FORCE, FALSE);
+    damage(ch, vict, dice(1, 6) + GET_STR_BONUS(ch), SKILL_SHIELD_CHARGE, DAM_BLUDGEON, FALSE);
     name = obj_index[GET_OBJ_RNUM(shield)].func;
     if (name)
       (name)(ch, shield, 0, "shieldcharge");
@@ -2088,7 +2088,7 @@ bool perform_shieldcharge(struct char_data *ch, struct char_data *vict)
     perform_knockdown(ch, vict, SKILL_SHIELD_CHARGE, true, true);
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
 
   USE_STANDARD_ACTION(ch);
@@ -2143,11 +2143,11 @@ bool perform_shieldslam(struct char_data *ch, struct char_data *vict)
   /*  Use an attack mechanic to determine success. */
   if (attack_roll(ch, vict, ATTACK_TYPE_OFFHAND, FALSE, 1) <= 0)
   {
-    damage(ch, vict, 0, SKILL_SHIELD_SLAM, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_SHIELD_SLAM, DAM_BLUDGEON, FALSE);
   }
   else
   {
-    damage(ch, vict, dice(1, 6) + (GET_STR_BONUS(ch) / 2), SKILL_SHIELD_SLAM, DAM_FORCE, FALSE);
+    damage(ch, vict, dice(1, 6) + (GET_STR_BONUS(ch) / 2), SKILL_SHIELD_SLAM, DAM_BLUDGEON, FALSE);
     name = obj_index[GET_OBJ_RNUM(shield)].func;
     if (name)
       (name)(ch, shield, 0, "shieldslam");
@@ -2167,7 +2167,7 @@ bool perform_shieldslam(struct char_data *ch, struct char_data *vict)
     }
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
 
   USE_STANDARD_ACTION(ch);
@@ -2222,7 +2222,7 @@ void perform_headbutt(struct char_data *ch, struct char_data *vict)
   if (attack_roll(ch, vict, ATTACK_TYPE_UNARMED, FALSE, 1) > 0)
   {
     damage(ch, vict, dice((HAS_FEAT(ch, FEAT_IMPROVED_UNARMED_STRIKE) ? 2 : 1), 8), SKILL_HEADBUTT,
-           DAM_FORCE, FALSE);
+           DAM_BLUDGEON, FALSE);
 
     if (!rand_number(0, 4))
     {
@@ -2242,11 +2242,11 @@ void perform_headbutt(struct char_data *ch, struct char_data *vict)
     }
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
   else
   {
-    damage(ch, vict, 0, SKILL_HEADBUTT, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_HEADBUTT, DAM_BLUDGEON, FALSE);
   }
 }
 
@@ -2642,7 +2642,7 @@ void perform_sap(struct char_data *ch, struct char_data *vict)
   if (attack_roll(ch, vict, ATTACK_TYPE_PRIMARY, FALSE, prob) > 0)
   {
     dam = 5 + dice(GET_LEVEL(ch), 2);
-    damage(ch, vict, dam, SKILL_SAP, DAM_FORCE, FALSE);
+    damage(ch, vict, dam, SKILL_SAP, DAM_BLUDGEON, FALSE);
     change_position(vict, POS_RECLINING);
 
     /* success!  fortitude save? */
@@ -2663,11 +2663,11 @@ void perform_sap(struct char_data *ch, struct char_data *vict)
     }
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
   else
   {
-    damage(ch, vict, 0, SKILL_SAP, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_SAP, DAM_BLUDGEON, FALSE);
   }
 
   USE_STANDARD_ACTION(ch);
@@ -2839,7 +2839,7 @@ void perform_springleap(struct char_data *ch, struct char_data *vict)
   if (attack_roll(ch, vict, ATTACK_TYPE_UNARMED, FALSE, 1) > 0)
   {
     dam = dice(6, (GET_LEVEL(ch) / 5) + 2);
-    damage(ch, vict, dam, SKILL_SPRINGLEAP, DAM_FORCE, FALSE);
+    damage(ch, vict, dam, SKILL_SPRINGLEAP, DAM_BLUDGEON, FALSE);
 
     /* ornir decided to disable this, so i changed the skill from full around action
      * to a move action -zusuk
@@ -2854,11 +2854,11 @@ void perform_springleap(struct char_data *ch, struct char_data *vict)
         affect_join(vict, &af, TRUE, FALSE, FALSE, FALSE); */
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
   else
   {
-    damage(ch, vict, 0, SKILL_SPRINGLEAP, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_SPRINGLEAP, DAM_BLUDGEON, FALSE);
   }
 
   change_position(ch, POS_STANDING);
@@ -4431,7 +4431,7 @@ ACMD(do_earthshaker)
       /* Deal damage */
       if (dam_amount > 0)
       {
-        damage(ch, tch, dam_amount, SKILL_EARTHSHAKER, DAM_FORCE, FALSE);
+        damage(ch, tch, dam_amount, SKILL_EARTHSHAKER, DAM_BLUDGEON, FALSE);
       }
 
       /* Knock prone (no save) - but check NOBASH */
@@ -7892,7 +7892,7 @@ static int tailsweep_callback(struct char_data *ch, struct char_data *tch, void 
     act("$N is knocked down by a tailsweep from $n.", FALSE, ch, 0, tch, TO_NOTVICT);
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, tch, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, tch, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
 
     (*vict_count)++;
   }
@@ -10205,7 +10205,7 @@ int perform_dragonbite(struct char_data *ch, struct char_data *vict)
   if (combat_maneuver_check(ch, vict, COMBAT_MANEUVER_TYPE_KICK, 50) > 0)
   {
     /* damagee! */
-    damage(ch, vict, dice(diceOne, diceTwo) + GET_STR(ch) + 4, SKILL_DRAGON_BITE, DAM_FORCE, FALSE);
+    damage(ch, vict, dice(diceOne, diceTwo) + GET_STR(ch) + 4, SKILL_DRAGON_BITE, DAM_PIERCING, FALSE);
 
     act("Your flesh is rended by a bite from $N!", FALSE, vict, 0, ch, TO_CHAR);
     act("$e is rended by your bite at $m!", FALSE, vict, 0, ch, TO_VICT);
@@ -10222,13 +10222,13 @@ int perform_dragonbite(struct char_data *ch, struct char_data *vict)
     }
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_PIERCING);
 
     got_em = TRUE;
   }
   else
   {
-    damage(ch, vict, 0, SKILL_DRAGON_BITE, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_DRAGON_BITE, DAM_PIERCING, FALSE);
     act("You dodge a vicious bite from $N!", FALSE, vict, 0, ch, TO_CHAR);
     act("$e dodges to the side as you bite at $m!", FALSE, vict, 0, ch, TO_VICT);
     act("$n dodges a vicious bite from $N!", FALSE, vict, 0, ch, TO_NOTVICT);
@@ -10282,7 +10282,7 @@ void perform_kick(struct char_data *ch, struct char_data *vict)
 
   if (combat_maneuver_check(ch, vict, COMBAT_MANEUVER_TYPE_KICK, 0) > 0)
   {
-    damage(ch, vict, dice(diceOne, diceTwo) + GET_STR_BONUS(ch), SKILL_KICK, DAM_FORCE, FALSE);
+    damage(ch, vict, dice(diceOne, diceTwo) + GET_STR_BONUS(ch), SKILL_KICK, DAM_BLUDGEON, FALSE);
     if (!savingthrow(ch, vict, SAVING_REFL, GET_STR_BONUS(vict), CAST_INNATE, GET_LEVEL(ch),
                      NOSCHOOL) &&
         rand_number(0, 2))
@@ -10298,10 +10298,10 @@ void perform_kick(struct char_data *ch, struct char_data *vict)
     }
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
   else
-    damage(ch, vict, 0, SKILL_KICK, DAM_FORCE, FALSE);
+    damage(ch, vict, 0, SKILL_KICK, DAM_BLUDGEON, FALSE);
 }
 
 ACMDCHECK(can_impromptu)
@@ -11941,7 +11941,7 @@ int perform_disarm(struct char_data *ch, struct char_data *vict, int mod)
       obj_to_char(unequip_char(vict, pos), vict);
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
   }
   else if (result <= -10)
   { /* critical failure */
@@ -12155,7 +12155,7 @@ int perform_sunder(struct char_data *ch, struct char_data *vict, int mod)
     WAIT_STATE(vict, 4 * PASSES_PER_SEC);
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
 
     return 1;
   }
@@ -12364,7 +12364,7 @@ bool perform_lichtouch(struct char_data *ch, struct char_data *vict)
   damage(ch, vict, amount, RACIAL_LICH_TOUCH, DAM_NEGATIVE, FALSE);
 
   /* fire-shield, etc check */
-  damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+  damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_NEGATIVE);
 
   return TRUE;
 }
@@ -14317,7 +14317,7 @@ void perform_slam(struct char_data *ch, struct char_data *vict)
   {
     if (combat_maneuver_check(ch, vict, COMBAT_MANEUVER_TYPE_SLAM, 0) > 0)
     {
-      damage(ch, vict, dice(diceOne, diceTwo) + GET_STR_BONUS(ch), SKILL_SLAM, DAM_FORCE, FALSE);
+      damage(ch, vict, dice(diceOne, diceTwo) + GET_STR_BONUS(ch), SKILL_SLAM, DAM_BLUDGEON, FALSE);
 
       if (HAS_FEAT(ch, FEAT_VAMPIRE_ENERGY_DRAIN) && IS_LIVING(vict) && CAN_USE_VAMPIRE_ABILITY(ch))
       {
@@ -14344,10 +14344,10 @@ void perform_slam(struct char_data *ch, struct char_data *vict)
       }
 
       /* fire-shield, etc check */
-      damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_FORCE);
+      damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_BLUDGEON);
     }
     else
-      damage(ch, vict, 0, SKILL_SLAM, DAM_FORCE, FALSE);
+      damage(ch, vict, 0, SKILL_SLAM, DAM_BLUDGEON, FALSE);
     vict->char_specials.recently_slammed = 3;
   }
   else

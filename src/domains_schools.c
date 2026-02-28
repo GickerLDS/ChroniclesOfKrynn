@@ -394,7 +394,7 @@ void assign_domains(void)
   add_domain_powers(DOMAIN_AIR, DOMAIN_POWER_LIGHTNING_ARC, DOMAIN_POWER_ELECTRICITY_RESISTANCE,
                     DOMAIN_POWER_UNDEFINED, DOMAIN_POWER_UNDEFINED, DOMAIN_POWER_UNDEFINED);
   /* 1st circle */ /* 2nd circle */
-  add_domain_spells(DOMAIN_AIR, SPELL_OBSCURING_MIST, SPELL_WIND_WALL,
+  add_domain_spells(DOMAIN_AIR, SPELL_OBSCURING_MIST, SPELL_GUST_OF_WIND,
                     /* 3rd circle */ /* 4th circle */ /* 5th circle */
                     SPELL_GASEOUS_FORM, SPELL_AIR_WALK, SPELL_BILLOWING_CLOUD,
                     /* 6th circle */ /* 7th circle */ /* 8th circle */
@@ -439,7 +439,7 @@ void assign_domains(void)
   add_domain_powers(DOMAIN_WATER, DOMAIN_POWER_ICICLE, DOMAIN_POWER_COLD_RESISTANCE,
                     DOMAIN_POWER_UNDEFINED, DOMAIN_POWER_UNDEFINED, DOMAIN_POWER_UNDEFINED);
   /* 1st circle */ /* 2nd circle */
-  add_domain_spells(DOMAIN_WATER, SPELL_ICE_DAGGER, SPELL_CHILL_TOUCH,
+  add_domain_spells(DOMAIN_WATER, SPELL_ICE_DAGGER, SPELL_FOG_CLOUD,
                     /* 3rd circle */ /* 4th circle */ /* 5th circle */
                     SPELL_AQUEOUS_ORB, SPELL_STINKING_CLOUD, SPELL_COLD_SHIELD,
                     /* 6th circle */ /* 7th circle */ /* 8th circle */

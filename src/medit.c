@@ -1713,7 +1713,7 @@ void medit_parse(struct descriptor_data *d, char *arg)
       break;
     case 'k':
     case 'K':
-      OLC_MODE(d) = MEDIT_DAM_FORCE;
+      OLC_MODE(d) = MEDIT_DAM_BLUDGEON;
       i++;
       break;
     case 'l':
@@ -1759,6 +1759,11 @@ void medit_parse(struct descriptor_data *d, char *arg)
     case 'u':
     case 'U':
       OLC_MODE(d) = MEDIT_DAM_WATER;
+      i++;
+      break;
+    case 'v':
+    case 'V':
+      OLC_MODE(d) = MEDIT_DAM_FORCE;
       i++;
       break;
     default:
@@ -2072,6 +2077,11 @@ void medit_parse(struct descriptor_data *d, char *arg)
     return;
   case MEDIT_DAM_FORCE:
     GET_RESISTANCES(OLC_MOB(d), DAM_FORCE) = LIMIT(i, -100, 100);
+    OLC_VAL(d) = TRUE;
+    medit_disp_resistances_menu(d);
+    return;
+  case MEDIT_DAM_BLUDGEON:
+    GET_RESISTANCES(OLC_MOB(d), DAM_BLUDGEON) = LIMIT(i, -100, 100);
     OLC_VAL(d) = TRUE;
     medit_disp_resistances_menu(d);
     return;

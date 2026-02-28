@@ -4274,7 +4274,8 @@ bool is_room_in_sunlight(room_rnum room)
     return false;
   if (ROOM_AFFECTED(room, RAFF_DARKNESS) ||
       ROOM_AFFECTED(room, RAFF_BILLOWING) || ROOM_AFFECTED(room, RAFF_OBSCURING_MIST) ||
-      ROOM_AFFECTED(room, RAFF_FOG))
+      ROOM_AFFECTED(room, RAFF_FOG) || ROOM_AFFECTED(room, RAFF_FOG_CLOUD) ||
+      ROOM_AFFECTED(room, RAFF_SOLID_FOG))
     return false;
   /* sectors dark by nature */
   if (SECT(room) == SECT_UNDERWATER)
@@ -7651,6 +7652,8 @@ int damage_type_to_resistance_type(int type)
     return APPLY_RES_SLICE;
   case DAM_PUNCTURE:
     return APPLY_RES_PUNCTURE;
+  case DAM_BLUDGEON:
+    return APPLY_RES_BLUDGEON;
   case DAM_FORCE:
     return APPLY_RES_FORCE;
   case DAM_SOUND:

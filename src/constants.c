@@ -777,6 +777,7 @@ const char *damtypes[] = {"RESERVED",
                           "sunlight",
                           "moving water",
                           "blood drain",
+                          "force",
                           "\n"};
 CHECK_TABLE_SIZE(damtypes, NUM_DAM_TYPES + 1);
 
@@ -808,6 +809,7 @@ const char *damtype_display[] = {"RESERVED",
                                  "Damage Sunlight",
                                  "Damage Moving Water",
                                  "Damage Blood Drain",
+                                 "Damage Force",
                                  "\n"};
 CHECK_TABLE_SIZE(damtype_display, NUM_DAM_TYPES + 1);
 
@@ -2066,6 +2068,7 @@ const char *apply_types[] = {
     "Spell-Duration",
     "Spell-Penetration",
     "Move-Speed",
+    "Resist-Force",
     "\n" /*74*/
 };
 CHECK_TABLE_SIZE(apply_types, NUM_APPLIES + 1);
@@ -2146,6 +2149,7 @@ const char *apply_type_food_names[] = {"",                     // none
                                        "",                     //  spell duration
                                        "",                     // spell penetration
                                        "",                     // move speed
+                                       "",                     // resist force
                                        "\n"};
 CHECK_TABLE_SIZE(apply_type_food_names, NUM_APPLIES + 1);
 
@@ -2226,7 +2230,9 @@ const int apply_type_food_or_drink[] = {TRUE,  // none
                                         TRUE,  // spell duration
                                         TRUE,  // spell penetration
                                         TRUE,  // move speed
-                                        TRUE};
+                                        TRUE,   // resist force
+                                        TRUE
+                                    };
 CHECK_TABLE_SIZE(apply_type_food_or_drink, NUM_APPLIES + 1);
 
 /** Matrix to show which bonus types are allowed for which apply locations */

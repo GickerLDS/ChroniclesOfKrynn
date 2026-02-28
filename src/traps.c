@@ -216,7 +216,7 @@ EVENTFUNC(event_trap_triggered)
 
   /* Non-event related variables.*/
   int effect;
-  int dam_type = DAM_FORCE;
+  int dam_type = DAM_BLUDGEON;
   struct affected_type af;
   const char *to_char = NULL;
   const char *to_room = NULL;

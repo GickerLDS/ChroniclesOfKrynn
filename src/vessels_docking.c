@@ -840,7 +840,7 @@ ACMD(do_board_hostile)
       act("$n falls into the water with a splash!", TRUE, ch, 0, 0, TO_ROOM);
 
       /* TODO: Move character to water room or apply swimming */
-      damage(ch, ch, dice(2, 6), TYPE_UNDEFINED, DAM_FORCE, FALSE);
+      damage(ch, ch, dice(2, 6), TYPE_UNDEFINED, DAM_BLUDGEON, FALSE);
     }
   }
 }

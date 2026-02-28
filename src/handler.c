@@ -275,6 +275,9 @@ void aff_apply_modify(struct char_data *ch, byte loc, sh_int mod, const char *ms
   case APPLY_RES_FORCE:
     GET_RESISTANCES(ch, DAM_FORCE) += mod;
     break;
+  case APPLY_RES_BLUDGEON:
+    GET_RESISTANCES(ch, DAM_BLUDGEON) += mod;
+    break;
   case APPLY_RES_SOUND:
     GET_RESISTANCES(ch, DAM_SOUND) += mod;
     break;

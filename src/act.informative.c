@@ -1626,6 +1626,16 @@ void look_at_room(struct char_data *ch, int ignore_brief)
     send_to_char(ch, "Your view is obscured by a thick fog...\r\n");
     return;
   }
+  else if (ROOM_AFFECTED(ch->in_room, RAFF_FOG_CLOUD))
+  {
+    send_to_char(ch, "Your view is obscured by a billowing fog cloud...\r\n");
+    return;
+  }
+  else if (ROOM_AFFECTED(ch->in_room, RAFF_SOLID_FOG))
+  {
+    send_to_char(ch, "Your view is obscured by a thick, viscous fog...\r\n");
+    return;
+  }
 
   /*
   if(!IS_DARK(target_room) && ULTRA_BLIND(ch, target_room)) {

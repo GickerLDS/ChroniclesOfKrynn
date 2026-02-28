@@ -1775,7 +1775,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
   case PSIONIC_CONCUSSION_BLAST: /* 2nd circle */ /* AoE */
     save = -1;                                    // no save
     mag_resist = TRUE;
-    element = DAM_FORCE;
+    element = DAM_BLUDGEON;
     num_dice = 1 + (GET_AUGMENT_PSP(ch) / 2);
     num_dice += get_kinetic_edge_bonus(ch);
     num_dice += get_kinetic_edge_ii_bonus(ch);
@@ -1837,7 +1837,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
           /* Kinetic Crush: add collision damage = manifester level */
           extra_force_damage += get_kinetic_crush_collision_damage(ch);
           damage(ch, victim, dice(num_dice, size_dice) + bonus + extra_force_damage, spellnum,
-                 DAM_FORCE, FALSE);
+                 DAM_BLUDGEON, FALSE);
         }
       }
     }
@@ -2241,7 +2241,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
   case SPELL_CLENCHED_FIST: // evocation
     save = SAVING_REFL;
     mag_resist = TRUE;
-    element = DAM_FORCE;
+    element = DAM_BLUDGEON;
     num_dice = MIN(28, level);
     size_dice = 11;
     bonus = level + 5;
@@ -2479,7 +2479,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
   case SPELL_GRASPING_HAND: // evocation
     save = SAVING_REFL;
     mag_resist = TRUE;
-    element = DAM_FORCE;
+    element = DAM_BLUDGEON;
     num_dice = MIN(26, level);
     size_dice = 6;
     bonus = level;
@@ -2641,7 +2641,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
   case SPELL_TELEKINESIS: // transmutation
     save = SAVING_FORT;
     mag_resist = TRUE;
-    element = DAM_FORCE;
+    element = DAM_BLUDGEON;
     num_dice = MIN(20, level);
     size_dice = 4;
     bonus = 0;
@@ -3053,7 +3053,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
     // AoE - 10d6 bludgeoning damage with knockdown
     save = SAVING_REFL;
     mag_resist = TRUE;
-    element = DAM_FORCE;
+    element = DAM_BLUDGEON;
     num_dice = 10;
     size_dice = 6;
     bonus = 0;
@@ -9628,19 +9628,20 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     to_room = "$n is surrounded by a spell turning shield.";
     break;
 
-  case SPELL_ACID_FOG: // acid fog (conjuration)
-    if (AFF_FLAGGED(victim, AFF_WIND_WALL))
-    {
-      send_to_char(ch, "The wall of wind surrounding you blows away the acid fog.\r\n");
-      act("A wall of wind surrounding $n dissipates the acid fog", FALSE, ch, 0, 0, TO_ROOM);
-      affect_from_char(victim, SPELL_ACID_FOG);
-      return;
-    }
-    af[0].duration = level;
-    af[0].location = APPLY_SPECIAL;
-    to_room = "$n is covered in the acid fog!";
-    to_vict = "You are covered in the acid fog!";
-    break;
+    case SPELL_ACID_FOG: // acid fog (conjuration)
+      if (AFF_FLAGGED(victim, AFF_WIND_WALL))
+      {
+        send_to_char(ch, "The wall of wind surrounding you blows away the acid fog.\r\n");
+        act("A wall of wind surrounding $n dissipates the acid fog", FALSE, ch, 0, 0, TO_ROOM);
+        affect_from_char(victim, SPELL_ACID_FOG);
+        return;
+      }
+      af[0].duration = level;
+      af[0].location = APPLY_SPECIAL;
+      af[0].modifier = 0;
+      to_room = "$n is covered in the acid fog!";
+      to_vict = "You are covered in the acid fog!";
+      break;
 
   case SPELL_STINKING_CLOUD: // conjuration
     if (!can_nauseate(victim))
@@ -14279,6 +14280,191 @@ void mag_room(int level, struct char_data *ch, struct obj_data *obj, int spellnu
     aff = RAFF_FOG;
     rounds = 8 + CASTER_LEVEL(ch);
     break;
+
+  case SPELL_FOG_CLOUD: // conjuration (creation)
+    /* Fog cloud obscures all sight (including darkvision) beyond 5 feet.
+     * Within 5 feet: concealment (20% miss chance)
+     * Beyond 5 feet: total concealment (50% miss chance)
+     * Dispersed by wind wall, doesn't function underwater
+     */
+    if (SECT(ch->in_room) == SECT_UNDERWATER)
+    {
+      send_to_char(ch, "The fog cloud quickly dissipates in the water.\r\n");
+      return;
+    }
+    to_char = "A bank of fog billows out and fills the area!";
+    to_room = "A bank of fog suddenly fills the area as $n casts!";
+    aff = RAFF_FOG_CLOUD;
+    rounds = MIN(100, level * 10);
+    break;
+
+  case SPELL_SOLID_FOG: // conjuration (creation)
+  case SPELL_ACID_FOG: // conjuration (creation)
+    /* Solid fog functions like fog cloud but with additional effects:
+     * - Obscures sight like fog cloud
+     * - Creatures move at half speed
+     * - -2 penalty on melee attack and damage rolls
+     * - Prevents ranged weapon attacks (except magic rays)
+     * - Reduces falling damage by 1d6 per 10 feet
+     * Does not stack with similar effects
+     */
+    if (SECT(ch->in_room) == SECT_UNDERWATER)
+    {
+      send_to_char(ch, "The solid fog quickly dissipates in the water.\r\n");
+      return;
+    }
+    to_char = "A thick, soupy fog fills the area, impeding all movement!";
+    to_room = "A thick, soupy fog suddenly fills the area as $n casts!";
+    aff = RAFF_SOLID_FOG;
+    rounds = MAX(10, level * 2);
+    break;
+
+  case SPELL_GUST_OF_WIND: // evocation [air]
+  {
+    /* Gust of wind clears fog/cloud effects from the room and dispels listed effects on occupants.
+     * Room effects: wall of fog, fog cloud, billowing cloud, faerie fog (obscuring mist behavior),
+     * obscuring mist, acid fog/solid fog.
+     * Personal effects: stinking cloud, cloudkill/deathcloud, acid fog, incendiary cloud,
+     * incendiary, faerie fog, summon swarm.
+     * Knocks flying creatures down (2d6 falling damage, reduced by slow fall)
+     * Small or smaller creatures must make reflex save or be knocked prone and lagged
+     */
+    struct raff_node *raff, *next_raff;
+    struct char_data *tch, *next_tch;
+    bool cleared_something = FALSE;
+
+    /* Remove fog-related room affections */
+    for (raff = raff_list; raff; raff = next_raff)
+    {
+      next_raff = raff->next;
+      
+      if (raff->room == IN_ROOM(ch) && 
+          (raff->affection == RAFF_FOG ||
+           raff->affection == RAFF_FOG_CLOUD ||
+           raff->affection == RAFF_SOLID_FOG ||
+           raff->affection == RAFF_BILLOWING ||
+           raff->affection == RAFF_OBSCURING_MIST))
+      {
+        rem_room_aff(raff);
+        cleared_something = TRUE;
+      }
+    }
+
+    /* Process all creatures in the room */
+    for (tch = world[IN_ROOM(ch)].people; tch; tch = next_tch)
+    {
+      next_tch = tch->next_in_room;
+      
+      if (affected_by_spell(tch, SPELL_STINKING_CLOUD))
+      {
+        affect_from_char(tch, SPELL_STINKING_CLOUD);
+        send_to_char(tch, "The gust of wind clears away the stinking cloud fumes!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_CLOUDKILL))
+      {
+        affect_from_char(tch, SPELL_CLOUDKILL);
+        send_to_char(tch, "The gust of wind disperses the cloudkill around you!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_DEATHCLOUD))
+      {
+        affect_from_char(tch, SPELL_DEATHCLOUD);
+        send_to_char(tch, "The gust of wind shreds the deathcloud around you!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_ACID_FOG))
+      {
+        affect_from_char(tch, SPELL_ACID_FOG);
+        send_to_char(tch, "The gust of wind strips away the acid fog around you!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_INCENDIARY_CLOUD))
+      {
+        affect_from_char(tch, SPELL_INCENDIARY_CLOUD);
+        send_to_char(tch, "The gust of wind breaks up the incendiary cloud around you!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_INCENDIARY))
+      {
+        affect_from_char(tch, SPELL_INCENDIARY);
+        send_to_char(tch, "The gust of wind snuffs out the incendiary effect around you!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_FAERIE_FOG))
+      {
+        affect_from_char(tch, SPELL_FAERIE_FOG);
+        send_to_char(tch, "The gust of wind blows away the faerie fog around you!\r\n");
+        cleared_something = TRUE;
+      }
+      if (affected_by_spell(tch, SPELL_SUMMON_SWARM))
+      {
+        affect_from_char(tch, SPELL_SUMMON_SWARM);
+        send_to_char(tch, "The gust of wind scatters the summoned swarm around you!\r\n");
+        cleared_something = TRUE;
+      }
+
+      /* Knock down flying creatures */
+      if (AFF_FLAGGED(tch, AFF_FLYING))
+      {
+        int fall_dam = dice(2, 6);
+        
+        /* Slow fall reduces damage */
+        if (!IS_NPC(tch) && HAS_FEAT(tch, FEAT_SLOW_FALL))
+        {
+          int slow_fall_ranks = HAS_FEAT(tch, FEAT_SLOW_FALL);
+          fall_dam -= (slow_fall_ranks * 3);
+          if (fall_dam < 0)
+            fall_dam = 0;
+        }
+        
+        REMOVE_BIT_AR(AFF_FLAGS(tch), AFF_FLYING);
+        send_to_char(tch, "\tWThe powerful wind knocks you right out of the air!\tn\r\n");
+        act("\tW$n is knocked out of the air by the gust of wind!\tn", FALSE, tch, 0, 0, TO_ROOM);
+        
+        if (fall_dam > 0)
+        {
+          damage(ch, tch, fall_dam, SPELL_GUST_OF_WIND, DAM_BLUDGEON, FALSE);
+        }
+      }
+
+      /* Small or smaller creatures get knocked around */
+      if (GET_SIZE(tch) <= SIZE_SMALL && tch != ch)
+      {
+        /* Check for spring attack immunity */
+        bool has_spring_attack = (!IS_NPC(tch) && 
+                                  (HAS_FEAT(tch, FEAT_SPRING_ATTACK) ||
+                                   get_perk_rank(tch, PERK_FIGHTER_SPRING_ATTACK, CLASS_WARRIOR)));
+        
+        if (!has_spring_attack && !savingthrow(ch, tch, SAVING_REFL, 0, casttype, level, EVOCATION))
+        {
+          GET_POS(tch) = POS_SITTING;
+          WAIT_STATE(tch, 2 * PASSES_PER_SEC);
+          send_to_char(tch, "\tWThe powerful gust of wind knocks you off your feet!\tn\r\n");
+          act("\tW$n is blown over by the gust of wind!\tn", FALSE, tch, 0, 0, TO_ROOM);
+        }
+        else if (!has_spring_attack)
+        {
+          send_to_char(tch, "\tWYou brace yourself against the powerful wind!\tn\r\n");
+        }
+        /* Spring attack users don't even get a message - they're too mobile */
+      }
+    }
+
+    if (cleared_something)
+    {
+      send_to_char(ch, "A powerful gust of wind sweeps through, clearing the air!\r\n");
+      act("$n creates a powerful gust of wind that clears the air!", FALSE, ch, 0, 0, TO_ROOM);
+    }
+    else
+    {
+      send_to_char(ch, "A gust of wind blows through the area.\r\n");
+      act("$n creates a gust of wind that blows through the area.", FALSE, ch, 0, 0, TO_ROOM);
+    }
+    
+    /* Don't create a room affection, this spell just clears things */
+    return;
+  }
 
     /*******  END ROOM AFFECTIONS ***********/
 

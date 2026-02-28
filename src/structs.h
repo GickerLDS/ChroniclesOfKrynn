@@ -285,10 +285,10 @@
 #define RAFF_FOG (1 << 0)
 #define RAFF_DARKNESS (1 << 1)
 #define RAFF_LIGHT (1 << 2)
-#define RAFF_UNUSED_1 (1 << 3)
+#define RAFF_SOLID_FOG (1 << 3)
 #define RAFF_BILLOWING (1 << 4)
 #define RAFF_ANTI_MAGIC (1 << 5)
-#define RAFF_UNUSED_2 (1 << 6)
+#define RAFF_FOG_CLOUD (1 << 6)
 #define RAFF_BLADE_BARRIER (1 << 7)
 #define RAFF_SPIKE_GROWTH (1 << 8)
 #define RAFF_SPIKE_STONES (1 << 9)
@@ -4879,7 +4879,7 @@
 #define APPLY_RES_UNHOLY 35
 #define APPLY_RES_SLICE 36
 #define APPLY_RES_PUNCTURE 37 // 10
-#define APPLY_RES_FORCE 38
+#define APPLY_RES_BLUDGEON 38
 #define APPLY_RES_SOUND 39
 #define APPLY_RES_POISON 40
 #define APPLY_RES_DISEASE 41
@@ -4918,10 +4918,10 @@
 #define APPLY_SPELL_DURATION 72
 #define APPLY_SPELL_PENETRATION 73
 #define APPLY_MOVE_SPEED 74 // applies to movement speed percentage
-
+#define APPLY_RES_FORCE 75
 
 /** Total number of applies */
-#define NUM_APPLIES 75
+#define NUM_APPLIES 76
 
 #define APPLY_TYPE_NONE 0
 #define APPLY_TYPE_ABILITY 1

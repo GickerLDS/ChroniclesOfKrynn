@@ -128,13 +128,13 @@ const struct trap_type_template trap_type_table[NUM_TRAP_TYPES] = {
      "You notice signs of an \tRambush trap\tn!", FALSE, 0},
 
     /* TRAP_TYPE_BOULDER */
-    {"boulder", DAM_FORCE, TRAP_SAVE_REFLEX, TRAP_SPECIAL_NONE,
+    {"boulder", DAM_BLUDGEON, TRAP_SAVE_REFLEX, TRAP_SPECIAL_NONE,
      "\tyA massive \tyboulder\ty crashes down on you!\tn",
      "\tyA massive \tyboulder\ty crashes down on $n!\tn", "You notice a \tyboulder trap\tn!", FALSE,
      0},
 
     /* TRAP_TYPE_WALL_SMASH */
-    {"wall smash", DAM_FORCE, TRAP_SAVE_REFLEX, TRAP_SPECIAL_NONE,
+    {"wall smash", DAM_BLUDGEON, TRAP_SAVE_REFLEX, TRAP_SPECIAL_NONE,
      "\tcA wall suddenly smashes into you!\tn", "\tcA wall suddenly smashes into $n!\tn",
      "You notice a \tcwall trap\tn!", FALSE, 0},
 
@@ -1539,7 +1539,7 @@ EVENTFUNC(event_trap_triggered)
 
   /* Non-event related variables.*/
   int effect;
-  int dam_type = DAM_FORCE;
+  int dam_type = DAM_BLUDGEON;
   struct affected_type af;
   const char *to_char = NULL;
   const char *to_room = NULL;

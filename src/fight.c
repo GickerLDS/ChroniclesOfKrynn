@@ -4855,6 +4855,10 @@ int compute_concealment(struct char_data *ch, struct char_data *attacker)
 
   if (ROOM_AFFECTED(IN_ROOM(ch), RAFF_OBSCURING_MIST))
     concealment += 20;
+  if (ROOM_AFFECTED(IN_ROOM(ch), RAFF_FOG_CLOUD))
+    concealment += 50; /* Fog cloud provides total concealment (50% miss chance) */
+  if (ROOM_AFFECTED(IN_ROOM(ch), RAFF_SOLID_FOG))
+    concealment += 50; /* Solid fog provides total concealment (50% miss chance) */
   if (HAS_FEAT(ch, FEAT_OUTSIDER))
     concealment += 15;
   if (HAS_FEAT(ch, FEAT_SELF_CONCEALMENT))
@@ -7042,6 +7046,13 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
   {
     if (display_mode)
       send_to_char(ch, "Grapple/Entangle penalty: \tR-2\tn\r\n");
+    dambonus -= 2;
+  }
+
+  if (IN_ROOM(ch) != NOWHERE && ROOM_AFFECTED(IN_ROOM(ch), RAFF_SOLID_FOG))
+  {
+    if (display_mode)
+      send_to_char(ch, "Solid Fog penalty: \tR-2\tn\r\n");
     dambonus -= 2;
   }
 
@@ -10371,6 +10382,12 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
       if (display)
         send_to_char(ch, "-2: %-50s\r\n", "Difficult Terrain");
     }
+  }
+  if (IN_ROOM(ch) != NOWHERE && ROOM_AFFECTED(IN_ROOM(ch), RAFF_SOLID_FOG))
+  {
+    bonuses[BONUS_TYPE_CIRCUMSTANCE] -= 2;
+    if (display)
+      send_to_char(ch, "-2: %-50s\r\n", "Solid Fog");
   }
 
   /* Competence bonus */
@@ -15473,14 +15490,14 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   if (HAS_EVOLUTION(ch, EVOLUTION_HOOVES))
   {
     numAttacks += 2;
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_HOOVES, DAM_FORCE);
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_HOOVES, DAM_FORCE);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_HOOVES, DAM_BLUDGEON);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_HOOVES, DAM_BLUDGEON);
     if (FIGHTING(ch))
     {
       if (GET_CONSECUTIVE_HITS(ch) >= 2)
       {
         numAttacks++;
-        perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_TRAMPLE, DAM_FORCE);
+        perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_TRAMPLE, DAM_BLUDGEON);
       }
     }
     GET_CONSECUTIVE_HITS(ch) = 0;
@@ -15488,8 +15505,8 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   if (HAS_EVOLUTION(ch, EVOLUTION_PINCERS))
   {
     numAttacks += 2;
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_PINCERS, DAM_FORCE);
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_PINCERS, DAM_FORCE);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_PINCERS, DAM_BLUDGEON);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_PINCERS, DAM_BLUDGEON);
     if (FIGHTING(ch) && HAS_EVOLUTION(ch, EVOLUTION_BLEED) && GET_CONSECUTIVE_HITS(ch) > 0)
     {
       apply_evolution_bleed(FIGHTING(ch));
@@ -15509,20 +15526,20 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   if (HAS_EVOLUTION(ch, EVOLUTION_TAIL_SLAP))
   {
     numAttacks++;
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_TAIL_SLAP, DAM_FORCE);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_TAIL_SLAP, DAM_BLUDGEON);
     GET_CONSECUTIVE_HITS(ch) = 0;
   }
   if (HAS_EVOLUTION(ch, EVOLUTION_TENTACLE))
   {
     numAttacks++;
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_TENTACLE, DAM_FORCE);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_TENTACLE, DAM_BLUDGEON);
     GET_CONSECUTIVE_HITS(ch) = 0;
   }
   if (HAS_EVOLUTION(ch, EVOLUTION_WING_BUFFET))
   {
     numAttacks += 2;
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_WING_BUFFET, DAM_FORCE);
-    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_WING_BUFFET, DAM_FORCE);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_WING_BUFFET, DAM_BLUDGEON);
+    perform_evolution_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_WING_BUFFET, DAM_BLUDGEON);
     if (FIGHTING(ch) && GET_SIZE(FIGHTING(ch)) < GET_SIZE(ch))
     {
       perform_knockdown(ch, FIGHTING(ch), EVOLUTION_WING_BUFFET_EFFECT, false, false);

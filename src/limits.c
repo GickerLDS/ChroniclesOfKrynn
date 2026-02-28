@@ -190,18 +190,18 @@ void affliction_tick(struct char_data *ch)
   if (affected_by_spell(ch, WARLOCK_CHILLING_TENTACLES))
   {
     damage(FIGHTING(ch) ? FIGHTING(ch) : ch, ch, dice(4, 6) + 13, WARLOCK_CHILLING_TENTACLES,
-           DAM_FORCE, FALSE);
+           DAM_BLUDGEON, FALSE);
     damage(FIGHTING(ch) ? FIGHTING(ch) : ch, ch, dice(2, 6), WARLOCK_CHILLING_TENTACLES_COLD,
            DAM_COLD, FALSE);
   }
   else if (affected_by_spell(ch, SPELL_GREATER_BLACK_TENTACLES))
   {
     damage(FIGHTING(ch) ? FIGHTING(ch) : ch, ch, dice(4, 6) + 13, SPELL_GREATER_BLACK_TENTACLES,
-           DAM_FORCE, FALSE);
+           DAM_BLUDGEON, FALSE);
   }
   else if (affected_by_spell(ch, SPELL_BLACK_TENTACLES))
   {
-    damage(FIGHTING(ch) ? FIGHTING(ch) : ch, ch, dice(1, 6) + 4, SPELL_BLACK_TENTACLES, DAM_FORCE,
+    damage(FIGHTING(ch) ? FIGHTING(ch) : ch, ch, dice(1, 6) + 4, SPELL_BLACK_TENTACLES, DAM_BLUDGEON,
            FALSE);
   }
 
@@ -2258,6 +2258,18 @@ void proc_d20_round(void)
               rem_room_aff(raff);
               act("Your wall of wind dissipates the wall of fog.", FALSE, i, 0, 0, TO_CHAR);
               act("$n's wall of wind dissipates the wall of fog.", FALSE, i, 0, 0, TO_ROOM);
+            }
+            else if (raff->affection == RAFF_FOG_CLOUD)
+            {
+              rem_room_aff(raff);
+              act("Your wall of wind dissipates the fog cloud.", FALSE, i, 0, 0, TO_CHAR);
+              act("$n's wall of wind dissipates the fog cloud.", FALSE, i, 0, 0, TO_ROOM);
+            }
+            else if (raff->affection == RAFF_SOLID_FOG)
+            {
+              rem_room_aff(raff);
+              act("Your wall of wind dissipates the solid fog.", FALSE, i, 0, 0, TO_CHAR);
+              act("$n's wall of wind dissipates the solid fog.", FALSE, i, 0, 0, TO_ROOM);
             }
           }
         }

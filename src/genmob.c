@@ -472,6 +472,8 @@ int write_mobile_espec(mob_vnum mvnum, struct char_data *mob, FILE *fd)
     fprintf(fd, "ResPuncture: %d\n", GET_RESISTANCES(mob, DAM_PUNCTURE));
   if (GET_RESISTANCES(mob, DAM_FORCE) != 0)
     fprintf(fd, "ResForce: %d\n", GET_RESISTANCES(mob, DAM_FORCE));
+  if (GET_RESISTANCES(mob, DAM_BLUDGEON) != 0)
+    fprintf(fd, "ResBludgeon: %d\n", GET_RESISTANCES(mob, DAM_BLUDGEON));
   if (GET_RESISTANCES(mob, DAM_SOUND) != 0)
     fprintf(fd, "ResSound: %d\n", GET_RESISTANCES(mob, DAM_SOUND));
   if (GET_RESISTANCES(mob, DAM_POISON) != 0)

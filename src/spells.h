@@ -244,7 +244,7 @@
 #define SPELL_CUNNING 125           // done
 #define SPELL_WISDOM 126            // done
 #define SPELL_CHARISMA 127          // done
-#define SPELL_UNUSED_128 128        // unused and available
+#define SPELL_FOG_CLOUD 128          // done
 #define SPELL_ACID_SPLASH 129       // cantrip, unfinished
 #define SPELL_RAY_OF_FROST 130      // cantrip, unfinished
 #define SPELL_WIZARD_EYE 131        // done
@@ -334,7 +334,7 @@
 #define SPELL_GREATER_SPELL_MANTLE 214 // done
 #define SPELL_MASS_ENHANCE 215         // done
 #define SPELL_PORTAL 216               // done
-#define SPELL_UNUSED_217 217           // unused and available
+#define SPELL_GUST_OF_WIND 217         // done  
 #define SPELL_HOLY_SWORD 218           // done (paladin)
 #define SPELL_INCENDIARY 219           // incendiary cloud proc
 /* some cleric spells */
@@ -593,7 +593,7 @@
 #define SPELL_JOLT 512
 #define SPELL_DISRUPT_UNDEAD 513
 #define SPELL_ARCANE_MARK 514
-#define SPELL_UNUSED_515 515
+#define SPELL_SOLID_FOG 515
 #define SPELL_ENHANCED_DIPLOMACY 516
 #define SPELL_FLARE 517
 #define SPELL_GRASP 518
@@ -1534,8 +1534,7 @@
 #define DAM_SLASHING DAM_SLICE
 #define DAM_PUNCTURE 10
 #define DAM_PIERCING DAM_PUNCTURE
-#define DAM_FORCE 11
-#define DAM_BLUDGEON DAM_FORCE
+#define DAM_BLUDGEON 11
 #define DAM_SOUND 12
 #define DAM_POISON 13
 #define DAM_DISEASE 14
@@ -1552,8 +1551,9 @@
 #define DAM_SUNLIGHT 25     // don't want this resistable as it's a vampire weakness
 #define DAM_MOVING_WATER 26 // don't want this resistable as it's a vampire weakness
 #define DAM_BLOOD_DRAIN 27  // don't want this resistable as it's vampire blood drain only
+#define DAM_FORCE 28
 /* ------------------------------*/
-#define NUM_DAM_TYPES 28
+#define NUM_DAM_TYPES 29
 /* if you add more dam types, don't forget to assign it to a gear-slot
    so players will have some sort of method of gaining the defense against
    the new damage type */
