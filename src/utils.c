@@ -4272,7 +4272,7 @@ bool is_room_in_sunlight(room_rnum room)
     return false;
   if (ROOM_FLAGGED(room, ROOM_FOG))
     return false;
-  if (ROOM_AFFECTED(room, RAFF_DARKNESS) || ROOM_AFFECTED(room, RAFF_ACID_FOG) ||
+  if (ROOM_AFFECTED(room, RAFF_DARKNESS) ||
       ROOM_AFFECTED(room, RAFF_BILLOWING) || ROOM_AFFECTED(room, RAFF_OBSCURING_MIST) ||
       ROOM_AFFECTED(room, RAFF_FOG))
     return false;
@@ -7753,6 +7753,35 @@ void absorb_energy_conversion(struct char_data *ch, int dam_type, int dam)
     }
     break;
   }
+}
+
+bool can_nauseate(struct char_data *ch)
+{
+  if (affected_by_spell(ch, PSIONIC_OAK_BODY))
+    return false;
+  if (affected_by_spell(ch, PSIONIC_BODY_OF_IRON))
+    return false;
+  if (affected_by_spell(ch, PSIONIC_SHADOW_BODY))
+    return false;
+  if (HAS_REAL_FEAT(ch, FEAT_TOUGH_AS_BONE))
+    return false;
+  if (HAS_FEAT(ch, FEAT_DIVINE_HEALTH))
+    return false;
+  if (HAS_FEAT(ch, FEAT_DIAMOND_BODY))
+    return false;
+  if (HAS_FEAT(ch, FEAT_PLAGUE_BRINGER))
+    return false;
+  if (HAS_FEAT(ch, FEAT_DRACONIAN_DISEASE_IMMUNITY))
+    return false;
+  if (IS_CONSTRUCT(ch))
+    return false;
+  if (IS_UNDEAD(ch))
+    return false;
+  if (HAS_EVOLUTION(ch, EVOLUTION_CELESTIAL_APPEARANCE) &&
+      get_evolution_appearance_save_bonus(ch) == 100)
+    return false;
+
+  return true;
 }
 
 // returns true if the target doesn't have immunity to blindness

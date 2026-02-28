@@ -2931,22 +2931,30 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
     size_dice = 6;
     break;
 
-  case SPELL_ACID: // acid fog (conjuration)
-    if (is_flying(victim) || AFF_FLAGGED(victim, AFF_LEVITATE))
+  case SPELL_FIRE_SEEDS:
+    // AoE
+    save = SAVING_REFL;
+    mag_resist = FALSE;
+    element = DAM_FIRE;
+    num_dice = GET_LEVEL(ch);
+    size_dice = 4;
+    bonus = level;
+    break;
+
+  case SPELL_ACID_FOG: // acid fog (conjuration)
+    if (AFF_FLAGGED(victim, AFF_WIND_WALL))
     {
-      act("You avoid being burned by the pool of acid as you are not touching the ground.", TRUE,
-          victim, 0, 0, TO_CHAR);
-      act("$n avoids being burned by the pool of acid as $e is not touching the ground.", TRUE,
-          victim, 0, 0, TO_ROOM);
-      return (0);
+      send_to_char(ch, "The wall of wind surrounding you blows away the acid fog.\r\n");
+      act("A wall of wind surrounding $n dissipates the acid fog", FALSE, ch, 0, 0, TO_ROOM);
+      affect_from_char(victim, SPELL_ACID_FOG);
+      return 0;
     }
     // AoE
     save = SAVING_FORT;
     mag_resist = TRUE;
     element = DAM_ACID;
     num_dice = 2;
-    size_dice = 10;
-    bonus = 5;
+    size_dice = 6;
     break;
 
   case SPELL_CHAIN_LIGHTNING: // evocation
@@ -3911,6 +3919,8 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
 
   if (victim == NULL || ch == NULL)
     return;
+
+  level = MAX(1, level);
 
   if (ARCANE_LEVEL(ch) > 0)
   {
@@ -7354,6 +7364,7 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
 
   case SPELL_KEEN_EDGE:
     af[0].duration = 10 * 10 * level; // 10 minutes per level
+    af[0].modifier = 1;
     af[0].location = APPLY_SPECIAL;
     to_vict = "Your weapons obtain a fine, keen edge.";
     to_room = "$n's weapons become extremely keen and sharp.";
@@ -7361,6 +7372,7 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
 
   case SPELL_WEAPON_OF_IMPACT:
     af[0].duration = 10 * 10 * level; // 10 minutes per level
+    af[0].modifier = 1;
     af[0].location = APPLY_SPECIAL;
     to_vict = "Your weapons begin to glow bright blue.";
     to_room = "$n's weapons begin to glow bright blue.";
@@ -9616,16 +9628,43 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     to_room = "$n is surrounded by a spell turning shield.";
     break;
 
-  case SPELL_STENCH:
+  case SPELL_ACID_FOG: // acid fog (conjuration)
+    if (AFF_FLAGGED(victim, AFF_WIND_WALL))
+    {
+      send_to_char(ch, "The wall of wind surrounding you blows away the acid fog.\r\n");
+      act("A wall of wind surrounding $n dissipates the acid fog", FALSE, ch, 0, 0, TO_ROOM);
+      affect_from_char(victim, SPELL_ACID_FOG);
+      return;
+    }
+    af[0].duration = level;
+    af[0].location = APPLY_SPECIAL;
+    to_room = "$n is covered in the acid fog!";
+    to_vict = "You are covered in the acid fog!";
+    break;
+
+  case SPELL_STINKING_CLOUD: // conjuration
+    if (!can_nauseate(victim))
+    {
+      send_to_char(ch, "Your opponent doesn't seem to be affected by stinky clouds.\r\n");
+      return;
+    }
     if (AFF_FLAGGED(victim, AFF_WIND_WALL))
     {
       send_to_char(ch, "The wall of wind surrounding you blows away the stench.\r\n");
       act("A wall of wind surrounding $n dissipates the stench", FALSE, ch, 0, 0, TO_ROOM);
       return;
     }
-    if (GET_LEVEL(victim) >= 9)
+    if (GET_LEVEL(victim) >= 10)
     {
-      return;
+      GET_DC_BONUS(ch) -= 2;
+    }
+    if (GET_LEVEL(victim) >= 20)
+    {
+      GET_DC_BONUS(ch) -= 2;
+    }
+    if (GET_LEVEL(victim) >= 30)
+    {
+      GET_DC_BONUS(ch) -= 2;
     }
     if (savingthrow(ch, victim, SAVING_FORT, 0, casttype, level, ABJURATION))
     {
@@ -9633,7 +9672,7 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     }
 
     SET_BIT_AR(af[0].bitvector, AFF_NAUSEATED);
-    af[0].duration = 3;
+    af[0].duration = 10;
     to_room = "$n becomes nauseated from the stinky fumes!";
     to_vict = "You become nauseated from the stinky fumes!";
     break;
@@ -10799,12 +10838,6 @@ void mag_masses(int level, struct char_data *ch, struct obj_data *obj, int spell
 
   switch (spellnum)
   {
-  case SPELL_STENCH:
-    isEffect = TRUE;
-    break;
-  case SPELL_ACID:
-    isDamage = true;
-    break;
   case SPELL_BLADES:
     isDamage = true;
     break;
@@ -11088,6 +11121,20 @@ void mag_areas(int level, struct char_data *ch, struct obj_data *obj, int spelln
     to_char = "You call forth many large, black tentacles from the ground!";
     to_room = "$n calls forth many large, black tentacles from the ground!";
     isEffect = TRUE;
+    break;
+  case SPELL_STINKING_CLOUD:
+    isEffect = TRUE;
+    to_char = "Clouds of billowing stinking fumes fill the area.";
+    to_room = "$n creates clouds of billowing stinking fumes that fill the area.";
+    break;
+  case SPELL_ACID_FOG:
+    isEffect = TRUE;
+    to_char = "You conjure a billowing fog of acidic mist that fills the area.";
+    to_room = "$n conjures a billowing fog of acidic mist that fills the area.";
+    break;
+  case SPELL_FIRE_SEEDS:
+    to_char = "You scatter fiery seeds that erupt into flames across the area!";
+    to_room = "$n scatters fiery seeds that erupt into flames across the area!";
     break;
   case WARLOCK_CHILLING_TENTACLES:
     to_char = "You call forth many writhing, frost-covered tentacles from the ground!";
@@ -13688,22 +13735,6 @@ void mag_creations(int level, struct char_data *ch, struct char_data *vict, stru
     to_room = "$n creates $p.";
     object_vnum = 20839;
     break;
-  case SPELL_FIRE_SEEDS:
-    to_char = "You create $p.";
-    to_room = "$n creates $p.";
-    send_to_char(ch, "Drop <item name> to start grenade, it will explode in 3 seconds.\r\n");
-#if defined(CAMPAIGN_DL)
-    if (rand_number(0, 1))
-      object_vnum = 20868;
-    else
-      object_vnum = 20869;
-#else
-    if (rand_number(0, 1))
-      object_vnum = 9404;
-    else
-      object_vnum = 9405;
-#endif
-    break;
 #if !defined(CAMPAIGN_FR) && !defined(CAMPAIGN_DL)
   case SPELL_GATE:
   case PSIONIC_PLANAR_TRAVEL:
@@ -14125,12 +14156,6 @@ void mag_room(int level, struct char_data *ch, struct obj_data *obj, int spellnu
     /*******  END ROOM EVENTS ************/
 
     /*******  ROOM AFFECTIONS ************/
-  case SPELL_ACID_FOG: // conjuration
-    to_char = "You create a thick bank of acid fog!";
-    to_room = "$n creates a thick bank of acid fog!";
-    aff = RAFF_ACID_FOG;
-    rounds = MAX(4, MAGIC_LEVEL(ch));
-    break;
 
   case ABILITY_KAPAK_DRACONIAN_DEATH_THROES: // conjuration
     to_char = "You dissolve into a pool of acid!";
@@ -14239,13 +14264,6 @@ void mag_room(int level, struct char_data *ch, struct obj_data *obj, int spellnu
     to_room = "Large stone spikes suddenly protrude from the ground.";
     aff = RAFF_SPIKE_STONES;
     rounds = MAX(4, DIVINE_LEVEL(ch));
-    break;
-
-  case SPELL_STINKING_CLOUD: // conjuration
-    to_char = "Clouds of billowing stinking fumes fill the area.";
-    to_room = "$n creates clouds of billowing stinking fumes that fill the area.";
-    aff = RAFF_STINK;
-    rounds = 12;
     break;
 
   case SPELL_UNHALLOW: // evocation
@@ -14481,7 +14499,6 @@ bool can_spell_be_empowered(int spellnum)
   case SPELL_IMPLODE:
   case SPELL_GREATER_SPELL_MANTLE:
   case SPELL_MASS_ENHANCE:
-  case SPELL_ACID:
   case SPELL_INCENDIARY:
   case SPELL_CURE_MODERATE:
   case SPELL_CURE_SERIOUS:

@@ -2853,6 +2853,17 @@ ASPELL(voracious_dispelling)
   perform_dispel(ch, victim, obj, WARLOCK_VORACIOUS_DISPELLING);
 }
 
+ASPELL(devour_magic)
+{
+  if (ch == NULL)
+    return;
+  if (victim == NULL)
+    victim = ch;
+
+  perform_dispel(ch, victim, obj, WARLOCK_DEVOUR_MAGIC);
+  mag_affects(level, ch, ch, obj, WARLOCK_DEVOUR_MAGIC, 0, casttype, 0);
+}
+
 ASPELL(tenacious_plague)
 {
   if (CLOUDKILL(ch) || INCENDIARY(ch) || DOOM(ch))

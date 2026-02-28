@@ -2591,11 +2591,12 @@ ACMD(do_get)
           send_to_char(ch, "You don't have %s %s.\r\n", AN(arg2), arg2);
         else if (GET_OBJ_TYPE(cont) != ITEM_CONTAINER && GET_OBJ_TYPE(cont) != ITEM_AMMO_POUCH)
         {
-          act("$p is not a container.", FALSE, ch, cont, 0, TO_CHAR);
           if (GET_OBJ_TYPE(cont) == ITEM_TREASURE_CHEST)
           {
-            act("$p can be looted with the loot command.", TRUE, ch, cont, 0, TO_CHAR);
+            do_loot(ch, arg2, 0, 0);
+            return;
           }
+          act("$p is not a container.", FALSE, ch, cont, 0, TO_CHAR);
         }
         else
           get_from_container(ch, cont, arg1, mode, amount);
@@ -2635,10 +2636,13 @@ ACMD(do_get)
             else if (cont_dotmode == FIND_ALLDOT)
             {
               found = 1;
-              act("$p is not a container.", FALSE, ch, cont, 0, TO_CHAR);
               if (GET_OBJ_TYPE(cont) == ITEM_TREASURE_CHEST)
               {
-                act("$p can be looted with the loot command.", TRUE, ch, cont, 0, TO_CHAR);
+                do_loot(ch, arg2, 0, 0);
+              }
+              else
+              {
+                act("$p is not a container.", FALSE, ch, cont, 0, TO_CHAR);
               }
             }
           }
@@ -2653,11 +2657,14 @@ ACMD(do_get)
             }
             else if (cont_dotmode == FIND_ALLDOT)
             {
-              act("$p is not a container.", FALSE, ch, cont, 0, TO_CHAR);
               found = 1;
               if (GET_OBJ_TYPE(cont) == ITEM_TREASURE_CHEST)
               {
-                act("$p can be looted with the loot command.", TRUE, ch, cont, 0, TO_CHAR);
+                do_loot(ch, arg2, 0, 0);
+              }
+              else
+              {
+                act("$p is not a container.", FALSE, ch, cont, 0, TO_CHAR);
               }
             }
           }
@@ -4976,7 +4983,32 @@ struct obj_data *find_lootbox_in_room_vis(struct char_data *ch)
 // Used with treasure chests that allow each individual character to loot it once every 4 hours
 ACMD(do_loot)
 {
-  struct obj_data *obj = find_lootbox_in_room_vis(ch);
+  struct obj_data *obj = NULL;
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  
+  one_argument(argument, arg, sizeof(arg));
+  
+  // If an argument is provided, try to find that specific chest
+  if (*arg)
+  {
+    struct char_data *tmp_char = NULL;
+    if (!generic_find(arg, FIND_OBJ_INV | FIND_OBJ_ROOM, ch, &tmp_char, &obj))
+    {
+      send_to_char(ch, "You don't see '%s' here.\r\n", arg);
+      return;
+    }
+    
+    if (GET_OBJ_TYPE(obj) != ITEM_TREASURE_CHEST)
+    {
+      send_to_char(ch, "That is not a treasure chest.\r\n");
+      return;
+    }
+  }
+  else
+  {
+    // No argument provided, find any visible chest
+    obj = find_lootbox_in_room_vis(ch);
+  }
 
   if (!obj)
   {
@@ -8873,8 +8905,7 @@ ACMDU(do_activate)
 
   if ((wear_slot = find_activate_object_by_spellnum(ch, spellnum, true)) == -1)
   {
-    send_to_char(ch,
-                 "You do not have any objects equipped with that spell and available uses.\r\n");
+    send_to_char(ch, "You do not have any objects equipped with that spell and available uses.\r\n");
     return;
   }
 
@@ -8992,26 +9023,22 @@ ACMDU(do_activate)
 
   if (ch == tch)
   {
-    snprintf(output, sizeof(output), "You activate $p, casting '%s' on Yourself.",
-             spell_info[spellnum].name);
+    snprintf(output, sizeof(output), "You activate $p, casting '%s' on Yourself.", spell_info[spellnum].name);
     act(output, TRUE, ch, obj, tch, TO_CHAR);
-    snprintf(output, sizeof(output), "$n activates $p, casting '%s' on $mself.",
-             spell_info[spellnum].name);
+    snprintf(output, sizeof(output), "$n activates $p, casting '%s' on $mself.", spell_info[spellnum].name);
     act(output, TRUE, ch, obj, tch, TO_ROOM);
   }
   else
   {
-    snprintf(output, sizeof(output), "You activate $p, casting '%s' on $N.",
-             spell_info[spellnum].name);
+    snprintf(output, sizeof(output), "You activate $p, casting '%s' on $N.", spell_info[spellnum].name);
     act(output, TRUE, ch, obj, tch, TO_CHAR);
-    snprintf(output, sizeof(output), "$n activates $p, casting '%s' on You.",
-             spell_info[spellnum].name);
+    snprintf(output, sizeof(output), "$n activates $p, casting '%s' on You.", spell_info[spellnum].name);
     act(output, TRUE, ch, obj, tch, TO_VICT);
-    snprintf(output, sizeof(output), "$n activates $p, casting '%s' on $N.",
-             spell_info[spellnum].name);
+    snprintf(output, sizeof(output), "$n activates $p, casting '%s' on $N.", spell_info[spellnum].name);
     act(output, TRUE, ch, obj, tch, TO_NOTVICT);
   }
 
+  spell_level = obj->activate_spell[ACT_SPELL_LEVEL];
   GET_DC_BONUS(ch) += spell_level / 2;
   obj->activate_spell[ACT_SPELL_CURRENT_USES]--;
   obj->activate_spell[ACT_SPELL_COOLDOWN] = ACT_SPELL_COOLDOWN_TIME;

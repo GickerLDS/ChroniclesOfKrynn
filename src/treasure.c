@@ -296,7 +296,6 @@ bool valid_item_spell(int spellnum)
   case SPELL_EPIC_MAGE_ARMOR:
   case SPELL_EPIC_WARDING:
   case SPELL_FIRE_BREATHE:
-  case SPELL_STENCH:
   case SPELL_ACID_SPLASH:
   case SPELL_RAY_OF_FROST:
   case SPELL_FSHIELD_DAM:
@@ -304,7 +303,7 @@ bool valid_item_spell(int spellnum)
   case SPELL_ASHIELD_DAM:
   case SPELL_ESHIELD_DAM:
   case SPELL_DEATHCLOUD:
-  case SPELL_ACID:
+  case SPELL_ACID_FOG:
   case SPELL_INCENDIARY:
   case SPELL_FROST_BREATHE:
   case SPELL_GAS_BREATHE:

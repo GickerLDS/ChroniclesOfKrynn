@@ -408,6 +408,7 @@ int countlines(char *filename);
 int get_account_experience(struct char_data *ch);
 void change_account_experience(struct char_data *ch, int amount);
 bool can_blind(struct char_data *ch);
+bool can_nauseate(struct char_data *ch);
 bool can_deafen(struct char_data *ch);
 bool can_disease(struct char_data *ch);
 bool can_poison(struct char_data *ch);

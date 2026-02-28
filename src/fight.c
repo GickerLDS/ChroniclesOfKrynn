@@ -16312,7 +16312,7 @@ void perform_violence(struct char_data *ch, int phase)
     }
   }
 
-  if (AFF_FLAGGED(ch, AFF_NAUSEATED))
+  if (AFF_FLAGGED(ch, AFF_NAUSEATED) && dice(1, 4) == 1)
   {
     send_to_char(ch, "You are too nauseated to fight!\r\n");
     act("$n seems to be too nauseated to fight!", TRUE, ch, 0, 0, TO_ROOM);

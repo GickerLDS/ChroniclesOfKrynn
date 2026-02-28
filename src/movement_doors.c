@@ -594,6 +594,12 @@ ACMD(do_gen_door)
     {
       if (GET_OBJ_VAL(obj, 4) <= 0)
       {
+        // Chest is not locked, so if this is an open command, loot it
+        if (subcmd == SCMD_OPEN)
+        {
+          do_loot(ch, type, 0, 0);
+          return;
+        }
         act("$p is not locked.", TRUE, ch, obj, 0, TO_CHAR);
         return;
       }
@@ -602,15 +608,23 @@ ACMD(do_gen_door)
         GET_OBJ_VAL(obj, 4) = 0;
         act("You have picked the lock on $p!", FALSE, ch, obj, 0, TO_CHAR);
         WAIT_STATE(ch, PULSE_VIOLENCE * 1);
+        send_to_char(ch, "Your next action will be delayed.\r\n");
+        USE_FULL_ROUND_ACTION(ch);
+        // After successfully picking, automatically loot if this is an open command
+        if (subcmd == SCMD_OPEN)
+        {
+          do_loot(ch, type, 0, 0);
+        }
+        return;
       }
       else
       {
         act("You have failed to pick the lock on $p.", FALSE, ch, obj, 0, TO_CHAR);
         WAIT_STATE(ch, PULSE_VIOLENCE * 3);
+        send_to_char(ch, "Your next action will be delayed.\r\n");
+        USE_FULL_ROUND_ACTION(ch);
+        return;
       }
-      send_to_char(ch, "Your next action will be delayed.\r\n");
-      USE_FULL_ROUND_ACTION(ch);
-      return;
     }
     if (!(DOOR_IS_OPENABLE(ch, obj, door)))
       send_to_char(ch, "You can't %s that!\r\n", cmd_door[subcmd]);

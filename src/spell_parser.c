@@ -1208,6 +1208,9 @@ SAVING_WILL here...  */
     case WARLOCK_VORACIOUS_DISPELLING:
       MANUAL_SPELL(voracious_dispelling);
       break;
+    case WARLOCK_DEVOUR_MAGIC:
+      MANUAL_SPELL(devour_magic);
+      break;
     case WARLOCK_TENACIOUS_PLAGUE:
       MANUAL_SPELL(tenacious_plague);
       break;
@@ -4224,7 +4227,7 @@ void mag_assign_spells(void)
          TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
          "You feel like you can hear again.", 3, 11, NECROMANCY, FALSE); // wiz2, cle3
   spello(SPELL_DISPEL_MAGIC, "dispel magic", 65, 50, 1, POS_FIGHTING,
-         TAR_OBJ_ROOM | TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE, MAG_MANUAL, NULL, 4, 11, ABJURATION,
+         TAR_OBJ_ROOM | TAR_CHAR_ROOM | TAR_FIGHT_VICT, FALSE, MAG_MANUAL, NULL, 4, 11, ABJURATION,
          FALSE); // wiz3, cle3
   spello(SPELL_ANIMATE_DEAD, "animate dead", 72, 57, 1, POS_FIGHTING, TAR_OBJ_ROOM, FALSE,
          MAG_SUMMONS, NULL, 10, 13, NECROMANCY, FALSE); // wiz4, cle3
@@ -4561,7 +4564,7 @@ void mag_assign_spells(void)
   spello(SPELL_GHOST_WOLF, "ghost wolf", 95, 80, 1, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_SUMMONS,
          NULL, 9, 11, CONJURATION, FALSE);
   spello(SPELL_STINKING_CLOUD, "stinking cloud", 65, 50, 1, POS_FIGHTING, TAR_IGNORE, FALSE,
-         MAG_ROOM, "You watch as the noxious gasses fade away.", 4, 11, CONJURATION, FALSE);
+         MAG_AREAS, "You watch as the noxious gasses fade away.", 4, 11, CONJURATION, FALSE);
   /* necromancy */
   spello(SPELL_BLIGHT, "blight", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_DAMAGE, NULL, 4, 11, NECROMANCY, FALSE);
@@ -4740,9 +4743,9 @@ void mag_assign_spells(void)
   /* conjuration */
   spello(SPELL_SUMMON_NATURES_ALLY_6, "natures ally vi", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
          MAG_SUMMONS, NULL, 8, 17, CONJURATION, FALSE);
-  spello(SPELL_ACID_FOG, "acid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
+  spello(SPELL_ACID_FOG, "acid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
          "You watch as the acid fog dissipates.", 7, 17, CONJURATION, FALSE);
-  spello(SPELL_FIRE_SEEDS, "fire seeds", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_CREATIONS,
+  spello(SPELL_FIRE_SEEDS, "fire seeds", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
          NULL, 7, 17, CONJURATION, FALSE);
   spello(SPELL_TRANSPORT_VIA_PLANTS, "transport via plants", 0, 0, 0, POS_STANDING, TAR_OBJ_ROOM,
          FALSE, MAG_MANUAL, NULL, 8, 17, CONJURATION, FALSE);
@@ -4785,7 +4788,7 @@ void mag_assign_spells(void)
   spello(SPELL_GLOBE_OF_INVULN, "globe of invuln", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
          MAG_AFFECTS, "Your globe of invulnerability has faded away.", 6, 17, ABJURATION, FALSE);
   spello(SPELL_GREATER_DISPELLING, "greater dispelling", 0, 0, 0, POS_FIGHTING,
-         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE, MAG_MANUAL, NULL, 4, 17, ABJURATION, FALSE);
+         TAR_CHAR_ROOM | TAR_FIGHT_VICT, FALSE, MAG_MANUAL, NULL, 4, 17, ABJURATION, FALSE);
   /* transmutation */
   spello(SPELL_CLONE, "clone", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_SUMMONS, NULL, 9, 17,
          NECROMANCY, FALSE);
@@ -5350,7 +5353,7 @@ void mag_assign_spells(void)
   spellabilo(WARLOCK_THE_DEAD_WALK, "the dead walk", 0, 0, 0, POS_FIGHTING, TAR_OBJ_ROOM, FALSE,
              MAG_SUMMONS, NULL, 1, 1, NECROMANCY, 4, FALSE);
   spellabilo(WARLOCK_VORACIOUS_DISPELLING, "voracious dispelling", 0, 0, 0, POS_FIGHTING,
-             TAR_CHAR_ROOM | TAR_NOT_SELF, ENCHANTMENT, MAG_MANUAL, NULL, 1, 1, NOSCHOOL, 4, FALSE);
+             TAR_CHAR_ROOM | TAR_NOT_SELF, FALSE, MAG_MANUAL, NULL, 1, 1, ENCHANTMENT, 4, FALSE);
   spellabilo(WARLOCK_WALK_UNSEEN, "walk unseen", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
              MAG_AFFECTS, NULL, 1, 1, ILLUSION, 2, FALSE);
   spellabilo(WARLOCK_ELDRITCH_CONE, "eldritch cone", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
@@ -5384,8 +5387,6 @@ void mag_assign_spells(void)
 
   // end warlock invocation definitions
 
-  spello(SPELL_ACID, "!UNUSED!", 79, 64, 1, POS_DEAD, TAR_IGNORE, TRUE, MAG_MASSES, NULL, 8, 12,
-         EVOCATION, FALSE);
   spello(SPELL_ASHIELD_DAM, "!UNUSED!", 0, 0, 0, POS_DEAD, TAR_IGNORE, TRUE, MAG_AFFECTS, NULL, 0,
          0, NOSCHOOL, FALSE);
   spello(SPELL_BLADES, "!UNUSED!", 79, 64, 1, POS_DEAD, TAR_IGNORE, TRUE, MAG_MASSES, NULL, 8, 12,
@@ -5530,6 +5531,7 @@ void mag_assign_spells(void)
 
   spello(SPELL_KEEN_EDGE, "keen edge", 79, 64, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,
          "Your weapons lose their keen edge.", 7, 11, TRANSMUTATION, FALSE);
+         
   spello(SPELL_WEAPON_OF_IMPACT, "weapon of impact", 79, 64, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
          MAG_AFFECTS, "Your weapons stop glowing blue.", 7, 11, TRANSMUTATION, FALSE);
 
@@ -5836,8 +5838,6 @@ spello(SPELL_IDENTIFY, "!UNUSED!", 0, 0, 0, 0,
 
   spello(SPELL_INCENDIARY, "!UNUSED!", 0, 0, 0, POS_DEAD, TAR_IGNORE, TRUE, MAG_AREAS, NULL, 0, 0,
          NOSCHOOL, FALSE);
-  spello(SPELL_STENCH, "!UNUSED!", 65, 50, 1, POS_DEAD, TAR_IGNORE, FALSE, MAG_MASSES,
-         "Your nausea from the noxious gas passes.", 4, 7, CONJURATION, FALSE);
   spello(BOMB_AFFECT_ACID, "acid bomb", 0, 0, 0, POS_SITTING, TAR_IGNORE, TRUE, 0, NULL, 0, 0,
          NOSCHOOL, FALSE);
   spello(BOMB_AFFECT_BLINDING, "blinding bomb", 0, 0, 0, POS_SITTING, TAR_IGNORE, TRUE, 0, NULL, 0,

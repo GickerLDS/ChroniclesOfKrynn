@@ -1553,12 +1553,18 @@ void quest_progress(struct char_data *ch, char argument[MAX_STRING_LENGTH])
     }
     case AQ_MOB_FIND: /* Find Mob */
     case AQ_MOB_KILL: /* Kill Mob */
-    case AQ_MOB_SAVE: /* Save Mob */
     case AQ_DIALOGUE: /* Dialogue Quest */
     {
       mob_rnum mob_rnum = real_mobile(QST_TARGET(rnum));
       if (mob_rnum != NOBODY)
         send_to_char(ch, "\tcQuest Target:\tn %s\r\n", mob_proto[mob_rnum].player.short_descr);
+      break;
+    }
+    case AQ_MOB_SAVE: /* Save Mob */
+    {
+      mob_rnum mob_rnum = real_mobile(QST_TARGET(rnum));
+      if (mob_rnum != NOBODY)
+        send_to_char(ch, "\tcTarget to Save (kill all other mobs in the room):\tn %s\r\n", mob_proto[mob_rnum].player.short_descr);
       break;
     }
     case AQ_OBJ_RETURN: /* Return Object */

@@ -6841,13 +6841,14 @@ int craft_misc_type_by_wear_loc(int wear_loc)
 
 void craft_update(void)
 {
-  struct descriptor_data *d;
+  struct descriptor_data *d, *d_next;
   struct char_data *ch;
   int i = 0;
   char buf[200];
 
-  for (d = descriptor_list; d; d = d->next)
+  for (d = descriptor_list; d; d = d_next)
   {
+    d_next = d->next;
     ch = d->character;
 
     if (!ch)
@@ -6932,6 +6933,9 @@ void craft_update(void)
           break;
         case SCMD_NEWCRAFT_SUPPLYORDER:
           craft_supplyorder_complete(ch);
+          break;
+        default: 
+          mudlog(NRM, LVL_STAFF, TRUE, "Error in craft_update complete: invalid crafting method %d for %s", GET_CRAFT(ch).crafting_method, GET_NAME(ch));
           break;
         }
       }
@@ -7035,17 +7039,18 @@ void craft_update(void)
           case SCMD_NEWCRAFT_SUPPLYORDER:
             if (GET_CRAFT(ch).craft_duration % 5 == 0)
             {
-              int current_item = GET_CRAFT(ch).supply_num_required -
-                                 num_supply_order_requisitions_to_go(ch) + 1;
+              int current_item = GET_CRAFT(ch).supply_num_required - num_supply_order_requisitions_to_go(ch) + 1;
               int total_items = GET_CRAFT(ch).supply_num_required;
               
-              send_to_char(ch, "Supply order for %s %d of %d. ",
-                           get_supply_order_item_desc(ch), current_item, total_items);
+              send_to_char(ch, "Supply order for %s %d of %d. ", get_supply_order_item_desc(ch), current_item, total_items);
               for (i = 0; i < GET_CRAFT(ch).craft_duration; i++)
                 send_to_char(ch, "*");
               send_to_char(ch, "\r\n");
             }
             break;
+          default:
+              mudlog(NRM, LVL_STAFF, TRUE, "Error in craft_update: invalid crafting method %d for %s", GET_CRAFT(ch).crafting_method, GET_NAME(ch));
+              break;
           }
         }
       }
@@ -9934,10 +9939,11 @@ void initialize_supply_slots(struct char_data *ch)
     memset(&GET_CRAFT(ch).supply_slots[i], 0, sizeof(struct supply_contract));
   }
 
-  // Set initial refresh time to 0 to force immediate generation
-  GET_CRAFT(ch).supply_slots_last_refresh =
-      0; // This will trigger should_refresh_supply_slots to return TRUE
-  GET_CRAFT(ch).supply_slots_next_refresh = time(NULL); // Can refresh immediately
+  // Set initial refresh time to NOW to trigger immediate refresh on next call
+  // but prevent infinite loop of checks
+  time_t now = time(NULL);
+  GET_CRAFT(ch).supply_slots_last_refresh = now;
+  GET_CRAFT(ch).supply_slots_next_refresh = now; // Force refresh on next call
 }
 
 // Refresh available supply order slots
@@ -9980,9 +9986,10 @@ void refresh_supply_slots(struct char_data *ch)
 
   for (i = 0; i < 5; i++)
   {
-    // Skip slots that already have contracts or are on cooldown
-    if (GET_CRAFT(ch).supply_slot_active[i] || (GET_CRAFT(ch).supply_slot_cooldowns[i] > 0 &&
-                                                now < GET_CRAFT(ch).supply_slot_cooldowns[i]))
+    // Skip slots that already have active contracts, or are on cooldown, or are currently being worked on
+    if (GET_CRAFT(ch).supply_slot_active[i] || 
+        (GET_CRAFT(ch).supply_slot_cooldowns[i] > 0 && now < GET_CRAFT(ch).supply_slot_cooldowns[i]) ||
+        (GET_CRAFT(ch).supply_active_slot == i && GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_SUPPLYORDER))
     {
       continue;
     }
@@ -9993,10 +10000,12 @@ void refresh_supply_slots(struct char_data *ch)
     if (contract->description)
     {
       free(contract->description);
+      contract->description = NULL;
     }
     if (contract->requirements)
     {
       free(contract->requirements);
+      contract->requirements = NULL;
     }
 
     // Clear the slot
@@ -10459,6 +10468,29 @@ void update_supply_slots_for_all_players(void)
 
     if (IS_NPC(ch))
       continue;
+
+    // Do NOT refresh supply slots while player is actively working on a supply order
+    // to avoid interfering with their current crafting session
+    if (GET_CRAFT(ch).crafting_method == SCMD_NEWCRAFT_SUPPLYORDER)
+    {
+      // Just check cooldown status, don't refresh slots
+      if (GET_CRAFT(ch).supply_cooldown_start_time > 0)
+      {
+        time_t elapsed = now - GET_CRAFT(ch).supply_cooldown_start_time;
+        
+        if (elapsed >= 7200)
+        {
+          /* Cooldown window has expired */
+          send_to_char(ch, "\tgYour supply order cooldown window has expired!\tn\r\n");
+          send_to_char(ch, "\tYYou can now request new supply orders.\tn\r\n");
+          
+          /* Reset cooldown */
+          GET_CRAFT(ch).supply_cooldown_start_time = 0;
+          GET_CRAFT(ch).supply_orders_completed_count = 0;
+        }
+      }
+      continue; // Skip slot refresh while actively crafting
+    }
 
     // Update this player's online time and check for slot refresh
     if (should_refresh_supply_slots(ch))

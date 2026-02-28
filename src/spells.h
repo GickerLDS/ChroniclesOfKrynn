@@ -244,7 +244,7 @@
 #define SPELL_CUNNING 125           // done
 #define SPELL_WISDOM 126            // done
 #define SPELL_CHARISMA 127          // done
-#define SPELL_STENCH 128            // done - stinking cloud proc
+#define SPELL_UNUSED_128 128        // unused and available
 #define SPELL_ACID_SPLASH 129       // cantrip, unfinished
 #define SPELL_RAY_OF_FROST 130      // cantrip, unfinished
 #define SPELL_WIZARD_EYE 131        // done
@@ -334,7 +334,7 @@
 #define SPELL_GREATER_SPELL_MANTLE 214 // done
 #define SPELL_MASS_ENHANCE 215         // done
 #define SPELL_PORTAL 216               // done
-#define SPELL_ACID 217                 // acid fog proc
+#define SPELL_UNUSED_217 217           // unused and available
 #define SPELL_HOLY_SWORD 218           // done (paladin)
 #define SPELL_INCENDIARY 219           // incendiary cloud proc
 /* some cleric spells */
@@ -1791,6 +1791,7 @@ ASPELL(warlock_charm);
 ASPELL(voracious_dispelling);
 ASPELL(tenacious_plague);
 ASPELL(wall_of_perilous_flame);
+ASPELL(devour_magic);
 
 /* basic magic calling functions */
 int find_skill_num(char *name);

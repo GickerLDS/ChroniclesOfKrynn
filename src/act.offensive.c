@@ -1325,6 +1325,12 @@ void perform_rescue(struct char_data *ch, struct char_data *vict)
     return;
   }
 
+  if (IS_NPC(ch) && !IS_NPC(vict) && PRF_FLAGGED(vict, PRF_NO_CHARMIE_RESCUE))
+  {
+    send_to_char(ch, "Your rescue target has no charmie rescue turned on.\r\n");
+    return;
+  }
+
   for (tmp_ch = world[IN_ROOM(ch)].people; tmp_ch && (FIGHTING(tmp_ch) != vict);
        tmp_ch = tmp_ch->next_in_room)
     ;
@@ -6950,8 +6956,7 @@ void perform_black_dragon_magic(struct char_data *ch, const char *argument)
   }
   else if (is_abbrev(arg2, "stinking-cloud"))
   {
-    call_magic(ch, vict, NULL, SPELL_STINKING_CLOUD, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch),
-               CAST_INNATE);
+    call_magic(ch, vict, NULL, SPELL_STINKING_CLOUD, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch), CAST_INNATE);
   }
   else if (is_abbrev(arg2, "shield"))
   {
@@ -7231,8 +7236,7 @@ ACMD(do_efreetimagic)
     {
       if (EFREETI_MAGIC_TIMER(ch) <= 0)
         EFREETI_MAGIC_TIMER(ch) = 150;
-      EFREETI_MAGIC_USES(ch)
-      --;
+      EFREETI_MAGIC_USES(ch)--;
     }
   }
   if (is_abbrev(arg2, "detect-magic"))
@@ -7267,12 +7271,12 @@ ACMD(do_efreetimagic)
   }
   else if (is_abbrev(arg2, "enlarge-person"))
   {
-    call_magic(ch, ch, NULL, SPELL_ENLARGE_PERSON, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch),
+    call_magic(ch, vict, NULL, SPELL_ENLARGE_PERSON, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch),
                CAST_INNATE);
   }
   else if (is_abbrev(arg2, "reduce-person"))
   {
-    call_magic(ch, ch, NULL, SPELL_SHRINK_PERSON, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch),
+    call_magic(ch, vict, NULL, SPELL_SHRINK_PERSON, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch),
                CAST_INNATE);
   }
   else

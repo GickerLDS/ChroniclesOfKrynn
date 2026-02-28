@@ -78,23 +78,6 @@ void room_aff_tick(struct raff_node *raff)
 
   switch (raff->spell)
   {
-  case SPELL_ACID_FOG:
-    caster = read_mobile(DG_CASTER_PROXY, VIRTUAL);
-    caster_room = &world[raff->room];
-    if (!caster)
-    {
-      script_log("comm.c: Cannot load the caster mob (acid fog)!");
-      return;
-    }
-
-    /* set the caster's name */
-    caster->player.short_descr = strdup("The room");
-    caster->next_in_room = caster_room->people;
-    caster_room->people = caster;
-    caster->in_room = real_room(caster_room->number);
-    call_magic(caster, NULL, NULL, SPELL_ACID, 0, DG_SPELL_LEVEL, CAST_SPELL);
-    extract_char(caster);
-    break;
   case SPELL_BILLOWING_CLOUD:
     for (caster = world[raff->room].people; caster; caster = caster->next_in_room)
     {
@@ -142,23 +125,6 @@ void room_aff_tick(struct raff_node *raff)
     caster_room->people = caster;
     caster->in_room = real_room(caster_room->number);
     call_magic(caster, NULL, NULL, SPELL_BLADES, 0, DG_SPELL_LEVEL, CAST_SPELL);
-    extract_char(caster);
-    break;
-  case SPELL_STINKING_CLOUD:
-    caster = read_mobile(DG_CASTER_PROXY, VIRTUAL);
-    caster_room = &world[raff->room];
-    if (!caster)
-    {
-      script_log("comm.c: Cannot load the caster mob!");
-      return;
-    }
-
-    /* set the caster's name */
-    caster->player.short_descr = strdup("The room");
-    caster->next_in_room = caster_room->people;
-    caster_room->people = caster;
-    caster->in_room = real_room(caster_room->number);
-    call_magic(caster, NULL, NULL, SPELL_STENCH, 0, DG_SPELL_LEVEL, CAST_SPELL);
     extract_char(caster);
     break;
   }
@@ -2134,6 +2100,12 @@ void proc_d20_round(void)
 
   for (i = character_list; i; i = i->next)
   {
+
+    if (affected_by_spell(i, SPELL_ACID_FOG))
+    {
+      call_magic(i, i, NULL, SPELL_ACID_FOG, 0, 11, CAST_SPELL);
+    }
+
     /* Cowering: 10% chance per round to be too afraid to act */
     if (FIGHTING(i) && AFF2_FLAGGED(i, AFF2_COWERING) && rand_number(1, 100) <= 10)
     {
@@ -2275,23 +2247,11 @@ void proc_d20_round(void)
               act("Your wall of wind dissipates the obscuring mist.", FALSE, i, 0, 0, TO_CHAR);
               act("$n's wall of wind dissipates the obscuring mist.", FALSE, i, 0, 0, TO_ROOM);
             }
-            else if (raff->affection == RAFF_ACID_FOG)
-            {
-              rem_room_aff(raff);
-              act("Your wall of wind dissipates the acid fog.", FALSE, i, 0, 0, TO_CHAR);
-              act("$n's wall of wind dissipates the acid fog.", FALSE, i, 0, 0, TO_ROOM);
-            }
             else if (raff->affection == RAFF_BILLOWING)
             {
               rem_room_aff(raff);
               act("Your wall of wind dissipates the billowing cloud.", FALSE, i, 0, 0, TO_CHAR);
               act("$n's wall of wind dissipates the billowing cloud.", FALSE, i, 0, 0, TO_ROOM);
-            }
-            else if (raff->affection == RAFF_STINK)
-            {
-              rem_room_aff(raff);
-              act("Your wall of wind dissipates the stinking cloud.", FALSE, i, 0, 0, TO_CHAR);
-              act("$n's wall of wind dissipates the stinking cloud.", FALSE, i, 0, 0, TO_ROOM);
             }
             else if (raff->affection == RAFF_FOG)
             {
