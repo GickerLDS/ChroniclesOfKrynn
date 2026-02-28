@@ -2146,7 +2146,7 @@ static void questline_show(struct char_data *ch, int quest_line_id, int limit)
     strip_colors(quest_name);
     strip_colors(quest_master);
     strip_colors(quest_location);
-    send_to_char(ch, "%2d) [#%6d] %-42.42s | %-25.25s | %-30.30s | %7d | %s %s\r\n", next_quest_pos, next_quest_vnum, quest_name,
+    send_to_char(ch, "%3d) [#%6d] %-42.42s | %-25.25s | %-30.30s | %7d | %s %s\r\n", next_quest_pos, next_quest_vnum, quest_name,
                  quest_master, quest_location, min_level, "Next", "===>");
   }
 
