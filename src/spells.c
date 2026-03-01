@@ -3615,7 +3615,7 @@ ASPELL(spell_transport_via_plants)
     send_to_char(ch, "That is not a plant!\r\n");
     return;
   }
-  else if (GET_OBJ_SIZE(obj) < SIZE_MEDIUM)
+  else if (GET_OBJ_SIZE(obj) < GET_SIZE(ch))
   {
     send_to_char(ch, "That plant is not large enough to transport you.\r\n");
     return;
