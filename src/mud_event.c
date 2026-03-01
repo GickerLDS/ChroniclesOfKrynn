@@ -61,6 +61,35 @@ struct list_data *world_events = NULL;
 /* The mud_event_index[] is defined in mud_event_list.c */
 extern struct mud_event_list mud_event_index[];
 
+static void transfer_purged_mob_items_to_master(struct char_data *mob)
+{
+  struct char_data *master = NULL;
+  struct obj_data *item = NULL, *next_item = NULL;
+  int wear_pos = 0;
+
+  if (!mob || !mob->master)
+    return;
+
+  master = mob->master;
+
+  for (wear_pos = 0; wear_pos < NUM_WEARS; wear_pos++)
+  {
+    if (GET_EQ(mob, wear_pos))
+    {
+      item = unequip_char(mob, wear_pos);
+      if (item)
+        obj_to_char(item, master);
+    }
+  }
+
+  for (item = mob->carrying; item; item = next_item)
+  {
+    next_item = item->next_content;
+    obj_from_char(item);
+    obj_to_char(item, master);
+  }
+}
+
 /* init_events() is the ideal function for starting global events. This
  * might be the case if you were to move the contents of heartbeat() into
  * the event system */
@@ -208,8 +237,17 @@ EVENTFUNC(event_countdown)
     break;
 
   case ePURGEMOB:
-    send_to_char(ch, "You must return to your home plane!\r\n");
-    act("With a sigh of relief $n fades out of this plane!", FALSE, ch, NULL, NULL, TO_ROOM);
+    transfer_purged_mob_items_to_master(ch);
+    if (IS_UNDEAD(ch))
+    {
+      send_to_char(ch, "Your undead form is purged back to the afterlife!\r\n");
+      act("With a scream of anguish $n fades out of this plane!", FALSE, ch, NULL, NULL, TO_ROOM);
+    }
+    else
+    {
+      send_to_char(ch, "You must return to your home plane!\r\n");
+      act("With a sigh of relief $n fades out of this plane!", FALSE, ch, NULL, NULL, TO_ROOM);
+    }
     extract_char(ch);
     break;
 

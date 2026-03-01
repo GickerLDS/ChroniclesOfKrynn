@@ -11763,6 +11763,10 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
   struct obj_data *tobj, *next_obj;
   int pfail = 0, msg = 0, fmsg = 0, num = 1, handle_corpse = FALSE, i;
   int mob_level = 0;
+  int summon_duration = 0;
+  int duration_focus_bonus_pct = 0;
+  int duration_uses_necromancy = FALSE;
+  int duration_uses_conjuration = FALSE;
   //int temp_level = 0;
   mob_vnum mob_num = 0;
   char desc[200];
@@ -11779,6 +11783,79 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
     else
       level += weather_info.moons.nuitari_lv;
   }
+
+  summon_duration = ((5 * 60) + (MAX(0, level) * 10)) * PASSES_PER_SEC;
+
+  switch (spellnum)
+  {
+  case SPELL_ANIMATE_DEAD:
+  case SPELL_GREATER_ANIMATION:
+  case SPELL_MUMMY_DUST:
+  case VAMPIRE_ABILITY_CHILDREN_OF_THE_NIGHT:
+  case ABILITY_CREATE_VAMPIRE_SPAWN:
+    duration_uses_necromancy = TRUE;
+    break;
+  case SPELL_DRAGON_KNIGHT:
+  case SPELL_SUMMON_SOLAR:
+  case SPELL_ELEMENTAL_SWARM:
+  case SPELL_SHAMBLER:
+  case SPELL_PHANTOM_STEED:
+  case SPELL_GHOST_WOLF:
+  case SPELL_SUMMON_CREATURE_1:
+  case SPELL_SUMMON_CREATURE_2:
+  case SPELL_SUMMON_CREATURE_3:
+  case SPELL_SUMMON_CREATURE_4:
+  case SPELL_SUMMON_CREATURE_5:
+  case SPELL_SUMMON_CREATURE_6:
+  case SPELL_SUMMON_CREATURE_7:
+  case SPELL_SUMMON_CREATURE_8:
+  case SPELL_SUMMON_CREATURE_9:
+  case SPELL_SUMMON_NATURES_ALLY_1:
+  case SPELL_SUMMON_NATURES_ALLY_2:
+  case SPELL_SUMMON_NATURES_ALLY_3:
+  case SPELL_SUMMON_NATURES_ALLY_4:
+  case SPELL_SUMMON_NATURES_ALLY_5:
+  case SPELL_SUMMON_NATURES_ALLY_6:
+  case SPELL_SUMMON_NATURES_ALLY_7:
+  case SPELL_SUMMON_NATURES_ALLY_8:
+  case SPELL_SUMMON_NATURES_ALLY_9:
+  case SPELL_DJINNI_KIND:
+  case SPELL_EFREETI_KIND:
+  case SPELL_MARID_KIND:
+  case SPELL_SHAITAN_KIND:
+    duration_uses_conjuration = TRUE;
+    break;
+  default:
+    break;
+  }
+
+  if (duration_uses_necromancy)
+  {
+    if (HAS_FEAT(ch, FEAT_SPELL_FOCUS) &&
+        HAS_SCHOOL_FEAT(ch, feat_to_sfeat(FEAT_SPELL_FOCUS), NECROMANCY))
+      duration_focus_bonus_pct += 20;
+    if (HAS_FEAT(ch, FEAT_GREATER_SPELL_FOCUS) &&
+        HAS_SCHOOL_FEAT(ch, feat_to_sfeat(FEAT_GREATER_SPELL_FOCUS), NECROMANCY))
+      duration_focus_bonus_pct += 20;
+    if (HAS_FEAT(ch, FEAT_EPIC_SPELL_FOCUS) &&
+        HAS_SCHOOL_FEAT(ch, feat_to_sfeat(FEAT_EPIC_SPELL_FOCUS), NECROMANCY))
+      duration_focus_bonus_pct += 20;
+  }
+  else if (duration_uses_conjuration)
+  {
+    if (HAS_FEAT(ch, FEAT_SPELL_FOCUS) &&
+        HAS_SCHOOL_FEAT(ch, feat_to_sfeat(FEAT_SPELL_FOCUS), CONJURATION))
+      duration_focus_bonus_pct += 20;
+    if (HAS_FEAT(ch, FEAT_GREATER_SPELL_FOCUS) &&
+        HAS_SCHOOL_FEAT(ch, feat_to_sfeat(FEAT_GREATER_SPELL_FOCUS), CONJURATION))
+      duration_focus_bonus_pct += 20;
+    if (HAS_FEAT(ch, FEAT_EPIC_SPELL_FOCUS) &&
+        HAS_SCHOOL_FEAT(ch, feat_to_sfeat(FEAT_EPIC_SPELL_FOCUS), CONJURATION))
+      duration_focus_bonus_pct += 20;
+  }
+
+  if (duration_focus_bonus_pct > 0)
+    summon_duration += (summon_duration * duration_focus_bonus_pct) / 100;
 
   switch (spellnum)
   {
@@ -12626,6 +12703,9 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
     add_follower(mob, ch);
     if (!GROUP(mob) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
       join_group(mob, GROUP(ch));
+
+    if (!char_has_mud_event(mob, ePURGEMOB))
+      attach_mud_event(new_mud_event(ePURGEMOB, mob, NULL), summon_duration);
 
     /* Hardened Constructs I: temp HP = manifester level and +1 AC for shambler */
     if (!IS_NPC(ch) && spellnum == PSIONIC_ECTOPLASMIC_SHAMBLER)

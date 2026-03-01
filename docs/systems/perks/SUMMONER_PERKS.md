@@ -181,7 +181,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 21. **Extended Summoning I**
     - Cost: 1 point per rank
     - Max Rank: 3
-    - Effect: Summon Creature spells last +2 rounds per rank
+    - Effect: Summon Creature spells last +10% longer per rank
     - Prerequisite: None
     - Notes: Applies to SPELL_SUMMON_CREATURE_1 through SPELL_SUMMON_CREATURE_9
 
