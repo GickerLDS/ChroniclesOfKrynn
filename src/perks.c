@@ -2157,6 +2157,345 @@ void define_summoner_perks(void)
     perk->special_description = strdup(
       "Eidolon gains +20 HP, +4 natural armor, and immunity to mind-affecting effects.");
     perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: SUMMONING EXCELLENCE - Tier 1
+   **************************************************************************/
+
+  perk = &perk_list[PERK_SUMMONER_EXTENDED_SUMMONING_1];
+  perk->id = PERK_SUMMONER_EXTENDED_SUMMONING_1;
+  perk->name = strdup("Extended Summoning I");
+  perk->description = strdup("Your conjured allies remain longer on the field.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPELL_DURATION;
+  perk->effect_value = 10;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Summoned creatures last 10% longer per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_AUGMENTED_SUMMONING_1];
+  perk->id = PERK_SUMMONER_AUGMENTED_SUMMONING_1;
+  perk->name = strdup("Augmented Summoning I");
+  perk->description = strdup("Your summoned creatures are hardier and more accurate.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 1;
+  perk->special_description = strdup("Summons gain +1 HP per HD and +1 attack per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_EFFICIENT_SUMMONING_1];
+  perk->id = PERK_SUMMONER_EFFICIENT_SUMMONING_1;
+  perk->name = strdup("Efficient Summoning I");
+  perk->description = strdup("You complete summon castings more quickly.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Summon casting recovery reduced by 1 second per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_SUMMONERS_BOND];
+  perk->id = PERK_SUMMONER_SUMMONERS_BOND;
+  perk->name = strdup("Summoner's Bond");
+  perk->description = strdup("You fight in sync with your summoned allies.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 1;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Gain +1 dodge AC and +1 attack while fighting with a summon.");
+  perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: SUMMONING EXCELLENCE - Tier 2
+   **************************************************************************/
+
+  perk = &perk_list[PERK_SUMMONER_EXTENDED_SUMMONING_2];
+  perk->id = PERK_SUMMONER_EXTENDED_SUMMONING_2;
+  perk->name = strdup("Extended Summoning II");
+  perk->description = strdup("Further extends summoned ally duration.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_SUMMONER_EXTENDED_SUMMONING_1;
+  perk->prerequisite_rank = 3;
+  perk->effect_type = PERK_EFFECT_SPELL_DURATION;
+  perk->effect_value = 5;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Summoned creatures gain an additional 5% duration per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_AUGMENTED_SUMMONING_2];
+  perk->id = PERK_SUMMONER_AUGMENTED_SUMMONING_2;
+  perk->name = strdup("Augmented Summoning II");
+  perk->description = strdup("Further improves summon durability and offense.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_1;
+  perk->prerequisite_rank = 3;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2;
+  perk->effect_modifier = 1;
+  perk->special_description = strdup("Summons gain +2 HP per HD and +1 damage per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_ELEMENTAL_AFFINITY];
+  perk->id = PERK_SUMMONER_ELEMENTAL_AFFINITY;
+  perk->name = strdup("Elemental Affinity");
+  perk->description = strdup("Your elemental summons are stronger and tougher.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10;
+  perk->effect_modifier = 10;
+  perk->special_description = strdup("Elemental summons gain +10% damage and +10 HP.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_BEAST_COMMANDER];
+  perk->id = PERK_SUMMONER_BEAST_COMMANDER;
+  perk->name = strdup("Beast Commander");
+  perk->description = strdup("Your dire summons maneuver and defend more effectively.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2;
+  perk->effect_modifier = 10;
+  perk->special_description = strdup("Dire summons gain +2 AC and +10% movement.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_MULTIPLE_SUMMONS_1];
+  perk->id = PERK_SUMMONER_MULTIPLE_SUMMONS_1;
+  perk->name = strdup("Multiple Summons I");
+  perk->description = strdup("You can occasionally call a second lesser summon.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EXTENDED_SUMMONING_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 20;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "20% chance for an extra Summon Creature I-III ally with reduced HP and duration.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_MASTER_SUMMONER];
+  perk->id = PERK_SUMMONER_MASTER_SUMMONER;
+  perk->name = strdup("Master Summoner");
+  perk->description = strdup("Your control over conjured allies increases.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_SUMMONERS_BOND;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("You can control +1 additional summoned creature.");
+  perk->toggleable = false;
+
+  /* TREE 2: SUMMONING EXCELLENCE - Tier 3 */
+
+  perk = &perk_list[PERK_SUMMONER_EXTENDED_SUMMONING_3];
+  perk->id = PERK_SUMMONER_EXTENDED_SUMMONING_3;
+  perk->name = strdup("Extended Summoning III");
+  perk->description = strdup("Your summons maintain their effectiveness for longer periods.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EXTENDED_SUMMONING_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPELL_DURATION;
+  perk->effect_value = 5;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("+5 rounds to all summon durations.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_AUGMENTED_SUMMONING_3];
+  perk->id = PERK_SUMMONER_AUGMENTED_SUMMONING_3;
+  perk->name = strdup("Augmented Summoning III");
+  perk->description = strdup("Your conjured creatures become more physically capable.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_ABILITY_SCORE;
+  perk->effect_value = 3;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Summoned creatures gain +3 to STR, DEX, and CON.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_ELEMENTAL_MASTERY];
+  perk->id = PERK_SUMMONER_ELEMENTAL_MASTERY;
+  perk->name = strdup("Elemental Mastery");
+  perk->description = strdup("You specialize in summoning elemental creatures.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_ELEMENTAL_AFFINITY;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 0;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "Summoned elementals last 50% longer, deal +20% damage, choose specialization.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_MULTIPLE_SUMMONS_2];
+  perk->id = PERK_SUMMONER_MULTIPLE_SUMMONS_2;
+  perk->name = strdup("Multiple Summons II");
+  perk->description = strdup("Your conjuration magic can call forth additional powerful allies.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_MULTIPLE_SUMMONS_1;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 0;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "20% chance for extra Summon Creature IV-VI ally with reduced HP and duration.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_PLANAR_BINDING];
+  perk->id = PERK_SUMMONER_PLANAR_BINDING;
+  perk->name = strdup("Planar Binding");
+  perk->description = strdup("You strengthen your connection with planar entities.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_2;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPELL_RESISTANCE;
+  perk->effect_value = 5;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Summoned outsiders gain +5 spell resistance.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_SUMMON_RESILIENCE];
+  perk->id = PERK_SUMMONER_SUMMON_RESILIENCE;
+  perk->name = strdup("Summon Resilience");
+  perk->description = strdup("Your conjured creatures become highly resistant to harm.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 3;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_DAMAGE_REDUCTION;
+  perk->effect_value = 5;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Summoned creatures gain DR 5/- per rank.");
+  perk->toggleable = false;
+
+  /* TREE 2: SUMMONING EXCELLENCE - Tier 4 */
+
+  perk = &perk_list[PERK_SUMMONER_OVERWHELMING_SUMMONS];
+  perk->id = PERK_SUMMONER_OVERWHELMING_SUMMONS;
+  perk->name = strdup("Overwhelming Summons");
+  perk->description = strdup("Your conjured creatures become devastating in combat.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_AUGMENTED_SUMMONING_3;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5;
+  perk->effect_modifier = 4;
+  perk->special_description = strdup(
+      "All summoned creatures gain +5 to hit, +4 AC, +2d6 damage.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_SUPERIOR_SUMMONER];
+  perk->id = PERK_SUMMONER_SUPERIOR_SUMMONER;
+  perk->name = strdup("Superior Summoner");
+  perk->description = strdup("You master the art of commanding conjured allies.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_MASTER_SUMMONER;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "You can control +2 additional summoned creatures, summon spells never fail.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_PLANAR_CHAMPION];
+  perk->id = PERK_SUMMONER_PLANAR_CHAMPION;
+  perk->name = strdup("Planar Champion");
+  perk->description = strdup("You become one with the planes themselves.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 6;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_OVERWHELMING_SUMMONS;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 0;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "Can summon creature types 2 levels higher (e.g., Summon Creature VIII at VII, IX at VIII).");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_ETERNAL_SWARM];
+  perk->id = PERK_SUMMONER_ETERNAL_SWARM;
+  perk->name = strdup("Eternal Swarm");
+  perk->description = strdup("Your summons persist longer and manifest faster than normal.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_SUMMONING_EXCELLENCE;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EXTENDED_SUMMONING_3;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 0;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "Summon Creature spells last 50% longer and cast 50% faster.");
+  perk->toggleable = false;
 }
 
 /* Inquisitor Helper Functions - Judgment & Spellcasting Tree Tier 1 */
@@ -24072,6 +24411,171 @@ bool has_summoner_twin_eidolon(struct char_data *ch)
 bool has_summoner_planar_unity(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_PLANAR_UNITY);
+}
+
+int get_summoner_extended_summoning_duration_bonus_pct(struct char_data *ch)
+{
+  int bonus = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EXTENDED_SUMMONING_1, CLASS_SUMMONER) * 10;
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EXTENDED_SUMMONING_2, CLASS_SUMMONER) * 5;
+
+  return bonus;
+}
+
+int get_summoner_augmented_summon_hp_per_hd_bonus(struct char_data *ch)
+{
+  int bonus = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  bonus += get_perk_rank(ch, PERK_SUMMONER_AUGMENTED_SUMMONING_1, CLASS_SUMMONER);
+  bonus += get_perk_rank(ch, PERK_SUMMONER_AUGMENTED_SUMMONING_2, CLASS_SUMMONER) * 2;
+
+  return bonus;
+}
+
+int get_summoner_augmented_summon_attack_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_SUMMONER_AUGMENTED_SUMMONING_1, CLASS_SUMMONER);
+}
+
+int get_summoner_augmented_summon_damage_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_SUMMONER_AUGMENTED_SUMMONING_2, CLASS_SUMMONER);
+}
+
+int get_summoner_efficient_summoning_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_SUMMONER_EFFICIENT_SUMMONING_1, CLASS_SUMMONER);
+}
+
+bool has_summoner_summoners_bond(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_SUMMONERS_BOND);
+}
+
+bool has_summoner_elemental_affinity(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ELEMENTAL_AFFINITY);
+}
+
+bool has_summoner_beast_commander(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_BEAST_COMMANDER);
+}
+
+bool has_summoner_multiple_summons_i(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_MULTIPLE_SUMMONS_1);
+}
+
+bool has_summoner_master_summoner(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_MASTER_SUMMONER);
+}
+
+/* TIER 3 Helper Functions */
+
+int get_summoner_extended_summoning_flat_rounds(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_EXTENDED_SUMMONING_3) ? 5 : 0;
+}
+
+int get_summoner_augmented_summon_stat_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_AUGMENTED_SUMMONING_3) ? 3 : 0;
+}
+
+bool has_summoner_elemental_mastery(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ELEMENTAL_MASTERY);
+}
+
+int get_summoner_elemental_mastery_damage_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_ELEMENTAL_MASTERY) ? 20 : 0;
+}
+
+bool has_summoner_multiple_summons_2(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_MULTIPLE_SUMMONS_2);
+}
+
+bool has_summoner_planar_binding(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_PLANAR_BINDING);
+}
+
+int get_summoner_summon_resilience_dr(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  int rank = 0;
+  rank += get_perk_rank(ch, PERK_SUMMONER_SUMMON_RESILIENCE, CLASS_SUMMONER);
+
+  return rank * 5;
+}
+
+/* TIER 4 Helper Functions */
+
+bool has_summoner_overwhelming_summons(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_OVERWHELMING_SUMMONS);
+}
+
+int get_summoner_overwhelming_summons_to_hit_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_OVERWHELMING_SUMMONS) ? 5 : 0;
+}
+
+int get_summoner_overwhelming_summons_ac_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_OVERWHELMING_SUMMONS) ? 4 : 0;
+}
+
+bool has_summoner_superior_summoner(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_SUPERIOR_SUMMONER);
+}
+
+bool has_summoner_planar_champion(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_PLANAR_CHAMPION);
+}
+
+bool has_summoner_eternal_swarm(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ETERNAL_SWARM);
 }
 
 int class_to_perk_class(int class_type, int which_perk)

@@ -4341,6 +4341,34 @@
 #define PERK_SUMMONER_TWIN_EIDOLON 1618
 #define PERK_SUMMONER_PLANAR_UNITY 1619
 
+/* TREE 2: SUMMONING EXCELLENCE - Tier 1 (1620-1623) */
+#define PERK_SUMMONER_EXTENDED_SUMMONING_1 1620
+#define PERK_SUMMONER_AUGMENTED_SUMMONING_1 1621
+#define PERK_SUMMONER_EFFICIENT_SUMMONING_1 1622
+#define PERK_SUMMONER_SUMMONERS_BOND 1623
+
+/* TREE 2: SUMMONING EXCELLENCE - Tier 2 (1624-1629) */
+#define PERK_SUMMONER_EXTENDED_SUMMONING_2 1624
+#define PERK_SUMMONER_AUGMENTED_SUMMONING_2 1625
+#define PERK_SUMMONER_ELEMENTAL_AFFINITY 1626
+#define PERK_SUMMONER_BEAST_COMMANDER 1627
+#define PERK_SUMMONER_MULTIPLE_SUMMONS_1 1628
+#define PERK_SUMMONER_MASTER_SUMMONER 1629
+
+/* TREE 2: SUMMONING EXCELLENCE - Tier 3 (1630-1635) */
+#define PERK_SUMMONER_EXTENDED_SUMMONING_3 1630
+#define PERK_SUMMONER_AUGMENTED_SUMMONING_3 1631
+#define PERK_SUMMONER_ELEMENTAL_MASTERY 1632
+#define PERK_SUMMONER_MULTIPLE_SUMMONS_2 1633
+#define PERK_SUMMONER_PLANAR_BINDING 1634
+#define PERK_SUMMONER_SUMMON_RESILIENCE 1635
+
+/* TREE 2: SUMMONING EXCELLENCE - Tier 4 (1636-1639) */
+#define PERK_SUMMONER_OVERWHELMING_SUMMONS 1636
+#define PERK_SUMMONER_SUPERIOR_SUMMONER 1637
+#define PERK_SUMMONER_PLANAR_CHAMPION 1638
+#define PERK_SUMMONER_ETERNAL_SWARM 1639
+
 /* ============================================================================
  * WARLOCK PERKS (1700-1799)
  * ============================================================================ */
@@ -4355,7 +4383,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1620
+#define NUM_PERKS 1640
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -7014,6 +7042,9 @@ struct player_special_data_saved
       elemental_mastery_active; /**< Whether elemental mastery is active for next elemental spell */
   time_t
       elemental_mastery_cooldown; /**< Timestamp until when elemental mastery can be used again (5 min cooldown) */
+
+  /* Summoner Elemental Mastery */
+  int summoner_preferred_element; /**< Preferred elemental type for Elemental Mastery perk (1=fire, 2=water, 3=air, 4=earth, 0=none) */
 
   /* Moon-based Bonus Spell Slots System */
   int moon_bonus_spells;      /**< Maximum moon bonus spells available (based on moon phase) */

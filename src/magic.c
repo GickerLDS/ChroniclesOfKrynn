@@ -11756,6 +11756,24 @@ bool isSummonMob(int vnum)
   return false;
 }
 
+/* Helper function to check if a mob matches the summoner's preferred elemental type */
+static bool mob_matches_preferred_element(mob_vnum mob_num, int preferred_element)
+{
+  switch (preferred_element)
+  {
+  case DAM_FIRE: /* Fire element */
+    return (mob_num == MOB_FIRE_ELEMENTAL);
+  case DAM_COLD: /* Water element (cold damage) */
+    return (mob_num == MOB_WATER_ELEMENTAL);
+  case DAM_AIR: /* Air element */
+    return (mob_num == MOB_AIR_ELEMENTAL);
+  case DAM_EARTH: /* Earth element */
+    return (mob_num == MOB_EARTH_ELEMENTAL);
+  default:
+    return false;
+  }
+}
+
 void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spellnum, int savetype,
                  int casttype)
 {
@@ -11767,6 +11785,9 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
   int duration_focus_bonus_pct = 0;
   int duration_uses_necromancy = FALSE;
   int duration_uses_conjuration = FALSE;
+  int multiple_summon_extra_index = -1;
+  int multiple_summons_2_extra_index = -1;
+  int efficient_summoning_rank = 0;
   //int temp_level = 0;
   mob_vnum mob_num = 0;
   char desc[200];
@@ -11785,6 +11806,22 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
   }
 
   summon_duration = ((5 * 60) + (MAX(0, level) * 10)) * PASSES_PER_SEC;
+
+  /* Planar Champion: Can summon creature types 2 levels higher
+     This allows access to higher-level summons early */
+  if (!IS_NPC(ch) && has_summoner_planar_champion(ch))
+  {
+    switch (spellnum)
+    {
+    case SPELL_SUMMON_CREATURE_6:
+    case SPELL_SUMMON_CREATURE_7:
+    case SPELL_SUMMON_CREATURE_8:
+    case SPELL_SUMMON_CREATURE_9:
+      level += 2;
+    default:
+      break;
+    }
+  }
 
   switch (spellnum)
   {
@@ -11856,6 +11893,44 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
 
   if (duration_focus_bonus_pct > 0)
     summon_duration += (summon_duration * duration_focus_bonus_pct) / 100;
+
+  summon_duration +=
+      (summon_duration * get_summoner_extended_summoning_duration_bonus_pct(ch)) / 100;
+
+  /* Extended Summoning III: +5 flat rounds */
+  summon_duration += get_summoner_extended_summoning_flat_rounds(ch);
+
+  /* Elemental Mastery: +50% duration for preferred elemental summons */
+  if (has_summoner_elemental_mastery(ch) && GET_SUMMONER_PREFERRED_ELEMENT(ch) > 0)
+  {
+    /* High-tier elemental spells can summon any elemental type randomly */
+    if (spellnum == SPELL_SUMMON_CREATURE_7 || spellnum == SPELL_SUMMON_CREATURE_8 ||
+        spellnum == SPELL_SUMMON_CREATURE_9 || spellnum == SPELL_SUMMON_NATURES_ALLY_7 ||
+        spellnum == SPELL_SUMMON_NATURES_ALLY_8 || spellnum == SPELL_SUMMON_NATURES_ALLY_9 ||
+        spellnum == SPELL_ELEMENTAL_SWARM)
+    {
+      /* Bonus will be applied after mob is summoned, when we know its type */
+    }
+    /* Specific elemental summon spells */
+    else if (spellnum == SPELL_DJINNI_KIND || spellnum == SPELL_EFREETI_KIND ||
+             spellnum == SPELL_MARID_KIND || spellnum == SPELL_SHAITAN_KIND)
+    {
+      /* Djinni=Air, Efreeti=Fire, Marid=Water, Shaitan=Earth */
+      if ((spellnum == SPELL_EFREETI_KIND && GET_SUMMONER_PREFERRED_ELEMENT(ch) == DAM_FIRE) ||
+          (spellnum == SPELL_MARID_KIND && GET_SUMMONER_PREFERRED_ELEMENT(ch) == DAM_COLD) ||
+          (spellnum == SPELL_DJINNI_KIND && GET_SUMMONER_PREFERRED_ELEMENT(ch) == DAM_AIR) ||
+          (spellnum == SPELL_SHAITAN_KIND && GET_SUMMONER_PREFERRED_ELEMENT(ch) == DAM_EARTH))
+      {
+        summon_duration += (summon_duration * 50) / 100;
+      }
+    }
+  }
+
+  /* Eternal Swarm: +50% duration */
+  if (has_summoner_eternal_swarm(ch))
+    summon_duration += (summon_duration * 50) / 100;
+
+  efficient_summoning_rank = get_summoner_efficient_summoning_rank(ch);
 
   switch (spellnum)
   {
@@ -12296,6 +12371,13 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
     send_to_char(ch, "You are too giddy to have any followers!\r\n");
     return;
   }
+
+  /* Superior Summoner: Summon spells never fail */
+  if (has_summoner_superior_summoner(ch))
+  {
+    pfail = 0;
+  }
+
   if (rand_number(0, 101) < pfail)
   {
     send_to_char(ch, "%s", mag_summon_fail_msgs[fmsg]);
@@ -12398,6 +12480,22 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
       return;
     }
     break;
+  }
+
+  if (has_summoner_multiple_summons_i(ch) &&
+      (spellnum == SPELL_SUMMON_CREATURE_1 || spellnum == SPELL_SUMMON_CREATURE_2 ||
+       spellnum == SPELL_SUMMON_CREATURE_3) && rand_number(1, 100) <= 20)
+  {
+    multiple_summon_extra_index = num;
+    num++;
+  }
+
+  if (has_summoner_multiple_summons_2(ch) &&
+      (spellnum == SPELL_SUMMON_CREATURE_4 || spellnum == SPELL_SUMMON_CREATURE_5 ||
+       spellnum == SPELL_SUMMON_CREATURE_6) && rand_number(1, 100) <= 20)
+  {
+    multiple_summons_2_extra_index = num;
+    num++;
   }
 
   /* bring the mob into existence! */
@@ -12697,6 +12795,143 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
       send_to_char(ch, "\tG[Greater Summons +1d6 dmg]\tn ");
     }
 
+    if (!IS_NPC(ch))
+    {
+      int hp_per_hd_bonus = get_summoner_augmented_summon_hp_per_hd_bonus(ch);
+      int attack_bonus = get_summoner_augmented_summon_attack_bonus(ch);
+      int damage_bonus = get_summoner_augmented_summon_damage_bonus(ch);
+      int stat_bonus = get_summoner_augmented_summon_stat_bonus(ch);
+      int overwhelming_to_hit = get_summoner_overwhelming_summons_to_hit_bonus(ch);
+      int overwhelming_ac = get_summoner_overwhelming_summons_ac_bonus(ch);
+      int elemental_damage_bonus = 0;
+      bool is_elemental =
+          (mob_num == MOB_FIRE_ELEMENTAL || mob_num == MOB_EARTH_ELEMENTAL ||
+           mob_num == MOB_AIR_ELEMENTAL || mob_num == MOB_WATER_ELEMENTAL);
+      bool is_dire_beast =
+          (mob_num == MOB_DIRE_BADGER || mob_num == MOB_DIRE_BOAR || mob_num == MOB_DIRE_WOLF ||
+           mob_num == MOB_DIRE_SPIDER || mob_num == MOB_DIRE_BEAR || mob_num == MOB_DIRE_TIGER);
+
+      if (hp_per_hd_bonus > 0)
+      {
+        int hp_bonus = hp_per_hd_bonus * MAX(1, GET_LEVEL(mob));
+        GET_REAL_MAX_HIT(mob) += hp_bonus;
+        GET_MAX_HIT(mob) += hp_bonus;
+        GET_HIT(mob) += hp_bonus;
+      }
+
+      if (attack_bonus > 0)
+      {
+        GET_REAL_HITROLL(mob) += attack_bonus;
+        GET_HITROLL(mob) += attack_bonus;
+      }
+
+      if (damage_bonus > 0)
+      {
+        GET_REAL_DAMROLL(mob) += damage_bonus;
+        GET_DAMROLL(mob) += damage_bonus;
+      }
+
+      if (stat_bonus > 0)
+      {
+        ((mob)->aff_abils.str) += stat_bonus;
+        ((mob)->aff_abils.dex) += stat_bonus;
+        ((mob)->aff_abils.con) += stat_bonus;
+      }
+
+      if (has_summoner_elemental_affinity(ch) && is_elemental)
+      {
+        /* Check if this elemental matches the preferred type */
+        bool matches_preference = false;
+        if (GET_SUMMONER_PREFERRED_ELEMENT(ch) > 0)
+        {
+          matches_preference = mob_matches_preferred_element(mob_num, GET_SUMMONER_PREFERRED_ELEMENT(ch));
+        }
+
+        /* Apply bonus if it matches preferred element or no preference set */
+        if (matches_preference || GET_SUMMONER_PREFERRED_ELEMENT(ch) == 0)
+        {
+          int hp_bonus = 10;
+          GET_REAL_MAX_HIT(mob) += hp_bonus;
+          GET_MAX_HIT(mob) += hp_bonus;
+          GET_HIT(mob) += hp_bonus;
+
+          GET_REAL_DAMROLL(mob) += MAX(1, (GET_REAL_DAMROLL(mob) * 10) / 100);
+        }
+      }
+
+      if (has_summoner_elemental_mastery(ch) && is_elemental)
+      {
+        /* Check if this elemental matches the preferred type */
+        bool matches_preference = false;
+        if (GET_SUMMONER_PREFERRED_ELEMENT(ch) > 0)
+        {
+          matches_preference = mob_matches_preferred_element(mob_num, GET_SUMMONER_PREFERRED_ELEMENT(ch));
+        }
+
+        /* Apply bonuses if it matches preferred element or no preference set */
+        if (matches_preference || GET_SUMMONER_PREFERRED_ELEMENT(ch) == 0)
+        {
+          /* Apply duration bonus for random summons that match preferred element */
+          if (spellnum == SPELL_SUMMON_CREATURE_7 || spellnum == SPELL_SUMMON_CREATURE_8 ||
+              spellnum == SPELL_SUMMON_CREATURE_9 || spellnum == SPELL_SUMMON_NATURES_ALLY_7 ||
+              spellnum == SPELL_SUMMON_NATURES_ALLY_8 || spellnum == SPELL_SUMMON_NATURES_ALLY_9 ||
+              spellnum == SPELL_ELEMENTAL_SWARM)
+          {
+            if (matches_preference)
+            {
+              /* Apply +50% duration bonus retroactively */
+              struct affected_type *af;
+              for (af = mob->affected; af; af = af->next)
+              {
+                if (af->spell == SPELL_CHARM)
+                {
+                  int bonus_duration = (af->duration * 50) / 100;
+                  af->duration += bonus_duration;
+                  break;
+                }
+              }
+            }
+          }
+
+          /* Apply damage bonus */
+          elemental_damage_bonus = get_summoner_elemental_mastery_damage_bonus(ch);
+          if (elemental_damage_bonus > 0)
+            GET_REAL_DAMROLL(mob) += MAX(1, (GET_REAL_DAMROLL(mob) * elemental_damage_bonus) / 100);
+        }
+      }
+
+      if (has_summoner_beast_commander(ch) && is_dire_beast)
+      {
+        GET_REAL_AC(mob) += 2;
+        GET_MOVE(mob) = GET_MOVE(mob) + (GET_MOVE(mob) / 10);
+      }
+
+      if (overwhelming_to_hit > 0)
+      {
+        GET_REAL_HITROLL(mob) += overwhelming_to_hit;
+        GET_HITROLL(mob) += overwhelming_to_hit;
+      }
+
+      if (overwhelming_ac > 0)
+      {
+        GET_REAL_AC(mob) -= overwhelming_ac;
+      }
+    }
+
+    if (multiple_summon_extra_index >= 0 && i == multiple_summon_extra_index)
+    {
+      GET_REAL_MAX_HIT(mob) = MAX(1, GET_REAL_MAX_HIT(mob) / 2);
+      GET_MAX_HIT(mob) = MAX(1, GET_MAX_HIT(mob) / 2);
+      GET_HIT(mob) = MIN(GET_HIT(mob), GET_MAX_HIT(mob));
+    }
+
+    if (multiple_summons_2_extra_index >= 0 && i == multiple_summons_2_extra_index)
+    {
+      GET_REAL_MAX_HIT(mob) = MAX(1, GET_REAL_MAX_HIT(mob) / 2);
+      GET_MAX_HIT(mob) = MAX(1, GET_MAX_HIT(mob) / 2);
+      GET_HIT(mob) = MIN(GET_HIT(mob), GET_MAX_HIT(mob));
+    }
+
     act(mag_summon_msgs[msg], FALSE, ch, 0, mob, TO_ROOM);
     act(mag_summon_to_msgs[msg], FALSE, ch, 0, mob, TO_CHAR);
     load_mtrigger(mob);
@@ -12705,7 +12940,17 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
       join_group(mob, GROUP(ch));
 
     if (!char_has_mud_event(mob, ePURGEMOB))
-      attach_mud_event(new_mud_event(ePURGEMOB, mob, NULL), summon_duration);
+    {
+      int this_summon_duration = summon_duration;
+
+      if (multiple_summon_extra_index >= 0 && i == multiple_summon_extra_index)
+        this_summon_duration = MAX(1, summon_duration / 3);
+
+      if (multiple_summons_2_extra_index >= 0 && i == multiple_summons_2_extra_index)
+        this_summon_duration = MAX(1, summon_duration / 3);
+
+      attach_mud_event(new_mud_event(ePURGEMOB, mob, NULL), this_summon_duration);
+    }
 
     /* Hardened Constructs I: temp HP = manifester level and +1 AC for shambler */
     if (!IS_NPC(ch) && spellnum == PSIONIC_ECTOPLASMIC_SHAMBLER)
@@ -12795,6 +13040,12 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
     }
     extract_obj(obj);
   }
+
+  if (efficient_summoning_rank > 0 && GET_WAIT_STATE(ch) > 0)
+    GET_WAIT_STATE(ch) = MAX(0, GET_WAIT_STATE(ch) - (efficient_summoning_rank * PASSES_PER_SEC));
+
+  if (has_summoner_eternal_swarm(ch) && GET_WAIT_STATE(ch) > 0)
+    GET_WAIT_STATE(ch) = MAX(0, GET_WAIT_STATE(ch) - (GET_WAIT_STATE(ch) / 2));
 
   save_char_pets(ch);
 

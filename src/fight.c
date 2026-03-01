@@ -1116,6 +1116,21 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
     if (!IS_NPC(ch) && is_dual_wielding(ch))
       bonuses[BONUS_TYPE_DODGE] += get_ranger_tempest_ac(ch);
 
+    /* Summoner's Bond: +1 dodge AC while fighting alongside a summoned creature */
+    if (!IS_NPC(ch) && attacker && has_summoner_summoners_bond(ch))
+    {
+      struct follow_type *f = NULL;
+      for (f = ch->followers; f; f = f->next)
+      {
+        if (IS_NPC(f->follower) && AFF_FLAGGED(f->follower, AFF_CHARM) &&
+            is_summon_creature_mob(GET_MOB_VNUM(f->follower)) && FIGHTING(f->follower) == attacker)
+        {
+          bonuses[BONUS_TYPE_DODGE] += 1;
+          break;
+        }
+      }
+    }
+
     /* Paladin Knight of the Chalice perk: Sacred Defender - +1 AC per rank when using weapon and shield */
     if (!IS_NPC(ch))
       bonuses[BONUS_TYPE_SHIELD] += get_paladin_sacred_defender_ac_bonus(ch);
@@ -4795,6 +4810,18 @@ int compute_damage_reduction_full(struct char_data *ch, int dam_type, bool displ
       damage_reduction = MIN(MAX_DAM_REDUC, damage_reduction);
       if (display)
         send_to_char(ch, "%-30s: %d\r\n", "Damage Reduction Capped At", MAX_DAM_REDUC);
+    }
+  }
+
+  /* Summon Resilience: Summoned creatures gain DR 5/- per rank */
+  if (IS_NPC(ch) && ch->master && !IS_NPC(ch->master))
+  {
+    int summon_resilience_dr = get_summoner_summon_resilience_dr(ch->master);
+    if (summon_resilience_dr > 0)
+    {
+      damage_reduction += summon_resilience_dr;
+      if (display)
+        send_to_char(ch, "%-30s: %d\r\n", "Summon Resilience", summon_resilience_dr);
     }
   }
 
@@ -11187,6 +11214,23 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
             send_to_char(ch, "%2d: %-50s\r\n", pack_bonus, "Pack Tactics");
           break; /* Only apply once */
         }
+      }
+    }
+  }
+
+  /* Summoner's Bond: +1 to-hit while fighting alongside a summoned creature */
+  if (!IS_NPC(ch) && victim && has_summoner_summoners_bond(ch))
+  {
+    struct follow_type *f;
+    for (f = ch->followers; f; f = f->next)
+    {
+      if (IS_NPC(f->follower) && AFF_FLAGGED(f->follower, AFF_CHARM) &&
+          is_summon_creature_mob(GET_MOB_VNUM(f->follower)) && FIGHTING(f->follower) == victim)
+      {
+        bonuses[BONUS_TYPE_UNDEFINED] += 1;
+        if (display)
+          send_to_char(ch, "%2d: %-50s\r\n", 1, "Summoner's Bond");
+        break;
       }
     }
   }

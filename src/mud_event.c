@@ -53,6 +53,7 @@
 #include "quest.h"
 #include "mysql.h"
 #include "act.h"
+#include "evolutions.h"
 #include "brew.h" /* Include for brewing events */
 
 /* Global List */
@@ -238,16 +239,8 @@ EVENTFUNC(event_countdown)
 
   case ePURGEMOB:
     transfer_purged_mob_items_to_master(ch);
-    if (IS_UNDEAD(ch))
-    {
-      send_to_char(ch, "Your undead form is purged back to the afterlife!\r\n");
-      act("With a scream of anguish $n fades out of this plane!", FALSE, ch, NULL, NULL, TO_ROOM);
-    }
-    else
-    {
-      send_to_char(ch, "You must return to your home plane!\r\n");
-      act("With a sigh of relief $n fades out of this plane!", FALSE, ch, NULL, NULL, TO_ROOM);
-    }
+    send_to_char(ch, "You must return to your home plane!\r\n");
+    act("With a sigh of relief $n fades out of this plane!", FALSE, ch, NULL, NULL, TO_ROOM);
     extract_char(ch);
     break;
 

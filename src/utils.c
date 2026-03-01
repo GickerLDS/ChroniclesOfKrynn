@@ -1178,7 +1178,10 @@ bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool 
   bool is_necro = (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1);
   bool is_summoner = (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1);
   bool necro_undead_slot_used = false;  /* Track if necro's free undead slot is filled */
-  bool summoner_free_slot_used = false;
+  int summoner_free_summon_slots =
+      1 + ((is_summoner && has_summoner_master_summoner(ch)) ? 1 : 0) + 
+      ((is_summoner && has_summoner_superior_summoner(ch)) ? 2 : 0);
+  int summoner_free_slots_used = 0;
   
   if (!ch || !new_mob)
     return false;
@@ -1199,10 +1202,10 @@ bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool 
 
     if (cat == FOLLOWER_CAT_SUMMON_CREATURE)
     {
-      if (is_summoner && !summoner_free_slot_used)
+      if (is_summoner && summoner_free_slots_used < summoner_free_summon_slots)
       {
         counts[FOLLOWER_CAT_SUMMON_CREATURE]++;
-        summoner_free_slot_used = true;
+        summoner_free_slots_used++;
         continue;
       }
 
@@ -1319,43 +1322,41 @@ bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool 
     
   case FOLLOWER_CAT_SUMMON_CREATURE:
     {
-      /* Summoners get 1 FREE summon creature mob (separate slot) */
+      /* Summoners get free summon creature slots (Master Summoner adds +1 slot, Superior Summoner adds +2). */
       if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1)
       {
-        /* If free summoner slot is empty, use it */
-        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] < 1)
+        int free_slots = 1 + (has_summoner_master_summoner(ch) ? 1 : 0) + 
+                         (has_summoner_superior_summoner(ch) ? 2 : 0);
+
+        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] < free_slots)
         {
           break;  /* Allow - uses free summoner slot */
         }
-        
-        /* Free slot is full - check if we can use OTHER slot instead */
-        /* Necromancers: if it's undead and free necro slot is empty, use that */
+
+        /* Free slots are full - check if we can use OTHER slot instead */
         if (is_necro && IS_UNDEAD(new_mob) && counts[FOLLOWER_CAT_NECRO_UNDEAD] < 1)
         {
           break;  /* Allow - uses free necro undead slot */
         }
-        
-        /* Check OTHER slot - summon creatures beyond the first count toward OTHER */
-        /* Effective OTHER = actual OTHER + (summon creatures - 1 for free slot) */
-        int effective_other = counts[FOLLOWER_CAT_OTHER] + (counts[FOLLOWER_CAT_SUMMON_CREATURE] - 1);
+
+        /* Effective OTHER = actual OTHER + summon creatures beyond free slots */
+        int effective_other =
+            counts[FOLLOWER_CAT_OTHER] + (counts[FOLLOWER_CAT_SUMMON_CREATURE] - free_slots);
         if (effective_other >= 1)
         {
           if (show_msg)
             send_to_char(ch, "You can't control more followers!\r\n");
           return false;
         }
-        /* Allow - will use OTHER slot */
       }
       else
       {
         /* Non-summoners: summon creatures count against their OTHER slot */
-        /* Necromancers: if the new summon creature is undead and free necro slot is empty, use that */
         if (is_necro && IS_UNDEAD(new_mob) && counts[FOLLOWER_CAT_NECRO_UNDEAD] < 1)
         {
-          /* Use the free necro undead slot */
           break;
         }
-        
+
         /* Check combined count of OTHER + SUMMON_CREATURE */
         int combined_count = counts[FOLLOWER_CAT_OTHER] + counts[FOLLOWER_CAT_SUMMON_CREATURE];
         if (combined_count >= 1)
@@ -1385,9 +1386,12 @@ bool can_add_follower_new(struct char_data *ch, struct char_data *new_mob, bool 
       int summon_creature_in_other = 0;
       if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1)
       {
-        /* Summoners: only summon creatures beyond the first count toward OTHER */
-        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] > 1)
-          summon_creature_in_other = counts[FOLLOWER_CAT_SUMMON_CREATURE] - 1;
+        int free_slots = 1 + (has_summoner_master_summoner(ch) ? 1 : 0) + 
+                         (has_summoner_superior_summoner(ch) ? 2 : 0);
+
+        /* Summoners: only summon creatures beyond free slots count toward OTHER */
+        if (counts[FOLLOWER_CAT_SUMMON_CREATURE] > free_slots)
+          summon_creature_in_other = counts[FOLLOWER_CAT_SUMMON_CREATURE] - free_slots;
       }
       else
       {
@@ -1475,7 +1479,10 @@ bool can_add_follower_by_flag(struct char_data *ch, int flag)
   {
     bool is_necro = (CLASS_LEVEL(ch, CLASS_NECROMANCER) >= 1);
     bool necro_undead_slot_used = false;
-    bool summoner_free_slot_used = false;
+    int summoner_free_slots =
+        (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1) ? (1 + (has_summoner_master_summoner(ch) ? 1 : 0) + 
+                                                    (has_summoner_superior_summoner(ch) ? 2 : 0)) : 0;
+    int summoner_free_slots_used = 0;
     bool is_summoner = (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1);
     int other_count = 0;
     
@@ -1489,9 +1496,9 @@ bool can_add_follower_by_flag(struct char_data *ch, int flag)
         int cat = get_follower_category(pet);
         if (cat == FOLLOWER_CAT_SUMMON_CREATURE)
         {
-          if (is_summoner && !summoner_free_slot_used)
+          if (is_summoner && summoner_free_slots_used < summoner_free_slots)
           {
-            summoner_free_slot_used = true;
+            summoner_free_slots_used++;
             continue;
           }
 
@@ -1528,8 +1535,9 @@ bool can_add_follower_by_flag(struct char_data *ch, int flag)
   {
     if (CLASS_LEVEL(ch, CLASS_SUMMONER) >= 1)
     {
-      /* Summoner gets 1 free summon creature slot */
-      limit = 1;
+      /* Summoner gets 1 free summon creature slot (+1 with Master Summoner) */
+      limit = 1 + (has_summoner_master_summoner(ch) ? 1 : 0) + 
+              (has_summoner_superior_summoner(ch) ? 2 : 0);
     }
     else
     {

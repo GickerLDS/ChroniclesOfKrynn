@@ -195,16 +195,14 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 23. **Efficient Summoning I**
     - Cost: 1 point per rank
     - Max Rank: 3
-    - Effect: Summon Creature spells cost -1 spell point per rank (minimum 1)
+    - Effect: All summon spells are cast as if quickened.
     - Prerequisite: None
-    - Notes: Resource management enhancement
 
 24. **Summoner's Bond**
     - Cost: 1 point
     - Max Rank: 1
-    - Effect: +5% chance summoning spells succeed (reduces pfail)
+    - Effect: Summoner gains +1 dodge ac and +1 to attacks when fighting with a summoned creature.
     - Prerequisite: None
-    - Notes: Reduces failure chance in mag_summons()
 
 ---
 
@@ -213,7 +211,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 25. **Extended Summoning II**
     - Cost: 2 points per rank
     - Max Rank: 2
-    - Effect: Additional +3 rounds to summon duration per rank
+    - Effect: Additional +5% duration to summon duration per rank
     - Prerequisite: Extended Summoning I (max)
     - Notes: Long-lasting summons for extended encounters
 
@@ -241,7 +239,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 29. **Multiple Summons I**
     - Cost: 2 points
     - Max Rank: 1
-    - Effect: 20% chance to summon one additional creature when casting Summon Creature I-III
+    - Effect: 20% chance to summon one additional creature when casting Summon Creature I-III. This creature doesn't count against pet limits, but only has 1/2 the hp and 1/3 the duration. If any summon I-III mob dies or is dismissed, this creature is dismissed as well. Any gear should be given back to the master.
     - Prerequisite: Extended Summoning I (2 ranks)
     - Notes: Tactical advantage for lower-level summons
 
@@ -259,7 +257,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 31. **Extended Summoning III**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: +5 rounds to all summon durations
+    - Effect: +5% to all summon durations
     - Prerequisite: Extended Summoning II (max)
     - Notes: Total of +13 rounds possible with all ranks
 
@@ -280,7 +278,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 34. **Multiple Summons II**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: 20% chance to summon additional creature extends to Summon Creature IV-VI
+    - Effect: 20% chance to summon additional creature extends to Summon Creature IV-VI. This creature doesn't count against pet limits, but only has 1/2 the hp and 1/3 the duration.  If any summon IV-VI mob dies or is dismissed, this creature is dismissed as well. Any gear should be given back to the master.
     - Prerequisite: Multiple Summons I
     - Notes: More powerful summons can duplicate
 
@@ -294,7 +292,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 36. **Summon Resilience**
     - Cost: 3 points per rank
     - Max Rank: 2
-    - Effect: Summoned creatures gain damage reduction 5/- per rank
+    - Effect: Summoned creatures gain damage reduction 2/- per rank
     - Prerequisite: Augmented Summoning II (max)
     - Notes: Makes summons more durable
 
@@ -312,14 +310,14 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 38. **Superior Summoner**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Can control +2 additional summoned creatures, summoning never fails
+    - Effect: Can control +1 additional summoned creature from summon creature I-IX spells
     - Prerequisite: Master Summoner, Multiple Summons II
     - Notes: Sets pfail to 0 for all summons
 
 39. **Planar Champion**
     - Cost: 6 points
     - Max Rank: 1
-    - Effect: Can summon level+2 creatures (Summon Creature VIII at VII, IX at VIII, etc.)
+    - Effect: Summoned creatures from summon creature I-IX spells are two levels higher.
     - Prerequisite: Overwhelming Summons
     - Notes: Early access to more powerful summons
 

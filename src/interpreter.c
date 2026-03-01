@@ -422,6 +422,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"blast", "blast", POS_FIGHTING, do_blast, 1, 0, FALSE, ACTION_STANDARD, {0, 0}, can_eldritch_blast},
     {"eldritch", "eldritch", POS_FIGHTING, do_eldritch, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"elementalmastery", "elementalmastery", POS_STANDING, do_elementalmastery, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"summonerpreference", "summonerpreference", POS_STANDING, do_summonerpreference, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"emote", "em", POS_RECLINING, do_echo, 0, SCMD_EMOTE, TRUE, ACTION_NONE, {0, 0}, NULL},
     {":", ":", POS_RECLINING, do_echo, 1, SCMD_EMOTE, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"enter", "ent", POS_STANDING, do_enter, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},

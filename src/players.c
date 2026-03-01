@@ -1712,6 +1712,8 @@ int load_char(const char *name, struct char_data *ch)
           load_spec_abil(fl, ch);
         else if (!strcmp(tag, "Spek"))
           SPEAKING(ch) = atoi(line);
+        else if (!strcmp(tag, "SPEl"))
+          ch->player_specials->saved.summoner_preferred_element = atoi(line);
         else if (!strcmp(tag, "SpRs"))
           GET_REAL_SPELL_RES(ch) = atoi(line);
         else if (!strcmp(tag, "Size"))
@@ -3251,6 +3253,9 @@ void save_char(struct char_data *ch, int mode)
   /* Save Elemental Mastery cooldown and active state */
   BUFFER_WRITE("PEMa: %ld %d\n", (long)ch->player_specials->saved.elemental_mastery_cooldown,
                ch->player_specials->saved.elemental_mastery_active ? 1 : 0);
+
+  /* Save Summoner Preferred Element */
+  BUFFER_WRITE("SPEl: %d\n", ch->player_specials->saved.summoner_preferred_element);
 
   /* Save evolutions */
   BUFFER_WRITE("Evol:\n");

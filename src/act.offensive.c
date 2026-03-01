@@ -9500,6 +9500,63 @@ ACMD(do_elementalmastery)
   act("$n channels the raw power of the elements!", TRUE, ch, 0, 0, TO_ROOM);
 }
 
+ACMD(do_summonerpreference)
+{
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  int element_type = 0;
+  const char *element_names[] = {"None", "Fire", "Water", "Air", "Earth"};
+
+  if (IS_NPC(ch))
+  {
+    send_to_char(ch, "Monsters cannot set elemental preferences.\r\n");
+    return;
+  }
+
+  if (!has_summoner_elemental_mastery(ch))
+  {
+    send_to_char(ch, "You need the Elemental Mastery perk to set an elemental preference.\r\n");
+    return;
+  }
+
+  one_argument(argument, arg, sizeof(arg));
+
+  if (!*arg)
+  {
+    if (GET_SUMMONER_PREFERRED_ELEMENT(ch) > 0 && GET_SUMMONER_PREFERRED_ELEMENT(ch) <= 4)
+    {
+      send_to_char(ch, "Your current preferred element is: %s\r\n",
+                   element_names[GET_SUMMONER_PREFERRED_ELEMENT(ch)]);
+    }
+    else
+    {
+      send_to_char(ch, "You have not set a preferred element.\r\n");
+    }
+    send_to_char(ch, "Choose an element: fire, water, air, or earth.\r\n");
+    return;
+  }
+
+  if (is_abbrev(arg, "fire"))
+    element_type = DAM_FIRE;
+  else if (is_abbrev(arg, "water"))
+    element_type = DAM_COLD;
+  else if (is_abbrev(arg, "air"))
+    element_type = DAM_AIR;
+  else if (is_abbrev(arg, "earth"))
+    element_type = DAM_EARTH;
+  else
+  {
+    send_to_char(ch, "Choose an element: fire, water, air, or earth.\r\n");
+    return;
+  }
+
+  GET_SUMMONER_PREFERRED_ELEMENT(ch) = element_type;
+  send_to_char(ch, "\tCYou attune yourself to the element of %s.\tn\r\n",
+               element_names[element_type]);
+  send_to_char(ch,
+               "\tCYour Elemental Mastery bonuses will now apply to %s elementals.\tn\r\n",
+               element_names[element_type]);
+}
+
 ACMD(do_firesnake)
 {
   PREREQ_NOT_NPC();
