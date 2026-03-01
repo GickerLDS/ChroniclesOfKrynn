@@ -22,6 +22,7 @@
 #include "assign_wpn_armor.h"
 #include "domains_schools.h"
 #include "spell_prep.h"
+#include "perks.h"
 #include "evolutions.h"
 #include "fight.h"
 #include "oasis.h"
@@ -1187,6 +1188,34 @@ void merge_eidolon_evolutions(struct char_data *ch)
     affect_to_char(ch, &af);
   }
 
+  /* Summoner Tier 3 perk: Merge Forms Enhancement */
+  if (has_summoner_merge_forms_enhancement(ch))
+  {
+    new_affect(&af);
+    af.location = APPLY_STR;
+    af.modifier = 2;
+    af.duration = mlev;
+    af.bonus_type = BONUS_TYPE_RACIAL;
+    af.spell = EIDOLON_MERGE_FORMS_EFFECT;
+    affect_to_char(ch, &af);
+
+    new_affect(&af);
+    af.location = APPLY_DEX;
+    af.modifier = 2;
+    af.duration = mlev;
+    af.bonus_type = BONUS_TYPE_RACIAL;
+    af.spell = EIDOLON_MERGE_FORMS_EFFECT;
+    affect_to_char(ch, &af);
+
+    new_affect(&af);
+    af.location = APPLY_CON;
+    af.modifier = 2;
+    af.duration = mlev;
+    af.bonus_type = BONUS_TYPE_RACIAL;
+    af.spell = EIDOLON_MERGE_FORMS_EFFECT;
+    affect_to_char(ch, &af);
+  }
+
   // fast healing
   if (HAS_TEMP_EVOLUTION(ch, EVOLUTION_FAST_HEALING))
   {
@@ -1583,6 +1612,8 @@ int get_shield_ally_bonus(struct char_data *ch)
   else if (HAS_FEAT(ch, FEAT_SHIELD_ALLY))
     bonus = 2;
 
+  bonus += get_summoner_shield_ally_bonus(ch);
+
   if (!get_eidolon_in_room(ch))
     return 0;
 
@@ -1597,6 +1628,7 @@ int get_shield_ally_bonus(struct char_data *ch)
         HAS_FEAT(tch, FEAT_GREATER_SHIELD_ALLY))
     {
       bonus = 4;
+      bonus += get_summoner_shield_ally_bonus(tch);
       break;
     }
   }

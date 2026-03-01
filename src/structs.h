@@ -3188,6 +3188,11 @@
 #define PERK_CATEGORY_INVESTIGATION_PERCEPTION 44
 #define PERK_CATEGORY_ADAPTABLE_TACTICS 45
 
+/* Summoner Perk Categories */
+#define PERK_CATEGORY_EIDOLON_MASTERY 46
+#define PERK_CATEGORY_SUMMONING_EXCELLENCE 47
+#define PERK_CATEGORY_ARCANE_CHANNELER 48
+
 
 /* Perk IDs - organized by class */
 /* Base perks start at 0, will define actual IDs in perks.c */
@@ -4308,7 +4313,33 @@
 /* ============================================================================
  * SUMMONER PERKS (1600-1699)
  * ============================================================================ */
-/* Not yet implemented */
+/* TREE 1: EIDOLON MASTERY - Tier 1 (1600-1603) */
+#define PERK_SUMMONER_EVOLUTION_POOL_1 1600
+#define PERK_SUMMONER_EIDOLON_RESILIENCE_1 1601
+#define PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_1 1602
+#define PERK_SUMMONER_BOND_OF_LIFE 1603
+
+/* TREE 1: EIDOLON MASTERY - Tier 2 (1604-1609) */
+#define PERK_SUMMONER_EVOLUTION_POOL_2 1604
+#define PERK_SUMMONER_EIDOLON_RESILIENCE_2 1605
+#define PERK_SUMMONER_ENHANCED_EVOLUTION_ATTACKS 1606
+#define PERK_SUMMONER_SHIELD_ALLY_ENHANCEMENT 1607
+#define PERK_SUMMONER_RAPID_SUMMONING 1608
+#define PERK_SUMMONER_EVOLUTION_SURGE_ENHANCEMENT 1609
+
+/* TREE 1: EIDOLON MASTERY - Tier 3 (1610-1615) */
+#define PERK_SUMMONER_EVOLUTION_POOL_3 1610
+#define PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_2 1611
+#define PERK_SUMMONER_ENHANCED_EVOLUTION_MAGIC 1612
+#define PERK_SUMMONER_EIDOLON_SPELL_RESISTANCE 1613
+#define PERK_SUMMONER_LIFE_LINK_ENHANCEMENT 1614
+#define PERK_SUMMONER_MERGE_FORMS_ENHANCEMENT 1615
+
+/* TREE 1: EIDOLON MASTERY - Tier 4 (1616-1619) */
+#define PERK_SUMMONER_ASPECT_MASTER 1616
+#define PERK_SUMMONER_ETERNAL_BOND 1617
+#define PERK_SUMMONER_TWIN_EIDOLON 1618
+#define PERK_SUMMONER_PLANAR_UNITY 1619
 
 /* ============================================================================
  * WARLOCK PERKS (1700-1799)
@@ -4324,7 +4355,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1492
+#define NUM_PERKS 1620
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

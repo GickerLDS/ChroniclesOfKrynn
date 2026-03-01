@@ -1685,7 +1685,9 @@ void perform_call(struct char_data *ch, int call_type, int level)
   int i = 0;
   struct follow_type *k = NULL, *next = NULL;
   struct char_data *mob = NULL;
+  struct char_data *twin = NULL;
   mob_vnum mob_num = NOBODY;
+  bool summon_twin = FALSE;
   /* tests for whether you can actually call a companion */
 
   /* companion here already ? */
@@ -2031,6 +2033,30 @@ void perform_call(struct char_data *ch, int call_type, int level)
     GET_LEVEL(mob) = MIN(30, level);
     autoroll_mob(mob, true, true);
     GET_REAL_MAX_HIT(mob) += 20;
+
+    if (!IS_NPC(ch))
+    {
+      int hp_bonus = get_summoner_eidolon_hp_bonus(ch);
+      int nat_armor_bonus = get_summoner_eidolon_natural_armor_bonus(ch);
+      int dmg_bonus = get_summoner_eidolon_damage_bonus(ch);
+
+      if (hp_bonus > 0)
+        GET_REAL_MAX_HIT(mob) += hp_bonus;
+
+      if (nat_armor_bonus > 0)
+        GET_REAL_AC(mob) += (nat_armor_bonus * 10);
+
+      if (dmg_bonus > 0)
+        GET_REAL_DAMROLL(mob) += dmg_bonus;
+
+      if (has_summoner_aspect_master(ch))
+        SET_BIT_AR(AFF2_FLAGS(mob), AFF2_MAGIC_ATTACKS);
+
+      GET_FAST_HEALING_MOD(mob) += get_summoner_eidolon_fast_healing_bonus(ch);
+
+      summon_twin = has_summoner_twin_eidolon(ch);
+    }
+
     GET_HIT(mob) = GET_REAL_MAX_HIT(mob);
     set_eidolon_descs(ch);
     assign_eidolon_evolutions(ch, mob, false);
@@ -2067,6 +2093,72 @@ void perform_call(struct char_data *ch, int call_type, int level)
   add_follower(mob, ch);
   if (!GROUP(mob) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
     join_group(mob, GROUP(ch));
+
+  if (call_type == MOB_EIDOLON && summon_twin)
+  {
+    twin = read_mobile(mob_num, VIRTUAL);
+    if (twin)
+    {
+      if (ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_WILDERNESS))
+      {
+        X_LOC(twin) = world[IN_ROOM(ch)].coords[0];
+        Y_LOC(twin) = world[IN_ROOM(ch)].coords[1];
+      }
+
+      char_to_room(twin, IN_ROOM(ch));
+      IS_CARRYING_W(twin) = 0;
+      IS_CARRYING_N(twin) = 0;
+
+      GET_LEVEL(twin) = MAX(1, GET_LEVEL(mob) - 2);
+      autoroll_mob(twin, true, true);
+      GET_REAL_MAX_HIT(twin) += 20;
+
+      if (!IS_NPC(ch))
+      {
+        int hp_bonus = get_summoner_eidolon_hp_bonus(ch);
+        int nat_armor_bonus = get_summoner_eidolon_natural_armor_bonus(ch);
+        int dmg_bonus = get_summoner_eidolon_damage_bonus(ch);
+
+        if (hp_bonus > 0)
+          GET_REAL_MAX_HIT(twin) += hp_bonus;
+
+        if (nat_armor_bonus > 0)
+          GET_REAL_AC(twin) += (nat_armor_bonus * 10);
+
+        if (dmg_bonus > 0)
+          GET_REAL_DAMROLL(twin) += dmg_bonus;
+
+        if (has_summoner_aspect_master(ch))
+          SET_BIT_AR(AFF2_FLAGS(twin), AFF2_MAGIC_ATTACKS);
+
+        GET_FAST_HEALING_MOD(twin) += get_summoner_eidolon_fast_healing_bonus(ch);
+      }
+
+      set_eidolon_descs(ch);
+      assign_eidolon_evolutions(ch, twin, false);
+
+      GET_REAL_MAX_HIT(twin) = MAX(1, GET_REAL_MAX_HIT(twin) / 2);
+      GET_HIT(twin) = GET_REAL_MAX_HIT(twin);
+      SET_BIT_AR(AFF_FLAGS(twin), AFF_CHARM);
+
+      if (can_add_follower_new(ch, twin, TRUE))
+      {
+        add_follower(twin, ch);
+        if (!GROUP(twin) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
+          join_group(twin, GROUP(ch));
+
+        act("A mirrored eidolon form emerges beside $n!", FALSE, ch, 0, 0, TO_ROOM);
+        send_to_char(ch, "A mirrored eidolon form answers your call.\r\n");
+
+        attach_mud_event(new_mud_event(ePURGEMOB, twin, NULL), 30 * PASSES_PER_SEC);
+      }
+      else
+      {
+        extract_char(twin);
+      }
+    }
+  }
+
   save_char_pets(ch);
 
   /* finally attach cooldown, approximately 14 minutes right now */
@@ -2092,7 +2184,13 @@ void perform_call(struct char_data *ch, int call_type, int level)
   }
   else if (call_type == MOB_EIDOLON)
   {
-    attach_mud_event(new_mud_event(eC_EIDOLON, ch, NULL), 4 * SECS_PER_MUD_DAY);
+    int cooldown = 4 * SECS_PER_MUD_DAY;
+    int reduction_pct = get_summoner_eidolon_cooldown_reduction_percent(ch);
+
+    if (reduction_pct > 0)
+      cooldown = MAX(1, cooldown - ((cooldown * reduction_pct) / 100));
+
+    attach_mud_event(new_mud_event(eC_EIDOLON, ch, NULL), cooldown);
   }
 
   send_to_char(ch,

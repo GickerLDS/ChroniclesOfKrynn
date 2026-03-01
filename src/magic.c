@@ -139,6 +139,14 @@ int compute_spell_res(struct char_data *ch, struct char_data *vict, int modifier
       resist = MAX(resist, 10 + GET_LEVEL(vict)); /* Standard SR for basic eidolons */
   }
 
+  /* Summoner Tier 3 perk: Eidolon Spell Resistance */
+  if (IS_NPC(vict) && MOB_FLAGGED(vict, MOB_EIDOLON) && vict->master && !IS_NPC(vict->master))
+  {
+    int perk_sr = get_summoner_eidolon_spell_resistance_value(vict->master);
+    if (perk_sr > 0)
+      resist = MAX(resist, perk_sr);
+  }
+
   /* Celestial/Fiendish Appearance grants additional SR based on eidolon level
    * Higher level eidolons (12+) get better base SR */
   if (HAS_EVOLUTION(vict, EVOLUTION_CELESTIAL_APPEARANCE) ||
@@ -725,6 +733,13 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
   if (ch && school == DIVINATION)
   {
     challenge += get_inquisitor_divination_dc_bonus(ch);
+  }
+
+  /* Summoner Tier 3 perk: Enhanced Evolution Magic (+1 DC for eidolon magic) */
+  if (ch && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_EIDOLON) && ch->master && !IS_NPC(ch->master) &&
+      isEidolonMagic(ch, spellnum))
+  {
+    challenge += get_summoner_eidolon_magic_dc_bonus(ch->master);
   }
 
   /* Master Transmuter adds +3 DC to transmutation spells */
@@ -9854,22 +9869,26 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       return;
     }
     af[0].location = APPLY_STR;
-    af[0].duration = (level * 12);
+    af[0].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[0].modifier = 2;
     af[0].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[1].location = APPLY_DEX;
-    af[1].duration = (level * 12);
+    af[1].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[1].modifier = 2;
     af[1].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[2].location = APPLY_CON;
-    af[2].duration = (level * 12);
+    af[2].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[2].modifier = 2;
     af[2].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[3].location = APPLY_AC_NEW;
-    af[3].duration = (level * 12);
+    af[3].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[3].modifier = 2;
     af[3].bonus_type = BONUS_TYPE_EIDOLON;
 
@@ -9896,22 +9915,26 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       affect_from_char(victim, SPELL_LESSER_EVOLUTION_SURGE);
     }
     af[0].location = APPLY_STR;
-    af[0].duration = (level * 12);
+    af[0].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[0].modifier = 4;
     af[0].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[1].location = APPLY_DEX;
-    af[1].duration = (level * 12);
+    af[1].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[1].modifier = 4;
     af[1].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[2].location = APPLY_CON;
-    af[2].duration = (level * 12);
+    af[2].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[2].modifier = 4;
     af[2].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[3].location = APPLY_AC;
-    af[3].duration = (level * 12);
+    af[3].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[3].modifier = 4;
     af[3].bonus_type = BONUS_TYPE_EIDOLON;
 
@@ -9936,22 +9959,26 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       affect_from_char(victim, SPELL_EVOLUTION_SURGE);
     }
     af[0].location = APPLY_STR;
-    af[0].duration = (level * 12);
+    af[0].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[0].modifier = 6;
     af[0].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[1].location = APPLY_DEX;
-    af[1].duration = (level * 12);
+    af[1].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[1].modifier = 6;
     af[1].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[2].location = APPLY_CON;
-    af[2].duration = (level * 12);
+    af[2].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[2].modifier = 6;
     af[2].bonus_type = BONUS_TYPE_EIDOLON;
 
     af[3].location = APPLY_AC;
-    af[3].duration = (level * 12);
+    af[3].duration = (level * 12) +
+             (get_summoner_evolution_surge_duration_bonus_rounds(ch) * 12);
     af[3].modifier = 6;
     af[3].bonus_type = BONUS_TYPE_EIDOLON;
 
@@ -12878,6 +12905,8 @@ void mag_points(int level, struct char_data *ch, struct char_data *victim, struc
       return;
     }
     healing = dice(2, 5) + 5 + MIN(10, level);
+    if (has_summoner_bond_of_life(ch))
+      healing += MAX(1, healing / 10);
     to_char = "You \twcure light wounds\tn on $N.";
     to_vict = "$n \twcures light wounds\tn on you.";
     to_notvict = "$N \twfeels a little better\tn.";
@@ -12890,6 +12919,8 @@ void mag_points(int level, struct char_data *ch, struct char_data *victim, struc
       return;
     }
     healing = dice(6, 5) + 15 + MIN(20, level);
+    if (has_summoner_bond_of_life(ch))
+      healing += MAX(1, healing / 10);
     to_char = "You \twcure wounds\tn on $N.";
     to_vict = "$n \twcures wounds\tn on you.";
     to_notvict = "$N \twfeels better\tn.";
@@ -12902,6 +12933,8 @@ void mag_points(int level, struct char_data *ch, struct char_data *victim, struc
       return;
     }
     healing = dice(10, 5) + 25 + MIN(30, level);
+    if (has_summoner_bond_of_life(ch))
+      healing += MAX(1, healing / 10);
     to_char = "You \twcure great wounds\tn on $N.";
     to_vict = "$n \twcures great wounds\tn on you.";
     to_notvict = "$N \twfeels a lot better\tn.";

@@ -6094,6 +6094,24 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
     }
   }
 
+  /* Summoner Tier 3 perk: Life Link Enhancement */
+  if (dam > 0 && IS_NPC(victim) && MOB_FLAGGED(victim, MOB_EIDOLON) && victim->master &&
+      !IS_NPC(victim->master) && has_summoner_life_link_enhancement(victim->master))
+  {
+    struct char_data *summoner = victim->master;
+    int transfer = dam / 2;
+
+    if (transfer > 0 && GET_POS(summoner) > POS_DEAD)
+    {
+      dam -= transfer;
+      GET_HIT(summoner) -= transfer;
+      update_pos(summoner);
+
+      if (CAN_SEE(summoner, victim))
+        send_to_char(summoner, "Your life link absorbs %d damage from your eidolon!\r\n", transfer);
+    }
+  }
+
   GET_HIT(victim) -= dam;
 
   /* Blackguard: Soul Carapace - convert portion of incoming damage to temp HP */

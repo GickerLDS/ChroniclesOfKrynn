@@ -6159,6 +6159,20 @@ sbyte is_immune_fear(struct char_data *ch, struct char_data *victim, sbyte displ
 
 sbyte is_immune_mind_affecting(struct char_data *ch, struct char_data *victim, sbyte display)
 {
+  /* Summoner Tier 4 perk: Planar Unity grants eidolon immunity to mind-affecting effects */
+  if (IS_NPC(victim) && victim->master && !IS_NPC(victim->master) && MOB_FLAGGED(victim, MOB_EIDOLON) &&
+      has_summoner_planar_unity(victim->master))
+  {
+    if (display)
+    {
+      send_to_char(ch, "%s is protected by Planar Unity and is immune to mind-affecting effects!\r\n",
+                   GET_NAME(victim));
+      send_to_char(victim, "Planar Unity shields you from %s's mind-affecting magic!\r\n",
+                   GET_NAME(ch));
+    }
+    return TRUE;
+  }
+
   /* Beast Master: Primal Avatar companion immunity */
   if (IS_NPC(victim) && victim->master && !IS_NPC(victim->master) &&
       MOB_FLAGGED(victim, MOB_C_ANIMAL) && ranger_companion_immune_mind(victim->master))
@@ -6267,6 +6281,19 @@ sbyte is_immune_mind_affecting(struct char_data *ch, struct char_data *victim, s
 
 sbyte is_immune_charm(struct char_data *ch, struct char_data *victim, sbyte display)
 {
+  /* Summoner Tier 4 perk: Planar Unity grants eidolon immunity to charm */
+  if (IS_NPC(victim) && victim->master && !IS_NPC(victim->master) && MOB_FLAGGED(victim, MOB_EIDOLON) &&
+      has_summoner_planar_unity(victim->master))
+  {
+    if (display)
+    {
+      send_to_char(ch, "%s is protected by Planar Unity and is immune to charm effects!\r\n",
+                   GET_NAME(victim));
+      send_to_char(victim, "Planar Unity shields you from %s's charm magic!\r\n", GET_NAME(ch));
+    }
+    return TRUE;
+  }
+
   if (AFF_FLAGGED(victim, AFF_MIND_BLANK))
   {
     if (display)

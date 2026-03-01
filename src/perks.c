@@ -85,6 +85,9 @@ const char *perk_category_names[] = {
     "Hunter's Arsenal",           /* 43 - PERK_CATEGORY_HUNTERS_ARSENAL */
     "Investigation & Perception", /* 44 - PERK_CATEGORY_INVESTIGATION_PERCEPTION */
     "Adaptable Tactics",          /* 45 - PERK_CATEGORY_ADAPTABLE_TACTICS */
+    "Eidolon Mastery",            /* 46 - PERK_CATEGORY_EIDOLON_MASTERY */
+    "Summoning Excellence",       /* 47 - PERK_CATEGORY_SUMMONING_EXCELLENCE */
+    "Arcane Channeler",           /* 48 - PERK_CATEGORY_ARCANE_CHANNELER */
     "\n"                          /* Terminator */
 };
 /* Forward declarations for perk definition functions */
@@ -158,6 +161,9 @@ void init_perks(void)
 
   /* Define Inquisitor Perks */
   define_inquisitor_perks();
+
+  /* Define Summoner Perks */
+  define_summoner_perks();
 
   log("Perks system initialized with %d defined perks.", count_defined_perks());
 }
@@ -1786,6 +1792,371 @@ void define_inquisitor_perks(void)
   perk->special_description = strdup(
       "Gain +2 to the ability score of your choice. All spell and power DCs increase by +2.");
   perk->toggleable = false;
+}
+
+/* Define Summoner Perks - Eidolon Mastery (Tier 1-2) */
+void define_summoner_perks(void)
+{
+  struct perk_data *perk;
+
+  /**************************************************************************
+   * TREE 1: EIDOLON MASTERY - Tier 1
+   **************************************************************************/
+
+  /* Tier 1: Evolution Pool I (3 ranks, 1 point each) */
+  perk = &perk_list[PERK_SUMMONER_EVOLUTION_POOL_1];
+  perk->id = PERK_SUMMONER_EVOLUTION_POOL_1;
+  perk->name = strdup("Evolution Pool I");
+  perk->description = strdup("Increase your eidolon's available evolution points.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 evolution point per rank */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Gain +1 eidolon evolution point per rank.");
+  perk->toggleable = false;
+
+  /* Tier 1: Eidolon Resilience I (5 ranks, 1 point each) */
+  perk = &perk_list[PERK_SUMMONER_EIDOLON_RESILIENCE_1];
+  perk->id = PERK_SUMMONER_EIDOLON_RESILIENCE_1;
+  perk->name = strdup("Eidolon Resilience I");
+  perk->description = strdup("Increase your eidolon's maximum hit points.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 5;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5; /* +5 HP per rank */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Your eidolon gains +5 maximum HP per rank.");
+  perk->toggleable = false;
+
+  /* Tier 1: Natural Armor Enhancement I (3 ranks, 1 point each) */
+  perk = &perk_list[PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_1];
+  perk->id = PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_1;
+  perk->name = strdup("Natural Armor Enhancement I");
+  perk->description = strdup("Increase your eidolon's natural armor bonus.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 natural armor (10 AC units) per rank */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Your eidolon gains +1 natural armor per rank.");
+  perk->toggleable = false;
+
+  /* Tier 1: Bond of Life (1 rank, 1 point) */
+  perk = &perk_list[PERK_SUMMONER_BOND_OF_LIFE];
+  perk->id = PERK_SUMMONER_BOND_OF_LIFE;
+  perk->name = strdup("Bond of Life");
+  perk->description = strdup("Your rejuvenation magic heals your eidolon more effectively.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* +10% rejuvenate healing */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Rejuvenate Eidolon spells heal 10% more.");
+  perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 1: EIDOLON MASTERY - Tier 2
+   **************************************************************************/
+
+  /* Tier 2: Evolution Pool II (2 ranks, 2 points each) */
+  perk = &perk_list[PERK_SUMMONER_EVOLUTION_POOL_2];
+  perk->id = PERK_SUMMONER_EVOLUTION_POOL_2;
+  perk->name = strdup("Evolution Pool II");
+  perk->description = strdup("Further increase your eidolon's available evolution points.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_SUMMONER_EVOLUTION_POOL_1;
+  perk->prerequisite_rank = 3;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 evolution point per rank */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Gain +1 additional eidolon evolution point per rank.");
+  perk->toggleable = false;
+
+  /* Tier 2: Eidolon Resilience II (3 ranks, 2 points each) */
+  perk = &perk_list[PERK_SUMMONER_EIDOLON_RESILIENCE_2];
+  perk->id = PERK_SUMMONER_EIDOLON_RESILIENCE_2;
+  perk->name = strdup("Eidolon Resilience II");
+  perk->description = strdup("Further increase your eidolon's maximum hit points.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = PERK_SUMMONER_EIDOLON_RESILIENCE_1;
+  perk->prerequisite_rank = 5;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* +10 HP per rank */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Your eidolon gains +10 additional maximum HP per rank.");
+  perk->toggleable = false;
+
+  /* Tier 2: Enhanced Evolution: Attacks (1 rank, 2 points) */
+  perk = &perk_list[PERK_SUMMONER_ENHANCED_EVOLUTION_ATTACKS];
+  perk->id = PERK_SUMMONER_ENHANCED_EVOLUTION_ATTACKS;
+  perk->name = strdup("Enhanced Evolution: Attacks");
+  perk->description = strdup("Your eidolon's natural attacks strike with greater force.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 eidolon damage */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Your eidolon's attacks gain +2 damage.");
+  perk->toggleable = false;
+
+  /* Tier 2: Shield Ally Enhancement (1 rank, 2 points) */
+  perk = &perk_list[PERK_SUMMONER_SHIELD_ALLY_ENHANCEMENT];
+  perk->id = PERK_SUMMONER_SHIELD_ALLY_ENHANCEMENT;
+  perk->name = strdup("Shield Ally Enhancement");
+  perk->description = strdup("Increase your shield ally protective bonus.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_BOND_OF_LIFE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 shield ally bonus */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Shield Ally grants +1 additional AC/save protection.");
+  perk->toggleable = false;
+
+  /* Tier 2: Rapid Summoning (1 rank, 2 points) */
+  perk = &perk_list[PERK_SUMMONER_RAPID_SUMMONING];
+  perk->id = PERK_SUMMONER_RAPID_SUMMONING;
+  perk->name = strdup("Rapid Summoning");
+  perk->description = strdup("Your eidolon call recharges faster.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 25; /* 25% cooldown reduction */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Call Eidolon cooldown is reduced by 25%.");
+  perk->toggleable = false;
+
+  /* Tier 2: Evolution Surge Enhancement (1 rank, 2 points) */
+  perk = &perk_list[PERK_SUMMONER_EVOLUTION_SURGE_ENHANCEMENT];
+  perk->id = PERK_SUMMONER_EVOLUTION_SURGE_ENHANCEMENT;
+  perk->name = strdup("Evolution Surge Enhancement");
+  perk->description = strdup("Evolution Surge spells last longer on your eidolon.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EVOLUTION_POOL_1;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 rounds duration */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Evolution Surge spell durations are increased by 2 rounds.");
+  perk->toggleable = false;
+
+    /**************************************************************************
+     * TREE 1: EIDOLON MASTERY - Tier 3
+     **************************************************************************/
+
+    /* Tier 3: Evolution Pool III (1 rank, 3 points) */
+    perk = &perk_list[PERK_SUMMONER_EVOLUTION_POOL_3];
+    perk->id = PERK_SUMMONER_EVOLUTION_POOL_3;
+    perk->name = strdup("Evolution Pool III");
+    perk->description = strdup("Greatly expand your eidolon's evolution potential.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_EVOLUTION_POOL_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Gain +2 additional eidolon evolution points.");
+    perk->toggleable = false;
+
+    /* Tier 3: Natural Armor Enhancement II (2 ranks, 3 points each) */
+    perk = &perk_list[PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_2];
+    perk->id = PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_2;
+    perk->name = strdup("Natural Armor Enhancement II");
+    perk->description = strdup("Further reinforce your eidolon's natural defenses.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Your eidolon gains +2 natural armor per rank.");
+    perk->toggleable = false;
+
+    /* Tier 3: Enhanced Evolution: Magic (1 rank, 3 points) */
+    perk = &perk_list[PERK_SUMMONER_ENHANCED_EVOLUTION_MAGIC];
+    perk->id = PERK_SUMMONER_ENHANCED_EVOLUTION_MAGIC;
+    perk->name = strdup("Enhanced Evolution: Magic");
+    perk->description = strdup("Your eidolon's evolution-granted magic becomes harder to resist.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_ENHANCED_EVOLUTION_ATTACKS;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Eidolon magic effects gain +1 save DC.");
+    perk->toggleable = false;
+
+    /* Tier 3: Eidolon Spell Resistance (1 rank, 4 points) */
+    perk = &perk_list[PERK_SUMMONER_EIDOLON_SPELL_RESISTANCE];
+    perk->id = PERK_SUMMONER_EIDOLON_SPELL_RESISTANCE;
+    perk->name = strdup("Eidolon Spell Resistance");
+    perk->description = strdup("Your eidolon gains innate resistance against hostile magic.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_EIDOLON_RESILIENCE_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 11;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Eidolon gains spell resistance equal to 11 + summoner level.");
+    perk->toggleable = false;
+
+    /* Tier 3: Life Link Enhancement (1 rank, 3 points) */
+    perk = &perk_list[PERK_SUMMONER_LIFE_LINK_ENHANCEMENT];
+    perk->id = PERK_SUMMONER_LIFE_LINK_ENHANCEMENT;
+    perk->name = strdup("Life Link Enhancement");
+    perk->description = strdup("You can share your eidolon's pain through your bond.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_BOND_OF_LIFE;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 50;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("50% of incoming eidolon damage is transferred to the summoner.");
+    perk->toggleable = false;
+
+    /* Tier 3: Merge Forms Enhancement (1 rank, 3 points) */
+    perk = &perk_list[PERK_SUMMONER_MERGE_FORMS_ENHANCEMENT];
+    perk->id = PERK_SUMMONER_MERGE_FORMS_ENHANCEMENT;
+    perk->name = strdup("Merge Forms Enhancement");
+    perk->description = strdup("Merged forms grant stronger physical reinforcement.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_EIDOLON_RESILIENCE_2;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Merge Forms grants an additional +2 STR, +2 DEX, +2 CON.");
+    perk->toggleable = false;
+
+    /**************************************************************************
+     * TREE 1: EIDOLON MASTERY - Tier 4
+     **************************************************************************/
+
+    /* Tier 4: Aspect Master (1 rank, 5 points) */
+    perk = &perk_list[PERK_SUMMONER_ASPECT_MASTER];
+    perk->id = PERK_SUMMONER_ASPECT_MASTER;
+    perk->name = strdup("Aspect Master");
+    perk->description = strdup("Perfect your command of evolutions and your eidolon's attacks.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_EVOLUTION_POOL_3;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 3;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Gain +3 evolution points; eidolon attacks count as magical.");
+    perk->toggleable = false;
+
+    /* Tier 4: Eternal Bond (1 rank, 5 points) */
+    perk = &perk_list[PERK_SUMMONER_ETERNAL_BOND];
+    perk->id = PERK_SUMMONER_ETERNAL_BOND;
+    perk->name = strdup("Eternal Bond");
+    perk->description = strdup("Your eidolon returns faster and recovers continuously.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_RAPID_SUMMONING;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 50;
+    perk->effect_modifier = 3;
+    perk->special_description =
+      strdup("Call Eidolon cooldown reduced by 50%; eidolon gains Fast Healing 3.");
+    perk->toggleable = false;
+
+    /* Tier 4: Twin Eidolon (1 rank, 6 points) */
+    perk = &perk_list[PERK_SUMMONER_TWIN_EIDOLON];
+    perk->id = PERK_SUMMONER_TWIN_EIDOLON;
+    perk->name = strdup("Twin Eidolon");
+    perk->description = strdup("Call forth a temporary mirrored eidolon alongside your primary one.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 6;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_ASPECT_MASTER;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 50;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Call Eidolon also summons a temporary twin at 50% max HP.");
+    perk->toggleable = false;
+
+    /* Tier 4: Planar Unity (1 rank, 5 points) */
+    perk = &perk_list[PERK_SUMMONER_PLANAR_UNITY];
+    perk->id = PERK_SUMMONER_PLANAR_UNITY;
+    perk->name = strdup("Planar Unity");
+    perk->description = strdup("Your eidolon becomes deeply stabilized by your planar bond.");
+    perk->associated_class = CLASS_SUMMONER;
+    perk->perk_category = PERK_CATEGORY_EIDOLON_MASTERY;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_SUMMONER_EIDOLON_SPELL_RESISTANCE;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 20;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup(
+      "Eidolon gains +20 HP, +4 natural armor, and immunity to mind-affecting effects.");
+    perk->toggleable = false;
 }
 
 /* Inquisitor Helper Functions - Judgment & Spellcasting Tree Tier 1 */
@@ -14078,7 +14449,7 @@ const char *get_perk_description(int perk_id)
 const char *get_perk_category_name(int perk_category)
 {
   /* Bounds check */
-  if (perk_category < 0 || perk_category > PERK_CATEGORY_PRIMAL_CHAMPION)
+  if (perk_category < 0 || perk_category > PERK_CATEGORY_ARCANE_CHANNELER)
     return "Unknown Category";
 
   return perk_category_names[perk_category];
@@ -23535,6 +23906,172 @@ int get_bard_curtain_call_damage_bonus(struct char_data *ch)
 
   /* 2d6 precision damage */
   return dice(2, 6);
+}
+
+/* Summoner Helper Functions - Eidolon Mastery Tier 1-2 */
+
+int get_summoner_evolution_pool_bonus(struct char_data *ch)
+{
+  int bonus = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EVOLUTION_POOL_1, CLASS_SUMMONER);
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EVOLUTION_POOL_2, CLASS_SUMMONER);
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EVOLUTION_POOL_3, CLASS_SUMMONER) * 2;
+
+  if (has_perk(ch, PERK_SUMMONER_ASPECT_MASTER))
+    bonus += 3;
+
+  return bonus;
+}
+
+int get_summoner_eidolon_hp_bonus(struct char_data *ch)
+{
+  int bonus = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EIDOLON_RESILIENCE_1, CLASS_SUMMONER) * 5;
+  bonus += get_perk_rank(ch, PERK_SUMMONER_EIDOLON_RESILIENCE_2, CLASS_SUMMONER) * 10;
+
+  if (has_perk(ch, PERK_SUMMONER_PLANAR_UNITY))
+    bonus += 20;
+
+  return bonus;
+}
+
+int get_summoner_eidolon_natural_armor_bonus(struct char_data *ch)
+{
+  int bonus = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  bonus += get_perk_rank(ch, PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_1, CLASS_SUMMONER);
+  bonus += get_perk_rank(ch, PERK_SUMMONER_NATURAL_ARMOR_ENHANCEMENT_2, CLASS_SUMMONER) * 2;
+
+  if (has_perk(ch, PERK_SUMMONER_PLANAR_UNITY))
+    bonus += 4;
+
+  return bonus;
+}
+
+bool has_summoner_bond_of_life(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_BOND_OF_LIFE);
+}
+
+bool has_summoner_enhanced_evolution_attacks(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ENHANCED_EVOLUTION_ATTACKS);
+}
+
+bool has_summoner_enhanced_evolution_magic(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ENHANCED_EVOLUTION_MAGIC);
+}
+
+int get_summoner_shield_ally_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_SHIELD_ALLY_ENHANCEMENT) ? 1 : 0;
+}
+
+int get_summoner_eidolon_cooldown_reduction_percent(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  if (has_perk(ch, PERK_SUMMONER_ETERNAL_BOND))
+    return 50;
+
+  return has_perk(ch, PERK_SUMMONER_RAPID_SUMMONING) ? 25 : 0;
+}
+
+int get_summoner_evolution_surge_duration_bonus_rounds(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_EVOLUTION_SURGE_ENHANCEMENT) ? 2 : 0;
+}
+
+int get_summoner_eidolon_damage_bonus(struct char_data *ch)
+{
+  int bonus = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  if (has_perk(ch, PERK_SUMMONER_ENHANCED_EVOLUTION_ATTACKS))
+    bonus += 2;
+
+  if (has_perk(ch, PERK_SUMMONER_ASPECT_MASTER))
+    bonus += 2;
+
+  return bonus;
+}
+
+int get_summoner_eidolon_fast_healing_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_ETERNAL_BOND) ? 3 : 0;
+}
+
+int get_summoner_eidolon_spell_resistance_value(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  if (!has_perk(ch, PERK_SUMMONER_EIDOLON_SPELL_RESISTANCE))
+    return 0;
+
+  return 11 + CLASS_LEVEL(ch, CLASS_SUMMONER);
+}
+
+int get_summoner_eidolon_magic_dc_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return has_perk(ch, PERK_SUMMONER_ENHANCED_EVOLUTION_MAGIC) ? 1 : 0;
+}
+
+bool has_summoner_life_link_enhancement(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_LIFE_LINK_ENHANCEMENT);
+}
+
+bool has_summoner_merge_forms_enhancement(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_MERGE_FORMS_ENHANCEMENT);
+}
+
+bool has_summoner_aspect_master(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ASPECT_MASTER);
+}
+
+bool has_summoner_eternal_bond(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ETERNAL_BOND);
+}
+
+bool has_summoner_twin_eidolon(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_TWIN_EIDOLON);
+}
+
+bool has_summoner_planar_unity(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_PLANAR_UNITY);
 }
 
 int class_to_perk_class(int class_type, int which_perk)

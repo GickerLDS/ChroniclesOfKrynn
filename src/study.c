@@ -5907,6 +5907,8 @@ int study_num_free_evolution_points(struct char_data *ch)
     }
   }
 
+  num_points += get_summoner_evolution_pool_bonus(ch);
+
   return (num_points - num_spent);
 }
 
