@@ -3598,85 +3598,120 @@ ASPELL(spell_resurrect)
 
 ASPELL(spell_transport_via_plants)
 {
-  obj_vnum obj_num = NOTHING;
   room_rnum to_room = NOWHERE;
-  struct obj_data *dest_obj = NULL, *tmp_obj = NULL;
+  int sector_type = 0;
 
   if (ch == NULL)
     return;
 
-  if (!obj)
+  /* Check if caster is in a valid natural sector */
+  sector_type = SECT(IN_ROOM(ch));
+  if (sector_type != SECT_CITY &&
+      sector_type != SECT_FIELD &&
+      sector_type != SECT_FOREST &&
+      sector_type != SECT_HILLS &&
+      sector_type != SECT_MOUNTAIN &&
+      sector_type != SECT_MARSHLAND &&
+      sector_type != SECT_HIGH_MOUNTAIN &&
+      sector_type != SECT_UD_WILD &&
+      sector_type != SECT_JUNGLE &&
+      sector_type != SECT_TAIGA)
   {
-    send_to_char(ch, "Your target does not exist!\r\n");
+    send_to_char(ch, "You must be in a natural environment with plant life to use this spell!\r\n");
     return;
   }
-  else if (GET_OBJ_TYPE(obj) != ITEM_PLANT)
+
+  if (!victim)
   {
-    send_to_char(ch, "That is not a plant!\r\n");
+    victim = ch;
+  }
+
+  if (AFF_FLAGGED(victim, AFF_NOTELEPORT))
+  {
+    send_to_char(ch, "Your spell fails to target that victim!\r\n");
     return;
   }
-  else if (GET_OBJ_SIZE(obj) < GET_SIZE(ch))
+
+  if (MOB_FLAGGED(victim, MOB_NOTELEPORT))
   {
-    send_to_char(ch, "That plant is not large enough to transport you.\r\n");
+    send_to_char(ch, "The transportation magic while beginning to form, flashes brightly, then dies "
+                     "suddenly!\r\n");
     return;
   }
-  obj_num = GET_OBJ_VNUM(obj);
 
-  // find another of that plant in the world
-  for (tmp_obj = object_list; tmp_obj; tmp_obj = tmp_obj->next)
+  if (IS_POWERFUL_BEING(victim))
   {
-    if (tmp_obj == obj)
-      continue;
-
-    // we don't want to transport to a plant in someone's inventory
-    if (GET_OBJ_VNUM(tmp_obj) == obj_num && !tmp_obj->carried_by)
-    {
-      dest_obj = tmp_obj;
-
-      // 5% chance we will just stop at this obj
-      if (!rand_number(0, 10))
-        break;
-    }
-  }
-
-  act("$n walks toward $p, and steps inside of it.", FALSE, ch, obj, 0, TO_ROOM);
-  act("You walk toward $p, and step inside of it.", FALSE, ch, obj, 0, TO_CHAR);
-
-  if (dest_obj != NULL)
-  {
-    to_room = dest_obj->in_room;
-  }
-
-  if (to_room == NOWHERE)
-  {
-    send_to_char(ch, "You are unable to find another exit, and are ejected from the plant.\r\n");
-    act("$n comes tumbling out from inside of $p.", FALSE, ch, obj, 0, TO_ROOM);
+    send_to_char(ch, "Transport failed!  The target is a powerful being and easily dismisses your "
+                     "magic from the other side!\r\n");
     return;
   }
-  else
+
+  to_room = IN_ROOM(victim);
+
+  if (!valid_mortal_tele_dest(ch, to_room, TRUE))
   {
-    if (!valid_mortal_tele_dest(ch, to_room, TRUE))
-    {
-      send_to_char(ch, "A bright flash prevents your spell from working!\r\n");
-      act("$n comes tumbling out from inside of $p.", FALSE, ch, obj, 0, TO_ROOM);
-      return;
-    }
-
-    // transport player to new location
-    char_from_room(ch);
-
-    if (ZONE_FLAGGED(GET_ROOM_ZONE(to_room), ZONE_WILDERNESS))
-    {
-      X_LOC(ch) = world[to_room].coords[0];
-      Y_LOC(ch) = world[to_room].coords[1];
-    }
-    char_to_room(ch, to_room);
-
-    look_at_room(ch, 0);
-    act("You find your destination, and step out through $p.", FALSE, ch, dest_obj, 0, TO_CHAR);
-    act("$n steps out from inside of $p!", FALSE, ch, dest_obj, 0, TO_ROOM);
-    // TODO: make this an event, so player enters into the plant, and sees a couple messages, then comes out the other side
+    send_to_char(ch, "A bright flash prevents your spell from working!");
+    return;
   }
+
+  if (!valid_mortal_tele_dest(ch, IN_ROOM(ch), TRUE))
+  {
+    send_to_char(ch, "A bright flash prevents your spell from working!");
+    return;
+  }
+
+  /* Check if destination is in a valid natural sector */
+  sector_type = SECT(to_room);
+  if (sector_type != SECT_CITY &&
+      sector_type != SECT_FIELD &&
+      sector_type != SECT_FOREST &&
+      sector_type != SECT_HILLS &&
+      sector_type != SECT_MOUNTAIN &&
+      sector_type != SECT_MARSHLAND &&
+      sector_type != SECT_HIGH_MOUNTAIN &&
+      sector_type != SECT_UD_WILD &&
+      sector_type != SECT_JUNGLE &&
+      sector_type != SECT_TAIGA)
+  {
+    send_to_char(ch, "Your destination does not have the plant life necessary to complete the journey!\r\n");
+    return;
+  }
+
+  /* no teleporting on the outter planes */
+  if (ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_ELEMENTAL) ||
+      ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_ETH_PLANE) ||
+      ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_ASTRAL_PLANE))
+  {
+    send_to_char(ch, "This magic won't help you travel on this plane!\r\n");
+    return;
+  }
+
+  /* no teleporting off the prime plane to another */
+  if (ZONE_FLAGGED(GET_ROOM_ZONE(to_room), ZONE_ELEMENTAL) ||
+      ZONE_FLAGGED(GET_ROOM_ZONE(to_room), ZONE_ETH_PLANE) ||
+      ZONE_FLAGGED(GET_ROOM_ZONE(to_room), ZONE_ASTRAL_PLANE))
+  {
+    send_to_char(ch, "Your target is beyond the reach of your magic!\r\n");
+    return;
+  }
+
+  send_to_char(ch, "You reach into the nearby plants and are transported through their roots...\r\n");
+  act("$n reaches into the nearby plants and slowly fades into the earth.", FALSE, ch, 0, 0, TO_ROOM);
+  char_from_room(ch);
+
+  if (ZONE_FLAGGED(GET_ROOM_ZONE(to_room), ZONE_WILDERNESS))
+  {
+    X_LOC(ch) = world[to_room].coords[0];
+    Y_LOC(ch) = world[to_room].coords[1];
+  }
+  char_to_room(ch, to_room);
+
+  act("$n emerges from the plant life around you.", FALSE, ch, 0, 0, TO_ROOM);
+  send_to_char(ch, "You emerge from the plant life at your destination...\r\n");
+  look_at_room(ch, 0);
+  entry_memory_mtrigger(ch);
+  greet_mtrigger(ch, -1);
+  greet_memory_mtrigger(ch);
 }
 
 ASPELL(spell_wall_of_thorns)

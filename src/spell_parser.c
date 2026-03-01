@@ -4747,7 +4747,7 @@ void mag_assign_spells(void)
          "You watch as the acid fog dissipates.", 7, 17, CONJURATION, FALSE);
   spello(SPELL_FIRE_SEEDS, "fire seeds", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
          NULL, 7, 17, CONJURATION, FALSE);
-  spello(SPELL_TRANSPORT_VIA_PLANTS, "transport via plants", 0, 0, 0, POS_STANDING, TAR_OBJ_ROOM,
+  spello(SPELL_TRANSPORT_VIA_PLANTS, "transport via plants", 0, 0, 0, POS_STANDING, TAR_CHAR_WORLD | TAR_NOT_SELF,
          FALSE, MAG_MANUAL, NULL, 8, 17, CONJURATION, FALSE);
   // summon creature 6 - shared
   /* necromancy */
