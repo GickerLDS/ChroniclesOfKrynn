@@ -443,6 +443,12 @@ int compute_charisma_bonus(struct char_data *ch)
   int bonus = (GET_CHA(ch) - 10) / 2;
   bonus -= get_char_affect_modifier(ch, AFFECT_LEVEL_DRAIN, APPLY_SPECIAL);
 
+  /* Summoner Arcane Channeler Tree - Charisma Enhancement II applies to all CHA_BONUS checks */
+  if (!IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
+  {
+    bonus += get_summoner_charisma_enhancement_2_bonus(ch);
+  }
+
   return bonus;
 }
 

@@ -361,7 +361,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 44. **Efficient Casting I**
     - Cost: 1 point per rank
     - Max Rank: 3
-    - Effect: -1 spell point cost for all spells per rank (minimum 1)
+    - Effect: 5% chance per rank to cast spells as quickened (sxame effect as quicken spell metamagic but without the spell level change)
     - Prerequisite: None
     - Notes: Resource management, stacks with Efficient Summoning
 
@@ -386,7 +386,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 47. **Charisma Enhancement II**
     - Cost: 2 points per rank
     - Max Rank: 2
-    - Effect: +1 additional effective Charisma per rank
+    - Effect: +1 per rank to any GET_CHA_BONUS() checks
     - Prerequisite: Charisma Enhancement I (max)
     - Notes: Total of +5 effective Charisma possible
 
@@ -400,14 +400,14 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 49. **Extended Spell Knowledge I**
     - Cost: 2 points
     - Max Rank: 1
-    - Effect: Learn +1 bonus spell per spell circle (1st-6th level)
+    - Effect: Can cast +1 bonus spell per spell circle (1st-3th level)
     - Prerequisite: Charisma Enhancement I (2 ranks)
     - Notes: Increases known spell count for summoners
 
-50. **Heighten Spell**
+50. **Empopwer Spell**
     - Cost: 2 points
     - Max Rank: 1
-    - Effect: Can cast spells at +3 spell points for +1 DC
+    - Effect: 10% chance that any spell cast is cast as empowered (as the metamagic effect without the spell level increase)
     - Prerequisite: Spell Focus: Conjuration I (max)
     - Notes: Metamagic-like ability
 
@@ -446,14 +446,14 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 55. **Extended Spell Knowledge II**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: Learn +1 additional bonus spell per circle (total +2)
+    - Effect: Can cast +1 additional bonus spell per circle (levels 4-6)
     - Prerequisite: Extended Spell Knowledge I
     - Notes: Significant spell versatility
 
-56. **Quicken Spell**
+56. **Extend Spell**
     - Cost: 4 points
     - Max Rank: 1
-    - Effect: Can cast a spell as an extra attack once per combat (+5 spell points)
+    - Effect: 10% chance for any spell cast to be cast as if extended (as the metamagic effect but without changing the spell level)
     - Prerequisite: Heighten Spell, Efficient Casting I (2 ranks)
     - Notes: Powerful action economy ability
 
@@ -464,7 +464,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 57. **Master of Conjuration**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Conjuration spells: +3 DC, +2 caster level, -3 spell point cost
+    - Effect: Conjuration spells: +3 DC, +2 caster level
     - Prerequisite: Spell Focus: Conjuration III, Arcane Supremacy
     - Notes: Ultimate conjuration mastery
 
@@ -485,7 +485,7 @@ Summoners are masters of conjuration magic who forge powerful bonds with their e
 60. **Spell Weaver**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Learn +2 spells per circle, can cast one spell per day without spell point cost
+    - Effect: Can cast +1 spells per circle
     - Prerequisite: Extended Spell Knowledge II, Quicken Spell
     - Notes: Ultimate versatility and resource management
 

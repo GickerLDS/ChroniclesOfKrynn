@@ -2921,6 +2921,11 @@ int compute_slots_by_circle(struct char_data *ch, int class, int circle)
   case CLASS_SUMMONER:
     spell_slots += spell_bonus[GET_CHA(ch)][circle];
     spell_slots += summoner_slots[class_level][circle];
+    /* Arcane Channeler Tree - Extended Spell Knowledge I (bonus spells for circles 1-3) */
+    if (circle >= 1 && circle <= 3 && !IS_NPC(ch))
+    {
+      spell_slots += get_summoner_extended_spell_knowledge_bonus_spells(ch, circle);
+    }
     break;
   case CLASS_INQUISITOR:
     spell_slots += spell_bonus[GET_WIS(ch)][circle];

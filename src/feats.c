@@ -1575,12 +1575,12 @@ void assign_feats(void)
   feato(FEAT_IMPROVED_TWO_WEAPON_FIGHTING, "improved two weapon fighting", TRUE, TRUE, FALSE,
         FEAT_TYPE_COMBAT, "extra attack with offhand weapon at -5 penalty",
         "extra attack with offhand weapon at -5 penalty");
-  feat_prereq_cfeat(FEAT_IMPROVED_TWO_WEAPON_FIGHTING, FEAT_TWO_WEAPON_FIGHTING);
+  feat_prereq_feat(FEAT_IMPROVED_TWO_WEAPON_FIGHTING, FEAT_TWO_WEAPON_FIGHTING, 1);
   feat_prereq_attribute(FEAT_IMPROVED_TWO_WEAPON_FIGHTING, AB_DEX, 17);
   feato(FEAT_GREATER_TWO_WEAPON_FIGHTING, "greater two weapon fighting", TRUE, TRUE, FALSE,
         FEAT_TYPE_COMBAT, "gives an additional offhand weapon attack at -10 penalty",
         "gives an additional offhand weapon attack at -10 penalty");
-  feat_prereq_cfeat(FEAT_GREATER_TWO_WEAPON_FIGHTING, FEAT_IMPROVED_TWO_WEAPON_FIGHTING);
+  feat_prereq_feat(FEAT_GREATER_TWO_WEAPON_FIGHTING, FEAT_IMPROVED_TWO_WEAPON_FIGHTING, 1);
   feat_prereq_attribute(FEAT_GREATER_TWO_WEAPON_FIGHTING, AB_DEX, 19);
   feato(FEAT_OVERSIZED_TWO_WEAPON_FIGHTING, "oversized two weapon fighting", TRUE, TRUE, FALSE,
         FEAT_TYPE_COMBAT, "treat one-handed weapon in offhand as light weapon",
@@ -1592,7 +1592,7 @@ void assign_feats(void)
         "when wielding two weapons receive +1 shield ac bonus",
         "When dual-wielding, or using a double-weapon, you automatically get a +1 "
         "shield bonus to AC");
-  feat_prereq_cfeat(FEAT_TWO_WEAPON_DEFENSE, FEAT_TWO_WEAPON_FIGHTING);
+  feat_prereq_feat(FEAT_TWO_WEAPON_DEFENSE, FEAT_TWO_WEAPON_FIGHTING, 1);
 
   /* vital strike weapon feats */
   feato(FEAT_VITAL_STRIKE, "vital strike", TRUE, TRUE, FALSE, FEAT_TYPE_COMBAT,

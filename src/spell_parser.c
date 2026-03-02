@@ -1851,9 +1851,29 @@ void finishCasting(struct char_data *ch)
       send_to_char(ch, "\tY[Your extract persists longer than expected!]\tn\r\n");
     }
 
+    /* Summoner Empower Spell: 10% chance to empower spells */
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER &&
+        has_summoner_empower_spell(ch) && !IS_SET(final_metamagic, METAMAGIC_EMPOWER) &&
+        can_spell_be_empowered(spellnum) && rand_number(1, 100) <= 10)
+    {
+      SET_BIT(final_metamagic, METAMAGIC_EMPOWER);
+      send_to_char(ch, "\tC[Your spell manifests with greater power!]\tn\r\n");
+    }
+
+    /* Summoner Spell Focus: Abjuration caster level bonus (+1 per rank for Abjuration spells) */
+    int cast_level = (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch);
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && spellnum > 0 && spellnum < NUM_SPELLS &&
+        spell_info[spellnum].schoolOfMagic == ABJURATION)
+    {
+      int abjuration_bonus = get_summoner_abjuration_caster_level_bonus(ch);
+      if (abjuration_bonus > 0)
+      {
+        cast_level += abjuration_bonus;
+      }
+    }
+
     call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic,
-               (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch),
-               CAST_SPELL);
+               cast_level, CAST_SPELL);
 
     /* Set cosmic awareness cooldown after successful manifestation */
     if (!IS_NPC(ch) && spellnum == PSIONIC_COSMIC_AWARENESS)
@@ -2588,6 +2608,21 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
                            10 * PASSES_PER_SEC);
           send_to_char(ch, "Your manifesting of '%s' accelerates to a faster action.\r\n",
                        spell_info[spellnum].name);
+        }
+      }
+    }
+    /* Summoner Efficient Casting: 5% per rank chance to quicken spells */
+    else if (!quickened && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
+    {
+      int efficient_casting_rank = get_summoner_efficient_casting_rank(ch);
+      if (efficient_casting_rank > 0)
+      {
+        int quicken_chance = efficient_casting_rank * 5; /* 5-15% */
+        if (rand_number(1, 100) <= quicken_chance)
+        {
+          casting_time = 0;
+          quickened = true;
+          send_to_char(ch, "Your spellcasting becomes unnaturally swift!\r\n");
         }
       }
     }

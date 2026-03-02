@@ -301,6 +301,13 @@ int mag_resistance(struct char_data *ch, struct char_data *vict, int modifier)
       resist -= 5;
   }
 
+  /* Summoner Arcane Channeler Tree - Spell Penetration bonuses */
+  if (!IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
+  {
+    challenge += get_summoner_spell_penetration_bonus(ch);
+    challenge += get_summoner_spell_penetration_2_bonus(ch);
+  }
+
   if (!IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SPELLSWORD) > 0 && WEAPON_SPELL_PROC(ch) == TRUE)
   {
     challenge += HAS_REAL_FEAT(ch, FEAT_IMPROVED_CHANNELLING) * 2;
@@ -764,6 +771,25 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
   if (ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_BARD) > 0 && casttype == CAST_SPELL)
   {
     challenge += get_bard_spellsong_maestra_dc_bonus(ch);
+  }
+
+  /* Summoner Arcane Channeler Tree - Spell Focus: Conjuration */
+  if (ch && school == CONJURATION)
+  {
+    challenge += get_summoner_spell_focus_conjuration_dc_bonus(ch);
+  }
+
+  /* Summoner Arcane Channeler Tree - Spell Focus: Abjuration */
+  if (ch && school == ABJURATION)
+  {
+    challenge += get_summoner_spell_focus_abjuration_dc_bonus(ch);
+  }
+
+  /* Summoner Arcane Channeler Tree - Charisma Enhancement affects spell DCs */
+  if (ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
+  {
+    challenge += get_summoner_charisma_enhancement(ch);
+    challenge += get_summoner_charisma_enhancement_2_bonus(ch);
   }
 
   /* Archmage of Control adds +5 DC to control spells (charm, confuse, daze, sleep) */
