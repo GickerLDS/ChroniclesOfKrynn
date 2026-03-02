@@ -3193,6 +3193,9 @@
 #define PERK_CATEGORY_SUMMONING_EXCELLENCE 47
 #define PERK_CATEGORY_ARCANE_CHANNELER 48
 
+/* Warlock Perk Categories */
+#define PERK_CATEGORY_ELDRITCH_MASTERY 49
+
 
 /* Perk IDs - organized by class */
 /* Base perks start at 0, will define actual IDs in perks.c */
@@ -4400,7 +4403,17 @@
 /* ============================================================================
  * WARLOCK PERKS (1700-1799)
  * ============================================================================ */
-/* Not yet implemented */
+/* TREE 1: ELDRITCH MASTERY - Tier 1 (1700-1703) */
+#define PERK_WARLOCK_AGONIZING_BLAST_1 1700
+#define PERK_WARLOCK_CRITICAL_CONDUIT_1 1701
+#define PERK_WARLOCK_ELDRITCH_ACCURACY 1702
+#define PERK_WARLOCK_BLAST_RESILIENCE_1 1703
+
+/* TREE 1: ELDRITCH MASTERY - Tier 2 (1704-1707) */
+#define PERK_WARLOCK_AGONIZING_BLAST_2 1704
+#define PERK_WARLOCK_CRITICAL_CONDUIT_2 1705
+#define PERK_WARLOCK_CONE_BLAST 1706
+#define PERK_WARLOCK_REPELLING_BLAST 1707
 
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
@@ -4411,7 +4424,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1660
+#define NUM_PERKS 1708
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

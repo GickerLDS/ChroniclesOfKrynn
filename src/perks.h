@@ -33,6 +33,7 @@ void define_psionicist_perks(void);
 void define_blackguard_perks(void);
 void define_inquisitor_perks(void);
 void define_summoner_perks(void);
+void define_warlock_perks(void);
 
 /* Summoner helper functions - Eidolon Mastery Tree Tier 1-2 */
 int get_summoner_evolution_pool_bonus(struct char_data *ch);
@@ -119,6 +120,15 @@ bool has_summoner_epic_spellcasting(struct char_data *ch);
 int get_summoner_epic_spellcasting_caster_level_bonus(struct char_data *ch);
 int get_summoner_epic_spellcasting_charisma_bonus(struct char_data *ch);
 bool has_summoner_spell_weaver(struct char_data *ch);
+
+/* Warlock helper functions - Eldritch Mastery Tree Tier 1-2 */
+int get_warlock_agonizing_blast_damage_bonus(struct char_data *ch);
+int get_warlock_critical_conduit_bonus(struct char_data *ch);
+int get_warlock_eldritch_accuracy_bonus(struct char_data *ch);
+int get_warlock_blast_resilience_bonus(struct char_data *ch);
+bool has_warlock_cone_blast(struct char_data *ch);
+int get_warlock_cone_blast_damage_bonus_pct(struct char_data *ch);
+int get_warlock_repelling_blast_knockdown_chance(struct char_data *ch);
 
 /* Inquisitor helper functions - Judgment & Spellcasting Tree Tier 1 */
 int get_inquisitor_empowered_judgment_bonus(struct char_data *ch);

@@ -2909,6 +2909,8 @@ ASPELL(eldritch_blast)
 
   int attack_result = 0;
   int effective_level = spell_info[WARLOCK_ELDRITCH_BLAST].effective_level;
+  int eldritch_accuracy_bonus = get_warlock_eldritch_accuracy_bonus(ch);
+  int critical_conduit_bonus = get_warlock_critical_conduit_bonus(ch);
   if (GET_ELDRITCH_SHAPE(ch) != -1)
     effective_level = MAX(effective_level, spell_info[GET_ELDRITCH_SHAPE(ch)].effective_level);
   if (GET_ELDRITCH_ESSENCE(ch) != -1)
@@ -2965,62 +2967,148 @@ ASPELL(eldritch_blast)
     mag_damage(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_CONE, 0, SAVING_REFL,
                CAST_INNATE);
     mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_CONE, -1, CAST_INNATE, 0);
-  }
-  else if (!(attack_result =
-                 attack_roll_with_critical(ch, victim, ATTACK_TYPE_ELDRITCH_BLAST, TRUE, 0, 20)))
-  {
-    act("You send a blast of energy towards $E, but $E avoids it.", FALSE, ch, 0, victim, TO_CHAR);
-    act("$n sends out a blast of energy towards you, but you avoid it.", FALSE, ch, 0, victim,
-        TO_VICT);
-    act("$n sends out a blast of energy towards $E, but $E avoids it.", FALSE, ch, 0, victim,
-        TO_NOTVICT);
-    free_list(target_list);
-    return;
-  }
-  else if (GET_ELDRITCH_SHAPE(ch) != WARLOCK_HIDEOUS_BLOW)
-  {
-    const bool is_critical = attack_result == 999;
-    if (is_critical)
+
+    /* Blast Resilience I: on hit, gain temporary energy resistance for 5 rounds */
+    if (get_warlock_blast_resilience_bonus(ch) > 0)
     {
-      mag_damage(effective_level, ch, victim, NULL, WARLOCK_CRITICAL_ELDRITCH_BLAST, 0, -1,
-                 CAST_INNATE);
-      mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE, 0);
+      struct affected_type af;
+      new_affect(&af);
+      af.spell = WARLOCK_ELDRITCH_BLAST;
+      af.duration = 5;
+      af.location = APPLY_RES_ENERGY;
+      af.modifier = get_warlock_blast_resilience_bonus(ch);
+      affect_join(ch, &af, TRUE, FALSE, TRUE, FALSE);
     }
-    else
+
+    /* Repelling Blast: chance to knock down target */
+    if (get_warlock_repelling_blast_knockdown_chance(ch) > 0 && GET_POS(victim) > POS_SITTING &&
+        rand_number(1, 100) <= get_warlock_repelling_blast_knockdown_chance(ch))
     {
-      mag_damage(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, 0, -1, CAST_INNATE);
-      mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE, 0);
+      change_position(victim, POS_SITTING);
+      act("You are knocked down by $n's repelling blast!", FALSE, ch, 0, victim, TO_VICT);
+      act("$N is knocked down by your repelling blast!", FALSE, ch, 0, victim, TO_CHAR);
+      act("$N is knocked down by $n's repelling blast!", FALSE, ch, 0, victim, TO_NOTVICT);
     }
-    if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_ELDRITCH_CHAIN)
+  }
+  else
+  {
+    bool is_critical = FALSE;
+
+    attack_result = attack_roll_with_critical(ch, victim, ATTACK_TYPE_ELDRITCH_BLAST, TRUE, 0, 20);
+
+    /* Eldritch Accuracy: convert near-misses into hits */
+    if (attack_result != 999 && attack_result <= 0 && eldritch_accuracy_bonus > 0)
+      attack_result += eldritch_accuracy_bonus;
+
+    if (attack_result <= 0)
     {
-      while (target_list->iSize > 0)
+      act("You send a blast of energy towards $E, but $E avoids it.", FALSE, ch, 0, victim,
+          TO_CHAR);
+      act("$n sends out a blast of energy towards you, but you avoid it.", FALSE, ch, 0, victim,
+          TO_VICT);
+      act("$n sends out a blast of energy towards $E, but $E avoids it.", FALSE, ch, 0, victim,
+          TO_NOTVICT);
+      free_list(target_list);
+      return;
+    }
+
+    is_critical = (attack_result == 999);
+
+    /* Critical Conduit I/II: bonus crit chance on successful Eldritch Blast hits */
+    if (!is_critical && critical_conduit_bonus > 0 && rand_number(1, 100) <= critical_conduit_bonus)
+    {
+      is_critical = TRUE;
+      send_to_char(ch, "\tW[Critical Conduit surges through your blast!]\tn\r\n");
+    }
+
+    if (GET_ELDRITCH_SHAPE(ch) != WARLOCK_HIDEOUS_BLOW)
+    {
+      if (is_critical)
       {
-        // Remove a target from the list.
-        tch = random_from_list(target_list);
-        remove_from_list(tch, target_list);
-        // Do the spell effects
-        mag_damage(effective_level, ch, tch, NULL, WARLOCK_ELDRITCH_CHAIN, 0, -1, CAST_INNATE);
-        mag_affects(effective_level, ch, tch, NULL, WARLOCK_ELDRITCH_CHAIN, -1, CAST_INNATE, 0);
-        act("An eldritch arc of energy jumps to you from $N's blast.", FALSE, ch, 0, tch, TO_VICT);
-        act("An eldritch arc of energy jumps to $E from $N's blast.", FALSE, ch, 0, tch,
-            TO_NOTVICT);
-        act("An eldritch arc of energy jumps to $E from your blast.", FALSE, ch, 0, tch, TO_CHAR);
+        mag_damage(effective_level, ch, victim, NULL, WARLOCK_CRITICAL_ELDRITCH_BLAST, 0, -1,
+                   CAST_INNATE);
+        mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE,
+                    0);
+      }
+      else
+      {
+        mag_damage(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, 0, -1, CAST_INNATE);
+        mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE,
+                    0);
+      }
+
+      /* Blast Resilience I: on hit, gain temporary energy resistance for 5 rounds */
+      if (get_warlock_blast_resilience_bonus(ch) > 0)
+      {
+        struct affected_type af;
+        new_affect(&af);
+        af.spell = WARLOCK_ELDRITCH_BLAST;
+        af.duration = 5;
+        af.location = APPLY_RES_ENERGY;
+        af.modifier = get_warlock_blast_resilience_bonus(ch);
+        affect_join(ch, &af, TRUE, FALSE, TRUE, FALSE);
+      }
+
+      /* Repelling Blast: chance to knock down target */
+      if (get_warlock_repelling_blast_knockdown_chance(ch) > 0 && GET_POS(victim) > POS_SITTING &&
+          rand_number(1, 100) <= get_warlock_repelling_blast_knockdown_chance(ch))
+      {
+        change_position(victim, POS_SITTING);
+        act("You are knocked down by $n's repelling blast!", FALSE, ch, 0, victim, TO_VICT);
+        act("$N is knocked down by your repelling blast!", FALSE, ch, 0, victim, TO_CHAR);
+        act("$N is knocked down by $n's repelling blast!", FALSE, ch, 0, victim, TO_NOTVICT);
+      }
+
+      if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_ELDRITCH_CHAIN)
+      {
+        while (target_list->iSize > 0)
+        {
+          // Remove a target from the list.
+          tch = random_from_list(target_list);
+          remove_from_list(tch, target_list);
+          // Do the spell effects
+          mag_damage(effective_level, ch, tch, NULL, WARLOCK_ELDRITCH_CHAIN, 0, -1, CAST_INNATE);
+          mag_affects(effective_level, ch, tch, NULL, WARLOCK_ELDRITCH_CHAIN, -1, CAST_INNATE, 0);
+
+          if (get_warlock_repelling_blast_knockdown_chance(ch) > 0 && GET_POS(tch) > POS_SITTING &&
+              rand_number(1, 100) <= get_warlock_repelling_blast_knockdown_chance(ch))
+            change_position(tch, POS_SITTING);
+
+          act("An eldritch arc of energy jumps to you from $N's blast.", FALSE, ch, 0, tch,
+              TO_VICT);
+          act("An eldritch arc of energy jumps to $E from $N's blast.", FALSE, ch, 0, tch,
+              TO_NOTVICT);
+          act("An eldritch arc of energy jumps to $E from your blast.", FALSE, ch, 0, tch,
+              TO_CHAR);
+        }
       }
     }
-  }
-  else if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_HIDEOUS_BLOW)
-  {
-    const bool is_critical = attack_result == 999;
-    if (is_critical)
+    else if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_HIDEOUS_BLOW)
     {
-      mag_damage(effective_level, ch, victim, NULL, WARLOCK_CRITICAL_ELDRITCH_BLAST, 0, -1,
-                 CAST_INNATE);
-      mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE, 0);
-    }
-    else
-    {
-      mag_damage(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, 0, -1, CAST_INNATE);
-      mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE, 0);
+      if (is_critical)
+      {
+        mag_damage(effective_level, ch, victim, NULL, WARLOCK_CRITICAL_ELDRITCH_BLAST, 0, -1,
+                   CAST_INNATE);
+        mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE,
+                    0);
+      }
+      else
+      {
+        mag_damage(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, 0, -1, CAST_INNATE);
+        mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE,
+                    0);
+      }
+
+      if (get_warlock_blast_resilience_bonus(ch) > 0)
+      {
+        struct affected_type af;
+        new_affect(&af);
+        af.spell = WARLOCK_ELDRITCH_BLAST;
+        af.duration = 5;
+        af.location = APPLY_RES_ENERGY;
+        af.modifier = get_warlock_blast_resilience_bonus(ch);
+        affect_join(ch, &af, TRUE, FALSE, TRUE, FALSE);
+      }
     }
   }
   if (target_list && target_list->iSize > 0)

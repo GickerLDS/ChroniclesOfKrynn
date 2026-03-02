@@ -1689,8 +1689,20 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       element = DAM_NEGATIVE;
     else if (GET_ELDRITCH_ESSENCE(ch) == WARLOCK_BRIMSTONE_BLAST)
       element = DAM_FIRE;
+
+    /* Warlock Eldritch Mastery perks: Agonizing Blast I/II flat damage bonus */
+    bonus += get_warlock_agonizing_blast_damage_bonus(ch);
+
     if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_ELDRITCH_CONE)
+    {
       size_dice = 8;
+      /* Warlock Eldritch Mastery perk: Cone Blast (+10% cone damage, approximated) */
+      if (has_warlock_cone_blast(ch))
+      {
+        int cone_bonus = MAX(1, (num_dice * get_warlock_cone_blast_damage_bonus_pct(ch)) / 10);
+        bonus += cone_bonus;
+      }
+    }
     break;
 
   case WARLOCK_TENACIOUS_PLAGUE:
