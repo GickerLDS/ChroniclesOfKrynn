@@ -22,6 +22,7 @@
 #include "spec_abilities.h"
 #include "handler.h"
 #include "spells.h"
+#include "perks.h"
 
 /* global */
 struct armor_table armor_list[NUM_SPEC_ARMOR_TYPES];
@@ -1280,6 +1281,10 @@ int compute_gear_spell_failure(struct char_data *ch)
   // Spellsword ignore spell fail
   if (HAS_FEAT(ch, FEAT_IGNORE_SPELL_FAILURE))
     spell_failure -= (HAS_FEAT(ch, FEAT_IGNORE_SPELL_FAILURE) * 10);
+
+  /* Summoner Arcane Channeler Tree - Archmage's Insight grants immunity to spell failure from armor */
+  if (has_summoner_archmages_insight(ch))
+    spell_failure = 0;
 
   if (spell_failure < 0)
     spell_failure = 0;

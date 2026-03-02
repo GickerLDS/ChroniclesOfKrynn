@@ -2660,6 +2660,170 @@ void define_summoner_perks(void)
   perk->effect_modifier = 0;
   perk->special_description = strdup("10% chance that any spell cast is empowered (as metamagic).");
   perk->toggleable = false;
+
+  /* ===== ARCANE CHANNELER - TIER 3 ===== */
+
+  perk = &perk_list[PERK_SUMMONER_SPELL_FOCUS_CONJURATION_3];
+  perk->id = PERK_SUMMONER_SPELL_FOCUS_CONJURATION_3;
+  perk->name = strdup("Spell Focus: Conjuration III");
+  perk->description = strdup("Your conjuration spells are nearly impossible to resist.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_SPELL_FOCUS_CONJURATION_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPELL_DC;
+  perk->effect_value = 2; /* +2 DC to conjuration */
+  perk->effect_modifier = CONJURATION;
+  perk->special_description = strdup("Adds +2 DC to all conjuration spells.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_SPELL_FOCUS_TRANSMUTATION];
+  perk->id = PERK_SUMMONER_SPELL_FOCUS_TRANSMUTATION;
+  perk->name = strdup("Spell Focus: Transmutation");
+  perk->description = strdup("Master transmutation magic to enhance and alter reality.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_SPELL_FOCUS_CONJURATION_2;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 3; /* +3 DC */
+  perk->effect_modifier = TRANSMUTATION;
+  perk->special_description = strdup("+3 DC to transmutation spells, +1 caster level for transmutation.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_ARCANE_SUPREMACY];
+  perk->id = PERK_SUMMONER_ARCANE_SUPREMACY;
+  perk->name = strdup("Arcane Supremacy");
+  perk->description = strdup("Your command over the arcane arts is unmatched.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_CHARISMA_ENHANCEMENT_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 to all DCs */
+  perk->effect_modifier = 2; /* +2 to concentration */
+  perk->special_description = strdup("+1 to all spell DCs, +2 to concentration checks.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_SPELL_PENETRATION_3];
+  perk->id = PERK_SUMMONER_SPELL_PENETRATION_3;
+  perk->name = strdup("Spell Penetration III");
+  perk->description = strdup("Your spells pierce even the most formidable defenses.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_SPELL_PENETRATION_2;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5; /* +5 to SR checks */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Add +5 additional to spell resistance checks.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_2];
+  perk->id = PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_2;
+  perk->name = strdup("Extended Spell Knowledge II");
+  perk->description = strdup("Further expand your repertoire of known spells.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_1;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 bonus spell per circle 4-6 */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Cast +1 additional bonus spell per circle (levels 4-6).");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_EXTEND_SPELL];
+  perk->id = PERK_SUMMONER_EXTEND_SPELL;
+  perk->name = strdup("Extend Spell");
+  perk->description = strdup("Your magical effects linger far longer than normal.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EFFICIENT_CASTING_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* 10% chance to extend */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("10% chance for any spell to be cast as extended (as metamagic).");
+  perk->toggleable = false;
+
+  /* ===== ARCANE CHANNELER - TIER 4 ===== */
+
+  perk = &perk_list[PERK_SUMMONER_MASTER_OF_CONJURATION];
+  perk->id = PERK_SUMMONER_MASTER_OF_CONJURATION;
+  perk->name = strdup("Master of Conjuration");
+  perk->description = strdup("You are the ultimate master of summoning and creation magic.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_SPELL_FOCUS_CONJURATION_3;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 3; /* +3 DC */
+  perk->effect_modifier = 2; /* +2 caster level */
+  perk->special_description = strdup("Conjuration spells: +3 DC, +2 caster level.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_ARCHMAGES_INSIGHT];
+  perk->id = PERK_SUMMONER_ARCHMAGES_INSIGHT;
+  perk->name = strdup("Archmage's Insight");
+  perk->description = strdup("Channel the wisdom of ancient archmages into your spellcasting.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_ARCANE_SUPREMACY;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 to all DCs */
+  perk->effect_modifier = 3; /* +3 to concentration */
+  perk->special_description = strdup("+2 to all spell DCs, +3 to concentration, immune to spell failure from armor.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_EPIC_SPELLCASTING];
+  perk->id = PERK_SUMMONER_EPIC_SPELLCASTING;
+  perk->name = strdup("Epic Spellcasting");
+  perk->description = strdup("Your magical prowess reaches legendary proportions.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 6;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_MASTER_OF_CONJURATION;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 caster level */
+  perk->effect_modifier = 3; /* +3 effective Charisma */
+  perk->special_description = strdup("+1 caster level to all spells, +3 effective Charisma.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_SUMMONER_SPELL_WEAVER];
+  perk->id = PERK_SUMMONER_SPELL_WEAVER;
+  perk->name = strdup("Spell Weaver");
+  perk->description = strdup("Weave together an incredible array of magical energies.");
+  perk->associated_class = CLASS_SUMMONER;
+  perk->perk_category = PERK_CATEGORY_ARCANE_CHANNELER;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_2;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 spell per circle */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Can cast +1 spells per circle.");
+  perk->toggleable = false;
 }
 
 /* Inquisitor Helper Functions - Judgment & Spellcasting Tree Tier 1 */
@@ -24859,6 +25023,154 @@ int get_summoner_extended_spell_knowledge_bonus_spells(struct char_data *ch, int
     return 1;
 
   return 0;
+}
+
+/* ===== ARCANE CHANNELER TREE - TIER 3 HELPER FUNCTIONS ===== */
+
+bool has_summoner_spell_focus_conjuration_3(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_SPELL_FOCUS_CONJURATION_3);
+}
+
+int get_summoner_spell_focus_conjuration_3_bonus(struct char_data *ch)
+{
+  if (!has_summoner_spell_focus_conjuration_3(ch))
+    return 0;
+
+  return 2; /* +2 DC to conjuration */
+}
+
+bool has_summoner_spell_focus_transmutation(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_SPELL_FOCUS_TRANSMUTATION);
+}
+
+int get_summoner_spell_focus_transmutation_dc_bonus(struct char_data *ch)
+{
+  if (!has_summoner_spell_focus_transmutation(ch))
+    return 0;
+
+  return 3; /* +3 DC to transmutation */
+}
+
+int get_summoner_transmutation_caster_level_bonus(struct char_data *ch)
+{
+  if (!has_summoner_spell_focus_transmutation(ch))
+    return 0;
+
+  return 1; /* +1 caster level for transmutation */
+}
+
+bool has_summoner_arcane_supremacy(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ARCANE_SUPREMACY);
+}
+
+int get_summoner_arcane_supremacy_dc_bonus(struct char_data *ch)
+{
+  if (!has_summoner_arcane_supremacy(ch))
+    return 0;
+
+  return 1; /* +1 to all spell DCs */
+}
+
+int get_summoner_arcane_supremacy_concentration_bonus(struct char_data *ch)
+{
+  if (!has_summoner_arcane_supremacy(ch))
+    return 0;
+
+  return 2; /* +2 to concentration checks */
+}
+
+int get_summoner_spell_penetration_3_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  if (has_perk(ch, PERK_SUMMONER_SPELL_PENETRATION_3))
+    return 5; /* +5 additional SR */
+
+  return 0;
+}
+
+bool has_summoner_extended_spell_knowledge_2(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_2);
+}
+
+bool has_summoner_extend_spell(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_EXTEND_SPELL);
+}
+
+/* ===== ARCANE CHANNELER TREE - TIER 4 HELPER FUNCTIONS ===== */
+
+bool has_summoner_master_of_conjuration(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_MASTER_OF_CONJURATION);
+}
+
+int get_summoner_master_of_conjuration_dc_bonus(struct char_data *ch)
+{
+  if (!has_summoner_master_of_conjuration(ch))
+    return 0;
+
+  return 3; /* +3 DC to conjuration */
+}
+
+int get_summoner_master_of_conjuration_caster_level_bonus(struct char_data *ch)
+{
+  if (!has_summoner_master_of_conjuration(ch))
+    return 0;
+
+  return 2; /* +2 caster level for conjuration */
+}
+
+bool has_summoner_archmages_insight(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_ARCHMAGES_INSIGHT);
+}
+
+int get_summoner_archmages_insight_dc_bonus(struct char_data *ch)
+{
+  if (!has_summoner_archmages_insight(ch))
+    return 0;
+
+  return 2; /* +2 to all spell DCs */
+}
+
+int get_summoner_archmages_insight_concentration_bonus(struct char_data *ch)
+{
+  if (!has_summoner_archmages_insight(ch))
+    return 0;
+
+  return 3; /* +3 to concentration checks */
+}
+
+bool has_summoner_epic_spellcasting(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_EPIC_SPELLCASTING);
+}
+
+int get_summoner_epic_spellcasting_caster_level_bonus(struct char_data *ch)
+{
+  if (!has_summoner_epic_spellcasting(ch))
+    return 0;
+
+  return 1; /* +1 caster level to all spells */
+}
+
+int get_summoner_epic_spellcasting_charisma_bonus(struct char_data *ch)
+{
+  if (!has_summoner_epic_spellcasting(ch))
+    return 0;
+
+  return 3; /* +3 effective Charisma */
+}
+
+bool has_summoner_spell_weaver(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_SUMMONER_SPELL_WEAVER);
 }
 
 int class_to_perk_class(int class_type, int which_perk)

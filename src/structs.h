@@ -4383,6 +4383,20 @@
 #define PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_1 1648
 #define PERK_SUMMONER_EMPOWER_SPELL 1649
 
+/* TREE 3: ARCANE CHANNELER - Tier 3 (1650-1655) */
+#define PERK_SUMMONER_SPELL_FOCUS_CONJURATION_3 1650
+#define PERK_SUMMONER_SPELL_FOCUS_TRANSMUTATION 1651
+#define PERK_SUMMONER_ARCANE_SUPREMACY 1652
+#define PERK_SUMMONER_SPELL_PENETRATION_3 1653
+#define PERK_SUMMONER_EXTENDED_SPELL_KNOWLEDGE_2 1654
+#define PERK_SUMMONER_EXTEND_SPELL 1655
+
+/* TREE 3: ARCANE CHANNELER - Tier 4 (1656-1659) */
+#define PERK_SUMMONER_MASTER_OF_CONJURATION 1656
+#define PERK_SUMMONER_ARCHMAGES_INSIGHT 1657
+#define PERK_SUMMONER_EPIC_SPELLCASTING 1658
+#define PERK_SUMMONER_SPELL_WEAVER 1659
+
 /* ============================================================================
  * WARLOCK PERKS (1700-1799)
  * ============================================================================ */
@@ -4397,7 +4411,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1640
+#define NUM_PERKS 1660
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

@@ -447,6 +447,8 @@ int compute_charisma_bonus(struct char_data *ch)
   if (!IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
   {
     bonus += get_summoner_charisma_enhancement_2_bonus(ch);
+    /* Epic Spellcasting adds +3 effective Charisma */
+    bonus += get_summoner_epic_spellcasting_charisma_bonus(ch);
   }
 
   return bonus;

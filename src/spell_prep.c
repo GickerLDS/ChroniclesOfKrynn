@@ -2926,6 +2926,18 @@ int compute_slots_by_circle(struct char_data *ch, int class, int circle)
     {
       spell_slots += get_summoner_extended_spell_knowledge_bonus_spells(ch, circle);
     }
+    /* Arcane Channeler Tree - Extended Spell Knowledge II (bonus spells for circles 4-6) */
+    if (circle >= 4 && circle <= 6 && !IS_NPC(ch))
+    {
+      if (has_summoner_extended_spell_knowledge_2(ch))
+        spell_slots += 1;
+    }
+    /* Arcane Channeler Tree - Spell Weaver (bonus spell for all circles) */
+    if (circle >= 1 && !IS_NPC(ch))
+    {
+      if (has_summoner_spell_weaver(ch))
+        spell_slots += 1;
+    }
     break;
   case CLASS_INQUISITOR:
     spell_slots += spell_bonus[GET_WIS(ch)][circle];

@@ -145,6 +145,14 @@ bool concentration_check(struct char_data *ch, int spellnum)
   if (has_inquisitor_swift_spellcaster(ch))
     concentration_dc -= 2;
 
+  /* Summoner Arcane Channeler Tree: Arcane Supremacy perk (+2 to concentration checks) */
+  if (get_summoner_arcane_supremacy_concentration_bonus(ch) > 0)
+    concentration_dc -= get_summoner_arcane_supremacy_concentration_bonus(ch);
+
+  /* Summoner Arcane Channeler Tree: Archmage's Insight perk (+3 to concentration checks) */
+  if (get_summoner_archmages_insight_concentration_bonus(ch) > 0)
+    concentration_dc -= get_summoner_archmages_insight_concentration_bonus(ch);
+
   if (CASTING_CLASS(ch) != CLASS_ALCHEMIST)
   {
     if (spellnum != SPELL_CURE_DEAFNESS && AFF_FLAGGED(ch, AFF_DEAF) && dice(1, 5) == 1)
@@ -1860,16 +1868,41 @@ void finishCasting(struct char_data *ch)
       send_to_char(ch, "\tC[Your spell manifests with greater power!]\tn\r\n");
     }
 
-    /* Summoner Spell Focus: Abjuration caster level bonus (+1 per rank for Abjuration spells) */
-    int cast_level = (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch);
-    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && spellnum > 0 && spellnum < NUM_SPELLS &&
-        spell_info[spellnum].schoolOfMagic == ABJURATION)
+    /* Summoner Extend Spell: 10% chance to extend spells */
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER &&
+        has_summoner_extend_spell(ch) && !IS_SET(final_metamagic, METAMAGIC_EXTEND) &&
+        can_spell_be_extended(spellnum) && rand_number(1, 100) <= 10)
     {
-      int abjuration_bonus = get_summoner_abjuration_caster_level_bonus(ch);
-      if (abjuration_bonus > 0)
+      SET_BIT(final_metamagic, METAMAGIC_EXTEND);
+      send_to_char(ch, "\tC[Your spell persists longer than expected!]\tn\r\n");
+    }
+
+    /* Summoner Arcane Channeler Tree - caster level bonuses */
+    int cast_level = (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch);
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && spellnum > 0 && spellnum < NUM_SPELLS)
+    {
+      int school = spell_info[spellnum].schoolOfMagic;
+      
+      /* Spell Focus: Abjuration (+1 caster level for Abjuration spells) */
+      if (school == ABJURATION)
       {
-        cast_level += abjuration_bonus;
+        cast_level += get_summoner_abjuration_caster_level_bonus(ch);
       }
+      
+      /* Spell Focus: Transmutation (+1 caster level for Transmutation spells) */
+      if (school == TRANSMUTATION)
+      {
+        cast_level += get_summoner_transmutation_caster_level_bonus(ch);
+      }
+      
+      /* Master of Conjuration (+2 caster level for Conjuration spells) */
+      if (school == CONJURATION)
+      {
+        cast_level += get_summoner_master_of_conjuration_caster_level_bonus(ch);
+      }
+      
+      /* Epic Spellcasting (+1 caster level to all spells) */
+      cast_level += get_summoner_epic_spellcasting_caster_level_bonus(ch);
     }
 
     call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic,

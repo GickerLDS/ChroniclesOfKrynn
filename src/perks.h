@@ -95,6 +95,31 @@ bool has_summoner_empower_spell(struct char_data *ch);
 int get_summoner_abjuration_caster_level_bonus(struct char_data *ch);
 int get_summoner_extended_spell_knowledge_bonus_spells(struct char_data *ch, int spell_level);
 
+/* Summoner helper functions - Arcane Channeler Tree Tier 3 */
+bool has_summoner_spell_focus_conjuration_3(struct char_data *ch);
+int get_summoner_spell_focus_conjuration_3_bonus(struct char_data *ch);
+bool has_summoner_spell_focus_transmutation(struct char_data *ch);
+int get_summoner_spell_focus_transmutation_dc_bonus(struct char_data *ch);
+int get_summoner_transmutation_caster_level_bonus(struct char_data *ch);
+bool has_summoner_arcane_supremacy(struct char_data *ch);
+int get_summoner_arcane_supremacy_dc_bonus(struct char_data *ch);
+int get_summoner_arcane_supremacy_concentration_bonus(struct char_data *ch);
+int get_summoner_spell_penetration_3_bonus(struct char_data *ch);
+bool has_summoner_extended_spell_knowledge_2(struct char_data *ch);
+bool has_summoner_extend_spell(struct char_data *ch);
+
+/* Summoner helper functions - Arcane Channeler Tree Tier 4 */
+bool has_summoner_master_of_conjuration(struct char_data *ch);
+int get_summoner_master_of_conjuration_dc_bonus(struct char_data *ch);
+int get_summoner_master_of_conjuration_caster_level_bonus(struct char_data *ch);
+bool has_summoner_archmages_insight(struct char_data *ch);
+int get_summoner_archmages_insight_dc_bonus(struct char_data *ch);
+int get_summoner_archmages_insight_concentration_bonus(struct char_data *ch);
+bool has_summoner_epic_spellcasting(struct char_data *ch);
+int get_summoner_epic_spellcasting_caster_level_bonus(struct char_data *ch);
+int get_summoner_epic_spellcasting_charisma_bonus(struct char_data *ch);
+bool has_summoner_spell_weaver(struct char_data *ch);
+
 /* Inquisitor helper functions - Judgment & Spellcasting Tree Tier 1 */
 int get_inquisitor_empowered_judgment_bonus(struct char_data *ch);
 bool can_inquisitor_dual_judgment(struct char_data *ch);

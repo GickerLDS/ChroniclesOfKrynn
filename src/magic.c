@@ -777,6 +777,8 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
   if (ch && school == CONJURATION)
   {
     challenge += get_summoner_spell_focus_conjuration_dc_bonus(ch);
+    challenge += get_summoner_spell_focus_conjuration_3_bonus(ch);
+    challenge += get_summoner_master_of_conjuration_dc_bonus(ch);
   }
 
   /* Summoner Arcane Channeler Tree - Spell Focus: Abjuration */
@@ -785,11 +787,29 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     challenge += get_summoner_spell_focus_abjuration_dc_bonus(ch);
   }
 
+  /* Summoner Arcane Channeler Tree - Spell Focus: Transmutation */
+  if (ch && school == TRANSMUTATION)
+  {
+    challenge += get_summoner_spell_focus_transmutation_dc_bonus(ch);
+  }
+
   /* Summoner Arcane Channeler Tree - Charisma Enhancement affects spell DCs */
   if (ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
   {
     challenge += get_summoner_charisma_enhancement(ch);
     challenge += get_summoner_charisma_enhancement_2_bonus(ch);
+  }
+
+  /* Summoner Arcane Channeler Tree - Arcane Supremacy adds +1 to all spell DCs */
+  if (ch)
+  {
+    challenge += get_summoner_arcane_supremacy_dc_bonus(ch);
+  }
+
+  /* Summoner Arcane Channeler Tree - Archmage's Insight adds +2 to all spell DCs */
+  if (ch)
+  {
+    challenge += get_summoner_archmages_insight_dc_bonus(ch);
   }
 
   /* Archmage of Control adds +5 DC to control spells (charm, confuse, daze, sleep) */
