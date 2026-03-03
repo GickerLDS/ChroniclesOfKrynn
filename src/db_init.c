@@ -134,6 +134,7 @@ void init_core_player_tables(void)
                                 "intel INT NOT NULL DEFAULT 0, "
                                 "wis INT NOT NULL, "
                                 "cha INT NOT NULL, "
+                                "purge_mob_timer INT NOT NULL DEFAULT 0, "
                                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
                                 "INDEX idx_pet_owner (owner_name)"
                                 ")";
@@ -142,6 +143,26 @@ void init_core_player_tables(void)
   {
     log("SYSERR: Failed to create pet_data table: %s", mysql_error(conn));
     return;
+  }
+
+  /* Check if purge_mob_timer field exists, add if not */
+  const char *check_purge_timer = "SHOW COLUMNS FROM pet_data LIKE 'purge_mob_timer'";
+  if (mysql_query_safe(conn, check_purge_timer) == 0)
+  {
+    MYSQL_RES *result = mysql_store_result(conn);
+    if (!mysql_num_rows(result))
+    {
+      const char *add_purge_timer = "ALTER TABLE pet_data ADD COLUMN purge_mob_timer INT NOT NULL DEFAULT 0";
+      if (mysql_query_safe(conn, add_purge_timer))
+      {
+        log("SYSERR: Failed to add purge_mob_timer column to pet_data: %s", mysql_error(conn));
+      }
+      else
+      {
+        log("INFO: Successfully added purge_mob_timer column to pet_data table");
+      }
+    }
+    mysql_free_result(result);
   }
 
   /* player_data - Core player character information */

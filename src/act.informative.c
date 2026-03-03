@@ -23,6 +23,7 @@
 #include "constants.h"
 #include "dg_scripts.h"
 #include "mud_event.h"
+#include "dg_event.h"
 #include "mail.h" /**< For the has_mail function */
 #include "act.h"
 #include "class.h"
@@ -221,7 +222,7 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
   {
     if (can_dam_be_resisted(i + 1))
     {
-      send_to_char(ch, "     %-15s: %-4d%% (%-2d)         ", damtype_display[i + 1],
+      send_to_char(ch, "     %-18s: %-4d%% (%-2d)         ", damtype_display[i + 1],
                    compute_damtype_reduction(tch, i + 1, NULL, TYPE_UNDEFINED),
                    compute_energy_absorb(tch, i + 1));
       dcount++;
@@ -229,6 +230,7 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
         send_to_char(ch, "\r\n");
     }
   }
+  send_to_char(ch, "\r\n");
 
   /* Show mob feats if NPC */
   if (IS_NPC(tch))
@@ -395,6 +397,27 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
 
     if (!found_effects)
       send_to_char(ch, "  No magical auras detected.\r\n");
+  }
+
+  /* Show ePURGEMOB timer if the target is the player's charmed creature */
+  if (IS_NPC(tch) && AFF_FLAGGED(tch, AFF_CHARM) && tch->master == ch)
+  {
+    struct mud_event_data *pMudEvent = char_has_mud_event(tch, ePURGEMOB);
+    if (pMudEvent)
+    {
+      long time_remaining = event_time(pMudEvent->pEvent);
+      if (time_remaining > 0)
+      {
+        long total_seconds = time_remaining / PASSES_PER_SEC;
+        long minutes = total_seconds / 60;
+        long seconds = total_seconds % 60;
+        
+        text_line(ch, "\tYSummon Duration\tC", 80, '-', '-');
+        send_to_char(ch, "  Time Remaining: %ld minute%s and %ld second%s\r\n", 
+                     minutes, (minutes != 1) ? "s" : "",
+                     seconds, (seconds != 1) ? "s" : "");
+      }
+    }
   }
 }
 
@@ -2932,7 +2955,7 @@ void perform_resistances(struct char_data *ch, struct char_data *k)
   {
     if (can_dam_be_resisted(i + 1))
     {
-      send_to_char(ch, "     %-15s: %-4d%% (%-2d)         ", damtype_display[i + 1],
+      send_to_char(ch, "     %-18s: %-4d%% (%-2d)         ", damtype_display[i + 1],
                    compute_damtype_reduction(k, i + 1, NULL, TYPE_UNDEFINED),
                    compute_energy_absorb(k, i + 1));
       dcount++;

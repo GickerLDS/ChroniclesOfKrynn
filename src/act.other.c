@@ -5755,6 +5755,14 @@ ACMD(do_lore)
   send_to_char(ch, "You attempt to utilize your vast knowledge of lore...\r\n");
   USE_STANDARD_ACTION(ch);
 
+  /* If the target is the player's charmed creature, skip skill check */
+  if (tch && IS_NPC(tch) && AFF_FLAGGED(tch, AFF_CHARM) && tch->master == ch)
+  {
+    send_to_char(ch, "As your loyal companion, you know everything about %s.\r\n", GET_NAME(tch));
+    lore_id_vict(ch, tch);
+    return;
+  }
+
   if (!can_lore_target(ch, tch, tobj, FALSE))
   {
     return; /* message sent in can_lore_target() */

@@ -28,6 +28,7 @@
 #include "spells.h"
 #include "clan.h"
 #include "mud_event.h"
+#include "dg_event.h"
 #include "craft.h" // crafting (auto craft quest inits)
 #include "spell_prep.h"
 #include "alchemy.h"
@@ -5398,11 +5399,11 @@ void save_char_pets(struct char_data *ch)
       continue;
     snprintf(query2, sizeof(query2),
              "INSERT INTO pet_data (pet_data_id, owner_name, pet_name, pet_sdesc, pet_ldesc, "
-             "pet_ddesc, vnum, level, hp, max_hp, str, con, dex, ac, wis, cha) VALUES(NULL,");
+             "pet_ddesc, vnum, level, hp, max_hp, str, con, dex, ac, wis, cha, purge_mob_timer) VALUES(NULL,");
 
     end2 = stpcpy(query2,
                   "INSERT INTO pet_data (pet_data_id, owner_name, pet_name, pet_sdesc, pet_ldesc, "
-                  "pet_ddesc, vnum, level, hp, max_hp, str, con, dex, ac, wis, cha) VALUES(NULL,");
+                  "pet_ddesc, vnum, level, hp, max_hp, str, con, dex, ac, wis, cha, purge_mob_timer) VALUES(NULL,");
     *end2++ = '\'';
     end2 += mysql_real_escape_string(conn, end2, GET_NAME(ch), strlen(GET_NAME(ch)));
     *end2++ = '\'';
@@ -5462,10 +5463,20 @@ void save_char_pets(struct char_data *ch)
 
     *end2++ = '\0';
 
-    snprintf(query3, sizeof(query3), "'%d','%d','%d','%d','%d','%d','%d','%d','%d','%d')",
+    /* Get remaining timer from ePURGEMOB event if it exists */
+    long purge_timer = 0;
+    struct mud_event_data *pMudEvent = char_has_mud_event(tch, ePURGEMOB);
+    if (pMudEvent && pMudEvent->pEvent)
+    {
+      purge_timer = event_time(pMudEvent->pEvent);
+      if (purge_timer < 0)
+        purge_timer = 0;  /* Ensure non-negative */
+    }
+
+    snprintf(query3, sizeof(query3), "'%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%ld')",
              GET_MOB_VNUM(tch), GET_LEVEL(tch), GET_HIT(tch), GET_REAL_MAX_HIT(tch),
              GET_REAL_STR(tch), GET_REAL_CON(tch), GET_REAL_DEX(tch), GET_REAL_AC(tch),
-             GET_REAL_WIS(tch), GET_REAL_CHA(tch));
+             GET_REAL_WIS(tch), GET_REAL_CHA(tch), purge_timer);
     snprintf(finalQuery, sizeof(finalQuery), "%s%s", query2, query3);
     if (mysql_query(conn, finalQuery))
     {
@@ -5517,7 +5528,7 @@ void load_char_pets(struct char_data *ch)
   }
   snprintf(query, sizeof(query),
            "SELECT vnum, level, hp, max_hp, str, con, dex, ac, intel, wis, cha, pet_name, "
-           "pet_sdesc, pet_ldesc, pet_ddesc, pet_data_id FROM pet_data WHERE owner_name='%s'",
+           "pet_sdesc, pet_ldesc, pet_ddesc, pet_data_id, COALESCE(purge_mob_timer, 0) FROM pet_data WHERE owner_name='%s'",
            escaped_name);
   free(escaped_name);
 
@@ -5607,6 +5618,13 @@ void load_char_pets(struct char_data *ch)
     if (atol(row[15]) > 0)
     {
       pet_idnum = atol(row[15]);
+    }
+    
+    /* Restore ePURGEMOB event if timer was saved */
+    long purge_timer = atol(row[16]);
+    if (purge_timer > 0)
+    {
+      attach_mud_event(new_mud_event(ePURGEMOB, mob, NULL), purge_timer);
     }
     if (MOB_FLAGGED(mob, MOB_EIDOLON))
     {
