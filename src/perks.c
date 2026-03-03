@@ -89,6 +89,7 @@ const char *perk_category_names[] = {
     "Summoning Excellence",       /* 47 - PERK_CATEGORY_SUMMONING_EXCELLENCE */
     "Arcane Channeler",           /* 48 - PERK_CATEGORY_ARCANE_CHANNELER */
     "Eldritch Mastery",           /* 49 - PERK_CATEGORY_ELDRITCH_MASTERY */
+    "Pact Bonding",               /* 50 - PERK_CATEGORY_PACT_BONDING */
     "\n"                          /* Terminator */
 };
 /* Forward declarations for perk definition functions */
@@ -5492,6 +5493,150 @@ void define_warlock_perks(void)
   perk->effect_modifier = 0;
   perk->special_description =
       strdup("5% chance to fire an additional Eldritch Blast for free when making an eldritch blast.");
+  perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: PACT BONDING - Tier 1
+   **************************************************************************/
+
+  perk = &perk_list[PERK_WARLOCK_DARK_ONES_BLESSING_1];
+  perk->id = PERK_WARLOCK_DARK_ONES_BLESSING_1;
+  perk->name = strdup("Dark One's Blessing I");
+  perk->description = strdup("Gain temporary HP when you slay enemies.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* ranks determine HP multiplier */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("When you reduce a hostile creature to 0 HP, gain temporary HP. Effect scales with ranks.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_PACT_CONNECTION];
+  perk->id = PERK_WARLOCK_PACT_CONNECTION;
+  perk->name = strdup("Pact Connection");
+  perk->description = strdup("Enhance your spell save DC through patron's blessing.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 spell save DC per rank */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Gain +1 spell save DC per rank from your patron's blessing.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_ELDRITCH_SIGHT_PACT];
+  perk->id = PERK_WARLOCK_ELDRITCH_SIGHT_PACT;
+  perk->name = strdup("Eldritch Sight");
+  perk->description = strdup("Detect magic at will through your patron's eye.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 1;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 60; /* feet of detection per rank */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Detect magic within 60 feet per rank. Can be cast at will.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_DARK_PATRONAGE];
+  perk->id = PERK_WARLOCK_DARK_PATRONAGE;
+  perk->name = strdup("Dark Patronage");
+  perk->description = strdup("Your patron grants you supernatural protection.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 1;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 to saving throws */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Gain +2 to all saving throws from patron's protection.");
+  perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: PACT BONDING - Tier 2
+   **************************************************************************/
+
+  perk = &perk_list[PERK_WARLOCK_DARK_ONES_BLESSING_2];
+  perk->id = PERK_WARLOCK_DARK_ONES_BLESSING_2;
+  perk->name = strdup("Dark One's Blessing II");
+  perk->description = strdup("Increase temporary HP from Dark One's Blessing.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_WARLOCK_DARK_ONES_BLESSING_1;
+  perk->prerequisite_rank = 3;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5; /* +5 temp HP per rank */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Dark One's Blessing grants additional +5 temporary HP per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_DARK_ONES_OWN_LUCK];
+  perk->id = PERK_WARLOCK_DARK_ONES_OWN_LUCK;
+  perk->name = strdup("Dark One's Own Luck");
+  perk->description = strdup("Your patron grants tactical luck in skill checks.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_WARLOCK_DARK_PATRONAGE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* uses per 10 minutes per rank */
+  perk->effect_modifier = 8; /* d8 bonus */
+  perk->special_description =
+      strdup("Once per 10 minutes per rank, add 1d8 to any skill check after rolling.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_FIENDISH_VIGOR];
+  perk->id = PERK_WARLOCK_FIENDISH_VIGOR;
+  perk->name = strdup("Fiendish Vigor");
+  perk->description = strdup("Cast False Life at will for temporary HP.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_DARK_ONES_BLESSING_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 4; /* base: 1d4+4 */
+  perk->effect_modifier = 4;
+  perk->special_description =
+      strdup("Cast False Life at will without expending spell slots (1d4+4 temporary HP).");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_PACT_SPELL_AMPLIFICATION];
+  perk->id = PERK_WARLOCK_PACT_SPELL_AMPLIFICATION;
+  perk->name = strdup("Pact Spell Amplification");
+  perk->description = strdup("Cast warlock spells at higher effective levels.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_PACT_CONNECTION;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 spell levels */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("When casting warlock spells, treat them as +2 levels higher for damage and DCs.");
   perk->toggleable = false;
 }
 
@@ -25599,6 +25744,72 @@ bool has_warlock_eternal_barrage(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
          has_perk(ch, PERK_WARLOCK_ETERNAL_BARRAGE);
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Pact Bonding Tier 1
+ **************************************************************************/
+
+int get_warlock_dark_ones_blessing_1_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_WARLOCK_DARK_ONES_BLESSING_1, CLASS_WARLOCK);
+}
+
+int get_warlock_pact_connection_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_WARLOCK_PACT_CONNECTION, CLASS_WARLOCK);
+}
+
+bool has_warlock_eldritch_sight_pact(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ELDRITCH_SIGHT_PACT);
+}
+
+bool has_warlock_dark_patronage(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_DARK_PATRONAGE);
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Pact Bonding Tier 2
+ **************************************************************************/
+
+int get_warlock_dark_ones_blessing_2_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return (get_perk_rank(ch, PERK_WARLOCK_DARK_ONES_BLESSING_2, CLASS_WARLOCK) * 5);
+}
+
+int get_warlock_dark_ones_own_luck_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_WARLOCK_DARK_ONES_OWN_LUCK, CLASS_WARLOCK);
+}
+
+bool has_warlock_fiendish_vigor(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_FIENDISH_VIGOR);
+}
+
+int get_warlock_pact_spell_amplification_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return has_perk(ch, PERK_WARLOCK_PACT_SPELL_AMPLIFICATION) ? 2 : 0;
 }
 
 int class_to_perk_class(int class_type, int which_perk)

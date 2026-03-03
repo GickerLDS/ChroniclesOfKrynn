@@ -246,6 +246,18 @@ int get_inquisitor_supremacy_bonus(struct char_data *ch);
 int perk_daily_uses_remaining(struct char_data *ch, event_id event, int uses_per_day);
 void perk_start_daily_use_cooldown(struct char_data *ch, event_id event, int uses_per_day);
 
+/* Warlock helper functions - Pact Bonding Tree Tier 1 */
+int get_warlock_dark_ones_blessing_1_bonus(struct char_data *ch);
+int get_warlock_pact_connection_bonus(struct char_data *ch);
+bool has_warlock_eldritch_sight_pact(struct char_data *ch);
+bool has_warlock_dark_patronage(struct char_data *ch);
+
+/* Warlock helper functions - Pact Bonding Tree Tier 2 */
+int get_warlock_dark_ones_blessing_2_bonus(struct char_data *ch);
+int get_warlock_dark_ones_own_luck_bonus(struct char_data *ch);
+bool has_warlock_fiendish_vigor(struct char_data *ch);
+int get_warlock_pact_spell_amplification_bonus(struct char_data *ch);
+
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
 int get_class_perks(int class_id, int *perk_ids, int max_perks);

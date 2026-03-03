@@ -497,6 +497,8 @@ struct mud_event_list mud_event_index[] = {
     {"Perfect Adaptation Cooldown", event_daily_use_cooldown, EVENT_CHAR,
      "You can use Perfect Adaptation again.", NULL, FEAT_UNDEFINED, 0},
     {"Summon Solar", event_countdown, EVENT_CHAR, "You are now able to cast Summon Solar again.", NULL, FEAT_UNDEFINED, 0},
+    {"Dark One's Own Luck", event_daily_use_cooldown, EVENT_CHAR,
+     "Your patron's guidance is available again.", "One of your Dark One's Own Luck uses has recovered.", FEAT_UNDEFINED, 0},
 };
 
 /* Expose registry count for validation */

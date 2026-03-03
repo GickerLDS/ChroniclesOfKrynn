@@ -13747,6 +13747,77 @@ EVENTFUNC(event_device_repair)
   return 0;
 }
 
+/* Warlock Eldritch Sight perk command: detect magic at will */
+ACMD(do_eldritch_sight_perk)
+{
+  PREREQ_NOT_NPC();
+
+  if (!has_warlock_eldritch_sight_pact(ch))
+  {
+    send_to_char(ch, "You have not developed Eldritch Sight.\r\n");
+    return;
+  }
+
+  call_magic(ch, ch, NULL, SPELL_DETECT_MAGIC, 0, GET_LEVEL(ch), CAST_INNATE);
+  send_to_char(ch, "Your patron grants you the sight to perceive the auras of magic.\r\n");
+  act("$n's eyes glow with eldritch light as they perceive the weave of magic.", TRUE, ch, 0, 0,
+      TO_ROOM);
+}
+
+/* Warlock Dark One's Own Luck perk command: add 1d8 to skill checks (10 minute cooldown per use) */
+ACMD(do_dark_ones_own_luck_perk)
+{
+  int rank = 0;
+  int uses = 0;
+
+  PREREQ_NOT_NPC();
+
+  rank = get_warlock_dark_ones_own_luck_bonus(ch);
+  if (rank <= 0)
+  {
+    send_to_char(ch, "You have not gained Dark One's Own Luck.\r\n");
+    return;
+  }
+
+  uses = perk_daily_uses_remaining(ch, eDARK_ONES_LUCK, rank);
+  if (uses <= 0)
+  {
+    send_to_char(ch, "You have exhausted your patron's guidance for now. Try again later.\r\n");
+    return;
+  }
+
+  /* Store a temporary perk state that can be checked during skill checks */
+  ch->char_specials.perk_luck_active = 1;
+  perk_start_daily_use_cooldown(ch, eDARK_ONES_LUCK, rank);
+
+  send_to_char(ch, "\tY[Dark One's Own Luck: Your next skill check will gain +1d8!]\tn\r\n");
+  act("$n's eyes glow momentarily as $s patron grants tactical luck.", TRUE, ch, 0, 0, TO_ROOM);
+}
+
+/* Warlock Fiendish Vigor perk command: cast False Life at will */
+ACMD(do_fiendish_vigor_perk)
+{
+  int temp_hp = 0;
+
+  PREREQ_NOT_NPC();
+
+  if (!has_warlock_fiendish_vigor(ch))
+  {
+    send_to_char(ch, "You have not mastered Fiendish Vigor.\r\n");
+    return;
+  }
+
+  /* Calculate temporary HP: 1d4 + 4 */
+  temp_hp = dice(1, 4) + 4;
+
+  /* Award temporary HP (capped at max HP + 50) */
+  GET_HIT(ch) = MIN(GET_MAX_HIT(ch) + 50, GET_HIT(ch) + temp_hp);
+
+  send_to_char(ch, "\tY[Fiendish Vigor: You gain +%d temporary HP!]\tn\r\n", temp_hp);
+  act("$n's body writhes with dark vitality as false life animates $m.", TRUE, ch, 0, 0,
+      TO_ROOM);
+}
+
 /* undefines */
 #undef DEBUG_MODE
 

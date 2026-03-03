@@ -253,6 +253,7 @@ typedef enum
   eLEGENDARY_RESILIENCE_USED, /* Inquisitor Legendary Resilience auto-save cooldown */
   ePERFECT_ADAPTATION_COOLDOWN, /* Inquisitor Perfect Adaptation 5-minute cooldown */
   eSUMMONSOLAR,                 // summon solar spell
+  eDARK_ONES_LUCK,              // warlock pact bonding Dark One's Own Luck cooldown
 } event_id;
 
 /* probably a smart place to mention to not forget to update:

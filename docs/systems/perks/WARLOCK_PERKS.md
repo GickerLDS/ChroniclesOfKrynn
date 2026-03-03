@@ -175,7 +175,7 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 4. **Dark Patronage**
    - Cost: 1 point
    - Max Rank: 1
-   - Effect: Gain advantage on saving throws against death once per day
+   - Effect: Gain +2 to all saving throws
    - Prerequisite: None
    - Notes: Represents patron's interest in keeping you alive
 
@@ -186,14 +186,14 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 5. **Dark One's Blessing II**
    - Cost: 2 points per rank
    - Max Rank: 2
-   - Effect: Additional +2 temporary HP per rank when Dark One's Blessing triggers
+   - Effect: Additional +5 temporary HP per rank when Dark One's Blessing triggers
    - Prerequisite: Dark One's Blessing I (max)
    - Notes: Total of +7 temporary HP per kill at maximum
 
 6. **Dark One's Own Luck**
    - Cost: 2 points per rank
    - Max Rank: 2
-   - Effect: Once per short rest per rank, add d8 to any ability check or saving throw after rolling
+   - Effect: Once per 10 minutes per rank, add d8 to a skill check (including crafting ot harvesting checks). Needs the creation of an ACMD command
    - Prerequisite: Dark Patronage
    - Notes: Tactical luck manipulation
 
@@ -207,7 +207,7 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 8. **Pact Spell Amplification**
    - Cost: 2 points
    - Max Rank: 1
-   - Effect: +1 spell slot level for spellcasting (1st-level slots become 2nd-level for casting purposes)
+   - Effect: +2 to spell level when casting warlock spells
    - Prerequisite: Pact Connection (2 ranks)
    - Notes: Allows upcast spells without additional resource cost
 
@@ -218,30 +218,30 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 9. **Fiendish Resilience**
    - Cost: 3 points per rank
    - Max Rank: 2
-   - Effect: Choose one damage type after each short rest; gain resistance to that type per rank
+   - Effect: Every ten minutes specify a damage type. Gain 25% resistance per rank for 1 minute. Need a ACMD command, and put code in compute_damtype_resistance
    - Prerequisite: Fiendish Vigor, Dark One's Blessing II (1 rank)
    - Notes: Flexible damage mitigation, stacks with other resistances
 
 10. **Pact Soul**
     - Cost: 4 points
     - Max Rank: 1
-    - Effect: Charisma-based saving throws +3, patron grants +2 to all CHA checks
+    - Effect: +2 to charisma bonus
     - Prerequisite: Pact Connection (max), Dark Patronage
     - Notes: Comprehensive negotiation/manipulation enhancement
 
 11. **Eldritch Endurance**
     - Cost: 3 points per rank
     - Max Rank: 2
-    - Effect: Gain Constitution-like benefit for spell checks; +1 spell concentration per rank
+    - Effect: +2 to concentration skill per rank
     - Prerequisite: Dark One's Blessing II (max)
     - Notes: Representation of patron strengthening your body
 
-12. **Patron's Question**
+12. **Dark Revelation**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: Once per day, ask your patron a question about previous events (DM provides answers); patron may demand service
+    - Effect: Your patron grants you insight into your enemies. When examining (using lore on) a creature, reveal its damage resistances, vulnerabilities, and immunities. Once per combat, gain +2 to hit and +2d6 damage against a target whose weaknesses you've identified.
     - Prerequisite: Eldritch Sight (max)
-    - Notes: Utility divination/narrative ability
+    - Notes: Strategic combat ability, patron provides knowledge of enemy weaknesses
 
 ---
 
@@ -257,21 +257,21 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 14. **Hurl Through Hell**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Once per long rest, transport enemy through hellish planes (deals 5d10 psychic damage on return or DC 18 CHA save)
+    - Effect: Ability to cast at-will a spell that sends the creature to the abyss and back in an instant, dealing 5d10+level mental damage.
     - Prerequisite: Fiendish Resilience (1 rank), Pact Spell Amplification
     - Notes: Powerful control/damage ability, represents patron's domain
 
 15. **Planar Anchor**
     - Cost: 6 points
     - Max Rank: 1
-    - Effect: Cannot be involuntarily teleported; allies within 30 feet gain advantage on saves vs teleportation
+    - Effect: Gain a new spell that protects from being summoned or teleported to usable at-will on self or others. Add this spell to the revoke list.
     - Prerequisite: Hurl Through Hell, One with Patron
     - Notes: Represents anchoring to patron's realm
 
 16. **Dark Master's Will**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Once per short rest, repeat a failed CHA saving throw; patron may reward with +1d6 temporary HP
+    - Effect: Once per 5 minutes, when a will save fails, automatically succeed.
     - Prerequisite: Dark One's Own Luck (max), Pact Soul
     - Notes: Ultimate save manipulation from patron intervention
 

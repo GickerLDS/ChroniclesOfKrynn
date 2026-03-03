@@ -11713,6 +11713,14 @@ int get_spell_dc_bonus(struct char_data *ch)
   if (affected_by_spell(ch, SKILL_HOLY_AVENGER))
     dc_bonus += 2;
 
+  /* Warlock Pact Connection perk bonus */
+  if (CLASS_LEVEL(ch, CLASS_WARLOCK) > 0)
+  {
+    int pact_bonus = get_warlock_pact_connection_bonus(ch);
+    if (pact_bonus > 0)
+      dc_bonus += pact_bonus;
+  }
+
   return dc_bonus;
 }
 

@@ -422,6 +422,10 @@ int compute_mag_saves(struct char_data *vict, int type, int modifier)
       saves += divine_grace_bonus;
   }
 
+  /* Warlock Dark Patronage perk bonus - +2 to all saving throws */
+  if (!IS_NPC(vict) && CLASS_LEVEL(vict, CLASS_WARLOCK) > 0 && has_warlock_dark_patronage(vict))
+    saves += 2;
+
   /* determine base, add/minus bonus/penalty and return */
   if (IS_NPC(vict))
     saves += (GET_LEVEL(vict) / 3) + 1;

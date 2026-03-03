@@ -3195,6 +3195,7 @@
 
 /* Warlock Perk Categories */
 #define PERK_CATEGORY_ELDRITCH_MASTERY 49
+#define PERK_CATEGORY_PACT_BONDING 50
 
 
 /* Perk IDs - organized by class */
@@ -4427,6 +4428,18 @@
 #define PERK_WARLOCK_REALITY_RENDING_BLAST 1714
 #define PERK_WARLOCK_ETERNAL_BARRAGE 1715
 
+/* TREE 2: PACT BONDING - Tier 1 (1716-1719) */
+#define PERK_WARLOCK_DARK_ONES_BLESSING_1 1716
+#define PERK_WARLOCK_PACT_CONNECTION 1717
+#define PERK_WARLOCK_ELDRITCH_SIGHT_PACT 1718
+#define PERK_WARLOCK_DARK_PATRONAGE 1719
+
+/* TREE 2: PACT BONDING - Tier 2 (1720-1723) */
+#define PERK_WARLOCK_DARK_ONES_BLESSING_2 1720
+#define PERK_WARLOCK_DARK_ONES_OWN_LUCK 1721
+#define PERK_WARLOCK_FIENDISH_VIGOR 1722
+#define PERK_WARLOCK_PACT_SPELL_AMPLIFICATION 1723
+
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
  * ============================================================================ */
@@ -4436,7 +4449,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1716
+#define NUM_PERKS 1724
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -6611,6 +6624,8 @@ struct char_special_data
 
   // warlock blast essence cooldowns
   int eldritch_blast_cooldowns[NUM_ELDRITCH_BLAST_COOLDOWNS];
+
+  bool perk_luck_active; // temporary flag for Dark One's Own Luck perk bonus
 
   bool is_charmie;
   int sage_mob_vnum;

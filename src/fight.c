@@ -6529,6 +6529,27 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
                        "follower will have increased stats.\r\n");
     }
 
+    /* Warlock Dark One's Blessing I/II: Gain temporary HP when reducing enemy to 0 HP */
+    if (ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 && victim && !IS_NPC(victim))
+    {
+      int blessing_rank_1 = get_warlock_dark_ones_blessing_1_bonus(ch);
+      int blessing_rank_2 = get_warlock_dark_ones_blessing_2_bonus(ch);
+      
+      if (blessing_rank_1 > 0 || blessing_rank_2 > 0)
+      {
+        int temp_hp = (GET_CHA_BONUS(ch) + (GET_WARLOCK_LEVEL(ch) / 2)) * blessing_rank_1;
+        temp_hp += blessing_rank_2;
+        
+        if (temp_hp > 0)
+        {
+          /* Award temporary HP (capped at max HP + 50) */
+          GET_HIT(ch) = MIN(GET_MAX_HIT(ch) + 50, GET_HIT(ch) + temp_hp);
+          
+          send_to_char(ch, "\tY[Dark One's Blessing grants you +%d temporary HP!]\tn\r\n", temp_hp);
+        }
+      }
+    }
+
     return (dam_killed_vict(ch, victim));
   }
 
