@@ -3029,6 +3029,14 @@ ASPELL(eldritch_blast)
                    CAST_INNATE);
         mag_affects(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, -1, CAST_INNATE,
                     0);
+        
+        /* Devastating Blast: critical hits deal 3d6 bonus damage instead of 2d6 */
+        if (has_warlock_devastating_blast(ch))
+        {
+          int extra_dam = dice(1, 6);
+          damage(ch, victim, extra_dam, -1, DAM_FORCE, FALSE);
+          send_to_char(ch, "\tR[Devastating Blast tears through reality! +%d damage]\tn\r\n", extra_dam);
+        }
       }
       else
       {
@@ -3049,6 +3057,26 @@ ASPELL(eldritch_blast)
         affect_join(ch, &af, TRUE, FALSE, TRUE, FALSE);
       }
 
+      /* Blast Resilience II: additional stacking energy resistance on hit */
+      if (get_warlock_blast_resilience_2_bonus(ch) > 0)
+      {
+        struct affected_type af;
+        new_affect(&af);
+        af.spell = WARLOCK_ELDRITCH_BLAST;
+        af.duration = 5;
+        af.location = APPLY_RES_ENERGY;
+        af.modifier = get_warlock_blast_resilience_2_bonus(ch);
+        affect_join(ch, &af, FALSE, FALSE, FALSE, FALSE); /* stacks separately */
+      }
+
+      /* Reality-Rending Blast: 10% chance for 2d10 bonus force damage that ignores resistances */
+      if (has_warlock_reality_rending_blast(ch) && rand_number(1, 100) <= 10)
+      {
+        int rend_dam = dice(2, 10);
+        damage(ch, victim, rend_dam, -1, DAM_FORCE, FALSE);
+        send_to_char(ch, "\tM[Reality-Rending Blast tears through the fabric of existence! +%d force damage]\tn\r\n", rend_dam);
+      }
+
       /* Repelling Blast: chance to knock down target */
       if (get_warlock_repelling_blast_knockdown_chance(ch) > 0 && GET_POS(victim) > POS_SITTING &&
           rand_number(1, 100) <= get_warlock_repelling_blast_knockdown_chance(ch))
@@ -3057,6 +3085,14 @@ ASPELL(eldritch_blast)
         act("You are knocked down by $n's repelling blast!", FALSE, ch, 0, victim, TO_VICT);
         act("$N is knocked down by your repelling blast!", FALSE, ch, 0, victim, TO_CHAR);
         act("$N is knocked down by $n's repelling blast!", FALSE, ch, 0, victim, TO_NOTVICT);
+      }
+
+      /* Eternal Barrage: 5% chance to fire an additional Eldritch Blast for free */
+      if (has_warlock_eternal_barrage(ch) && rand_number(1, 100) <= 5)
+      {
+        send_to_char(ch, "\tY[Eternal Barrage unleashes another blast!]\tn\r\n");
+        /* Recursively call eldritch blast on same victim */
+        mag_damage(effective_level, ch, victim, NULL, WARLOCK_ELDRITCH_BLAST, 0, -1, CAST_INNATE);
       }
 
       if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_ELDRITCH_CHAIN)

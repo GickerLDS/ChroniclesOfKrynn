@@ -5350,6 +5350,149 @@ void define_warlock_perks(void)
   perk->special_description =
       strdup("Eldritch Blast gains a 5% knockdown chance per rank.");
   perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 1: ELDRITCH MASTERY - Tier 3
+   **************************************************************************/
+
+  perk = &perk_list[PERK_WARLOCK_AGONIZING_BLAST_3];
+  perk->id = PERK_WARLOCK_AGONIZING_BLAST_3;
+  perk->name = strdup("Agonizing Blast III");
+  perk->description = strdup("Maximum Eldritch Blast damage enhancement.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_AGONIZING_BLAST_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPELL_DAMAGE;
+  perk->effect_value = 3; /* +3 damage */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Eldritch Blast gains +3 additional damage.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_CHAIN_BLAST];
+  perk->id = PERK_WARLOCK_CHAIN_BLAST;
+  perk->name = strdup("Chain Blast");
+  perk->description = strdup("Enhance Eldritch Chain with bonus damage.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_CONE_BLAST;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* +10% damage */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Eldritch Chain gains +10% damage.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_BLAST_RESILIENCE_2];
+  perk->id = PERK_WARLOCK_BLAST_RESILIENCE_2;
+  perk->name = strdup("Blast Resilience II");
+  perk->description = strdup("Enhanced energy resistance from Eldritch Blast hits.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_WARLOCK_BLAST_RESILIENCE_1;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5; /* +5 energy resistance per rank for 5 rounds */
+  perk->effect_modifier = 5;
+  perk->special_description =
+      strdup("On Eldritch Blast hit, gain additional +5 energy resistance per rank for 5 rounds (stacks separately).");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_DEVASTATING_BLAST];
+  perk->id = PERK_WARLOCK_DEVASTATING_BLAST;
+  perk->name = strdup("Devastating Blast");
+  perk->description = strdup("Eldritch Blast critical hits deal enhanced damage.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_AGONIZING_BLAST_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 3; /* 3d6 instead of 2d6 */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Critical hits with Eldritch Blast deal 3d6 bonus damage instead of 2d6.");
+  perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 1: ELDRITCH MASTERY - Tier 4
+   **************************************************************************/
+
+  perk = &perk_list[PERK_WARLOCK_ELDRITCH_ANNIHILATION];
+  perk->id = PERK_WARLOCK_ELDRITCH_ANNIHILATION;
+  perk->name = strdup("Eldritch Annihilation");
+  perk->description = strdup("Ultimate Eldritch Blast damage specialization.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_AGONIZING_BLAST_3;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPELL_DAMAGE;
+  perk->effect_value = 5; /* +5 damage, +10% to AoE forms */
+  perk->effect_modifier = 10;
+  perk->special_description =
+      strdup("Eldritch Blast gains +5 damage, and +10% additional damage with cone or chain forms.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_BLAST_MASTERY];
+  perk->id = PERK_WARLOCK_BLAST_MASTERY;
+  perk->name = strdup("Blast Mastery");
+  perk->description = strdup("Eldritch Blast penetrates magical defenses.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_DEVASTATING_BLAST;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 50; /* 50% resistance ignore */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Eldritch Blast ignores 50% of enemy damage resistance.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_REALITY_RENDING_BLAST];
+  perk->id = PERK_WARLOCK_REALITY_RENDING_BLAST;
+  perk->name = strdup("Reality-Rending Blast");
+  perk->description = strdup("Eldritch Blast can tear reality itself.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 6;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_ELDRITCH_ANNIHILATION;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* 10% proc chance */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("10% chance per Eldritch Blast to deal 2d10 additional force damage that ignores resistances.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_ETERNAL_BARRAGE];
+  perk->id = PERK_WARLOCK_ETERNAL_BARRAGE;
+  perk->name = strdup("Eternal Barrage");
+  perk->description = strdup("Eldritch Blast can trigger additional free blasts.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_ELDRITCH_MASTERY;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_CRITICAL_CONDUIT_2;
+  perk->prerequisite_rank = 2;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5; /* 5% chance */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("5% chance to fire an additional Eldritch Blast for free when making an eldritch blast.");
+  perk->toggleable = false;
 }
 
 /* Define Psionicist Perks */
@@ -25378,6 +25521,84 @@ int get_warlock_repelling_blast_knockdown_chance(struct char_data *ch)
     return 0;
 
   return get_perk_rank(ch, PERK_WARLOCK_REPELLING_BLAST, CLASS_WARLOCK) * 5;
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Eldritch Mastery Tier 3
+ **************************************************************************/
+
+int get_warlock_agonizing_blast_3_damage(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return has_perk(ch, PERK_WARLOCK_AGONIZING_BLAST_3) ? 3 : 0;
+}
+
+bool has_warlock_chain_blast(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_CHAIN_BLAST);
+}
+
+int get_warlock_chain_blast_damage_bonus_pct(struct char_data *ch)
+{
+  if (!has_warlock_chain_blast(ch))
+    return 0;
+
+  return 10;
+}
+
+int get_warlock_blast_resilience_2_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return (get_perk_rank(ch, PERK_WARLOCK_BLAST_RESILIENCE_2, CLASS_WARLOCK) * 5);
+}
+
+bool has_warlock_devastating_blast(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_DEVASTATING_BLAST);
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Eldritch Mastery Tier 4
+ **************************************************************************/
+
+int get_warlock_eldritch_annihilation_damage(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return has_perk(ch, PERK_WARLOCK_ELDRITCH_ANNIHILATION) ? 5 : 0;
+}
+
+int get_warlock_eldritch_annihilation_aoe_bonus_pct(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return has_perk(ch, PERK_WARLOCK_ELDRITCH_ANNIHILATION) ? 10 : 0;
+}
+
+bool has_warlock_blast_mastery(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_BLAST_MASTERY);
+}
+
+bool has_warlock_reality_rending_blast(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_REALITY_RENDING_BLAST);
+}
+
+bool has_warlock_eternal_barrage(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ETERNAL_BARRAGE);
 }
 
 int class_to_perk_class(int class_type, int which_perk)

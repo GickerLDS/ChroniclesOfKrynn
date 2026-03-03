@@ -1690,8 +1690,10 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
     else if (GET_ELDRITCH_ESSENCE(ch) == WARLOCK_BRIMSTONE_BLAST)
       element = DAM_FIRE;
 
-    /* Warlock Eldritch Mastery perks: Agonizing Blast I/II flat damage bonus */
+    /* Warlock Eldritch Mastery perks: Agonizing Blast I/II/III flat damage bonus */
     bonus += get_warlock_agonizing_blast_damage_bonus(ch);
+    bonus += get_warlock_agonizing_blast_3_damage(ch);
+    bonus += get_warlock_eldritch_annihilation_damage(ch);
 
     if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_ELDRITCH_CONE)
     {
@@ -1701,6 +1703,27 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       {
         int cone_bonus = MAX(1, (num_dice * get_warlock_cone_blast_damage_bonus_pct(ch)) / 10);
         bonus += cone_bonus;
+      }
+      /* Warlock Eldritch Mastery perk: Eldritch Annihilation AoE bonus */
+      if (get_warlock_eldritch_annihilation_aoe_bonus_pct(ch) > 0)
+      {
+        int annihilation_bonus = MAX(1, (num_dice * get_warlock_eldritch_annihilation_aoe_bonus_pct(ch)) / 10);
+        bonus += annihilation_bonus;
+      }
+    }
+    else if (GET_ELDRITCH_SHAPE(ch) == WARLOCK_ELDRITCH_CHAIN)
+    {
+      /* Warlock Eldritch Mastery perk: Chain Blast (+10% chain damage, approximated) */
+      if (has_warlock_chain_blast(ch))
+      {
+        int chain_bonus = MAX(1, (num_dice * get_warlock_chain_blast_damage_bonus_pct(ch)) / 10);
+        bonus += chain_bonus;
+      }
+      /* Warlock Eldritch Mastery perk: Eldritch Annihilation AoE bonus */
+      if (get_warlock_eldritch_annihilation_aoe_bonus_pct(ch) > 0)
+      {
+        int annihilation_bonus = MAX(1, (num_dice * get_warlock_eldritch_annihilation_aoe_bonus_pct(ch)) / 10);
+        bonus += annihilation_bonus;
       }
     }
     break;

@@ -4415,6 +4415,18 @@
 #define PERK_WARLOCK_CONE_BLAST 1706
 #define PERK_WARLOCK_REPELLING_BLAST 1707
 
+/* TREE 1: ELDRITCH MASTERY - Tier 3 (1708-1711) */
+#define PERK_WARLOCK_AGONIZING_BLAST_3 1708
+#define PERK_WARLOCK_CHAIN_BLAST 1709
+#define PERK_WARLOCK_BLAST_RESILIENCE_2 1710
+#define PERK_WARLOCK_DEVASTATING_BLAST 1711
+
+/* TREE 1: ELDRITCH MASTERY - Tier 4 (1712-1715) */
+#define PERK_WARLOCK_ELDRITCH_ANNIHILATION 1712
+#define PERK_WARLOCK_BLAST_MASTERY 1713
+#define PERK_WARLOCK_REALITY_RENDING_BLAST 1714
+#define PERK_WARLOCK_ETERNAL_BARRAGE 1715
+
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
  * ============================================================================ */
@@ -4424,7 +4436,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1708
+#define NUM_PERKS 1716
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

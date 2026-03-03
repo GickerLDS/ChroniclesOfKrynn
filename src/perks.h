@@ -130,6 +130,20 @@ bool has_warlock_cone_blast(struct char_data *ch);
 int get_warlock_cone_blast_damage_bonus_pct(struct char_data *ch);
 int get_warlock_repelling_blast_knockdown_chance(struct char_data *ch);
 
+/* Warlock helper functions - Eldritch Mastery Tier 3 */
+int get_warlock_agonizing_blast_3_damage(struct char_data *ch);
+bool has_warlock_chain_blast(struct char_data *ch);
+int get_warlock_chain_blast_damage_bonus_pct(struct char_data *ch);
+int get_warlock_blast_resilience_2_bonus(struct char_data *ch);
+bool has_warlock_devastating_blast(struct char_data *ch);
+
+/* Warlock helper functions - Eldritch Mastery Tier 4 */
+int get_warlock_eldritch_annihilation_damage(struct char_data *ch);
+int get_warlock_eldritch_annihilation_aoe_bonus_pct(struct char_data *ch);
+bool has_warlock_blast_mastery(struct char_data *ch);
+bool has_warlock_reality_rending_blast(struct char_data *ch);
+bool has_warlock_eternal_barrage(struct char_data *ch);
+
 /* Inquisitor helper functions - Judgment & Spellcasting Tree Tier 1 */
 int get_inquisitor_empowered_judgment_bonus(struct char_data *ch);
 bool can_inquisitor_dual_judgment(struct char_data *ch);

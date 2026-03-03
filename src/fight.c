@@ -4380,6 +4380,19 @@ int compute_damtype_reduction(struct char_data *ch, int dam_type, struct char_da
     break;
   }
 
+  /* Warlock Blast Mastery: Eldritch Blast ignores 50% of damage resistance */
+  if (attacker && !IS_NPC(attacker) && has_warlock_blast_mastery(attacker))
+  {
+    /* Check if the attack is an Eldritch Blast variant */
+    if (w_type == WARLOCK_ELDRITCH_BLAST || w_type == WARLOCK_CRITICAL_ELDRITCH_BLAST ||
+        w_type == WARLOCK_ELDRITCH_SPEAR || w_type == WARLOCK_ELDRITCH_CHAIN ||
+        w_type == WARLOCK_ELDRITCH_CONE || w_type == WARLOCK_ELDRITCH_DOOM ||
+        w_type == WARLOCK_HIDEOUS_BLOW)
+    {
+      damtype_reduction = (int)(damtype_reduction * 0.5);
+    }
+  }
+
   /* caps */
   if (damtype_reduction < -999)
     damtype_reduction = -999; /* 10x vulnerability? */
