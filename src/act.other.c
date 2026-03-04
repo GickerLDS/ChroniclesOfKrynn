@@ -13740,6 +13740,17 @@ EVENTFUNC(event_device_repair)
 
   struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
 
+  /* Check if device still needs repair (may have stabilized during repair process) */
+  if (!inv->broken && inv->dc_penalty <= 0)
+  {
+    send_to_char(ch, "Your device repair for %s has been cancelled - the device has stabilized on its own!\r\n",
+                 inv->short_description);
+    act("$n's device repair process stops as the invention stabilizes on its own.", TRUE, ch, 0, 0,
+        TO_ROOM);
+    save_char(ch, 0);
+    return 0;
+  }
+
   /* Store old DC penalty for message */
   int old_penalty = inv->dc_penalty;
 

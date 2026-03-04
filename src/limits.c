@@ -2387,7 +2387,7 @@ void check_devices(void)
 
     /* Artificer device recharge: Every 30 seconds recharge 1 use or reduce DC penalty */
     if (CLASS_LEVEL(i, CLASS_ARTIFICER) > 0 && !FIGHTING(i) &&
-        i->player_specials->saved.num_inventions > 0)
+        i->player_specials->saved.num_inventions > 0 && !char_has_mud_event(i, eDEVICE_REPAIR))
     {
       artificer_level = CLASS_LEVEL(i, CLASS_ARTIFICER);
       max_uses = 1 + (artificer_level / 2);
