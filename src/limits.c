@@ -2376,52 +2376,95 @@ void proc_d20_round(void)
   }
 }
 
+/* Helper function to get the device recharge rate for a character (in seconds)
+ * Base rate is 30 seconds, but can be modified by feats and perks in the future */
+int get_device_recharge_rate(struct char_data *ch)
+{
+  int recharge_rate = 30; /* Base recharge rate */
+
+  /* TODO: Add feat/perk checks here to modify recharge_rate */
+  /* Example: if (HAS_FEAT(ch, FEAT_FASTER_RECHARGE)) recharge_rate -= 5; */
+
+  return recharge_rate;
+}
+
 void check_devices(void)
 {
-  struct char_data *i = NULL, *next_char = NULL;
+  extern struct descriptor_data *descriptor_list;
+  struct descriptor_data *d = NULL;
+  struct char_data *i = NULL;
   int artificer_level, max_uses;
 
-  for (i = character_list; i; i = next_char)
+  /* Iterate through descriptors (players only) */
+  for (d = descriptor_list; d; d = d->next)
   {
-    next_char = i->next;
+    /* Skip if not connected or no character */
+    if (d->connected != CON_PLAYING || !d->character)
+      continue;
 
-    /* Artificer device recharge: Every 30 seconds recharge 1 use or reduce DC penalty */
+    i = d->character;
+
+    /* Artificer device recharge: Check every second, process when timer expires */
     if (CLASS_LEVEL(i, CLASS_ARTIFICER) > 0 && !FIGHTING(i) &&
-        i->player_specials->saved.num_inventions > 0 && !char_has_mud_event(i, eDEVICE_REPAIR))
+        i->player_specials->saved.num_inventions > 0)
     {
-      artificer_level = CLASS_LEVEL(i, CLASS_ARTIFICER);
-      max_uses = 1 + (artificer_level / 2);
-      if (HAS_FEAT(i, FEAT_GNOMISH_TINKERING))
-        max_uses += 1;
+      int recharge_rate = get_device_recharge_rate(i);
 
-      /* Find the first device that can be recharged (working from top of list) */
-      int dev_idx;
-      for (dev_idx = 0; dev_idx < i->player_specials->saved.num_inventions; dev_idx++)
+      /* Decrement recharge timer */
+      if (i->player_specials->saved.device_recharge_timer > 0)
       {
-        struct player_invention *inv = &i->player_specials->saved.inventions[dev_idx];
+        i->player_specials->saved.device_recharge_timer--;
+      }
 
-        /* Skip broken devices - they cannot be recharged until repaired */
-        if (inv->broken)
-          continue;
+      /* Process device recharge when timer expires */
+      if (i->player_specials->saved.device_recharge_timer <= 0)
+      {
+        i->player_specials->saved.device_recharge_timer = recharge_rate;
 
-        /* Process device if it has been used or has DC penalty */
-        if (inv->uses > 0 || inv->dc_penalty > 0)
+        artificer_level = CLASS_LEVEL(i, CLASS_ARTIFICER);
+        max_uses = 1 + (artificer_level / 2);
+        if (HAS_FEAT(i, FEAT_GNOMISH_TINKERING))
+          max_uses += 1;
+
+        /* Get the device being repaired, if any */
+        struct mud_event_data *pRepairEvent = char_has_mud_event(i, eDEVICE_REPAIR);
+        int repairing_device_idx = -1;
+        if (pRepairEvent && pRepairEvent->sVariables)
+          repairing_device_idx = atoi(pRepairEvent->sVariables);
+
+        /* Find the first device that can be recharged (working from top of list) */
+        int dev_idx;
+        for (dev_idx = 0; dev_idx < i->player_specials->saved.num_inventions; dev_idx++)
         {
-          /* If device has DC penalty, reduce it instead of recharging uses */
-          if (inv->dc_penalty > 0)
+          struct player_invention *inv = &i->player_specials->saved.inventions[dev_idx];
+
+          /* Skip the device being repaired */
+          if (dev_idx == repairing_device_idx)
+            continue;
+
+          /* Skip broken devices - they cannot be recharged until repaired */
+          if (inv->broken)
+            continue;
+
+          /* Process device if it has been used or has DC penalty */
+          if (inv->uses > 0 || inv->dc_penalty > 0)
           {
-            inv->dc_penalty = MAX(0, inv->dc_penalty - 4);
-            send_to_char(i, "\tgYour device '%s' stabilizes. (DC penalty: +%d)\tn\r\n",
-                         inv->short_description, inv->dc_penalty);
+            /* If device has DC penalty, reduce it instead of recharging uses */
+            if (inv->dc_penalty > 0)
+            {
+              inv->dc_penalty = MAX(0, inv->dc_penalty - 4);
+              send_to_char(i, "\tgYour device '%s' stabilizes. (DC penalty: +%d)\tn\r\n",
+                           inv->short_description, inv->dc_penalty);
+            }
+            /* Only recharge uses if DC penalty is now 0 and device has been used */
+            else if (inv->uses > 0)
+            {
+              inv->uses--;
+              send_to_char(i, "\tgYour device '%s' has recharged. (Uses remaining: %d/%d)\tn\r\n",
+                           inv->short_description, max_uses - inv->uses, max_uses);
+            }
+            break; /* Only process one device per recharge interval */
           }
-          /* Only recharge uses if DC penalty is now 0 and device has been used */
-          else if (inv->uses > 0)
-          {
-            inv->uses--;
-            send_to_char(i, "\tgYour device '%s' has recharged. (Uses remaining: %d/%d)\tn\r\n",
-                         inv->short_description, max_uses - inv->uses, max_uses);
-          }
-          break; /* Only process one device per 30 seconds */
         }
       }
     }

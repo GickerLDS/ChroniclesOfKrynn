@@ -7003,6 +7003,9 @@ struct player_special_data_saved
   int bonus_slots_used;         // Tracks used bonus any-level spell slots
   int bonus_slots_regen_timer;  // Timer for any-level slot regeneration (ticks until next regen)
 
+  /* Artificer device recharge tracking */
+  int device_recharge_timer;    // Timer tracking seconds until next device recharge check
+
   int character_age;
   bool character_age_saved;
 

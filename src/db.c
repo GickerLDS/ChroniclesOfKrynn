@@ -7108,6 +7108,9 @@ void init_char(struct char_data *ch)
 
   /* Initialize moon bonus spells for arcane casters */
   init_moon_bonus_spells(ch);
+
+  /* Initialize artificer device recharge timer */
+  ch->player_specials->saved.device_recharge_timer = 0;
 }
 
 /* returns the real number of the room with given virtual number */
