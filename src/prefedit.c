@@ -270,7 +270,9 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       "%s[%s%3s%s]\r\n"
       /* Line 10 (10) Autolight and PvP Flag */
       "%sL%s) Auto-Light Replacement  %s[%s%3s%s]        %sM%s) PvP Flag                         "
-      "%s[%s%3s%s]\r\n",
+      "%s[%s%3s%s]\r\n"
+      /* Line 11 (11) No Walk-To Confirm */
+      "%sN%s) No Walk-To Confirmation %s[%s%3s%s]\r\n",
       /*******1********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_USE_STORED_CONSUMABLES) ? CBGRN(d->character, C_NRM)
@@ -362,7 +364,11 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       /*******M*********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_PVP) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
-      ONOFF(PREFEDIT_FLAGGED(PRF_PVP)), CCCYN(d->character, C_NRM)
+      ONOFF(PREFEDIT_FLAGGED(PRF_PVP)), CCCYN(d->character, C_NRM),
+      /*******N*********/
+      CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
+      ONOFF(PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM)), CCCYN(d->character, C_NRM)
 
       /*end*/);
 
@@ -1256,6 +1262,11 @@ void prefedit_parse(struct descriptor_data *d, char *arg)
       }
 
       TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_PVP);
+      break;
+
+    case 'n':
+    case 'N':
+      TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_NO_WALKTO_CONFIRM);
       break;
 
     default:

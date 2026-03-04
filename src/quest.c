@@ -2469,6 +2469,15 @@ ACMDU(do_walkto_quest)
 
   send_to_char(ch, "\tYDistance:\tn %d room%s\r\n", distance, distance == 1 ? "" : "s");
 
+  /* Check if player has No Walk-To Confirmation flag */
+  if (PRF_FLAGGED(ch, PRF_NO_WALKTO_CONFIRM))
+  {
+    /* Skip confirmation and directly set walkto */
+    GET_WALKTO_LOC(ch) = world[target_room].number;
+    send_to_char(ch, "\tGYYou begin walking to your destination.\tn\r\n");
+    return;
+  }
+
   /* Generate confirmation code */
   confirm_code = generate_confirm_code();
   

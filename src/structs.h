@@ -1478,9 +1478,10 @@
 #define PRF_SWEEPING_STRIKE 85 /**< Monk sweeping strike: auto-trip on first flurry attack */
 #define PRF_SURVEY_ROOMS_PROMPT 86 /**< Display survey rooms in prompt */
 #define PRF_AUTOLIGHT 87 /**< Automatically replace burned-out light from inventory */
+#define PRF_NO_WALKTO_CONFIRM 88 /**< Skip walkto confirmation for quest targets/masters */
 
 /** Total number of available PRF flags */
-#define NUM_PRF_FLAGS 88
+#define NUM_PRF_FLAGS 89
 
 /* Score Color Theme constants */
 #define SCORE_THEME_ENHANCED 0     /**< Enhanced theme with rich colors */

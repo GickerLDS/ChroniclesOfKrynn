@@ -8551,6 +8551,8 @@ ACMD(do_gen_tog)
       {"Survey rooms in prompt disabled.\r\n", "Survey rooms in prompt enabled.\r\n"},
       // 70
       {"Autolight disabled.\r\n", "Autolight enabled.\r\n"},
+      // 71
+      {"Walk-to confirmation required.\r\n", "Walk-to confirmation skipped for quest targets/masters.\r\n"},
   };
 
   if (IS_NPC(ch))
@@ -8884,6 +8886,9 @@ ACMD(do_gen_tog)
     break;
   case SCMD_AUTOLIGHT:
     result = PRF_TOG_CHK(ch, PRF_AUTOLIGHT);
+    break;
+  case SCMD_NO_WALKTO_CONFIRM:
+    result = PRF_TOG_CHK(ch, PRF_NO_WALKTO_CONFIRM);
     break;
   default:
     log("SYSERR: Unknown subcmd %d in do_gen_toggle.", subcmd);

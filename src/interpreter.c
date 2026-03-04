@@ -192,6 +192,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"autohit", "autohit", POS_DEAD, do_gen_tog, 0, SCMD_AUTOHIT, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autokey", "autokey", POS_DEAD, do_gen_tog, 0, SCMD_AUTOKEY, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autolight", "autolight", POS_DEAD, do_gen_tog, 0, SCMD_AUTOLIGHT, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"nowalktoconfirm", "nowalkto", POS_DEAD, do_gen_tog, 0, SCMD_NO_WALKTO_CONFIRM, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autoloot", "autoloot", POS_DEAD, do_gen_tog, 0, SCMD_AUTOLOOT, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"automap", "automap", POS_DEAD, do_gen_tog, 0, SCMD_AUTOMAP, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autoprep", "autoprep", POS_DEAD, do_gen_tog, 0, SCMD_AUTO_PREP, TRUE, ACTION_NONE, {0, 0}, NULL},
