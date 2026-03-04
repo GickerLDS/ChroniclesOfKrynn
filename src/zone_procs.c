@@ -1669,7 +1669,7 @@ void prisoner_gear_loading(struct char_data *ch)
   obj_to_room(read_object(COINS_SILV, VIRTUAL), real_room(PRISONER_VAULT));
 
   /* random treasure, it'll be put on the lich */
-  award_magic_item(NUM_TREASURE, ch, GRADE_SUPERIOR);
+  award_magic_item(NUM_TREASURE, ch, GRADE_SUPERIOR, 0); // no source level cap for special zone reward
   /************************************************************************/
 
   /* the work is done! */

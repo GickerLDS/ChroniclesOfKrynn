@@ -889,7 +889,7 @@ void apply_mission_rewards(char_data *ch)
                gain_exp(ch, GET_MISSION_EXP(ch), GAIN_EXP_MODE_QUEST));
 
   send_to_char(ch, "You've received a random loot drop!\r\n");
-  award_magic_item(1, ch, quick_grade_check(level));
+  award_magic_item(1, ch, quick_grade_check(level), level);
 
   send_to_char(ch, "\r\n");
 

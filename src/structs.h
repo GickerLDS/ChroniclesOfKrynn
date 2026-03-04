@@ -6368,7 +6368,7 @@ struct char_ability_data
 #define NUM_ABILITY_MODS 6
 
 /* make sure this matches spells.h define */
-#define NUM_DAM_TYPES 28
+#define NUM_DAM_TYPES 29
 
 /* Character 'points', or health statistics. (we have points and real_points) */
 struct char_point_data

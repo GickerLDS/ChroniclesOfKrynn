@@ -794,8 +794,7 @@ void determine_treasure(struct char_data *ch, struct char_data *mob)
   if (dice(1, 100) <= MAX(TREASURE_PERCENT, HAPPY_TREASURE))
   {
     if (dice(1, 3) == 1)
-      award_magic_item(1, ch,
-                       grade); // we want magic item treasure drops to be better but less common
+      award_magic_item(1, ch, grade, level); // we want magic item treasure drops to be better but less common
     snprintf(buf, MEDIUM_STRING, "\tYYou have found %d coins hidden on $N's corpse!\tn", gold);
     act(buf, FALSE, ch, 0, mob, TO_CHAR);
     snprintf(buf, MEDIUM_STRING, "$n \tYhas found %d coins hidden on $N's corpse!\tn", gold);
@@ -805,43 +804,43 @@ void determine_treasure(struct char_data *ch, struct char_data *mob)
   }
 }
 
-void award_random_magic_armor(struct char_data *ch, int grade)
+void award_random_magic_armor(struct char_data *ch, int grade, int source_level)
 {
   if (dice(1, 3) != 3)
-    award_magic_armor_suit(ch, grade);
+    award_magic_armor_suit(ch, grade, source_level);
   else
-    award_magic_armor(ch, grade, ITEM_WEAR_SHIELD);
+    award_magic_armor(ch, grade, ITEM_WEAR_SHIELD, source_level);
 }
 
-void award_random_expendible_item(struct char_data *ch, int grade)
+void award_random_expendible_item(struct char_data *ch, int grade, int source_level)
 {
   switch (dice(1, 8))
   {
   case 1:
   case 2:
   case 3:
-    award_expendable_item(ch, grade, TYPE_SCROLL);
-    award_expendable_item(ch, grade, TYPE_SCROLL);
+    award_expendable_item(ch, grade, TYPE_SCROLL, source_level);
+    award_expendable_item(ch, grade, TYPE_SCROLL, source_level);
     break;
   case 4:
   case 5:
   case 6:
-    award_expendable_item(ch, grade, TYPE_POTION);
-    award_expendable_item(ch, grade, TYPE_POTION);
-    award_expendable_item(ch, grade, TYPE_POTION);
+    award_expendable_item(ch, grade, TYPE_POTION, source_level);
+    award_expendable_item(ch, grade, TYPE_POTION, source_level);
+    award_expendable_item(ch, grade, TYPE_POTION, source_level);
     break;
   case 7:
-    award_expendable_item(ch, grade, TYPE_WAND);
+    award_expendable_item(ch, grade, TYPE_WAND, source_level);
     break;
   case 8:
-    award_expendable_item(ch, grade, TYPE_STAFF);
+    award_expendable_item(ch, grade, TYPE_STAFF, source_level);
     break;
   }
 }
 
 #if defined(USE_NEW_CRAFTING_SYSTEM)
 /* character should get treasure, roll dice for what items to give out */
-void award_magic_item(int number, struct char_data *ch, int grade)
+void award_magic_item(int number, struct char_data *ch, int grade, int source_level)
 {
   int i = 0;
   int roll = 0;
@@ -860,24 +859,24 @@ void award_magic_item(int number, struct char_data *ch, int grade)
   {
     roll = dice(1, 100);
     if (roll <= 20) // 20%
-      award_magic_weapon(ch, grade);
+      award_magic_weapon(ch, grade, source_level);
     else if (roll <= 50) // 30%
     {
-      award_random_expendible_item(ch, grade);
+      award_random_expendible_item(ch, grade, source_level);
     }
     else if (roll <= 80) // 30%
     {
-      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), source_level);
     }
     else // 20%
     {
-      award_random_magic_armor(ch, grade);
+      award_random_magic_armor(ch, grade, source_level);
     }
   }
 }
 #elif defined(USE_OLD_CRAFTING_SYSTEM)
 /* character should get treasure, roll dice for what items to give out */
-void award_magic_item(int number, struct char_data *ch, int grade)
+void award_magic_item(int number, struct char_data *ch, int grade, int source_level)
 {
   int i = 0;
   int roll = 0;
@@ -896,9 +895,9 @@ void award_magic_item(int number, struct char_data *ch, int grade)
   {
     roll = dice(1, 100);
     if (roll <= 10) /*  1 - 10    10%  */
-      award_random_crystal(ch, grade);
+      award_random_crystal(ch, grade, source_level);
     else if (roll <= 30) /*  11 - 30   20% */
-      award_magic_weapon(ch, grade);
+      award_magic_weapon(ch, grade, source_level);
     else if (roll <= 55)
     { /* 31 - 55   25% */
       switch (dice(1, 9))
@@ -906,44 +905,44 @@ void award_magic_item(int number, struct char_data *ch, int grade)
       case 1:
       case 2:
       case 3:
-        award_expendable_item(ch, grade, TYPE_SCROLL);
-        award_expendable_item(ch, grade, TYPE_SCROLL);
+        award_expendable_item(ch, grade, TYPE_SCROLL, source_level);
+        award_expendable_item(ch, grade, TYPE_SCROLL, source_level);
         break;
       case 4:
       case 5:
       case 6:
-        award_expendable_item(ch, grade, TYPE_POTION);
-        award_expendable_item(ch, grade, TYPE_POTION);
-        award_expendable_item(ch, grade, TYPE_POTION);
+        award_expendable_item(ch, grade, TYPE_POTION, source_level);
+        award_expendable_item(ch, grade, TYPE_POTION, source_level);
+        award_expendable_item(ch, grade, TYPE_POTION, source_level);
         break;
       case 7:
-        award_expendable_item(ch, grade, TYPE_WAND);
+        award_expendable_item(ch, grade, TYPE_WAND, source_level);
         break;
       case 8:
-        award_expendable_item(ch, grade, TYPE_STAFF);
+        award_expendable_item(ch, grade, TYPE_STAFF, source_level);
         break;
       default: /* 5 */
-        award_magic_ammo(ch, grade);
+        award_magic_ammo(ch, grade, source_level);
         break;
       }
     }
     else if (roll <= 80)
     { /* 56 - 80   25% */
-      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), source_level);
     }
     else
     { /* 80 - 100  20% */
       if (dice(1, 3) != 3)
-        award_magic_armor_suit(ch, grade);
+        award_magic_armor_suit(ch, grade, source_level);
       else
-        award_magic_armor(ch, grade, ITEM_WEAR_SHIELD);
+        award_magic_armor(ch, grade, ITEM_WEAR_SHIELD, source_level);
     }
   }
 }
 
 #else
 /* Default implementation when no crafting system is defined */
-void award_magic_item(int number, struct char_data *ch, int grade)
+void award_magic_item(int number, struct char_data *ch, int grade, int source_level)
 {
   int i = 0;
   int roll = 0;
@@ -964,9 +963,9 @@ void award_magic_item(int number, struct char_data *ch, int grade)
   {
     roll = dice(1, 100);
     if (roll <= 10) /* 1-10: 10% crystals */
-      award_random_crystal(ch, grade);
+      award_random_crystal(ch, grade, source_level);
     else if (roll <= 15) /* 11-15: 5% weapons */
-      award_magic_weapon(ch, grade);
+      award_magic_weapon(ch, grade, source_level);
     else if (roll <= 55) /* 16-55: 40% expendables */
     {
       switch (dice(1, 9))
@@ -974,37 +973,37 @@ void award_magic_item(int number, struct char_data *ch, int grade)
       case 1:
       case 2:
       case 3:
-        award_expendable_item(ch, grade, TYPE_SCROLL);
-        award_expendable_item(ch, grade, TYPE_SCROLL);
+        award_expendable_item(ch, grade, TYPE_SCROLL, source_level);
+        award_expendable_item(ch, grade, TYPE_SCROLL, source_level);
         break;
       case 4:
       case 5:
       case 6:
-        award_expendable_item(ch, grade, TYPE_POTION);
-        award_expendable_item(ch, grade, TYPE_POTION);
-        award_expendable_item(ch, grade, TYPE_POTION);
+        award_expendable_item(ch, grade, TYPE_POTION, source_level);
+        award_expendable_item(ch, grade, TYPE_POTION, source_level);
+        award_expendable_item(ch, grade, TYPE_POTION, source_level);
         break;
       case 7:
-        award_expendable_item(ch, grade, TYPE_WAND);
+        award_expendable_item(ch, grade, TYPE_WAND, source_level);
         break;
       case 8:
-        award_expendable_item(ch, grade, TYPE_STAFF);
+        award_expendable_item(ch, grade, TYPE_STAFF, source_level);
         break;
       default: /* 9 */
-        award_magic_ammo(ch, grade);
+        award_magic_ammo(ch, grade, source_level);
         break;
       }
     }
     else if (roll <= 80) /* 56-80: 25% misc items/trinkets */
     {
-      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), source_level);
     }
     else /* 81-100: 20% armor */
     {
       if (dice(1, 3) != 3)
-        award_magic_armor_suit(ch, grade);
+        award_magic_armor_suit(ch, grade, source_level);
       else
-        award_magic_armor(ch, grade, ITEM_WEAR_SHIELD);
+        award_magic_armor(ch, grade, ITEM_WEAR_SHIELD, source_level);
     }
   }
 }
@@ -1163,7 +1162,7 @@ int random_apply_value(void)
 }
 
 /* function to create a random crystal */
-void award_random_crystal(struct char_data *ch, int grade)
+void award_random_crystal(struct char_data *ch, int grade, int source_level)
 {
   int color1 = -1, color2 = -1, desc = -1, roll = 0;
   struct obj_data *obj = NULL;
@@ -1258,7 +1257,7 @@ void award_random_crystal(struct char_data *ch, int grade)
   }
 
   cp_modify_object_applies(ch, obj, cp_convert_grade_enchantment(grade), CP_TYPE_CRYSTAL,
-                           rare_grade, FALSE);
+                           rare_grade, FALSE, source_level);
 }
 
 /* awards potions or scroll or wand or staff */
@@ -1268,10 +1267,11 @@ void award_random_crystal(struct char_data *ch, int grade)
    obj value 1:  potion/scroll - spell #1; staff/wand - max charges
    obj value 2:  potion/scroll - spell #2; staff/wand - charges remaining
    obj value 3:  potion/scroll - spell #3; staff/wand - spell #1 */
-void award_expendable_item(struct char_data *ch, int grade, int type)
+void award_expendable_item(struct char_data *ch, int grade, int type, int source_level)
 {
   int class = CLASS_UNDEFINED, spell_level = 1, spell_num = SPELL_RESERVED_DBC;
   int color1 = 0, color2 = 0, desc = 0, roll = dice(1, 100), i = 0;
+  int obj_level = 1;
   struct obj_data *obj = NULL;
   char keywords[MEDIUM_STRING] = {'\0'}, buf[MAX_STRING_LENGTH] = {'\0'};
 
@@ -1463,7 +1463,10 @@ void award_expendable_item(struct char_data *ch, int grade, int type)
 
     GET_OBJ_MATERIAL(obj) = MATERIAL_GLASS;
     GET_OBJ_COST(obj) = MIN(1000, 5 * spell_level);
-    GET_OBJ_LEVEL(obj) = dice(1, spell_level);
+    obj_level = dice(1, spell_level);
+    if (source_level > 0)
+      obj_level = MIN(obj_level, source_level);
+    GET_OBJ_LEVEL(obj) = obj_level;
     break;
 
   case TYPE_WAND:
@@ -1491,7 +1494,10 @@ void award_expendable_item(struct char_data *ch, int grade, int type)
     GET_OBJ_MATERIAL(obj) = MATERIAL_WOOD;
     GET_OBJ_TYPE(obj) = ITEM_WAND;
     SET_BIT_AR(GET_OBJ_WEAR(obj), ITEM_WEAR_HOLD);
-    GET_OBJ_LEVEL(obj) = dice(1, spell_level);
+    obj_level = dice(1, spell_level);
+    if (source_level > 0)
+      obj_level = MIN(obj_level, source_level);
+    GET_OBJ_LEVEL(obj) = obj_level;
     break;
 
   case TYPE_STAFF:
@@ -1518,7 +1524,10 @@ void award_expendable_item(struct char_data *ch, int grade, int type)
     GET_OBJ_MATERIAL(obj) = MATERIAL_WOOD;
     GET_OBJ_TYPE(obj) = ITEM_STAFF;
     SET_BIT_AR(GET_OBJ_WEAR(obj), ITEM_WEAR_HOLD);
-    GET_OBJ_LEVEL(obj) = dice(1, spell_level);
+    obj_level = dice(1, spell_level);
+    if (source_level > 0)
+      obj_level = MIN(obj_level, source_level);
+    GET_OBJ_LEVEL(obj) = obj_level;
     break;
 
   default: // Type-Scrolls
@@ -1541,7 +1550,10 @@ void award_expendable_item(struct char_data *ch, int grade, int type)
     GET_OBJ_COST(obj) = MIN(1000, 10 * spell_level);
     GET_OBJ_MATERIAL(obj) = MATERIAL_PAPER;
     GET_OBJ_TYPE(obj) = ITEM_SCROLL;
-    GET_OBJ_LEVEL(obj) = dice(1, spell_level);
+    obj_level = dice(1, spell_level);
+    if (source_level > 0)
+      obj_level = MIN(obj_level, source_level);
+    GET_OBJ_LEVEL(obj) = obj_level;
     break;
   }
 
@@ -1565,7 +1577,7 @@ void award_expendable_item(struct char_data *ch, int grade, int type)
  bonus as the currency, so we have to make decisions on the value of receiving
  other stats such as strength, hps, etc */
 void cp_modify_object_applies(struct char_data *ch, struct obj_data *obj, int enchantment_grade,
-                              int cp_type, int rare_grade, int silent_mode)
+                              int cp_type, int rare_grade, int silent_mode, int source_level)
 {
   int bonus_value = enchantment_grade, bonus_location = APPLY_NONE;
   bool has_enhancement = FALSE;
@@ -1677,6 +1689,9 @@ void cp_modify_object_applies(struct char_data *ch, struct obj_data *obj, int en
 
   /* object level (min level to use) */
   GET_OBJ_LEVEL(obj) = MIN(30, bonus_value * 5);
+  /* cap to source level if provided (mob level, chest level, etc) */
+  if (source_level > 0)
+    GET_OBJ_LEVEL(obj) = MIN(GET_OBJ_LEVEL(obj), source_level);
 
 #if defined(USE_NEW_RANDOM_OBJECT_GUIDELINES)
 
@@ -1874,7 +1889,7 @@ void cp_modify_object_applies(struct char_data *ch, struct obj_data *obj, int en
  */
 
 /* Give away random magic ammo */
-void award_magic_ammo(struct char_data *ch, int grade)
+void award_magic_ammo(struct char_data *ch, int grade, int source_level)
 {
   struct obj_data *obj = NULL, *obj2 = NULL, *obj3 = NULL, *obj4 = NULL;
   int armor_desc_rollA = 0;
@@ -1977,13 +1992,13 @@ void award_magic_ammo(struct char_data *ch, int grade)
   SET_BIT_AR(GET_OBJ_EXTRA(obj3), ITEM_MAGIC);
   SET_BIT_AR(GET_OBJ_EXTRA(obj4), ITEM_MAGIC);
   cp_modify_object_applies(ch, obj, cp_convert_grade_enchantment(grade), CP_TYPE_AMMO, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   cp_modify_object_applies(ch, obj2, cp_convert_grade_enchantment(grade), CP_TYPE_AMMO, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   cp_modify_object_applies(ch, obj3, cp_convert_grade_enchantment(grade), CP_TYPE_AMMO, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   cp_modify_object_applies(ch, obj4, cp_convert_grade_enchantment(grade), CP_TYPE_AMMO, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   /* END BONUS SECTION */
 }
 
@@ -2145,7 +2160,7 @@ void give_magic_armor(struct char_data *ch, int selection, int enchantment, bool
   /* END DESCRIPTION SECTION */
 
   /* BONUS SECTION */
-  cp_modify_object_applies(ch, obj, enchantment, CP_TYPE_ARMOR, RARE_GRADE_NORMAL, silent_mode);
+  cp_modify_object_applies(ch, obj, enchantment, CP_TYPE_ARMOR, RARE_GRADE_NORMAL, silent_mode, 0);
   /* END BONUS SECTION */
 }
 
@@ -2157,7 +2172,7 @@ void give_magic_armor(struct char_data *ch, int selection, int enchantment, bool
  * 3)  determine Creation Points
  * 4)  determine AC bonus (Always first stat...)
  * 5)  craft description based on object and bonuses */
-void award_magic_armor(struct char_data *ch, int grade, int wear_slot)
+void award_magic_armor(struct char_data *ch, int grade, int wear_slot, int source_level)
 {
   struct obj_data *obj = NULL;
   int roll = 0, armor_desc_roll = 0, crest_num = 0;
@@ -2289,7 +2304,7 @@ void award_magic_armor(struct char_data *ch, int grade, int wear_slot)
 
   /* BONUS SECTION */
   cp_modify_object_applies(ch, obj, cp_convert_grade_enchantment(grade), CP_TYPE_ARMOR, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   /* END BONUS SECTION */
 }
 
@@ -2300,7 +2315,7 @@ void award_magic_armor(struct char_data *ch, int grade, int wear_slot)
  * 3)  determine Creation Points
  * 4)  determine AC bonus (Always first stat...)
  * 5)  craft description based on object and bonuses */
-void award_magic_armor_suit(struct char_data *ch, int grade)
+void award_magic_armor_suit(struct char_data *ch, int grade, int source_level)
 {
   struct obj_data *head = NULL, *body = NULL, *arms = NULL, *legs = NULL;
   int roll = 0, armor_desc_roll = 0, crest_num = 0;
@@ -2538,13 +2553,13 @@ void award_magic_armor_suit(struct char_data *ch, int grade)
 
   /* BONUS SECTION */
   cp_modify_object_applies(ch, body, cp_convert_grade_enchantment(grade), CP_TYPE_ARMOR, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   cp_modify_object_applies(ch, head, cp_convert_grade_enchantment(grade), CP_TYPE_ARMOR, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   cp_modify_object_applies(ch, arms, cp_convert_grade_enchantment(grade), CP_TYPE_ARMOR, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   cp_modify_object_applies(ch, legs, cp_convert_grade_enchantment(grade), CP_TYPE_ARMOR, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
   /* END BONUS SECTION */
 }
 
@@ -2832,7 +2847,7 @@ int possible_material_upgrade(int base_mat, int grade)
  */
 #define SHORT_STRING 80
 
-void award_magic_weapon(struct char_data *ch, int grade)
+void award_magic_weapon(struct char_data *ch, int grade, int source_level)
 {
   struct obj_data *obj = NULL;
   int roll = 0;
@@ -2853,7 +2868,7 @@ void award_magic_weapon(struct char_data *ch, int grade)
   roll = rand_number(1, NUM_WEAPON_TYPES - 1);
   if (roll == 1)
   {
-    award_misc_magic_item(ch, 9, grade); // monk gloves
+    award_misc_magic_item(ch, 9, grade, source_level); // monk gloves
     return;
   }
 
@@ -3039,7 +3054,7 @@ void award_magic_weapon(struct char_data *ch, int grade)
   /* object is fully described
    base object is taken care of including material, now set random stats, etc */
   cp_modify_object_applies(ch, obj, cp_convert_grade_enchantment(grade), CP_TYPE_WEAPON, rare_grade,
-                           FALSE);
+                           FALSE, source_level);
 }
 #undef SHORT_STRING
 
@@ -3239,7 +3254,7 @@ void give_magic_weapon(struct char_data *ch, int selection, int enchantment, boo
 
   /* object is fully described
    base object is taken care of including material, now set random stats, etc */
-  cp_modify_object_applies(ch, obj, enchantment, CP_TYPE_WEAPON, RARE_GRADE_NORMAL, silent_mode);
+  cp_modify_object_applies(ch, obj, enchantment, CP_TYPE_WEAPON, RARE_GRADE_NORMAL, silent_mode, 0);
 }
 #undef SHORT_STRING
 
@@ -3547,7 +3562,7 @@ void give_misc_magic_item(struct char_data *ch, int category, int enchantment, b
   }
 
   /* level, bonus and cost */
-  cp_modify_object_applies(ch, obj, enchantment, CP_TYPE_MISC, RARE_GRADE_NORMAL, silent_mode);
+  cp_modify_object_applies(ch, obj, enchantment, CP_TYPE_MISC, RARE_GRADE_NORMAL, silent_mode, 0);
 }
 #undef SHORT_STRING
 
@@ -3563,7 +3578,7 @@ void give_misc_magic_item(struct char_data *ch, int category, int enchantment, b
  */
 #define SHORT_STRING 80
 
-void award_misc_magic_item(struct char_data *ch, int category, int grade)
+void award_misc_magic_item(struct char_data *ch, int category, int grade, int source_level)
 {
   struct obj_data *obj = NULL;
   int vnum = -1, material = MATERIAL_BRONZE;
@@ -3894,7 +3909,7 @@ void award_misc_magic_item(struct char_data *ch, int category, int grade)
   }
 
   /* level, bonus and cost */
-  cp_modify_object_applies(ch, obj, grade, CP_TYPE_MISC, rare_grade, FALSE);
+  cp_modify_object_applies(ch, obj, grade, CP_TYPE_MISC, rare_grade, FALSE, source_level);
 }
 #undef SHORT_STRING
 
@@ -3939,7 +3954,7 @@ void load_treasure(char_data *mob)
   grade = dice(1, max_grade);
 
   /* Give the mob one magic item. */
-  award_magic_item(1, mob, grade);
+  award_magic_item(1, mob, grade, level);
 }
 
 /* utility function for bazaar below - misc armoring such
@@ -4202,59 +4217,59 @@ ACMD(do_loadmagicspecific)
   for (i = 0; i < number; i++)
   {
     if (is_abbrev(arg2, "weapon"))
-      award_magic_weapon(ch, grade);
+      award_magic_weapon(ch, grade, 0);
     else if (is_abbrev(arg2, "body"))
-      award_magic_armor(ch, grade, ITEM_WEAR_BODY);
+      award_magic_armor(ch, grade, ITEM_WEAR_BODY, 0);
     else if (is_abbrev(arg2, "legs"))
-      award_magic_armor(ch, grade, ITEM_WEAR_LEGS);
+      award_magic_armor(ch, grade, ITEM_WEAR_LEGS, 0);
     else if (is_abbrev(arg2, "arms"))
-      award_magic_armor(ch, grade, ITEM_WEAR_ARMS);
+      award_magic_armor(ch, grade, ITEM_WEAR_ARMS, 0);
     else if (is_abbrev(arg2, "head"))
-      award_magic_armor(ch, grade, ITEM_WEAR_HEAD);
+      award_magic_armor(ch, grade, ITEM_WEAR_HEAD, 0);
     else if (is_abbrev(arg2, "crystal"))
-      award_random_crystal(ch, grade);
+      award_random_crystal(ch, grade, 0);
     else if (is_abbrev(arg2, "shield"))
-      award_magic_armor(ch, grade, ITEM_WEAR_SHIELD);
+      award_magic_armor(ch, grade, ITEM_WEAR_SHIELD, 0);
     else if (is_abbrev(arg2, "ammo"))
-      award_magic_ammo(ch, grade);
+      award_magic_ammo(ch, grade, 0);
     else if (is_abbrev(arg2, "finger"))
-      award_misc_magic_item(ch, TRS_SLOT_FINGER, grade);
+      award_misc_magic_item(ch, TRS_SLOT_FINGER, grade, 0);
     else if (is_abbrev(arg2, "neck"))
-      award_misc_magic_item(ch, TRS_SLOT_NECK, grade);
+      award_misc_magic_item(ch, TRS_SLOT_NECK, grade, 0);
     else if (is_abbrev(arg2, "wrist"))
-      award_misc_magic_item(ch, TRS_SLOT_WRIST, grade);
+      award_misc_magic_item(ch, TRS_SLOT_WRIST, grade, 0);
     else if (is_abbrev(arg2, "feet"))
-      award_misc_magic_item(ch, TRS_SLOT_FEET, grade);
+      award_misc_magic_item(ch, TRS_SLOT_FEET, grade, 0);
     else if (is_abbrev(arg2, "monk"))
-      award_misc_magic_item(ch, TRS_SLOT_MONK_GLOVES, grade);
+      award_misc_magic_item(ch, TRS_SLOT_MONK_GLOVES, grade, 0);
     else if (is_abbrev(arg2, "hand"))
-      award_misc_magic_item(ch, TRS_SLOT_HAND, grade);
+      award_misc_magic_item(ch, TRS_SLOT_HAND, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "about"))
-      award_misc_magic_item(ch, TRS_SLOT_ABOUT, grade);
+      award_misc_magic_item(ch, TRS_SLOT_ABOUT, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "waist"))
-      award_misc_magic_item(ch, TRS_SLOT_WAIST, grade);
+      award_misc_magic_item(ch, TRS_SLOT_WAIST, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "held"))
-      award_misc_magic_item(ch, TRS_SLOT_HELD, grade);
+      award_misc_magic_item(ch, TRS_SLOT_HELD, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "face"))
-      award_misc_magic_item(ch, TRS_SLOT_FACE, grade);
+      award_misc_magic_item(ch, TRS_SLOT_FACE, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "shoulders"))
-      award_misc_magic_item(ch, TRS_SLOT_SHOULDERS, grade);
+      award_misc_magic_item(ch, TRS_SLOT_SHOULDERS, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "ears"))
-      award_misc_magic_item(ch, TRS_SLOT_EARS, grade);
+      award_misc_magic_item(ch, TRS_SLOT_EARS, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "ankles"))
-      award_misc_magic_item(ch, TRS_SLOT_ANKLET, grade);
+      award_misc_magic_item(ch, TRS_SLOT_ANKLET, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "eyes"))
-      award_misc_magic_item(ch, TRS_SLOT_EYES, grade);
+      award_misc_magic_item(ch, TRS_SLOT_EYES, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "instrument"))
-      award_misc_magic_item(ch, TRS_SLOT_INSTRUMENT, grade);
+      award_misc_magic_item(ch, TRS_SLOT_INSTRUMENT, cp_convert_grade_enchantment(grade), 0);
     else if (is_abbrev(arg2, "scroll"))
-      award_expendable_item(ch, grade, TYPE_SCROLL);
+      award_expendable_item(ch, grade, TYPE_SCROLL, 0);
     else if (is_abbrev(arg2, "potion"))
-      award_expendable_item(ch, grade, TYPE_POTION);
+      award_expendable_item(ch, grade, TYPE_POTION, 0);
     else if (is_abbrev(arg2, "wand"))
-      award_expendable_item(ch, grade, TYPE_WAND);
+      award_expendable_item(ch, grade, TYPE_WAND, 0);
     else if (is_abbrev(arg2, "staff"))
-      award_expendable_item(ch, grade, TYPE_STAFF);
+      award_expendable_item(ch, grade, TYPE_STAFF, 0);
   }
 
   send_to_char(ch, "You attempt to create some items!\r\n");
@@ -4314,7 +4329,7 @@ ACMD(do_loadmagic)
   if (number >= 50)
     number = 50;
 
-  award_magic_item(number, ch, grade);
+  award_magic_item(number, ch, grade, 0); // admin command, no source level cap
 }
 
 int get_random_armor_suit_type(void)

@@ -498,25 +498,25 @@ ACMDU(do_swindle)
       switch (dice(1, 10))
       {
       case 1:
-        award_random_crystal(ch, grade);
+        award_random_crystal(ch, grade, GET_LEVEL(vict));
         break;
       case 2:
       case 3:
-        award_expendable_item(ch, grade, TYPE_SCROLL);
+        award_expendable_item(ch, grade, TYPE_SCROLL, GET_LEVEL(vict));
         break;
       case 5:
       case 6:
       case 7:
-        award_expendable_item(ch, grade, TYPE_POTION);
+        award_expendable_item(ch, grade, TYPE_POTION, GET_LEVEL(vict));
         break;
       case 8:
-        award_expendable_item(ch, grade, TYPE_WAND);
+        award_expendable_item(ch, grade, TYPE_WAND, GET_LEVEL(vict));
         break;
       case 9:
-        award_expendable_item(ch, grade, TYPE_STAFF);
+        award_expendable_item(ch, grade, TYPE_STAFF, GET_LEVEL(vict));
         break;
       case 10:
-        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), GET_LEVEL(vict));
         break;
       }
       ch->char_specials.which_treasure_message = CUSTOM_TREASURE_MESSAGE_NONE;
@@ -606,25 +606,25 @@ ACMDU(do_entertain)
       switch (dice(1, 10))
       {
       case 1:
-        award_random_crystal(ch, grade);
+        award_random_crystal(ch, grade, GET_LEVEL(vict));
         break;
       case 2:
       case 3:
-        award_expendable_item(ch, grade, TYPE_SCROLL);
+        award_expendable_item(ch, grade, TYPE_SCROLL, GET_LEVEL(vict));
         break;
       case 5:
       case 6:
       case 7:
-        award_expendable_item(ch, grade, TYPE_POTION);
+        award_expendable_item(ch, grade, TYPE_POTION, GET_LEVEL(vict));
         break;
       case 8:
-        award_expendable_item(ch, grade, TYPE_WAND);
+        award_expendable_item(ch, grade, TYPE_WAND, GET_LEVEL(vict));
         break;
       case 9:
-        award_expendable_item(ch, grade, TYPE_STAFF);
+        award_expendable_item(ch, grade, TYPE_STAFF, GET_LEVEL(vict));
         break;
       case 10:
-        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), GET_LEVEL(vict));
         break;
       }
       ch->char_specials.which_treasure_message = CUSTOM_TREASURE_MESSAGE_NONE;
@@ -743,25 +743,25 @@ ACMDU(do_tribute)
       switch (dice(1, 10))
       {
       case 1:
-        award_random_crystal(ch, grade);
+        award_random_crystal(ch, grade, GET_LEVEL(vict));
         break;
       case 2:
       case 3:
-        award_expendable_item(ch, grade, TYPE_SCROLL);
+        award_expendable_item(ch, grade, TYPE_SCROLL, GET_LEVEL(vict));
         break;
       case 5:
       case 6:
       case 7:
-        award_expendable_item(ch, grade, TYPE_POTION);
+        award_expendable_item(ch, grade, TYPE_POTION, GET_LEVEL(vict));
         break;
       case 8:
-        award_expendable_item(ch, grade, TYPE_WAND);
+        award_expendable_item(ch, grade, TYPE_WAND, GET_LEVEL(vict));
         break;
       case 9:
-        award_expendable_item(ch, grade, TYPE_STAFF);
+        award_expendable_item(ch, grade, TYPE_STAFF, GET_LEVEL(vict));
         break;
       case 10:
-        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), GET_LEVEL(vict));
         break;
       }
       ch->char_specials.which_treasure_message = CUSTOM_TREASURE_MESSAGE_NONE;
@@ -847,25 +847,25 @@ ACMDU(do_extort)
       switch (dice(1, 10))
       {
       case 1:
-        award_random_crystal(ch, grade);
+        award_random_crystal(ch, grade, GET_LEVEL(vict));
         break;
       case 2:
       case 3:
-        award_expendable_item(ch, grade, TYPE_SCROLL);
+        award_expendable_item(ch, grade, TYPE_SCROLL, GET_LEVEL(vict));
         break;
       case 5:
       case 6:
       case 7:
-        award_expendable_item(ch, grade, TYPE_POTION);
+        award_expendable_item(ch, grade, TYPE_POTION, GET_LEVEL(vict));
         break;
       case 8:
-        award_expendable_item(ch, grade, TYPE_WAND);
+        award_expendable_item(ch, grade, TYPE_WAND, GET_LEVEL(vict));
         break;
       case 9:
-        award_expendable_item(ch, grade, TYPE_STAFF);
+        award_expendable_item(ch, grade, TYPE_STAFF, GET_LEVEL(vict));
         break;
       case 10:
-        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade));
+        award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), GET_LEVEL(vict));
         break;
       }
       ch->char_specials.which_treasure_message = CUSTOM_TREASURE_MESSAGE_NONE;

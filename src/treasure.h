@@ -153,24 +153,24 @@ bool valid_item_spell(int spellnum);
 struct char_data *find_treasure_recipient(struct char_data *killer);
 /* modify objects bonuses, set value, level, 'say' and deliver */
 void cp_modify_object_applies(struct char_data *ch, struct obj_data *obj, int enchantment_grade,
-                              int cp_type, int rare_grade, int silent_mode);
+                              int cp_type, int rare_grade, int silent_mode, int source_level);
 // determines whether the character will get treasure or not
 void determine_treasure(struct char_data *ch, struct char_data *mob);
 // character should get treasure, chooses what awards are given out
 // uses:  award_special/expendable (potion/scroll/wand/staff)/weapon/"item"/armor
-void award_magic_item(int number, struct char_data *ch, int grade);
+void award_magic_item(int number, struct char_data *ch, int grade, int source_level);
 /* function that creates a random crystal */
-void award_random_crystal(struct char_data *ch, int grade);
+void award_random_crystal(struct char_data *ch, int grade, int source_level);
 // gives away staff/potion/scroll/wand
-void award_expendable_item(struct char_data *ch, int grade, int type);
+void award_expendable_item(struct char_data *ch, int grade, int type, int source_level);
 // gives away random magic armor
-void award_magic_armor(struct char_data *ch, int grade, int wear_slot);
+void award_magic_armor(struct char_data *ch, int grade, int wear_slot, int source_level);
 // gives away random magic weapon
-void award_magic_weapon(struct char_data *ch, int grade);
+void award_magic_weapon(struct char_data *ch, int grade, int source_level);
 // gives away random armor pieces (outside of body-armor/shield)
-void award_misc_magic_item(struct char_data *ch, int category, int grade);
+void award_misc_magic_item(struct char_data *ch, int category, int grade, int source_level);
 // gives away random ammo
-void award_magic_ammo(struct char_data *ch, int grade);
+void award_magic_ammo(struct char_data *ch, int grade, int source_level);
 // determines bonus modifiers to apply_value
 int random_bonus_value(int apply_value, int grade, int mod);
 // take an object, and set its values to an appropriate weapon of 'type'
@@ -198,7 +198,7 @@ int get_armor_piece_by_style(int style, int wear_loc);
  * 3)  determine Creation Points
  * 4)  determine AC bonus (Always first stat...)
  * 5)  craft description based on object and bonuses */
-void award_magic_armor_suit(struct char_data *ch, int grade);
+void award_magic_armor_suit(struct char_data *ch, int grade, int source_level);
 /*  Will return a random healing potion based on level */
 int get_random_healing_potion(int spell_level);
 /* Will determine whether a feat makes sense on a particular object.

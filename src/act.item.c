@@ -5201,13 +5201,13 @@ ACMD(do_loot)
   switch (LOOTBOX_TYPE(obj))
   {
   case LOOTBOX_TYPE_WEAPON:
-    award_magic_weapon(ch, max_grade);
+    award_magic_weapon(ch, max_grade, level);
     chance = 12;
     recWeapon = true;
     recMagic = true;
     break;
   case LOOTBOX_TYPE_ARMOR:
-    award_magic_armor_suit(ch, max_grade);
+    award_magic_armor_suit(ch, max_grade, level);
     chance = 12;
     recArmor = true;
     recMagic = true;
@@ -5216,16 +5216,16 @@ ACMD(do_loot)
     switch (dice(1, 4))
     {
     case 1:
-      award_expendable_item(ch, max_grade, TYPE_SCROLL);
+      award_expendable_item(ch, max_grade, TYPE_SCROLL, level);
       break;
     case 2:
-      award_expendable_item(ch, max_grade, TYPE_POTION);
+      award_expendable_item(ch, max_grade, TYPE_POTION, level);
       break;
     case 3:
-      award_expendable_item(ch, max_grade, TYPE_WAND);
+      award_expendable_item(ch, max_grade, TYPE_WAND, level);
       break;
     case 4:
-      award_expendable_item(ch, max_grade, TYPE_STAFF);
+      award_expendable_item(ch, max_grade, TYPE_STAFF, level);
       break;
     }
     chance = 12;
@@ -5233,13 +5233,13 @@ ACMD(do_loot)
     recMagic = true;
     break;
   case LOOTBOX_TYPE_TRINKET:
-    award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(max_grade));
+    award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(max_grade), level);
     chance = 12;
     recTrinket = true;
     recMagic = true;
     break;
   case LOOTBOX_TYPE_CRYSTAL:
-    award_random_crystal(ch, max_grade);
+    award_random_crystal(ch, max_grade, level);
     chance = 12;
     recCrystal = true;
     recMagic = true;
@@ -5259,47 +5259,47 @@ ACMD(do_loot)
   {
     if (dice(1, chance) == 1 && !recCrystal)
     {
-      award_random_crystal(ch, max_grade);
+      award_random_crystal(ch, max_grade, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recWeapon)
     {
-      award_magic_weapon(ch, max_grade);
+      award_magic_weapon(ch, max_grade, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recConsumable)
     {
-      award_expendable_item(ch, max_grade, TYPE_SCROLL);
+      award_expendable_item(ch, max_grade, TYPE_SCROLL, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recConsumable)
     {
-      award_expendable_item(ch, max_grade, TYPE_POTION);
+      award_expendable_item(ch, max_grade, TYPE_POTION, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recConsumable)
     {
-      award_expendable_item(ch, max_grade, TYPE_WAND);
+      award_expendable_item(ch, max_grade, TYPE_WAND, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recConsumable)
     {
-      award_expendable_item(ch, max_grade, TYPE_STAFF);
+      award_expendable_item(ch, max_grade, TYPE_STAFF, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recConsumable)
     {
-      award_magic_ammo(ch, max_grade);
+      award_magic_ammo(ch, max_grade, level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recTrinket)
     {
-      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(max_grade));
+      award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(max_grade), level);
       recMagic = true;
     }
     if (dice(1, chance) == 1 && !recArmor)
     {
-      award_magic_armor(ch, max_grade, -1);
+      award_magic_armor(ch, max_grade, -1, level);
       recMagic = true;
     }
   } while (!recMagic);

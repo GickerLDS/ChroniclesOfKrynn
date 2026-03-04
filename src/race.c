@@ -6716,35 +6716,35 @@ ACMD(do_scrounge)
   switch (scrounge)
   {
   case 1: // weapon
-    award_magic_weapon(ch, grade);
+    award_magic_weapon(ch, grade, GET_LEVEL(ch));
     break;
   case 2: // armor
     switch (dice(1, 5))
     {
     case 1:
-      award_magic_armor(ch, grade, ITEM_WEAR_BODY);
+      award_magic_armor(ch, grade, ITEM_WEAR_BODY, GET_LEVEL(ch));
       break;
     case 2:
-      award_magic_armor(ch, grade, ITEM_WEAR_ARMS);
+      award_magic_armor(ch, grade, ITEM_WEAR_ARMS, GET_LEVEL(ch));
       break;
     case 3:
-      award_magic_armor(ch, grade, ITEM_WEAR_LEGS);
+      award_magic_armor(ch, grade, ITEM_WEAR_LEGS, GET_LEVEL(ch));
       break;
     case 4:
-      award_magic_armor(ch, grade, ITEM_WEAR_HEAD);
+      award_magic_armor(ch, grade, ITEM_WEAR_HEAD, GET_LEVEL(ch));
       break;
     case 5:
-      award_magic_armor(ch, grade, ITEM_WEAR_SHIELD);
+      award_magic_armor(ch, grade, ITEM_WEAR_SHIELD, GET_LEVEL(ch));
       break;
     }
     break;
   case 3: // misc
-    award_misc_magic_item(ch, dice(1, 9), grade);
+    award_misc_magic_item(ch, dice(1, 9), grade, GET_LEVEL(ch));
     break;
   case 4: // consumable
   case 5: // consumable
   case 6: // consumable
-    award_expendable_item(ch, grade, dice(1, 2));
+    award_expendable_item(ch, grade, dice(1, 2), GET_LEVEL(ch));
     break;
   case 7: // food/drink
   case 8: // food/drink
