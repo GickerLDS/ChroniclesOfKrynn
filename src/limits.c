@@ -2380,7 +2380,7 @@ void proc_d20_round(void)
  * Base rate is 30 seconds, but can be modified by feats and perks in the future */
 int get_device_recharge_rate(struct char_data *ch)
 {
-  int recharge_rate = 30; /* Base recharge rate */
+  int recharge_rate = BASE_ARTIFICER_RECHARGE; /* Base recharge rate */
 
   /* TODO: Add feat/perk checks here to modify recharge_rate */
   /* Example: if (HAS_FEAT(ch, FEAT_FASTER_RECHARGE)) recharge_rate -= 5; */
@@ -2432,7 +2432,7 @@ void check_devices(void)
         if (pRepairEvent && pRepairEvent->sVariables)
           repairing_device_idx = atoi(pRepairEvent->sVariables);
 
-        /* Find the first device that can be recharged (working from top of list) */
+        /* Recharge all devices by one use (except broken or being repaired) */
         int dev_idx;
         for (dev_idx = 0; dev_idx < i->player_specials->saved.num_inventions; dev_idx++)
         {
@@ -2463,7 +2463,6 @@ void check_devices(void)
               send_to_char(i, "\tgYour device '%s' has recharged. (Uses remaining: %d/%d)\tn\r\n",
                            inv->short_description, max_uses - inv->uses, max_uses);
             }
-            break; /* Only process one device per recharge interval */
           }
         }
       }

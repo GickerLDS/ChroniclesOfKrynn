@@ -678,6 +678,8 @@
 /* max enemies, reserved space for array of ranger's favored enemies */
 #define MAX_ENEMIES 10
 
+#define BASE_ARTIFICER_RECHARGE 30
+
 // Memorization
 /* sorc can get up to 9 + charisma bonus of stat cap 50 = 5 */
 #define NUM_SLOTS 15   // conersative-value max num slots per circle
