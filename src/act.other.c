@@ -8549,6 +8549,8 @@ ACMD(do_gen_tog)
        "blows attack each round.\r\n"},
       // 69
       {"Survey rooms in prompt disabled.\r\n", "Survey rooms in prompt enabled.\r\n"},
+      // 70
+      {"Autolight disabled.\r\n", "Autolight enabled.\r\n"},
   };
 
   if (IS_NPC(ch))
@@ -8879,6 +8881,9 @@ ACMD(do_gen_tog)
     break;
   case SCMD_SURVEY_ROOMS_PROMPT:
     result = PRF_TOG_CHK(ch, PRF_SURVEY_ROOMS_PROMPT);
+    break;
+  case SCMD_AUTOLIGHT:
+    result = PRF_TOG_CHK(ch, PRF_AUTOLIGHT);
     break;
   default:
     log("SYSERR: Unknown subcmd %d in do_gen_toggle.", subcmd);

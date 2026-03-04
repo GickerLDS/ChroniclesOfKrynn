@@ -191,6 +191,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"autogroup", "autogroup", POS_DEAD, do_gen_tog, 0, SCMD_AUTOGROUP, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autohit", "autohit", POS_DEAD, do_gen_tog, 0, SCMD_AUTOHIT, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autokey", "autokey", POS_DEAD, do_gen_tog, 0, SCMD_AUTOKEY, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"autolight", "autolight", POS_DEAD, do_gen_tog, 0, SCMD_AUTOLIGHT, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autoloot", "autoloot", POS_DEAD, do_gen_tog, 0, SCMD_AUTOLOOT, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"automap", "automap", POS_DEAD, do_gen_tog, 0, SCMD_AUTOMAP, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"autoprep", "autoprep", POS_DEAD, do_gen_tog, 0, SCMD_AUTO_PREP, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -4272,6 +4273,7 @@ void nanny(struct descriptor_data *d, char *arg)
       }
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTO_STAND);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOHIT);
+      SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTOLIGHT);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUTO_GROUP);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_AUGMENT_BUFFS);
       SET_BIT_AR(PRF_FLAGS(d->character), PRF_DISPACTIONS);

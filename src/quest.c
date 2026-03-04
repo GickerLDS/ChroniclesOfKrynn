@@ -986,9 +986,14 @@ void autoquest_trigger_check(struct char_data *ch, struct char_data *vict, struc
       if (ch == vict)
         found = FALSE;
       for (i = world[IN_ROOM(ch)].people; i && found; i = i->next_in_room)
-        if (i && IS_NPC(i) && !MOB_FLAGGED(i, MOB_NOTDEADYET))
-          if ((GET_MOB_VNUM(i) != QST_TARGET(rnum)) && !AFF_FLAGGED(i, AFF_CHARM))
-            found = FALSE;
+      {
+        if (!i || !IS_NPC(i) || MOB_FLAGGED(i, MOB_NOTDEADYET))
+          continue;
+        if (AFF_FLAGGED(i, AFF_CHARM))
+          continue;
+        if (GET_MOB_VNUM(i) != QST_TARGET(rnum))
+          found = FALSE;
+      }
       if (found)
         generic_complete_quest(ch, index);
       break;
@@ -1024,8 +1029,13 @@ void autoquest_trigger_check(struct char_data *ch, struct char_data *vict, struc
       if (QST_TARGET(rnum) == world[IN_ROOM(ch)].number)
       {
         for (i = world[IN_ROOM(ch)].people; i && found; i = i->next_in_room)
-          if (i && IS_NPC(i) && !MOB_FLAGGED(i, MOB_NOTDEADYET))
-            found = FALSE;
+        {
+          if (!i || !IS_NPC(i) || MOB_FLAGGED(i, MOB_NOTDEADYET))
+            continue;
+          if (AFF_FLAGGED(i, AFF_CHARM))
+            continue;
+          found = FALSE;
+        }
         if (found)
           generic_complete_quest(ch, index);
       }

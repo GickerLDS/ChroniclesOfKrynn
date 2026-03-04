@@ -925,6 +925,7 @@ ACMD_DECL(do_buildwalk);
 #define SCMD_AUTOSEARCH 67
 #define SCMD_SWEEPING_STRIKE 68
 #define SCMD_SURVEY_ROOMS_PROMPT 69
+#define SCMD_AUTOLIGHT 70
 
 /* do_quit */
 ACMD_DECL(do_quit);

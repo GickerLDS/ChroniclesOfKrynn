@@ -2547,6 +2547,9 @@ static void update_object(struct obj_data *obj, int use)
 void update_char_objects(struct char_data *ch)
 {
   int i;
+  struct obj_data *burned_light = NULL;
+  struct obj_data *replacement_light = NULL;
+  struct obj_data *obj = NULL;
 
   if (GET_EQ(ch, WEAR_LIGHT) != NULL)
     if (GET_OBJ_TYPE(GET_EQ(ch, WEAR_LIGHT)) == ITEM_LIGHT)
@@ -2568,7 +2571,35 @@ void update_char_objects(struct char_data *ch)
           send_to_char(ch, "Your \tYlight\tn sputters out and \tDdies\tn.\r\n");
           act("$n's light sputters out and dies.", FALSE, ch, 0, 0, TO_ROOM);
           world[IN_ROOM(ch)].light--;
-          obj_to_char(unequip_char(ch, WEAR_LIGHT), ch);
+
+          if (PRF_FLAGGED(ch, PRF_AUTOLIGHT))
+          {
+            burned_light = unequip_char(ch, WEAR_LIGHT);
+            extract_obj(burned_light);
+            for (obj = ch->carrying; obj; obj = obj->next_content)
+            {
+              if (GET_OBJ_TYPE(obj) == ITEM_LIGHT && GET_OBJ_VAL(obj, 2) > 0 &&
+                  GET_OBJ_VAL(obj, 2) != -1)
+              {
+                replacement_light = obj;
+                break;
+              }
+            }
+
+            if (replacement_light)
+            {
+              obj_from_char(replacement_light);
+              equip_char(ch, replacement_light, WEAR_LIGHT);
+              act("You quickly replace your burned-out light with $p.", FALSE, ch,
+                  replacement_light, 0, TO_CHAR);
+              act("$n quickly replaces a burned-out light with $p.", FALSE, ch,
+                  replacement_light, 0, TO_ROOM);
+            }
+          }
+          else
+          {
+            obj_to_char(unequip_char(ch, WEAR_LIGHT), ch);
+          }
         }
       }
 

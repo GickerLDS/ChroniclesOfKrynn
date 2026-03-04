@@ -1316,6 +1316,7 @@ const char *preference_bits[] = {"Brief",
                                  "Auto-Search",
                                  "Sweeping-Strike",
                                  "Survey-Rooms",
+                                 "Auto-Light",
                                  "\n"};
 CHECK_TABLE_SIZE(preference_bits, NUM_PRF_FLAGS + 1);
 

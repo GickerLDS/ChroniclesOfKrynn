@@ -1475,9 +1475,10 @@
   84 /**< Automatically search for traps when moving (1/2 perception, 1/2 speed, lose initiative) */
 #define PRF_SWEEPING_STRIKE 85 /**< Monk sweeping strike: auto-trip on first flurry attack */
 #define PRF_SURVEY_ROOMS_PROMPT 86 /**< Display survey rooms in prompt */
+#define PRF_AUTOLIGHT 87 /**< Automatically replace burned-out light from inventory */
 
 /** Total number of available PRF flags */
-#define NUM_PRF_FLAGS 87
+#define NUM_PRF_FLAGS 88
 
 /* Score Color Theme constants */
 #define SCORE_THEME_ENHANCED 0     /**< Enhanced theme with rich colors */

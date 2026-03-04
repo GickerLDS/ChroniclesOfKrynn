@@ -266,9 +266,11 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       "%sH%s) Shorten Post Combat Text%s[%s%3s%s]        %sI%s) Automatic Eldritch Blast         "
       "%s[%s%3s%s]\r\n"
       /* Line 9 (9) No Crafting Progress Messages */
-      "%sJ%s) No Crafting Progress Msg%s[%s%3s%s]        %sL%s) BoardCheck on Login              "
+      "%sJ%s) No Crafting Progress Msg%s[%s%3s%s]        %sK%s) BoardCheck on Login              "
       "%s[%s%3s%s]\r\n",
-      /* Line 8 (8) No Rage Spell */
+      /* Line 10 (10) Autolight and PvP Flag */
+      "%sL%s) Auto-Light Replacement  %s[%s%3s%s]        %sM%s) PvP Flag                       "
+      "%s[%s%3s%s]\r\n",
       /*******1********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_USE_STORED_CONSUMABLES) ? CBGRN(d->character, C_NRM)
@@ -347,25 +349,23 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       ONOFF(PREFEDIT_FLAGGED(PRF_AUTOBLAST)), CCCYN(d->character, C_NRM),
       /*******J*********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
-      PREFEDIT_FLAGGED(PRF_NO_CRAFT_PROGRESS) ? CBGRN(d->character, C_NRM)
-                                              : CBRED(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_NO_CRAFT_PROGRESS) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
       ONOFF(PREFEDIT_FLAGGED(PRF_NO_CRAFT_PROGRESS)), CCCYN(d->character, C_NRM),
-      /**/
+      /*******K*********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_BOARDCHECK) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
-      ONOFF(PREFEDIT_FLAGGED(PRF_BOARDCHECK)), CCCYN(d->character, C_NRM)
+      ONOFF(PREFEDIT_FLAGGED(PRF_BOARDCHECK)), CCCYN(d->character, C_NRM),
+      /*******L*********/
+      CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_AUTOLIGHT) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
+      ONOFF(PREFEDIT_FLAGGED(PRF_AUTOLIGHT)), CCCYN(d->character, C_NRM),
+      /*******M*********/
+      CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_PVP) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
+      ONOFF(PREFEDIT_FLAGGED(PRF_PVP)), CCCYN(d->character, C_NRM)
+
 
       /*end*/);
-
-  /* PvP Flag */
-  if (CONFIG_PK_ALLOWED)
-  {
-    send_to_char(d->character, "%sK%s) Enable PvP Flag       %s[%s%3s%s]\r\n",
-                 CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
-                 PREFEDIT_FLAGGED(PRF_PVP) ? CBGRN(d->character, C_NRM)
-                                           : CBRED(d->character, C_NRM),
-                 ONOFF(PREFEDIT_FLAGGED(PRF_PVP)), CCCYN(d->character, C_NRM));
-  }
 
   /* Finishing Off */
   send_to_char(d->character, "%sQ%s) Quit extra toggle preferences...\r\n",
@@ -1217,13 +1217,18 @@ void prefedit_parse(struct descriptor_data *d, char *arg)
       TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_NO_CRAFT_PROGRESS);
       break;
 
-    case 'l':
-    case 'L':
+    case 'k':
+    case 'K':
       TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_BOARDCHECK);
       break;
 
-    case 'k':
-    case 'K':
+    case 'l':
+    case 'L':
+      TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_AUTOLIGHT);
+      break;
+
+    case 'm':
+    case 'M':
       if (!CONFIG_PK_ALLOWED)
       {
         send_to_char(d->character, "Player killing is not enabled on this MUD.\r\n");
