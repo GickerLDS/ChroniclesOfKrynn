@@ -559,6 +559,10 @@ int load_char(const char *name, struct char_data *ch)
     CNDNSD(ch) = NULL;
     GET_DR(ch) = NULL;
     GET_WALKTO_LOC(ch) = 0;
+    GET_WALKTO_CONFIRM(ch) = NULL;
+    GET_WALKTO_PENDING_ROOM(ch) = NOWHERE;
+    GET_WALKTO_PENDING_QUEST_INDEX(ch) = -1;
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
     GET_TEMPLATE(ch) = PFDEF_TEMPLATE;
     GET_BACKGROUND(ch) = 0;
     GET_PREMADE_BUILD_CLASS(ch) = PFDEF_PREMADE_BUILD;

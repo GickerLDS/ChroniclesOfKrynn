@@ -424,7 +424,6 @@ cpp_extern const struct command_info cmd_info[] = {
     {"eldritch", "eldritch", POS_FIGHTING, do_eldritch, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"eldritchsight", "eldritchsight", POS_RESTING, do_eldritch_sight_perk, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
     {"elementalmastery", "elementalmastery", POS_STANDING, do_elementalmastery, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
-    {"summonerpreference", "summonerpreference", POS_STANDING, do_summonerpreference, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"emote", "em", POS_RECLINING, do_echo, 0, SCMD_EMOTE, TRUE, ACTION_NONE, {0, 0}, NULL},
     {":", ":", POS_RECLINING, do_echo, 1, SCMD_EMOTE, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"enter", "ent", POS_STANDING, do_enter, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
@@ -1030,6 +1029,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"sacredflames", "sacredflames", POS_FIGHTING, do_sacredflames, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"staffevents", "staffevents", POS_SLEEPING, do_staffevents, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"summon", "summon", POS_RECLINING, do_summon, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"summonerpreference", "summonerpreference", POS_STANDING, do_summonerpreference, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"statcap", "statcap", POS_RECLINING, do_statcap, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     /*pubsub*/
     {"subscribe", "sub", POS_DEAD, do_subscribe, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},

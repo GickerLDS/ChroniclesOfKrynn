@@ -56,6 +56,7 @@
 #define SCMD_QUEST_PROGRESS 4 /* Show progress of current quest       */
 #define SCMD_QUEST_STATUS 5   /* Show complete details of a quest     */
 #define SCMD_QUEST_ASSIGN 6   /* Staff complete quest for target      */
+#define SCMD_QUEST_WALKTO 7   /* Walkto quest target                  */
 
 /* AQ Flags (much room for expansion) ********************************* */
 #define AQ_REPEATABLE (1 << 0)         /* Quest can be repeated                */
@@ -161,10 +162,12 @@ void add_completed_quest(struct char_data *ch, qst_vnum vnum);
 void remove_completed_quest(struct char_data *ch, qst_vnum vnum);
 void quest_timeout(struct char_data *ch, int index);
 void check_timed_quests(void);
+void quest_walkto(struct char_data *ch, char argument[MAX_STRING_LENGTH]);
 SPECIAL_DECL(questmaster);
 ACMD_DECL(do_quest);
 ACMD_DECL(do_questline);
 ACMD_DECL(do_aqref);
+ACMD_DECL(do_walkto_quest);
 bool is_dialogue_quest_failed(struct char_data *ch, qst_vnum q_vnum);
 void set_dialogue_quest_failed(struct char_data *ch, qst_vnum q_vnum);
 void set_dialogue_quest_succeeded(struct char_data *ch, qst_vnum q_vnum);

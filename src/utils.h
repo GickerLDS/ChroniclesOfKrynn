@@ -1604,6 +1604,11 @@ void char_from_furniture(struct char_data *ch);
 #define GET_DEVICE_DESTROY_CONFIRM(ch) (ch->player_specials->device_destroy_confirm)
 #define GET_DEVICE_DESTROY_INV_IDX(ch) (ch->player_specials->device_destroy_inv_idx)
 
+#define GET_WALKTO_CONFIRM(ch) (ch->player_specials->walkto_confirm)
+#define GET_WALKTO_PENDING_ROOM(ch) (ch->player_specials->walkto_pending_room)
+#define GET_WALKTO_PENDING_QUEST_INDEX(ch) (ch->player_specials->walkto_pending_quest_index)
+#define GET_WALKTO_DEST_LABEL(ch) (ch->player_specials->walkto_destination_label)
+
 #define IS_SHIELD(type)                                                                            \
   (type == SPEC_ARMOR_TYPE_BUCKLER || type == SPEC_ARMOR_TYPE_SMALL_SHIELD ||                      \
    type == SPEC_ARMOR_TYPE_LARGE_SHIELD || type == SPEC_ARMOR_TYPE_TOWER_SHIELD)

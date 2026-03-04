@@ -28,6 +28,7 @@
 #include "db_init.h"
 #include "dg_scripts.h" /* for load_mtrigger() */
 #include "modify.h"
+#include "graph.h"
 
 /*-------------------------------------------------------------------*/
 /* External data */
@@ -80,15 +81,17 @@ const char *aq_flags[] = {"REPEATABLE", "REPLACE-OBJ-REWARD", "\n"};
 
 static int cmd_tell;
 
-static const char *quest_cmd[] = {"list",   "history", "join",   "leave", "progress",
-                                  "status", "view",    "assign", "\n"};
+static const char *quest_cmd[] = {"list", "history", "join", "leave", "progress",
+                                  "status", "assign", "\n"};
 
 static const char *quest_mort_usage =
-    "Usage: quest  list | history <optional nn> | progress <optional nn> | join <nn> | leave <nn>";
+  "Usage: quest list | history <optional nn> | progress <optional nn> | join <nn> | leave <nn>\r\n"
+  "Use 'walkto questtarget' or 'walkto questmaster' to navigate to your quest objective.";
 
 static const char *quest_imm_usage =
-    "Usage: quest  list | history <optional nn> | progress <optional nn> | join <nn> | leave <nn> "
-    "| status <vnum> | assign <target> <vnum>";
+  "Usage: quest list | history <optional nn> | progress <optional nn> | join <nn> | leave <nn> "
+  "| status <vnum> | assign <target> <vnum>\r\n"
+  "Use 'walkto questtarget' or 'walkto questmaster' to navigate to your quest objective.";
 
 /*--------------------------------------------------------------------------*/
 /* Utility Functions                                                        */
@@ -1903,6 +1906,579 @@ void quest_stat(struct char_data *ch, char argument[MAX_STRING_LENGTH])
 /* Quest Command Processing Function and Questmaster Special                */
 
 /*--------------------------------------------------------------------------*/
+
+/* ----------------------------------------------------------------------
+ * Quest Walkto Helper Functions
+ * ----------------------------------------------------------------------*/
+
+/* Helper to generate random confirmation code */
+static char *generate_confirm_code(void)
+{
+  static char code[7];
+  int i;
+
+  for (i = 0; i < 6; i++)
+  {
+    code[i] = 'a' + rand_number(0, 25);
+  }
+  code[6] = '\0';
+
+  return code;
+}
+
+/* Find room containing object with given vnum (checks ground, mob inventory, and mob equipment) */
+static room_rnum quest_find_room_with_object(obj_vnum obj_vnum)
+{
+  struct obj_data *obj;
+  obj_rnum obj_rnum = real_object(obj_vnum);
+
+  if (obj_rnum == NOTHING)
+    return NOWHERE;
+
+  for (obj = object_list; obj; obj = obj->next)
+  {
+    if (obj->item_number == obj_rnum)
+    {
+      /* Check if object is on the ground in a room */
+      if (obj->carried_by == NULL && obj->worn_by == NULL && IN_ROOM(obj) != NOWHERE)
+        return IN_ROOM(obj);
+      
+      /* Check if object is carried by a mob */
+      if (obj->carried_by && IS_NPC(obj->carried_by) && IN_ROOM(obj->carried_by) != NOWHERE)
+        return IN_ROOM(obj->carried_by);
+      
+      /* Check if object is worn by a mob */
+      if (obj->worn_by && IS_NPC(obj->worn_by) && IN_ROOM(obj->worn_by) != NOWHERE)
+        return IN_ROOM(obj->worn_by);
+    }
+  }
+
+  return NOWHERE;
+}
+
+static room_rnum quest_find_room_with_mob(mob_vnum mob_vnum)
+{
+  struct char_data *mob;
+  mob_rnum mob_rnum = real_mobile(mob_vnum);
+
+  if (mob_rnum == NOBODY)
+    return NOWHERE;
+
+  for (mob = character_list; mob; mob = mob->next)
+  {
+    if (IS_NPC(mob) && mob->nr == mob_rnum && IN_ROOM(mob) != NOWHERE)
+      return IN_ROOM(mob);
+  }
+
+  return NOWHERE;
+}
+
+static room_rnum quest_find_closest_mob_from_list(const char *kill_list, struct char_data *ch)
+{
+  char kill_list_copy[MAX_STRING_LENGTH];
+  char *mob_vnum_str;
+  room_rnum closest_room = NOWHERE;
+  int closest_distance = INT_MAX;
+
+  if (!kill_list || !*kill_list || IN_ROOM(ch) == NOWHERE)
+    return NOWHERE;
+
+  strncpy(kill_list_copy, kill_list, sizeof(kill_list_copy) - 1);
+  kill_list_copy[sizeof(kill_list_copy) - 1] = '\0';
+
+  mob_vnum_str = strtok(kill_list_copy, ",");
+  while (mob_vnum_str)
+  {
+    room_rnum mob_room = quest_find_room_with_mob(atoi(mob_vnum_str));
+
+    if (mob_room != NOWHERE)
+    {
+      int distance = count_rooms_between(IN_ROOM(ch), mob_room);
+      if (distance >= 0 && distance < closest_distance)
+      {
+        closest_distance = distance;
+        closest_room = mob_room;
+      }
+    }
+
+    mob_vnum_str = strtok(NULL, ",");
+  }
+
+  return closest_room;
+}
+
+static struct char_data *quest_find_closest_mob_instance_from_list(const char *kill_list,
+                                                                   struct char_data *ch)
+{
+  char kill_list_copy[MAX_STRING_LENGTH];
+  char *mob_vnum_str;
+  struct char_data *mob;
+  struct char_data *closest_mob = NULL;
+  int closest_distance = INT_MAX;
+
+  if (!kill_list || !*kill_list || IN_ROOM(ch) == NOWHERE)
+    return NULL;
+
+  strncpy(kill_list_copy, kill_list, sizeof(kill_list_copy) - 1);
+  kill_list_copy[sizeof(kill_list_copy) - 1] = '\0';
+
+  mob_vnum_str = strtok(kill_list_copy, ",");
+  while (mob_vnum_str)
+  {
+    mob_vnum vnum = atoi(mob_vnum_str);
+    mob_rnum mob_rnum = real_mobile(vnum);
+
+    if (mob_rnum != NOBODY)
+    {
+      for (mob = character_list; mob; mob = mob->next)
+      {
+        if (IS_NPC(mob) && mob->nr == mob_rnum && IN_ROOM(mob) != NOWHERE)
+        {
+          int distance = count_rooms_between(IN_ROOM(ch), IN_ROOM(mob));
+          if (distance >= 0 && distance < closest_distance)
+          {
+            closest_distance = distance;
+            closest_mob = mob;
+          }
+        }
+      }
+    }
+
+    mob_vnum_str = strtok(NULL, ",");
+  }
+
+  return closest_mob;
+}
+
+void quest_walkto(struct char_data *ch, char argument[MAX_STRING_LENGTH])
+{
+  qst_rnum rnum;
+  int index = -1;
+  room_rnum target_room = NOWHERE;
+
+  if (IN_ROOM(ch) == NOWHERE)
+  {
+    send_to_char(ch, "You cannot use this command here.\r\n");
+    return;
+  }
+
+  if (*argument)
+  {
+    index = atoi(argument);
+    if (index < 0 || index >= MAX_CURRENT_QUESTS)
+    {
+      send_to_char(ch, "Invalid quest index.\r\n");
+      return;
+    }
+  }
+  else
+  {
+    for (index = 0; index < MAX_CURRENT_QUESTS; index++)
+    {
+      if (GET_QUEST(ch, index) != NOTHING)
+        break;
+    }
+
+    if (index >= MAX_CURRENT_QUESTS)
+    {
+      send_to_char(ch, "You are not on any active quests.\r\n");
+      return;
+    }
+  }
+
+  if (GET_QUEST(ch, index) == NOTHING)
+  {
+    send_to_char(ch, "That quest slot is empty.\r\n");
+    return;
+  }
+
+  rnum = real_quest(GET_QUEST(ch, index));
+  if (rnum == NOTHING)
+  {
+    clear_quest(ch, index);
+    send_to_char(ch, "That quest no longer exists.\r\n");
+    return;
+  }
+
+  switch (QST_TYPE(rnum))
+  {
+  case AQ_OBJ_FIND:
+    target_room = quest_find_room_with_object(QST_TARGET(rnum));
+    break;
+
+  case AQ_MOB_FIND:
+  case AQ_MOB_KILL:
+  case AQ_MOB_SAVE:
+    target_room = quest_find_room_with_mob(QST_TARGET(rnum));
+    break;
+
+  case AQ_OBJ_RETURN:
+    target_room = quest_find_room_with_object(QST_TARGET(rnum));
+    break;
+
+  case AQ_MOB_MULTI_KILL:
+    target_room = quest_find_closest_mob_from_list(QST_KLIST(rnum), ch);
+    break;
+
+  case AQ_ROOM_FIND:
+  case AQ_ROOM_CLEAR:
+    target_room = real_room(QST_TARGET(rnum));
+    break;
+
+  case AQ_DIALOGUE:
+    target_room = quest_find_room_with_mob(QST_TARGET(rnum));
+    break;
+
+  case AQ_AUTOCRAFT:
+  case AQ_CRAFT:
+  case AQ_CRAFT_RESIZE:
+  case AQ_CRAFT_DIVIDE:
+  case AQ_CRAFT_MINE:
+  case AQ_CRAFT_HUNT:
+  case AQ_CRAFT_KNIT:
+  case AQ_CRAFT_FOREST:
+  case AQ_CRAFT_DISENCHANT:
+  case AQ_CRAFT_AUGMENT:
+  case AQ_CRAFT_CONVERT:
+  case AQ_CRAFT_RESTRING:
+  case AQ_COMPLETE_MISSION:
+  case AQ_HOUSE_FIND:
+  case AQ_WILD_FIND:
+  case AQ_GIVE_GOLD:
+    send_to_char(ch, "This quest type has no quest target to walk to.\r\n");
+    return;
+
+  default:
+    send_to_char(ch, "Unable to determine quest target for this quest type.\r\n");
+    return;
+  }
+
+  if (target_room == NOWHERE)
+  {
+    send_to_char(ch, "Unable to find the quest target right now.\r\n");
+    return;
+  }
+
+  if (world[target_room].number <= 0)
+  {
+    send_to_char(ch, "Unable to walk to that destination.\r\n");
+    return;
+  }
+
+  GET_WALKTO_LOC(ch) = world[target_room].number;
+
+  send_to_char(ch, "You begin walking to your quest target.\r\n");
+}
+
+/* ----------------------------------------------------------------------
+ * Standalone Walkto Command Handler (walkto questtarget/questmaster)
+ * ----------------------------------------------------------------------*/
+
+ACMDU(do_walkto_quest)
+{
+  char arg1[MAX_INPUT_LENGTH], arg2[MAX_INPUT_LENGTH], arg3[MAX_INPUT_LENGTH];
+  char destination_type[64] = {'\0'};
+  char destination_name[MAX_STRING_LENGTH] = {'\0'};
+  int quest_count = 0;
+  int quest_indices[MAX_CURRENT_QUESTS];
+  int selected_quest = -1;
+  qst_rnum rnum;
+  room_rnum target_room = NOWHERE;
+  mob_rnum target_mob_rnum;
+  obj_rnum target_obj_rnum;
+  room_rnum target_room_rnum;
+  struct char_data *closest_mob;
+  int i, distance;
+  bool is_master = FALSE;
+  char *confirm_code;
+
+  three_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2), arg3, sizeof(arg3));
+
+  /* Check if player is in a valid room */
+  if (IN_ROOM(ch) == NOWHERE)
+  {
+    send_to_char(ch, "You cannot use this command here.\r\n");
+    return;
+  }
+
+  /* Check if confirming a pending walkto */
+  if (GET_WALKTO_CONFIRM(ch) && *arg1 && !strcasecmp(arg1, GET_WALKTO_CONFIRM(ch)))
+  {
+    if (GET_WALKTO_PENDING_ROOM(ch) == NOWHERE)
+    {
+      send_to_char(ch, "Your pending walkto has expired.\r\n");
+      free(GET_WALKTO_CONFIRM(ch));
+      GET_WALKTO_CONFIRM(ch) = NULL;
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+      return;
+    }
+
+    GET_WALKTO_LOC(ch) = world[GET_WALKTO_PENDING_ROOM(ch)].number;
+    send_to_char(ch, "You begin walking to your destination.\r\n");
+
+    free(GET_WALKTO_CONFIRM(ch));
+    GET_WALKTO_CONFIRM(ch) = NULL;
+    GET_WALKTO_PENDING_ROOM(ch) = NOWHERE;
+    GET_WALKTO_PENDING_QUEST_INDEX(ch) = -1;
+    return;
+  }
+
+  /* Parse command: walkto questtarget [quest#] or walkto questmaster [quest#] */
+  if (!*arg1)
+  {
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+    send_to_char(ch, "Usage: walkto questtarget [quest number] | walkto questmaster [quest number]\r\n");
+    return;
+  }
+
+  /* Determine if they want target or master */
+  if (is_abbrev(arg1, "questtarget"))
+  {
+    is_master = FALSE;
+  }
+  else if (is_abbrev(arg1, "questmaster"))
+  {
+    is_master = TRUE;
+  }
+  else
+  {
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+    send_to_char(ch, "Usage: walkto questtarget [quest number] | walkto questmaster [quest number]\r\n");
+    return;
+  }
+
+  /* Count active quests */
+  for (i = 0; i < MAX_CURRENT_QUESTS; i++)
+  {
+    if (GET_QUEST(ch, i) != NOTHING)
+    {
+      quest_indices[quest_count] = i;
+      quest_count++;
+    }
+  }
+
+  if (quest_count == 0)
+  {
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+    send_to_char(ch, "You are not on any active quests.\r\n");
+    return;
+  }
+
+  /* If quest number specified, use it */
+  if (*arg2)
+  {
+    int quest_num = atoi(arg2);
+    if (quest_num < 1 || quest_num > quest_count)
+    {
+      send_to_char(ch, "Invalid quest number. You have %d active quest%s.\r\n",
+                   quest_count, quest_count == 1 ? "" : "s");
+      return;
+    }
+    selected_quest = quest_indices[quest_num - 1];
+  }
+  /* If multiple quests, require them to specify which one */
+  else if (quest_count > 1)
+  {
+    send_to_char(ch, "You have %d active quests. Please specify which quest:\r\n", quest_count);
+    for (i = 0; i < quest_count; i++)
+    {
+      rnum = real_quest(GET_QUEST(ch, quest_indices[i]));
+      if (rnum != NOTHING)
+      {
+        send_to_char(ch, "  %d) %s\r\n", i + 1, QST_NAME(rnum));
+      }
+    }
+    send_to_char(ch, "Usage: walkto %s <quest number>\r\n", is_master ? "questmaster" : "questtarget");
+    return;
+  }
+  /* Single quest, auto-select it */
+  else
+  {
+    selected_quest = quest_indices[0];
+  }
+
+  /* Get quest rnum */
+  rnum = real_quest(GET_QUEST(ch, selected_quest));
+  if (rnum == NOTHING)
+  {
+    clear_quest(ch, selected_quest);
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+    send_to_char(ch, "That quest no longer exists.\r\n");
+    return;
+  }
+
+  /* Determine target room based on quest type and whether they want master or target */
+  if (is_master)
+  {
+    /* Always go to quest master regardless of quest type */
+    if (QST_MASTER(rnum) == NOBODY || QST_MASTER(rnum) <= 0)
+    {
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+      send_to_char(ch, "No quest master is set for this quest.\r\n");
+      return;
+    }
+
+    target_room = quest_find_room_with_mob(QST_MASTER(rnum));
+    target_mob_rnum = real_mobile(QST_MASTER(rnum));
+    snprintf(destination_type, sizeof(destination_type), "Quest Master");
+    if (target_mob_rnum != NOBODY)
+      snprintf(destination_name, sizeof(destination_name), "%s",
+               mob_proto[target_mob_rnum].player.short_descr);
+    else
+      snprintf(destination_name, sizeof(destination_name), "Unknown quest master");
+    
+    if (target_room == NOWHERE)
+    {
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+      send_to_char(ch, "Unable to find the quest master for this quest.\r\n");
+      return;
+    }
+  }
+  else
+  {
+    /* For questtarget, check if this quest type has no walkable target */
+    switch (QST_TYPE(rnum))
+    {
+    case AQ_AUTOCRAFT:
+    case AQ_CRAFT:
+    case AQ_CRAFT_RESIZE:
+    case AQ_CRAFT_DIVIDE:
+    case AQ_CRAFT_MINE:
+    case AQ_CRAFT_HUNT:
+    case AQ_CRAFT_KNIT:
+    case AQ_CRAFT_FOREST:
+    case AQ_CRAFT_DISENCHANT:
+    case AQ_CRAFT_AUGMENT:
+    case AQ_CRAFT_CONVERT:
+    case AQ_CRAFT_RESTRING:
+    case AQ_COMPLETE_MISSION:
+    case AQ_HOUSE_FIND:
+    case AQ_WILD_FIND:
+    case AQ_GIVE_GOLD:
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+      send_to_char(ch, "This quest type has no quest target to walk to. Use 'walkto questmaster' instead.\r\n");
+      return;
+    }
+    
+    /* Find the quest target based on quest type */
+    switch (QST_TYPE(rnum))
+    {
+    case AQ_OBJ_FIND:
+    case AQ_OBJ_RETURN:
+      target_room = quest_find_room_with_object(QST_TARGET(rnum));
+      target_obj_rnum = real_object(QST_TARGET(rnum));
+      snprintf(destination_type, sizeof(destination_type), "Quest Target (Object)");
+      if (target_obj_rnum != NOTHING)
+        snprintf(destination_name, sizeof(destination_name), "%s",
+                 obj_proto[target_obj_rnum].short_description);
+      else
+        snprintf(destination_name, sizeof(destination_name), "Unknown object");
+      break;
+
+    case AQ_MOB_FIND:
+    case AQ_MOB_KILL:
+    case AQ_MOB_SAVE:
+      target_room = quest_find_room_with_mob(QST_TARGET(rnum));
+      target_mob_rnum = real_mobile(QST_TARGET(rnum));
+      snprintf(destination_type, sizeof(destination_type), "Quest Target (Mob)");
+      if (target_mob_rnum != NOBODY)
+        snprintf(destination_name, sizeof(destination_name), "%s",
+                 mob_proto[target_mob_rnum].player.short_descr);
+      else
+        snprintf(destination_name, sizeof(destination_name), "Unknown mob");
+      break;
+
+    case AQ_MOB_MULTI_KILL:
+      target_room = quest_find_closest_mob_from_list(QST_KLIST(rnum), ch);
+      closest_mob = quest_find_closest_mob_instance_from_list(QST_KLIST(rnum), ch);
+      snprintf(destination_type, sizeof(destination_type), "Quest Target (Mob)");
+      if (closest_mob)
+        snprintf(destination_name, sizeof(destination_name), "%s", GET_NAME(closest_mob));
+      else
+        snprintf(destination_name, sizeof(destination_name), "Closest matching target mob");
+      break;
+
+    case AQ_ROOM_FIND:
+    case AQ_ROOM_CLEAR:
+      target_room = real_room(QST_TARGET(rnum));
+      target_room_rnum = real_room(QST_TARGET(rnum));
+      snprintf(destination_type, sizeof(destination_type), "Quest Target (Room)");
+      if (target_room_rnum != NOWHERE)
+        snprintf(destination_name, sizeof(destination_name), "%s", world[target_room_rnum].name);
+      else
+        snprintf(destination_name, sizeof(destination_name), "Unknown room");
+      break;
+
+    case AQ_DIALOGUE:
+      target_room = quest_find_room_with_mob(QST_TARGET(rnum));
+      target_mob_rnum = real_mobile(QST_TARGET(rnum));
+      snprintf(destination_type, sizeof(destination_type), "Quest Target (Mob)");
+      if (target_mob_rnum != NOBODY)
+        snprintf(destination_name, sizeof(destination_name), "%s",
+                 mob_proto[target_mob_rnum].player.short_descr);
+      else
+        snprintf(destination_name, sizeof(destination_name), "Unknown mob");
+      break;
+
+    default:
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+      send_to_char(ch, "Unable to determine quest target for this quest type.\r\n");
+      return;
+    }
+    
+    if (target_room == NOWHERE)
+    {
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+      send_to_char(ch, "Unable to find the quest target right now.\r\n");
+      return;
+    }
+  }
+
+  if (world[target_room].number <= 0)
+  {
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+    send_to_char(ch, "Unable to walk to that destination.\r\n");
+    return;
+  }
+
+  /* Calculate distance */
+  distance = count_rooms_between(IN_ROOM(ch), target_room);
+
+  if (distance < 0)
+  {
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+    send_to_char(ch, "Unable to find a path to that destination.\r\n");
+    return;
+  }
+
+  /* Display information and request confirmation */
+  send_to_char(ch, "\tYQuest:\tn %s\r\n", QST_NAME(rnum));
+  send_to_char(ch, "\tYDestination:\tn %s - %s\r\n",
+               *destination_type ? destination_type : "Destination",
+               *destination_name ? destination_name : "Unknown");
+
+  send_to_char(ch, "\tYDistance:\tn %d room%s\r\n", distance, distance == 1 ? "" : "s");
+
+  /* Generate confirmation code */
+  confirm_code = generate_confirm_code();
+  
+  if (GET_WALKTO_CONFIRM(ch))
+    free(GET_WALKTO_CONFIRM(ch));
+  
+  GET_WALKTO_CONFIRM(ch) = strdup(confirm_code);
+  GET_WALKTO_PENDING_ROOM(ch) = target_room;
+  GET_WALKTO_PENDING_QUEST_INDEX(ch) = selected_quest;
+  snprintf(GET_WALKTO_DEST_LABEL(ch), MAX_INPUT_LENGTH, "%s '%s'",
+           is_master ? "your quest master" : "your quest target",
+           *destination_name ? destination_name : "Unknown");
+
+  send_to_char(ch, "\r\nTo confirm this walkto, type: \tCwalkto %s\tn\r\n", confirm_code);
+}
+
+/*--------------------------------------------------------------------------*/
+/* Quest Command Processing Functions                                       */
+/*--------------------------------------------------------------------------*/
+
 ACMD(do_quest)
 {
   char arg1[MAX_INPUT_LENGTH] = {'\0'}, arg2[MAX_STRING_LENGTH] = {'\0'};

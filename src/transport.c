@@ -28,6 +28,7 @@
 #include "alchemy.h"
 #include "race.h"
 #include "transport.h"
+#include "quest.h"
 #include "dg_scripts.h"
 #include "wilderness.h"
 #include "graph.h"
@@ -1046,6 +1047,20 @@ int get_travel_time(struct char_data *ch, int speed, int locale, int here, int t
 
 ACMDU(do_walkto)
 {
+  char arg1[MAX_INPUT_LENGTH];
+  
+  /* Check if this is a quest walkto command or confirmation */
+  one_argument(argument, arg1, sizeof(arg1));
+  if ((GET_WALKTO_CONFIRM(ch) && *arg1 && !strcasecmp(arg1, GET_WALKTO_CONFIRM(ch))) ||
+      is_abbrev(arg1, "questtarget") || is_abbrev(arg1, "questmaster"))
+  {
+    do_walkto_quest(ch, argument, cmd, subcmd);
+    return;
+  }
+
+  GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
+
+  /* Otherwise use the default landmark system */
   switch (CONFIG_LANDMARK_SYSTEM)
   {
   case LANDMARK_SYSTEM_WORLD:
@@ -1091,6 +1106,7 @@ ACMDU(do_walkto_full)
   {
     send_to_char(ch, "You need to specify the landmark you wish to travel to.  Type 'LANDMARKS' "
                      "for a list.\r\n");
+    send_to_char(ch, "You can also use 'walkto questtarget' or 'walkto questmaster' to navigate to an active quest.\r\n");
     send_to_char(ch, "You can type 'walkto cancel' to cancel your current walkto action.\r\n");
     return;
   }
@@ -1103,9 +1119,13 @@ ACMDU(do_walkto_full)
 
   if (is_abbrev(argument, "cancel"))
   {
-    send_to_char(ch, "You stop walking to '%s'",
-                 get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
+    if (*GET_WALKTO_DEST_LABEL(ch))
+      send_to_char(ch, "You stop walking to %s.", GET_WALKTO_DEST_LABEL(ch));
+    else
+      send_to_char(ch, "You stop walking to '%s'.",
+                   get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
     GET_WALKTO_LOC(ch) = 0;
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
     return;
   }
 
@@ -1168,6 +1188,7 @@ ACMDU(do_walkto_city)
   {
     send_to_char(ch, "You need to specify the landmark you wish to travel to.  Type 'LANDMARKS' "
                      "for a list.\r\n");
+    send_to_char(ch, "You can also use 'walkto questtarget' or 'walkto questmaster' to navigate to an active quest.\r\n");
     send_to_char(ch, "You can type 'walkto cancel' to cancel your current walkto action.\r\n");
     return;
   }
@@ -1180,9 +1201,13 @@ ACMDU(do_walkto_city)
 
   if (is_abbrev(argument, "cancel"))
   {
-    send_to_char(ch, "You stop walking to the %s",
-                 get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
+    if (*GET_WALKTO_DEST_LABEL(ch))
+      send_to_char(ch, "You stop walking to %s.", GET_WALKTO_DEST_LABEL(ch));
+    else
+      send_to_char(ch, "You stop walking to the %s.",
+                   get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
     GET_WALKTO_LOC(ch) = 0;
+    GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
     return;
   }
 
@@ -1328,9 +1353,14 @@ void process_walkto_actions(void)
       continue;
     if ((dir = find_first_step(IN_ROOM(ch), destination)) < 0)
     {
-      send_to_char(ch, "Your walk to '%s' has been interrupted %d.\r\n",
-                   get_walkto_landmark_name(GET_WALKTO_LOC(ch)), dir);
+      if (*GET_WALKTO_DEST_LABEL(ch))
+        send_to_char(ch, "Your walk to %s has been interrupted %d.\r\n",
+                     GET_WALKTO_DEST_LABEL(ch), dir);
+      else
+        send_to_char(ch, "Your walk to '%s' has been interrupted %d.\r\n",
+                     get_walkto_landmark_name(GET_WALKTO_LOC(ch)), dir);
       GET_WALKTO_LOC(ch) = 0;
+      GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
       continue;
     }
     else
@@ -1338,14 +1368,22 @@ void process_walkto_actions(void)
       perform_move(ch, dir, 1);
       if (IN_ROOM(ch) == destination)
       {
-        send_to_char(ch, "You have arrived at the '%s' landmark.\r\n",
-                     get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
+        if (*GET_WALKTO_DEST_LABEL(ch))
+          send_to_char(ch, "You have arrived at %s.\r\n", GET_WALKTO_DEST_LABEL(ch));
+        else
+          send_to_char(ch, "You have arrived at the '%s' landmark.\r\n",
+                       get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
         GET_WALKTO_LOC(ch) = 0;
+        GET_WALKTO_DEST_LABEL(ch)[0] = '\0';
       }
       else if (GET_WALKTO_LOC(ch))
       {
-        send_to_char(ch, "You continue walking to '%s'.  Type walkto cancel to stop.\r\n",
-                     get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
+        if (*GET_WALKTO_DEST_LABEL(ch))
+          send_to_char(ch, "You continue walking to %s.  Type walkto cancel to stop.\r\n",
+                       GET_WALKTO_DEST_LABEL(ch));
+        else
+          send_to_char(ch, "You continue walking to '%s'.  Type walkto cancel to stop.\r\n",
+                       get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
       }
     }
   }

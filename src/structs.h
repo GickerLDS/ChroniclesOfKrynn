@@ -7225,6 +7225,12 @@ struct player_special_data
   /* Device destroy confirmation */
   char *device_destroy_confirm;
   int device_destroy_inv_idx;
+
+  /* Walkto quest confirmation */
+  char *walkto_confirm;
+  room_vnum walkto_pending_room;
+  int walkto_pending_quest_index;
+  char walkto_destination_label[MAX_INPUT_LENGTH];
 };
 
 /** Special data used by NPCs, not PCs */
