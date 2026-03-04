@@ -237,7 +237,7 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
                CBWHT(d->character, C_NRM));
 
   /* The top section of the actual menu */
-  send_to_char(
+    send_to_char(
       d->character,
       "%s1%s) Use Stored Consumables  %s[%s%3s%s]        %s9%s) Charmie Combat Roll              "
       "%s[%s%3s%s]\r\n"
@@ -267,9 +267,9 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       "%s[%s%3s%s]\r\n"
       /* Line 9 (9) No Crafting Progress Messages */
       "%sJ%s) No Crafting Progress Msg%s[%s%3s%s]        %sK%s) BoardCheck on Login              "
-      "%s[%s%3s%s]\r\n",
+      "%s[%s%3s%s]\r\n"
       /* Line 10 (10) Autolight and PvP Flag */
-      "%sL%s) Auto-Light Replacement  %s[%s%3s%s]        %sM%s) PvP Flag                       "
+      "%sL%s) Auto-Light Replacement  %s[%s%3s%s]        %sM%s) PvP Flag                         "
       "%s[%s%3s%s]\r\n",
       /*******1********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
@@ -363,7 +363,6 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_PVP) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
       ONOFF(PREFEDIT_FLAGGED(PRF_PVP)), CCCYN(d->character, C_NRM)
-
 
       /*end*/);
 
