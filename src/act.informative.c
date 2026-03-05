@@ -48,6 +48,7 @@
 #include "spec_procs.h"
 #include "transport.h"
 #include "encounters.h"
+#include "protocol.h"
 #include "deities.h"
 #include "treasure.h"
 #include "resource_depletion.h" /* Phase 6: Conservation system */
@@ -11611,6 +11612,81 @@ void look_at_moons(struct char_data *ch)
       send_to_char(ch, "The darkness seems to lessen as %s begins to vanish.\r\n", moon_names[2]);
     else
       send_to_char(ch, "No trace of the infinite darkness from %s is visible.\r\n", moon_names[2]);
+  }
+}
+
+/* GMCP Test Command - Tests if GMCP protocol is working */
+ACMD(do_gmcptest)
+{
+  protocol_t *pProtocol = NULL;
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  
+  one_argument(argument, arg, sizeof(arg));
+  
+  /* Check if descriptor exists */
+  if (!ch->desc)
+  {
+    send_to_char(ch, "You have no descriptor (are you a mob?).\r\n");
+    return;
+  }
+  
+  pProtocol = ch->desc->pProtocol;
+  
+  /* Check if protocol is initialized */
+  if (!pProtocol)
+  {
+    send_to_char(ch, "Protocol system is not initialized for your connection.\r\n");
+    return;
+  }
+  
+  /* Display protocol status */
+  send_to_char(ch, "\tCGMCP Protocol Test\tn\r\n");
+  send_to_char(ch, "===================\r\n\r\n");
+  
+  send_to_char(ch, "Protocol Status:\r\n");
+  send_to_char(ch, "  GMCP Enabled:  %s\r\n", pProtocol->bGMCP ? "\tGYES\tn" : "\tRNO\tn");
+  send_to_char(ch, "  MSDP Enabled:  %s\r\n", pProtocol->bMSDP ? "\tGYES\tn" : "\tRNO\tn");
+  send_to_char(ch, "  MXP Enabled:   %s\r\n", pProtocol->bMXP ? "\tGYES\tn" : "\tRNO\tn");
+  send_to_char(ch, "  256 Color:     %s\r\n", 
+               pProtocol->b256Support == eYES ? "\tGYES\tn" : 
+               pProtocol->b256Support == eSOMETIMES ? "\tYSOMETIMES\tn" : "\tRNO\tn");
+  
+  if (!*arg)
+  {
+    send_to_char(ch, "\r\nUsage: gmcptest <package.variable>\r\n");
+    send_to_char(ch, "Example: gmcptest char.status\r\n");
+    send_to_char(ch, "\r\nThis will send a test GMCP message to your client.\r\n");
+    send_to_char(ch, "Check your client's GMCP debug window to see if you receive it.\r\n");
+    return;
+  }
+  
+  /* Send a test GMCP message if requested */
+  if (pProtocol->bGMCP)
+  {
+    char gmcp_data[MAX_STRING_LENGTH];
+    
+    snprintf(gmcp_data, sizeof(gmcp_data),
+             "{ \"name\": \"%s\", \"level\": %d, \"health\": %d, \"max_health\": %d, \"test\": \"GMCP is working!\" }",
+             GET_NAME(ch), GET_LEVEL(ch), GET_HIT(ch), GET_MAX_HIT(ch));
+    
+    /* Send via the MSDP system (which sends as GMCP when bGMCP is true) */
+    MSDPSendPair(ch->desc, arg, gmcp_data);
+    
+    send_to_char(ch, "\r\n\tGTest GMCP message sent!\tn\r\n");
+    send_to_char(ch, "Package: %s\r\n", arg);
+    send_to_char(ch, "Data: %s\r\n", gmcp_data);
+    send_to_char(ch, "\r\nCheck your MUD client's GMCP debug window.\r\n");
+    send_to_char(ch, "If you don't see the message, your client may not support GMCP,\r\n");
+    send_to_char(ch, "or GMCP may not be enabled in your client's settings.\r\n");
+  }
+  else
+  {
+    send_to_char(ch, "\r\n\tRGMCP is not enabled for your connection.\tn\r\n");
+    send_to_char(ch, "Your client did not negotiate GMCP during connection.\r\n");
+    send_to_char(ch, "\r\nTo use GMCP:\r\n");
+    send_to_char(ch, "1. Use a client that supports GMCP (Mudlet, Mushclient, etc.)\r\n");
+    send_to_char(ch, "2. Enable GMCP in your client's settings\r\n");
+    send_to_char(ch, "3. Reconnect to the MUD\r\n");
   }
 }
 
