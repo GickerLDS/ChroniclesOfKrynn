@@ -110,7 +110,12 @@ int save_all(void)
         save_list = save_list->next; /* Fatal error, skip this one. */
         break;
       default:
-        log("SYSERR: GenOLC: Invalid save type %d in save list.\n", save_list->type);
+      {
+        struct save_list_data *bad_item = save_list;
+        log("SYSERR: GenOLC: Invalid save type %d in save list.", save_list->type);
+        save_list = save_list->next; /* Fatal error, skip this one. */
+        free(bad_item);
+      }
         break;
       }
     }
@@ -211,6 +216,12 @@ int add_to_save_list(zone_vnum zone, int type)
 {
   struct save_list_data *nitem;
   zone_rnum rznum;
+
+  if (type < SL_MOB || type > SL_HLP)
+  {
+    log("SYSERR: add_to_save_list: Invalid save type passed. (%d)", type);
+    return FALSE;
+  }
 
   if (type == SL_CFG)
     return FALSE;

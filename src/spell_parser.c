@@ -4285,6 +4285,12 @@ void mag_assign_spells(void)
          "You feel less dexterous.", 2, 7, TRANSMUTATION, FALSE); // wiz2, cle1
   spello(SPELL_SCARE, "scare", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_AFFECTS, "You no longer feel scared.", 1, 7, NECROMANCY, FALSE); // wiz1, cle2
+    spello(SPELL_BANE, "bane", 0, 0, 0, POS_FIGHTING,
+      TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
+      "You no longer feel burdened by bane.", 2, 7, ENCHANTMENT, FALSE); // wiz1, cle1
+    spello(SPELL_DISGUISE_SELF, "disguise self", 0, 0, 0, POS_FIGHTING,
+      TAR_CHAR_ROOM | TAR_SELF_ONLY, FALSE, MAG_AFFECTS,
+      "Your illusionary disguise fades away.", 2, 7, ILLUSION, FALSE); // wiz1, cle1
   spello(SPELL_FEAR, "cause fear", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_AFFECTS, "You no longer feel afraid.", 1, 7, NECROMANCY, FALSE); // wiz4, cle5
   spello(SPELL_SUMMON_CREATURE_2, "summon creature ii", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
@@ -4495,9 +4501,6 @@ void mag_assign_spells(void)
   /* illusion */
   spello(SPELL_COLOR_SPRAY, "color spray", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT,
          TRUE, MAG_DAMAGE | MAG_AFFECTS, NULL, 1, 7, ILLUSION, FALSE);
-    spello(SPELL_DISGUISE_SELF, "disguise self", 0, 0, 0, POS_FIGHTING,
-      TAR_CHAR_ROOM | TAR_SELF_ONLY, FALSE, MAG_AFFECTS,
-      "Your illusory disguise fades away.", 3, 7, ILLUSION, FALSE);
   // scare - shared
   spello(SPELL_TRUE_STRIKE, "true strike", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,
          "You feel you are no longer able to strike true!", 0, 7, DIVINATION, FALSE);
@@ -5167,9 +5170,6 @@ void mag_assign_spells(void)
          "You feel the power that is muting you fade.", 3, 11, ILLUSION, FALSE); // wiz2, cle3
   spello(SPELL_DOOM, "doom", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_NOT_SELF, TRUE, MAG_AFFECTS,
          "You are no longer filled with feelings of doom.", 2, 8, NECROMANCY, FALSE);
-    spello(SPELL_BANE, "bane", 0, 0, 0, POS_FIGHTING,
-      TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
-      "You no longer feel burdened by baneful magic.", 2, 8, ENCHANTMENT, FALSE);
 
   // endurance - shared
   // negative energy ray - shared

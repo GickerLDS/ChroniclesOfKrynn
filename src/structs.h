@@ -4478,7 +4478,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1732
+#define NUM_PERKS 1740
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

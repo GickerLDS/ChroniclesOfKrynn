@@ -5825,7 +5825,7 @@ void define_warlock_perks(void)
   perk = &perk_list[PERK_WARLOCK_ONE_WITH_SHADOWS];
   perk->id = PERK_WARLOCK_ONE_WITH_SHADOWS;
   perk->name = strdup("One with Shadows");
-  perk->description = strdup("Become invisible in dim light or darkness; can hide in plain sight while active.");
+  perk->description = strdup("Become invisible in dim light or darkness.");
   perk->associated_class = CLASS_WARLOCK;
   perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
   perk->cost = 3;
@@ -5836,14 +5836,14 @@ void define_warlock_perks(void)
   perk->effect_value = 1;
   perk->effect_modifier = 0;
   perk->special_description =
-      strdup("In dim light or darkness, become invisible. While active, also allows hiding in plain sight. Requires command to activate. Invisibility ends if exiting darkness.");
+      strdup("In dim light or darkness, become invisible. Requires command to activate. Invisibility ends if exiting darkness.");
   perk->toggleable = true;
 
   /* Beguiling Influence */
   perk = &perk_list[PERK_WARLOCK_BEGUILING_INFLUENCE];
   perk->id = PERK_WARLOCK_BEGUILING_INFLUENCE;
   perk->name = strdup("Beguiling Influence");
-  perk->description = strdup("Gain bonus to Deception, Intimidate and Persuasion skills.");
+  perk->description = strdup("Gain bonus to Deception and Persuasion skills.");
   perk->associated_class = CLASS_WARLOCK;
   perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
   perk->cost = 1;
@@ -5854,7 +5854,7 @@ void define_warlock_perks(void)
   perk->effect_value = 3; /* +3 to deception and persuasion */
   perk->effect_modifier = 0;
   perk->special_description =
-      strdup("+3 to Deception, Intimidate and Persuasion skills.");
+      strdup("+3 to Deception and Persuasion skills.");
   perk->toggleable = false;
 
   /*** Invocation Mastery - Tier 2 ***/
@@ -5899,7 +5899,7 @@ void define_warlock_perks(void)
   perk = &perk_list[PERK_WARLOCK_THIEF_OF_FIVE_FATES];
   perk->id = PERK_WARLOCK_THIEF_OF_FIVE_FATES;
   perk->name = strdup("Thief of Five Fates");
-    perk->description = strdup("Cast Bane at will.");
+  perk->description = strdup("Cast Bane once per 5 minutes.");
   perk->associated_class = CLASS_WARLOCK;
   perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
   perk->cost = 2;
@@ -5908,9 +5908,9 @@ void define_warlock_perks(void)
   perk->prerequisite_rank = 1;
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 1;
-    perk->effect_modifier = 0;
+  perk->effect_modifier = 300; /* 5 minutes in seconds */
   perk->special_description =
-      strdup("Cast Bane at will. Curse enemies with penalties to attacks and saves.");
+      strdup("Cast Bane once per 5 minutes. Curse enemies with penalties to attacks and saves.");
   perk->toggleable = false;
 
   /* Appearance of Shadows */
@@ -18181,8 +18181,7 @@ bool has_hide_in_plain_sight(struct char_data *ch)
   if (!ch || IS_NPC(ch))
     return FALSE;
 
-  return has_perk(ch, PERK_ROGUE_HIDE_IN_PLAIN_SIGHT) ||
-         has_perk_active(ch, PERK_WARLOCK_ONE_WITH_SHADOWS);
+  return has_perk(ch, PERK_ROGUE_HIDE_IN_PLAIN_SIGHT);
 }
 
 /**

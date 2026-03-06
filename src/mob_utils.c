@@ -218,8 +218,7 @@ bool move_on_path(struct char_data *ch)
   /* stuck in a spot for a moment */
   if (PATH_DELAY(ch) > 0)
   {
-    PATH_DELAY(ch)
-    --;
+    PATH_DELAY(ch)--;
     return FALSE;
   }
 
@@ -231,6 +230,12 @@ bool move_on_path(struct char_data *ch)
     PATH_INDEX(ch) = 0;
 
   next = GET_PATH(ch, PATH_INDEX(ch));
+
+  if (next == NOWHERE)
+  {
+    send_to_char(ch, "Hrm, it appears I have no where to go!.\r\n");
+    return FALSE;
+  }
 
   send_to_char(ch, "PATH:  Path-Index:  %d, Next (get-path vnum):  %d (%d).\r\n", PATH_INDEX(ch),
                next, real_room(next));
