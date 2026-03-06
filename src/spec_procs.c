@@ -11954,6 +11954,7 @@ SPECIAL(identify_mob)
       }
       GET_GOLD(ch) -= cost;
       send_to_char(ch, "That will cost you %d coins.\r\n", cost);
+      SET_BIT_AR(GET_OBJ_EXTRA(obj), ITEM_IDENTIFIED);
       do_stat_object(ch, obj, ITEM_STAT_MODE_IDENTIFY_SPELL);
     }
     else
