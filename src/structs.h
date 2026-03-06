@@ -4444,6 +4444,18 @@
 #define PERK_WARLOCK_FIENDISH_VIGOR 1722
 #define PERK_WARLOCK_PACT_SPELL_AMPLIFICATION 1723
 
+/* TREE 2: PACT BONDING - Tier 3 (1724-1727) */
+#define PERK_WARLOCK_FIENDISH_RESILIENCE 1724
+#define PERK_WARLOCK_PACT_SOUL 1725
+#define PERK_WARLOCK_ELDRITCH_ENDURANCE 1726
+#define PERK_WARLOCK_DARK_REVELATION 1727
+
+/* TREE 2: PACT BONDING - Tier 4/Capstone (1728-1731) */
+#define PERK_WARLOCK_ONE_WITH_PATRON 1728
+#define PERK_WARLOCK_HURL_THROUGH_HELL 1729
+#define PERK_WARLOCK_PLANAR_ANCHOR 1730
+#define PERK_WARLOCK_DARK_MASTERS_WILL 1731
+
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
  * ============================================================================ */
@@ -4453,7 +4465,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1724
+#define NUM_PERKS 1732
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -6630,6 +6642,9 @@ struct char_special_data
   int eldritch_blast_cooldowns[NUM_ELDRITCH_BLAST_COOLDOWNS];
 
   bool perk_luck_active; // temporary flag for Dark One's Own Luck perk bonus
+
+  int dark_revelation_mob_rnum; // Dark Revelation lored target rnum for combat bonus
+  bool dark_revelation_used; // Dark Revelation bonus already applied this combat
 
   bool is_charmie;
   int sage_mob_vnum;

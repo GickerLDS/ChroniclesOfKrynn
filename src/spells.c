@@ -2864,6 +2864,37 @@ ASPELL(devour_magic)
   mag_affects(level, ch, ch, obj, WARLOCK_DEVOUR_MAGIC, 0, casttype, 0);
 }
 
+ASPELL(spell_hurl_through_hell)
+{
+  int dam;
+
+  if (ch == NULL || victim == NULL)
+    return;
+
+  if (ROOM_FLAGGED(IN_ROOM(ch), ROOM_PEACEFUL))
+  {
+    send_to_char(ch, "This room just has such a peaceful, easy feeling...\r\n");
+    return;
+  }
+
+  if (mag_resistance(ch, victim, 0))
+  {
+    send_to_char(ch, "Your magic fizzles against your target's resistance!\r\n");
+    return;
+  }
+
+  /* Calculate damage: 5d10 + warlock level */
+  dam = dice(5, 10) + get_warlock_hurl_through_hell_damage(ch);
+
+  /* Deal mental damage with no save */
+  if (damage(ch, victim, dam, SPELL_HURL_THROUGH_HELL, DAM_MENTAL, FALSE) < 0)
+    return; /* victim died */
+
+  act("You hurl $N through the depths of hell, searing $S mind!", FALSE, ch, 0, victim, TO_CHAR);
+  act("$n hurls you through the depths of hell, searing your mind!", FALSE, ch, 0, victim, TO_VICT);
+  act("$n hurls $N through the depths of hell!", FALSE, ch, 0, victim, TO_NOTVICT);
+}
+
 ASPELL(tenacious_plague)
 {
   if (CLOUDKILL(ch) || INCENDIARY(ch) || DOOM(ch))

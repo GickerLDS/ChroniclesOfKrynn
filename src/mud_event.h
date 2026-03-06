@@ -254,6 +254,9 @@ typedef enum
   ePERFECT_ADAPTATION_COOLDOWN, /* Inquisitor Perfect Adaptation 5-minute cooldown */
   eSUMMONSOLAR,                 // summon solar spell
   eDARK_ONES_LUCK,              // warlock pact bonding Dark One's Own Luck cooldown
+  eFIENDISH_RESILIENCE,         // warlock pact bonding Fiendish Resilience 5-minute cooldown
+  eDARK_MASTERS_WILL,            // warlock pact bonding Dark Master's Will 5-minute cooldown
+  eWARLOCK_ONE_WITH_PATRON,      // warlock pact bonding One with Patron 50% HP trigger cooldown
 } event_id;
 
 /* probably a smart place to mention to not forget to update:

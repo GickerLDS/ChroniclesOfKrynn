@@ -218,7 +218,7 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 9. **Fiendish Resilience**
    - Cost: 3 points per rank
    - Max Rank: 2
-   - Effect: Every ten minutes specify a damage type. Gain 25% resistance per rank for 1 minute. Need a ACMD command, and put code in compute_damtype_resistance
+   - Effect: Gain 25% resistance per rank for 1 minute for a specified damage type. Need a ACMD command, and put code in compute_damtype_resistance. 5 minute cooldown.
    - Prerequisite: Fiendish Vigor, Dark One's Blessing II (1 rank)
    - Notes: Flexible damage mitigation, stacks with other resistances
 

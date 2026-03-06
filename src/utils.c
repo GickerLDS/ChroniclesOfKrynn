@@ -451,6 +451,12 @@ int compute_charisma_bonus(struct char_data *ch)
     bonus += get_summoner_epic_spellcasting_charisma_bonus(ch);
   }
 
+  /* Warlock Pact Bonding Tree - Pact Soul adds +2 to charisma bonus */
+  if (!IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0)
+  {
+    bonus += get_warlock_pact_soul_bonus(ch);
+  }
+
   return bonus;
 }
 

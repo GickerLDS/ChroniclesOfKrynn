@@ -462,6 +462,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"forage", "forage", POS_STANDING, do_forage, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"force", "force", POS_SLEEPING, do_force, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"fiendishboon", "fiendishb", POS_DEAD, do_fiendishboon, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"fiendishresilience", "fiendishresilience", POS_FIGHTING, do_fiendish_resilience_perk, 1, 0, FALSE, ACTION_SWIFT, {3, 0}, NULL},
     {"fiendishvigor", "fiendishvigor", POS_RESTING, do_fiendish_vigor_perk, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
     {"fill", "fil", POS_STANDING, do_pour, 0, SCMD_FILL, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"file", "file", POS_SLEEPING, do_file, LVL_IMMORT, 0, TRUE, ACTION_NONE, {0, 0}, NULL},

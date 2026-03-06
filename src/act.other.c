@@ -5778,6 +5778,20 @@ ACMD(do_lore)
   {
     /* victim */
     lore_id_vict(ch, tch);
+
+    /* Dark Revelation: Warlock perk provides combat bonuses after lore */
+    if (has_warlock_dark_revelation(ch) && IS_NPC(tch))
+    {
+      /* Check if target is not a charm and is within 5 levels or higher */
+      if (!(AFF_FLAGGED(tch, AFF_CHARM) && tch->master == ch) &&
+          GET_LEVEL(tch) >= (GET_LEVEL(ch) - 5))
+      {
+        ch->char_specials.dark_revelation_mob_rnum = GET_MOB_RNUM(tch);
+        ch->char_specials.dark_revelation_used = FALSE;
+        send_to_char(ch, "\tY[Your patron reveals this creature's weaknesses! "
+                         "You gain +2 to hit and +2d6 damage in your next battle against it.]\tn\r\n");
+      }
+    }
   }
 }
 
@@ -13844,6 +13858,139 @@ ACMD(do_fiendish_vigor_perk)
 
   send_to_char(ch, "\tY[Fiendish Vigor: You gain +%d temporary HP!]\tn\r\n", temp_hp);
   act("$n's body writhes with dark vitality as false life animates $m.", TRUE, ch, 0, 0,
+      TO_ROOM);
+}
+
+/* Warlock Fiendish Resilience perk command: activate damage resistance */
+ACMD(do_fiendish_resilience_perk)
+{
+  char arg[MAX_INPUT_LENGTH];
+  int resistance_pct = 0;
+  int rank = 0;
+  bool applied = false;
+
+  PREREQ_NOT_NPC();
+
+  rank = get_warlock_fiendish_resilience_bonus(ch) / 25; /* Return percentage value, divide by 25 to get rank */
+  if (rank <= 0)
+  {
+    send_to_char(ch, "You have not mastered Fiendish Resilience.\r\n");
+    return;
+  }
+
+  one_argument(argument, arg, sizeof(arg));
+
+  if (!*arg)
+  {
+    send_to_char(ch, "Usage: fiendishresilience <damage_type>\r\n");
+    send_to_char(ch, "Available types: fire, cold, acid, electric, sonic, force, mental, holy, unholy, slashing, piercing, bludgeoning\r\n");
+    send_to_char(ch, "You gain %d%% resistance per rank for 1 minute.\r\n", rank * 25);
+    return;
+  }
+
+  /* Check if command is on cooldown */
+  if (char_has_mud_event(ch, eFIENDISH_RESILIENCE))
+  {
+    send_to_char(ch, "Your patron's protection is still settling. Try again in a moment.\r\n");
+    return;
+  }
+
+  resistance_pct = rank * 25; /* Formula: 25% per rank */
+
+  /* Create affect with 1 minute duration (10 ticks) */
+  struct affected_type af;
+  new_affect(&af);
+  af.spell = AFFECT_PERK_WARLOCK_FIENDISH_RESILIENCE;
+  af.duration = 10; /* 1 minute = 10 ticks */
+  af.modifier = resistance_pct;
+  af.bonus_type = BONUS_TYPE_UNIVERSAL;
+
+  /* Map damage type to APPLY_RES_* location */
+  if (is_abbrev(arg, "fire"))
+  {
+    af.location = APPLY_RES_FIRE;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "cold"))
+  {
+    af.location = APPLY_RES_COLD;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "acid"))
+  {
+    af.location = APPLY_RES_ACID;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "electric") || is_abbrev(arg, "electricity") || is_abbrev(arg, "shock"))
+  {
+    af.location = APPLY_RES_ELECTRIC;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "sonic") || is_abbrev(arg, "sound"))
+  {
+    af.location = APPLY_RES_SOUND;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "force"))
+  {
+    af.location = APPLY_RES_FORCE;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "mental") || is_abbrev(arg, "psychic"))
+  {
+    af.location = APPLY_RES_MENTAL;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "holy"))
+  {
+    af.location = APPLY_RES_HOLY;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "unholy"))
+  {
+    af.location = APPLY_RES_UNHOLY;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "slashing") || is_abbrev(arg, "slash") || is_abbrev(arg, "slice"))
+  {
+    af.location = APPLY_RES_SLICE;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "piercing") || is_abbrev(arg, "pierce") || is_abbrev(arg, "puncture"))
+  {
+    af.location = APPLY_RES_PUNCTURE;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+  else if (is_abbrev(arg, "bludgeoning") || is_abbrev(arg, "bludgeon") || is_abbrev(arg, "blunt"))
+  {
+    af.location = APPLY_RES_BLUDGEON;
+    affect_to_char(ch, &af);
+    applied = true;
+  }
+
+  if (!applied)
+  {
+    send_to_char(ch, "Invalid damage type. See 'fiendishresilience' for valid options.\r\n");
+    return;
+  }
+
+  /* Set cooldown (5 minutes = 300 seconds) */
+  attach_mud_event(new_mud_event(eFIENDISH_RESILIENCE, ch, NULL), 300 * PASSES_PER_SEC);
+
+  send_to_char(ch, "\tY[Fiendish Resilience: You gain %d%% resistance to %s damage for 1 minute!]\tn\r\n", 
+               resistance_pct, arg);
+  act("$n's form writhes with fiendish energy, becoming resistant to $s chosen harm.", TRUE, ch, 0, 0,
       TO_ROOM);
 }
 

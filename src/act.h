@@ -722,6 +722,7 @@ ACMD_DECL(do_aurareading_perk);
 ACMD_DECL(do_eldritch_sight_perk);
 ACMD_DECL(do_dark_ones_own_luck_perk);
 ACMD_DECL(do_fiendish_vigor_perk);
+ACMD_DECL(do_fiendish_resilience_perk);
 ACMD_DECL(do_perfectadaptation_perk);
 ACMD_DECL(do_supremacy_perk);
 ACMD_DECL(do_irresistablemagic);

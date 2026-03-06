@@ -5638,6 +5638,150 @@ void define_warlock_perks(void)
   perk->special_description =
       strdup("When casting warlock spells, treat them as +2 levels higher for damage and DCs.");
   perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: PACT BONDING - Tier 3
+   **************************************************************************/
+
+  perk = &perk_list[PERK_WARLOCK_FIENDISH_RESILIENCE];
+  perk->id = PERK_WARLOCK_FIENDISH_RESILIENCE;
+  perk->name = strdup("Fiendish Resilience");
+  perk->description = strdup("Gain temporary resistance to a chosen damage type.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 3;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_WARLOCK_FIENDISH_VIGOR;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 25; /* 25% resistance per rank */
+  perk->effect_modifier = 60; /* 1 minute duration in seconds */
+  perk->special_description =
+      strdup("Gain 25% resistance per rank to a chosen damage type for 1 minute. 5 minute cooldown.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_PACT_SOUL];
+  perk->id = PERK_WARLOCK_PACT_SOUL;
+  perk->name = strdup("Pact Soul");
+  perk->description = strdup("Deepen your bond with your patron for greater charisma.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_PACT_CONNECTION;
+  perk->prerequisite_rank = 3; /* max rank */
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 to charisma bonus */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Your charisma bonus increases by +2 through your patron's influence.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_ELDRITCH_ENDURANCE];
+  perk->id = PERK_WARLOCK_ELDRITCH_ENDURANCE;
+  perk->name = strdup("Eldritch Endurance");
+  perk->description = strdup("Your patron strengthens your concentration ability.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 3;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_WARLOCK_DARK_ONES_BLESSING_2;
+  perk->prerequisite_rank = 2; /* max rank */
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 to concentration skill per rank */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Gain +2 bonus to concentration skill checks per rank.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_DARK_REVELATION];
+  perk->id = PERK_WARLOCK_DARK_REVELATION;
+  perk->name = strdup("Dark Revelation");
+  perk->description = strdup("Patron reveals enemy weaknesses, granting combat advantage.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_ELDRITCH_SIGHT_PACT;
+  perk->prerequisite_rank = 2; /* max rank */
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 to hit and +2d6 damage against identified targets */
+  perk->effect_modifier = 6; /* damage die */
+  perk->special_description =
+      strdup("When examining a creature, reveal resistances/vulnerabilities. Once per combat, gain +2 to hit and +2d6 damage against identified targets.");
+  perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: PACT BONDING - Tier 4/Capstone
+   **************************************************************************/
+
+  perk = &perk_list[PERK_WARLOCK_ONE_WITH_PATRON];
+  perk->id = PERK_WARLOCK_ONE_WITH_PATRON;
+  perk->name = strdup("One with Patron");
+  perk->description = strdup("Dark One's Blessing triggers at 50% HP instead of kills.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_DARK_ONES_BLESSING_2;
+  perk->prerequisite_rank = 2; /* max rank */
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5; /* +5 temp HP per trigger */
+  perk->effect_modifier = 50; /* at 50% HP threshold */
+  perk->special_description =
+      strdup("Dark One's Blessings trigger at 50% HP instead of kills, and grant +5 bonus temporary HP.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_HURL_THROUGH_HELL];
+  perk->id = PERK_WARLOCK_HURL_THROUGH_HELL;
+  perk->name = strdup("Hurl Through Hell");
+  perk->description = strdup("Cast an at-will spell to hurl creatures through the abyss.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_FIENDISH_RESILIENCE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* 5d10 damage + level */
+  perk->effect_modifier = 10; /* damage die */
+  perk->special_description =
+      strdup("Cast at-will to send creature to abyss and back, dealing 5d10+level mental damage.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_PLANAR_ANCHOR];
+  perk->id = PERK_WARLOCK_PLANAR_ANCHOR;
+  perk->name = strdup("Planar Anchor");
+  perk->description = strdup("Cast at-will to anchor from planar summons and teleportation.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 6;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_HURL_THROUGH_HELL;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* usable at-will on self or others */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Gain a spell that prevents being summoned or teleported, usable at-will on self or others.");
+  perk->toggleable = false;
+
+  perk = &perk_list[PERK_WARLOCK_DARK_MASTERS_WILL];
+  perk->id = PERK_WARLOCK_DARK_MASTERS_WILL;
+  perk->name = strdup("Dark Master's Will");
+  perk->description = strdup("Dark patron forces your will upon failed saves.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_PACT_BONDING;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_DARK_ONES_OWN_LUCK;
+  perk->prerequisite_rank = 2; /* max rank */
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* once per 5 minutes */
+  perk->effect_modifier = 300; /* 5 minutes in seconds */
+  perk->special_description =
+      strdup("Once per 5 minutes, automatically succeed on a will save that you failed. Patron's intervention.");
+  perk->toggleable = false;
 }
 
 /* Define Psionicist Perks */
@@ -25810,6 +25954,90 @@ int get_warlock_pact_spell_amplification_bonus(struct char_data *ch)
     return 0;
 
   return has_perk(ch, PERK_WARLOCK_PACT_SPELL_AMPLIFICATION) ? 2 : 0;
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Pact Bonding Tier 3
+ **************************************************************************/
+
+int get_warlock_fiendish_resilience_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return (get_perk_rank(ch, PERK_WARLOCK_FIENDISH_RESILIENCE, CLASS_WARLOCK) * 25);
+}
+
+bool has_warlock_fiendish_resilience(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_FIENDISH_RESILIENCE);
+}
+
+int get_warlock_pact_soul_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return has_perk(ch, PERK_WARLOCK_PACT_SOUL) ? 2 : 0;
+}
+
+int get_warlock_eldritch_endurance_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return (get_perk_rank(ch, PERK_WARLOCK_ELDRITCH_ENDURANCE, CLASS_WARLOCK) * 2);
+}
+
+bool has_warlock_dark_revelation(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_DARK_REVELATION);
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Pact Bonding Tier 4/Capstone
+ **************************************************************************/
+
+bool has_warlock_one_with_patron(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ONE_WITH_PATRON);
+}
+
+int get_warlock_one_with_patron_temp_hp(struct char_data *ch)
+{
+  if (!has_warlock_one_with_patron(ch))
+    return 0;
+
+  return 5; /* +5 temp HP per trigger */
+}
+
+bool has_warlock_hurl_through_hell(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_HURL_THROUGH_HELL);
+}
+
+int get_warlock_hurl_through_hell_damage(struct char_data *ch)
+{
+  if (!has_warlock_hurl_through_hell(ch))
+    return 0;
+
+  return 10 + CLASS_LEVEL(ch, CLASS_WARLOCK); /* 5d10 + level */
+}
+
+bool has_warlock_planar_anchor(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_PLANAR_ANCHOR);
+}
+
+bool has_warlock_dark_masters_will(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_DARK_MASTERS_WILL);
 }
 
 int class_to_perk_class(int class_type, int which_perk)

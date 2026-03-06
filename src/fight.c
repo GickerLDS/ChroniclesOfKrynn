@@ -1889,6 +1889,13 @@ void stop_fighting(struct char_data *ch)
 
     /* Blackguard: Reset Resilient Corruption stacks when leaving combat */
     reset_blackguard_resilient_corruption(ch);
+
+    /* Dark Revelation: Clear lored target and reset used flag */
+    if (ch->char_specials.dark_revelation_mob_rnum != -1)
+    {
+      ch->char_specials.dark_revelation_mob_rnum = -1;
+      ch->char_specials.dark_revelation_used = FALSE;
+    }
   }
 
   if (affected_by_spell(ch, SKILL_SMITE_EVIL))
@@ -6184,6 +6191,33 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
       trigger_blackguard_graveborn_vigor(victim);
   }
 
+  /* Warlock: One with Patron - Dark One's Blessing triggers at 50% HP threshold */
+  if (!IS_NPC(victim) && CLASS_LEVEL(victim, CLASS_WARLOCK) > 0 && has_warlock_one_with_patron(victim) && dam > 0 && GET_HIT(victim) > 0)
+  {
+    int hp_pct = (GET_HIT(victim) * 100) / MAX(1, GET_MAX_HIT(victim));
+    if (hp_pct <= 50 && !char_has_mud_event(victim, eWARLOCK_ONE_WITH_PATRON))
+    {
+      int blessing_rank_1 = get_warlock_dark_ones_blessing_1_bonus(victim);
+      int blessing_rank_2 = get_warlock_dark_ones_blessing_2_bonus(victim);
+      
+      if (blessing_rank_1 > 0 || blessing_rank_2 > 0)
+      {
+        int temp_hp = (GET_CHA_BONUS(victim) + (GET_WARLOCK_LEVEL(victim) / 2)) * blessing_rank_1;
+        temp_hp += blessing_rank_2;
+        temp_hp += get_warlock_one_with_patron_temp_hp(victim); /* +5 bonus from One with Patron */
+        
+        if (temp_hp > 0)
+        {
+          GET_HIT(victim) = MIN(GET_MAX_HIT(victim) + 50, GET_HIT(victim) + temp_hp);
+          send_to_char(victim, "\tY[Your patron's blessing at half strength grants you +%d temporary HP!]\tn\r\n", temp_hp);
+          
+          /* Set a 1 minute cooldown */
+          attach_mud_event(new_mud_event(eWARLOCK_ONE_WITH_PATRON, victim, NULL), 60 * PASSES_PER_SEC);
+        }
+      }
+    }
+  }
+
   /* Blackguard: Sanguine Barrier - gain temp HP from damage dealt */
   if (dam > 0 && ch && !IS_NPC(ch))
   {
@@ -6683,6 +6717,18 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
         if (display_mode)
           send_to_char(ch, "Soul Rend: \tR%dd6 (%d)\tn\r\n", soul_rend_bonus, sr_dam);
       }
+    }
+
+    /* Dark Revelation: +2d6 damage vs lored target (once per combat) */
+    if (vict && ch->char_specials.dark_revelation_mob_rnum == GET_MOB_RNUM(vict) &&
+        !ch->char_specials.dark_revelation_used)
+    {
+      int dark_rev_dam = dice(2, 6);
+      dambonus += dark_rev_dam;
+      ch->char_specials.dark_revelation_used = TRUE;
+      if (display_mode)
+        send_to_char(ch, "Dark Revelation: \tR2d6 (%d)\tn\r\n", dark_rev_dam);
+      send_to_char(ch, "\tY[Your patron's insight guides your strike! +2d6 damage]\tn\r\n");
     }
   }
 
@@ -14296,6 +14342,13 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
       calc_bab += compute_attack_bonus(ch, victim, attack_type);
     }
     break;
+  }
+
+  /* Dark Revelation: +2 to hit against lored target */
+  if (!IS_NPC(ch) && ch->char_specials.dark_revelation_mob_rnum == GET_MOB_RNUM(victim) &&
+      !ch->char_specials.dark_revelation_used)
+  {
+    calc_bab += 2;
   }
 
   if (type == TYPE_ATTACK_OF_OPPORTUNITY)

@@ -534,6 +534,23 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     }
   }
 
+  /* Warlock Dark Master's Will - auto-succeed a will save if not on cooldown */
+  if (!IS_NPC(vict) && type == SAVING_WILL && has_warlock_dark_masters_will(vict) && 
+      !char_has_mud_event(vict, eDARK_MASTERS_WILL))
+  {
+    send_to_char(vict, "\tY[Dark Master's Will: Your patron grants you intervention over this will save!]\tn\r\n");
+    if (ch)
+      send_to_char(ch, "\tR%s's patron intervenes, causing %s to resist your magic!\tn\r\n",
+                   GET_NAME(vict), HMHR(vict));
+    act("\tY$n's expression hardens as $s patron's will flows through $m!\tn", FALSE, vict, NULL, ch,
+        TO_NOTVICT);
+
+    /* Set cooldown (5 minutes = 300 seconds) */
+    attach_mud_event(new_mud_event(eDARK_MASTERS_WILL, vict, NULL), 300 * PASSES_PER_SEC);
+
+    return TRUE; /* Automatically succeed */
+  }
+
   if (has_teamwork_feat(vict, FEAT_DUCK_AND_COVER) && type == SAVING_REFL)
     diceroll = MAX(diceroll, d20(vict));
 
@@ -7884,6 +7901,13 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     SET_BIT_AR(af[0].bitvector, AFF_DIM_LOCK);
     to_room = "$n is bound to this dimension!";
     to_vict = "You feel yourself bound to this dimension!";
+    break;
+
+  case SPELL_PLANAR_ANCHOR: // abjuration - warlock perk
+    af[0].duration = (level + 12);
+    SET_BIT_AR(af[0].bitvector, AFF_NOTELEPORT);
+    to_room = "$n is anchored to this plane!";
+    to_vict = "You feel anchored to this plane, protected from unwanted teleportation!";
     break;
 
   case SPELL_DISPLACEMENT:       // illusion

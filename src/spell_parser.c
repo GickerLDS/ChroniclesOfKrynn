@@ -153,6 +153,10 @@ bool concentration_check(struct char_data *ch, int spellnum)
   if (get_summoner_archmages_insight_concentration_bonus(ch) > 0)
     concentration_dc -= get_summoner_archmages_insight_concentration_bonus(ch);
 
+  /* Warlock Pact Bonding Tree: Eldritch Endurance perk (+2 per rank to concentration checks) */
+  if (get_warlock_eldritch_endurance_bonus(ch) > 0)
+    concentration_dc -= get_warlock_eldritch_endurance_bonus(ch);
+
   if (CASTING_CLASS(ch) != CLASS_ALCHEMIST)
   {
     if (spellnum != SPELL_CURE_DEAFNESS && AFF_FLAGGED(ch, AFF_DEAF) && dice(1, 5) == 1)
@@ -4908,6 +4912,12 @@ void mag_assign_spells(void)
          FALSE, MAG_AFFECTS, "You feel your displacement spell wear off.", 6, 19, ILLUSION, FALSE);
   spello(SPELL_BLINK, "blink", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
          FALSE, MAG_AFFECTS, "You feel your blink spell wear off.", 6, 19, TRANSMUTATION, FALSE);
+  /* Warlock at-will spell - Hurl Through Hell */
+  spello(SPELL_HURL_THROUGH_HELL, "hurl through hell", 0, 0, 0, POS_FIGHTING,
+         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE, MAG_MANUAL, NULL, 5, 11, NOSCHOOL, FALSE);
+  /* Warlock at-will spell - Planar Anchor */
+  spello(SPELL_PLANAR_ANCHOR, "planar anchor", 0, 0, 0, POS_STANDING,
+         TAR_CHAR_ROOM, FALSE, MAG_AFFECTS, "You no longer feel anchored to this plane.", 5, 11, ABJURATION, FALSE);
   spello(SPELL_FOG_CLOUD, "fog cloud", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
          "The fog cloud begins to dissipate.", 2, 7, CONJURATION, FALSE);
   spello(SPELL_SOLID_FOG, "solid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
@@ -5662,6 +5672,10 @@ void mag_assign_spells(void)
          TAR_IGNORE, FALSE, MAG_AFFECTS, "Your inspiration from recent performances fades.", 1, 1,
          NOSCHOOL, FALSE);
 
+  spello(AFFECT_PERK_WARLOCK_FIENDISH_RESILIENCE, "warlock perk fiendish resilience", 0, 0, 0, POS_FIGHTING,
+         TAR_IGNORE, FALSE, MAG_AFFECTS, "Your fiendish resilience fades.", 1, 1,
+         NOSCHOOL, FALSE);
+
   spello(SPELL_REMOVE_PARALYSIS, "remove paralysis", 44, 29, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
          MAG_UNAFFECTS, NULL, 3, 8, CONJURATION, FALSE);
 
@@ -6364,6 +6378,10 @@ sbyte canCastAtWill(struct char_data *ch, int spellnum)
   if (find_cantrip_class(ch, spellnum) != CLASS_UNDEFINED)
     return true;
   if (isWarlockMagic(ch, spellnum) && is_a_known_spell(ch, CLASS_WARLOCK, spellnum))
+    return true;
+  if (spellnum == SPELL_HURL_THROUGH_HELL && has_warlock_hurl_through_hell(ch))
+    return true;
+  if (spellnum == SPELL_PLANAR_ANCHOR && has_warlock_planar_anchor(ch))
     return true;
   if (isHighElfCantrip(ch, spellnum))
     return true;

@@ -6824,6 +6824,9 @@ void clear_char(struct char_data *ch)
   if (IS_NPC(ch))
     PROC_FIRED(ch) = 0;
 
+  /* Initialize Dark Revelation tracking */
+  ch->char_specials.dark_revelation_mob_rnum = -1;
+
   GET_REAL_AC(ch) = 100; /* Basic Armor of 10 */
   if (GET_REAL_MAX_PSP(ch) < 100)
     GET_REAL_MAX_PSP(ch) = 100;

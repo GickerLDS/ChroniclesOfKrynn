@@ -608,9 +608,11 @@
 #define SPELL_POISON_BREATH 527
 #define SPELL_SUMMON_SOLAR 528
 #define SPELL_BLINK 529
+#define SPELL_HURL_THROUGH_HELL 530
+#define SPELL_PLANAR_ANCHOR 531
 
 /** Total Number of defined spells  */
-#define NUM_SPELLS 530
+#define NUM_SPELLS 532
 #define LAST_SPELL_DEFINE NUM_SPELLS + 1
 
 #define MAX_SPELL_AFFECTS 6 /* change if more needed */
@@ -737,6 +739,7 @@
 #define AFFECT_INQUISITOR_AMBUSH_USED 1309
 #define AFFECT_INQUISITOR_DEADLY_AIM 1310
 #define AFFECT_POOL_OF_ACID 1311
+#define AFFECT_PERK_WARLOCK_FIENDISH_RESILIENCE 1312
 
 // 1470 to 1493 are poisons with room saved for more poisons up to 1498
 
@@ -1792,6 +1795,7 @@ ASPELL(voracious_dispelling);
 ASPELL(tenacious_plague);
 ASPELL(wall_of_perilous_flame);
 ASPELL(devour_magic);
+ASPELL(spell_hurl_through_hell);
 
 /* basic magic calling functions */
 int find_skill_num(char *name);

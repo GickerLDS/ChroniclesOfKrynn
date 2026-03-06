@@ -258,6 +258,21 @@ int get_warlock_dark_ones_own_luck_bonus(struct char_data *ch);
 bool has_warlock_fiendish_vigor(struct char_data *ch);
 int get_warlock_pact_spell_amplification_bonus(struct char_data *ch);
 
+/* Warlock helper functions - Pact Bonding Tree Tier 3 */
+int get_warlock_fiendish_resilience_bonus(struct char_data *ch);
+bool has_warlock_fiendish_resilience(struct char_data *ch);
+int get_warlock_pact_soul_bonus(struct char_data *ch);
+int get_warlock_eldritch_endurance_bonus(struct char_data *ch);
+bool has_warlock_dark_revelation(struct char_data *ch);
+
+/* Warlock helper functions - Pact Bonding Tree Tier 4/Capstone */
+bool has_warlock_one_with_patron(struct char_data *ch);
+int get_warlock_one_with_patron_temp_hp(struct char_data *ch);
+bool has_warlock_hurl_through_hell(struct char_data *ch);
+int get_warlock_hurl_through_hell_damage(struct char_data *ch);
+bool has_warlock_planar_anchor(struct char_data *ch);
+bool has_warlock_dark_masters_will(struct char_data *ch);
+
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
 int get_class_perks(int class_id, int *perk_ids, int max_perks);
