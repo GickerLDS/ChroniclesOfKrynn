@@ -24,6 +24,8 @@
 extern struct mysql_board_config *mysql_board_configs;
 extern int mysql_num_boards;
 extern MYSQL *conn;
+/* Global variables defined here, used elsewhere */
+extern const char *nrm, *grn, *cyn, *yel, *mgn, *red;
 
 /*-------------------------------------------------------------------*/
 /* Function prototypes */
@@ -305,11 +307,11 @@ void bedit_disp_menu(struct descriptor_data *d)
           "%sA%s) Active       : %s%s%s\r\n"
           "%sQ%s) Quit\r\n"
           "Enter choice : ",
-          grn, nrm, cyn, B_NUM(board), nrm, grn, nrm, yel, board_name_buf, nrm, grn, nrm, yel,
-          board_types[B_TYPE(board)], nrm, grn, nrm, cyn, B_READ_LVL(board), nrm, grn, nrm, cyn,
-          B_WRITE_LVL(board), nrm, grn, nrm, cyn, B_DELETE_LVL(board), nrm, grn, nrm, cyn,
-          B_OBJ_VNUM(board), nrm, grn, nrm, cyn, B_CLAN_ID(board), nrm, grn, nrm, cyn,
-          B_CLAN_RANK(board), nrm, grn, nrm, cyn, B_ACTIVE(board) ? "Yes" : "No", nrm, grn, nrm);
+          "\tG", "\tn", "\tC", B_NUM(board), "\tn", "\tG", "\tn", "\tY", board_name_buf, "\tn", "\tG", "\tn", "\tY",
+          board_types[B_TYPE(board)], "\tn", "\tG", "\tn", "\tC", B_READ_LVL(board), "\tn", "\tG", "\tn", "\tC",
+          B_WRITE_LVL(board), "\tn", "\tG", "\tn", "\tC", B_DELETE_LVL(board), "\tn", "\tG", "\tn", "\tC",
+          B_OBJ_VNUM(board), "\tn", "\tG", "\tn", "\tC", B_CLAN_ID(board), "\tn", "\tG", "\tn", "\tC",
+          B_CLAN_RANK(board), "\tn", "\tG", "\tn", "\tC", B_ACTIVE(board) ? "Yes" : "No", "\tn", "\tG", "\tn");
 
   send_to_char(d->character, "%s", buf);
   OLC_MODE(d) = BEDIT_MAIN_MENU;
@@ -329,7 +331,7 @@ void bedit_disp_board_type_menu(struct descriptor_data *d)
 
   for (i = 0; board_types[i][0] != '\n'; i++)
   {
-    sprintf(buf + strlen(buf), "%s%d%s) %s\r\n", grn, i, nrm, board_types[i]);
+    sprintf(buf + strlen(buf), "%s%d%s) %s\r\n", "\tG", i, "\tn", board_types[i]);
   }
 
   strcat(buf, "Enter board type : ");

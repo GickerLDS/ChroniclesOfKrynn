@@ -610,9 +610,11 @@
 #define SPELL_BLINK 529
 #define SPELL_HURL_THROUGH_HELL 530
 #define SPELL_PLANAR_ANCHOR 531
+#define SPELL_BANE 532
+#define SPELL_DISGUISE_SELF 533
 
 /** Total Number of defined spells  */
-#define NUM_SPELLS 532
+#define NUM_SPELLS 534
 #define LAST_SPELL_DEFINE NUM_SPELLS + 1
 
 #define MAX_SPELL_AFFECTS 6 /* change if more needed */

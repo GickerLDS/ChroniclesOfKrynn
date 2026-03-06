@@ -876,6 +876,15 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
   {
     bonuses[BONUS_TYPE_ARMOR] += GET_LEVEL(ch) / 3;
   }
+  /* Warlock Armor of Shadows invocation */
+  if (!IS_NPC(ch))
+  {
+    int armor_of_shadows = get_warlock_armor_of_shadows_bonus(ch);
+    if (armor_of_shadows > 0)
+    {
+      bonuses[BONUS_TYPE_ARMOR] += armor_of_shadows;
+    }
+  }
   /**/
 
   /* bonus type shield (usually equipment) */

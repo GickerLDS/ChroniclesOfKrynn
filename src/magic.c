@@ -6839,6 +6839,16 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     to_room = "$n looks more confident and personable!";
     break;
 
+  case SPELL_DISGUISE_SELF:
+    af[0].location = APPLY_SKILL;
+    af[0].specific = ABILITY_DISGUISE;
+    af[0].modifier = 10;
+    af[0].duration = 100 * level;
+    af[0].bonus_type = BONUS_TYPE_COMPETENCE;
+    to_vict = "An illusory guise settles over you.";
+    to_room = "$n's appearance subtly shifts under an illusory disguise.";
+    break;
+
   case SPELL_BARKSKIN: // transmutation
 
     af[0].location = APPLY_AC_NEW;
@@ -6920,6 +6930,9 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       return;
     }
 
+    if (affected_by_spell(victim, SPELL_BANE))
+      affect_from_char(victim, SPELL_BANE);
+
     af[0].location = APPLY_HITROLL;
     af[0].modifier = 1;
     af[0].duration = 300;
@@ -6932,6 +6945,32 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
 
     to_room = "$n is now righteous!";
     to_vict = "You feel righteous.";
+    break;
+
+  case SPELL_BANE:
+    if (mag_resistance(ch, victim, 0))
+      return;
+    if (savingthrow(ch, victim, SAVING_WILL, enchantment_bonus, casttype, level, ENCHANTMENT))
+    {
+      send_to_char(ch, "The bane is resisted!\r\n");
+      return;
+    }
+
+    if (affected_by_spell(victim, SPELL_BLESS))
+      affect_from_char(victim, SPELL_BLESS);
+
+    af[0].location = APPLY_HITROLL;
+    af[0].modifier = -1;
+    af[0].duration = 10 * level;
+    af[0].bonus_type = BONUS_TYPE_MORALE;
+
+    af[1].location = APPLY_SAVING_WILL;
+    af[1].modifier = -1;
+    af[1].duration = 10 * level;
+    af[1].bonus_type = BONUS_TYPE_MORALE;
+
+    to_room = "$n is afflicted by a baneful curse!";
+    to_vict = "A baneful curse burdens your aim and resolve!";
     break;
 
   case SPELL_CAUSTIC_BLOOD: // transmutation
@@ -13872,6 +13911,14 @@ void mag_unaffects(int level, struct char_data *ch, struct char_data *victim, st
     to_char = "You remove the fear from $N.";
     to_vict = "$n removes the fear upon you.";
     to_notvict = "$N looks brave again.";
+    break;
+
+  case SPELL_BANE:
+    spell = SPELL_BLESS;
+    msg_not_affected = FALSE;
+    to_char = "You dispel $N's blessing with bane.";
+    to_vict = "$n's bane dispels your blessing.";
+    to_notvict = "$N's blessing is dispelled by bane.";
     break;
 
   case SPELL_CURE_DEAFNESS:

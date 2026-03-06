@@ -208,6 +208,9 @@ bool move_on_path(struct char_data *ch)
   if (FIGHTING(ch))
     return FALSE;
 
+  if (IN_ROOM(ch) == NOWHERE)
+    return FALSE;
+
   /* finished path */
   if (PATH_SIZE(ch) < 1)
     return FALSE;

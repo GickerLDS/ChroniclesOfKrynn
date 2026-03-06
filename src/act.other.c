@@ -6467,7 +6467,8 @@ ACMD(do_hide)
 {
   if (FIGHTING(ch) && !AFF_FLAGGED(ch, AFF_GRAPPLED) && !AFF_FLAGGED(ch, AFF_ENTANGLED))
   {
-    if (HAS_FEAT(ch, FEAT_HIDE_IN_PLAIN_SIGHT) || can_one_with_shadows(ch) ||
+    if (HAS_FEAT(ch, FEAT_HIDE_IN_PLAIN_SIGHT) ||
+      has_perk_active(ch, PERK_WARLOCK_ONE_WITH_SHADOWS) || can_one_with_shadows(ch) ||
         can_naturally_stealthy(ch) || has_perk(ch, PERK_MONK_SHADOW_MASTER))
     {
       USE_STANDARD_ACTION(ch);

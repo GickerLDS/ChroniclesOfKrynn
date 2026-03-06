@@ -5782,6 +5782,154 @@ void define_warlock_perks(void)
   perk->special_description =
       strdup("Once per 5 minutes, automatically succeed on a will save that you failed. Patron's intervention.");
   perk->toggleable = false;
+
+  /*** Invocation Mastery - Tier 1 ***/
+
+  /* Armor of Shadows */
+  perk = &perk_list[PERK_WARLOCK_ARMOR_OF_SHADOWS];
+  perk->id = PERK_WARLOCK_ARMOR_OF_SHADOWS;
+  perk->name = strdup("Armor of Shadows");
+  perk->description = strdup("Cast Mage Armor on yourself at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_UNDEFINED;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_AC;
+  perk->effect_value = 1; /* +1 AC per rank */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Cast Mage Armor at will. AC bonus improves by +1 per rank.");
+  perk->toggleable = false;
+
+  /* Beast Speech */
+  perk = &perk_list[PERK_WARLOCK_BEAST_SPEECH];
+  perk->id = PERK_WARLOCK_BEAST_SPEECH;
+  perk->name = strdup("Beast Speech");
+  perk->description = strdup("Speak with animals and cast charm animal at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_UNDEFINED;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SKILL;
+  perk->effect_value = 5; /* +5 to handle animal per rank */
+  perk->effect_modifier = ABILITY_HANDLE_ANIMAL;
+  perk->special_description =
+      strdup("Speak with animals at will. Cast charm animal at will. +5 to handle animal skill per rank.");
+  perk->toggleable = false;
+
+  /* One with Shadows */
+  perk = &perk_list[PERK_WARLOCK_ONE_WITH_SHADOWS];
+  perk->id = PERK_WARLOCK_ONE_WITH_SHADOWS;
+  perk->name = strdup("One with Shadows");
+  perk->description = strdup("Become invisible in dim light or darkness; can hide in plain sight while active.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_UNDEFINED;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("In dim light or darkness, become invisible. While active, also allows hiding in plain sight. Requires command to activate. Invisibility ends if exiting darkness.");
+  perk->toggleable = true;
+
+  /* Beguiling Influence */
+  perk = &perk_list[PERK_WARLOCK_BEGUILING_INFLUENCE];
+  perk->id = PERK_WARLOCK_BEGUILING_INFLUENCE;
+  perk->name = strdup("Beguiling Influence");
+  perk->description = strdup("Gain bonus to Deception, Intimidate and Persuasion skills.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 1;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_UNDEFINED;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SKILL;
+  perk->effect_value = 3; /* +3 to deception and persuasion */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("+3 to Deception, Intimidate and Persuasion skills.");
+  perk->toggleable = false;
+
+  /*** Invocation Mastery - Tier 2 ***/
+
+  /* Devil's Sight */
+  perk = &perk_list[PERK_WARLOCK_DEVILS_SIGHT];
+  perk->id = PERK_WARLOCK_DEVILS_SIGHT;
+  perk->name = strdup("Devil's Sight");
+  perk->description = strdup("Cast infravision at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_UNDEFINED;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Cast infravision at will. See in magical and non-magical darkness.");
+  perk->toggleable = false;
+
+  /* Eldritch Sight */
+  perk = &perk_list[PERK_WARLOCK_ELDRITCH_SIGHT];
+  perk->id = PERK_WARLOCK_ELDRITCH_SIGHT;
+  perk->name = strdup("Eldritch Sight");
+  perk->description = strdup("Cast Detect Magic at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_UNDEFINED;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Cast Detect Magic at will. Sense magical auras and enchantments.");
+  perk->toggleable = false;
+
+  /* Thief of Five Fates */
+  perk = &perk_list[PERK_WARLOCK_THIEF_OF_FIVE_FATES];
+  perk->id = PERK_WARLOCK_THIEF_OF_FIVE_FATES;
+  perk->name = strdup("Thief of Five Fates");
+    perk->description = strdup("Cast Bane at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 2;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_BEGUILING_INFLUENCE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+    perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Cast Bane at will. Curse enemies with penalties to attacks and saves.");
+  perk->toggleable = false;
+
+  /* Appearance of Shadows */
+  perk = &perk_list[PERK_WARLOCK_APPEARANCE_OF_SHADOWS];
+  perk->id = PERK_WARLOCK_APPEARANCE_OF_SHADOWS;
+  perk->name = strdup("Appearance of Shadows");
+  perk->description = strdup("Cast Disguise Self at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_ONE_WITH_SHADOWS;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10; /* +10 to disguise skill while active */
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Cast Disguise Self at will. Grants +10 to disguise skill while active.");
+  perk->toggleable = false;
 }
 
 /* Define Psionicist Perks */
@@ -16795,6 +16943,15 @@ int get_perk_skill_bonus(struct char_data *ch, int skill_num)
     bonus += get_perk_acrobatics_bonus(ch);
   }
 
+  /* Warlock Beguiling Influence applies to Deception (Bluff) and Persuasion (Diplomacy) */
+  switch (skill_num)
+  {
+  case ABILITY_BLUFF:
+  case ABILITY_DIPLOMACY:
+    bonus += get_perk_beguiling_influence_bonus(ch);
+    break;
+  }
+
   return bonus;
 }
 
@@ -18024,7 +18181,8 @@ bool has_hide_in_plain_sight(struct char_data *ch)
   if (!ch || IS_NPC(ch))
     return FALSE;
 
-  return has_perk(ch, PERK_ROGUE_HIDE_IN_PLAIN_SIGHT);
+  return has_perk(ch, PERK_ROGUE_HIDE_IN_PLAIN_SIGHT) ||
+         has_perk_active(ch, PERK_WARLOCK_ONE_WITH_SHADOWS);
 }
 
 /**
@@ -26038,6 +26196,74 @@ bool has_warlock_dark_masters_will(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
          has_perk(ch, PERK_WARLOCK_DARK_MASTERS_WILL);
+}
+
+/**************************************************************************
+ * Warlock Helper Functions - Invocation Mastery
+ **************************************************************************/
+
+int get_warlock_armor_of_shadows_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_WARLOCK_ARMOR_OF_SHADOWS, CLASS_WARLOCK);
+}
+
+int get_warlock_beast_speech_ranks(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_WARLOCK_BEAST_SPEECH, CLASS_WARLOCK);
+}
+
+bool has_warlock_one_with_shadows(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ONE_WITH_SHADOWS);
+}
+
+bool has_warlock_beguiling_influence(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_BEGUILING_INFLUENCE);
+}
+
+bool has_warlock_devils_sight(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_DEVILS_SIGHT);
+}
+
+bool has_warlock_eldritch_sight(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ELDRITCH_SIGHT);
+}
+
+bool has_warlock_thief_of_five_fates(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_THIEF_OF_FIVE_FATES);
+}
+
+bool has_warlock_appearance_of_shadows(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_APPEARANCE_OF_SHADOWS);
+}
+
+int get_perk_beguiling_influence_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  /* Beguiling Influence gives +3 to Deception (Bluff) and Persuasion (Diplomacy) */
+  if (has_perk(ch, PERK_WARLOCK_BEGUILING_INFLUENCE))
+    return 3;
+
+  return 0;
 }
 
 int class_to_perk_class(int class_type, int which_perk)

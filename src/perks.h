@@ -273,6 +273,17 @@ int get_warlock_hurl_through_hell_damage(struct char_data *ch);
 bool has_warlock_planar_anchor(struct char_data *ch);
 bool has_warlock_dark_masters_will(struct char_data *ch);
 
+/* Invocation Mastery functions */
+int get_warlock_armor_of_shadows_bonus(struct char_data *ch);
+int get_warlock_beast_speech_ranks(struct char_data *ch);
+bool has_warlock_one_with_shadows(struct char_data *ch);
+bool has_warlock_beguiling_influence(struct char_data *ch);
+bool has_warlock_devils_sight(struct char_data *ch);
+bool has_warlock_eldritch_sight(struct char_data *ch);
+bool has_warlock_thief_of_five_fates(struct char_data *ch);
+bool has_warlock_appearance_of_shadows(struct char_data *ch);
+int get_perk_beguiling_influence_bonus(struct char_data *ch);
+
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
 int get_class_perks(int class_id, int *perk_ids, int max_perks);

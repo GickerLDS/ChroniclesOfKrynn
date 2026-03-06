@@ -4205,6 +4205,7 @@ void load_class_list(void)
   spell_assignment(CLASS_WIZARD, SPELL_NEGATIVE_ENERGY_RAY, 1);
   spell_assignment(CLASS_WIZARD, SPELL_RAY_OF_ENFEEBLEMENT, 1);
   spell_assignment(CLASS_WIZARD, SPELL_CHARM, 1);
+  spell_assignment(CLASS_WIZARD, SPELL_DISGUISE_SELF, 1);
   spell_assignment(CLASS_WIZARD, SPELL_ENCHANT_ITEM, 1);
   spell_assignment(CLASS_WIZARD, SPELL_SLEEP, 1);
   spell_assignment(CLASS_WIZARD, SPELL_COLOR_SPRAY, 1);
@@ -4573,6 +4574,7 @@ void load_class_list(void)
   spell_assignment(CLASS_CLERIC, SPELL_ANT_HAUL, 1);
   spell_assignment(CLASS_CLERIC, SPELL_PLANAR_HEALING, 1);
   spell_assignment(CLASS_CLERIC, SPELL_BLESS, 1);
+  spell_assignment(CLASS_CLERIC, SPELL_BANE, 1);
   /*              class num      spell                   level acquired */
   /* 2nd circle */
   spell_assignment(CLASS_CLERIC, SPELL_AUGURY, 3);
@@ -5602,6 +5604,7 @@ void load_class_list(void)
   spell_assignment(CLASS_SORCERER, SPELL_NEGATIVE_ENERGY_RAY, 1);
   spell_assignment(CLASS_SORCERER, SPELL_RAY_OF_ENFEEBLEMENT, 1);
   spell_assignment(CLASS_SORCERER, SPELL_CHARM, 1);
+  spell_assignment(CLASS_SORCERER, SPELL_DISGUISE_SELF, 1);
   spell_assignment(CLASS_SORCERER, SPELL_ENCHANT_ITEM, 1);
   spell_assignment(CLASS_SORCERER, SPELL_SLEEP, 1);
   spell_assignment(CLASS_SORCERER, SPELL_COLOR_SPRAY, 1);
@@ -6199,10 +6202,12 @@ void load_class_list(void)
   spell_assignment(CLASS_BLACKGUARD, SPELL_CAUSE_LIGHT_WOUNDS, 6);
   spell_assignment(CLASS_BLACKGUARD, SPELL_PROT_FROM_GOOD, 6);
   spell_assignment(CLASS_BLACKGUARD, SPELL_SUMMON_CREATURE_3, 6);
+  spell_assignment(CLASS_BLACKGUARD, SPELL_DISGUISE_SELF, 6);
   spell_assignment(CLASS_BLACKGUARD, SPELL_ENDURANCE, 6);
   spell_assignment(CLASS_BLACKGUARD, SPELL_NEGATIVE_ENERGY_RAY, 6);
   spell_assignment(CLASS_BLACKGUARD, SPELL_ENDURE_ELEMENTS, 6);
   spell_assignment(CLASS_BLACKGUARD, SPELL_HEDGING_WEAPONS, 6);
+  spell_assignment(CLASS_BLACKGUARD, SPELL_BANE, 6);
   /*              class num      spell                   level acquired */
   /* 2nd circle */
   spell_assignment(CLASS_BLACKGUARD, SPELL_BLINDNESS, 10);
@@ -6519,6 +6524,7 @@ void load_class_list(void)
   spell_assignment(CLASS_BARD, SPELL_RESISTANCE, 1);
   spell_assignment(CLASS_BARD, SPELL_UNDETECTABLE_ALIGNMENT, 1);
   spell_assignment(CLASS_BARD, SPELL_IDENTIFY, 1);
+  spell_assignment(CLASS_BARD, SPELL_DISGUISE_SELF, 1);
   /*              class num      spell                   level acquired */
   /* 2nd circle */
   spell_assignment(CLASS_BARD, SPELL_SUMMON_CREATURE_2, 4);
@@ -8461,6 +8467,7 @@ void load_class_list(void)
   spell_assignment(CLASS_ALCHEMIST, SPELL_EXPEDITIOUS_RETREAT, 1);
   spell_assignment(CLASS_ALCHEMIST, SPELL_IDENTIFY, 1);
   spell_assignment(CLASS_ALCHEMIST, SPELL_DETECT_ALIGN, 1);
+  spell_assignment(CLASS_ALCHEMIST, SPELL_DISGUISE_SELF, 1);
   spell_assignment(CLASS_ALCHEMIST, SPELL_SHIELD, 1);
   spell_assignment(CLASS_ALCHEMIST, SPELL_ANT_HAUL, 1);
 
@@ -8674,11 +8681,13 @@ void load_class_list(void)
 
   /* spell circle 1 */
   spell_assignment(CLASS_INQUISITOR, SPELL_BLESS, 1);
+  spell_assignment(CLASS_INQUISITOR, SPELL_BANE, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_CURE_LIGHT, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_DETECT_ALIGN, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_DIVINE_FAVOR, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_DOOM, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_EXPEDITIOUS_RETREAT, 1);
+  spell_assignment(CLASS_INQUISITOR, SPELL_DISGUISE_SELF, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_HEDGING_WEAPONS, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_CAUSE_LIGHT_WOUNDS, 1);
   spell_assignment(CLASS_INQUISITOR, SPELL_PROT_FROM_EVIL, 1);

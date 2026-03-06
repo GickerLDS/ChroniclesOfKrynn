@@ -294,21 +294,21 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 2. **Beast Speech**
    - Cost: 1 point per rank
    - Max Rank: 2
-   - Effect: Speak with animals at will per rank; understand their communication as if they spoke your language
+   - Effect: Speak with animals at will per rank; understand their communication as if they spoke your language. Cast charm animal at will and +5 to handle animal skill
    - Prerequisite: None
    - Notes: Utility beast communication
 
 3. **One with Shadows**
-   - Cost: 1 point per rank
-   - Max Rank: 2
-   - Effect: In dim light or darkness, become invisible with action per rank (once per round)
+   - Cost: 3 points
+   - Max Rank: 1
+   - Effect: In dim light or darkness, become invisible (only while remaining in dim light or darkness). Requires command to activate. Invisibility ends if exiting darkness.
    - Prerequisite: None
    - Notes: Stealth ability requiring environmental factors
 
 4. **Beguiling Influence**
    - Cost: 1 point
    - Max Rank: 1
-   - Effect: Gain proficiency in Deception and Persuasion skills
+   - Effect: Gain +3 to Deception and Persuasion skills
    - Prerequisite: None
    - Notes: Social magic enhancement
 
@@ -317,30 +317,30 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 ### Tier 2 Perks (2 points each)
 
 5. **Devil's Sight**
-   - Cost: 2 points per rank
-   - Max Rank: 2
-   - Effect: See in darkness (magical and nonmagical) to 60 feet per rank
+   - Cost: 3 points
+   - Max Rank: 1
+   - Effect: can cast infravision at will
    - Prerequisite: None
    - Notes: Darkvision enhancement for warlocks without darkvision
 
 6. **Eldritch Sight**
    - Cost: 2 points per rank
    - Max Rank: 1
-   - Effect: Detect magic at will; see magical auras on objects and creatures within 30 feet
+   - Effect: cast Detect magic at will
    - Prerequisite: None
    - Notes: Utility divination ability
 
 7. **Thief of Five Fates**
    - Cost: 2 points
    - Max Rank: 1
-   - Effect: Cast Bane once per long rest (DC 18 CHA save, disadvantage on saves vs your spells)
+   - Effect: Cast Bane at will
    - Prerequisite: Beguiling Influence
    - Notes: Curse ability enhancing enemy failures
 
 8. **Appearance of Shadows**
-   - Cost: 2 points per rank
-   - Max Rank: 2
-   - Effect: Cast Disguise Self at will per rank; improve Disguise Self by adding +1d4 to checks per rank
+   - Cost: 3 points per rank
+   - Max Rank: 1
+   - Effect: Cast Disguise Self at will. create the spell if necessary. Spells gives +10 to discguise skill while active.
    - Prerequisite: One with Shadows (2 ranks)
    - Notes: Deception/infiltration invocation
 
