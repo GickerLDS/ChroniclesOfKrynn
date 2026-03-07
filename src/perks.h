@@ -306,6 +306,13 @@ bool has_warlock_eldritch_apotheosis(struct char_data *ch);
 int get_artificer_device_efficiency_bonus(struct char_data *ch);
 int get_artificer_stable_circuitry_rank(struct char_data *ch);
 int get_artificer_arcane_battery_rank(struct char_data *ch);
+int get_artificer_dual_layer_imprint_rank(struct char_data *ch);
+int get_artificer_combat_calibration_rank(struct char_data *ch);
+int get_artificer_stable_circuitry_break_save_chance(struct char_data *ch);
+int get_artificer_predictive_venting_rank(struct char_data *ch);
+int get_artificer_adaptive_payload_rank(struct char_data *ch);
+int get_artificer_field_recompiler_cooldown(struct char_data *ch);
+bool has_artificer_field_recompiler(struct char_data *ch);
 bool has_artificer_volatile_theorem(struct char_data *ch);
 bool is_artificer_volatile_theorem_on(struct char_data *ch);
 

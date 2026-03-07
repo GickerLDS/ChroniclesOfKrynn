@@ -12958,6 +12958,147 @@ void define_artificer_perks(void)
   perk->special_description =
     strdup("Toggle overcharge: +10% effect magnitude, +2 instability pressure on failures.");
   perk->toggleable = TRUE;
+
+  /*** WEIRD SCIENCE ENGINEERING TREE - TIER II ***/
+
+  /* Device Efficiency II */
+  perk = &perk_list[PERK_ARTIFICER_DEVICE_EFFICIENCY_II];
+  perk->id = PERK_ARTIFICER_DEVICE_EFFICIENCY_II;
+  perk->name = strdup("Device Efficiency II");
+  perk->description = strdup("Additional +1 max use per rank to devices.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_ARTIFICER_DEVICE_EFFICIENCY_I;
+  perk->prerequisite_rank = 3;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Adds +1 maximum device use.");
+
+  /* Stable Circuitry II */
+  perk = &perk_list[PERK_ARTIFICER_STABLE_CIRCUITRY_II];
+  perk->id = PERK_ARTIFICER_STABLE_CIRCUITRY_II;
+  perk->name = strdup("Stable Circuitry II");
+  perk->description =
+      strdup("10% chance per rank to prevent device breakage on failure (5 minute cooldown).");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_ARTIFICER_STABLE_CIRCUITRY_I;
+  perk->prerequisite_rank = 3;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10;
+  perk->effect_modifier = 300;
+  perk->special_description =
+      strdup("When device would break: 10% per rank chance to prevent break; 5 minute cooldown.");
+
+  /* Dual-Layer Imprint */
+  perk = &perk_list[PERK_ARTIFICER_DUAL_LAYER_IMPRINT];
+  perk->id = PERK_ARTIFICER_DUAL_LAYER_IMPRINT;
+  perk->name = strdup("Dual-Layer Imprint");
+  perk->description =
+      strdup("Devices with multiple spells gain +5% effect scaling per rank.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_ARTIFICER_VOLATILE_THEOREM;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 5;
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Multi-spell devices gain +5% effect magnitude per rank.");
+
+  /* Combat Calibration */
+  perk = &perk_list[PERK_ARTIFICER_COMBAT_CALIBRATION];
+  perk->id = PERK_ARTIFICER_COMBAT_CALIBRATION;
+  perk->name = strdup("Combat Calibration");
+  perk->description = strdup("+1 save DC per rank for violent device effects.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 2;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = PERK_ARTIFICER_ARCANE_BATTERY_I;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Violent CAST_DEVICE spells gain +1 DC per rank.");
+
+    /*** WEIRD SCIENCE ENGINEERING TREE - TIER III ***/
+
+    /* Arcane Battery II */
+    perk = &perk_list[PERK_ARTIFICER_ARCANE_BATTERY_II];
+    perk->id = PERK_ARTIFICER_ARCANE_BATTERY_II;
+    perk->name = strdup("Arcane Battery II");
+    perk->description =
+      strdup("Additional 2 seconds faster recharge per rank; first post-combat pulse is quicker.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_ARCANE_BATTERY_I;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Additional -2s recharge per rank and faster first pulse.");
+
+    /* Predictive Venting */
+    perk = &perk_list[PERK_ARTIFICER_PREDICTIVE_VENTING];
+    perk->id = PERK_ARTIFICER_PREDICTIVE_VENTING;
+    perk->name = strdup("Predictive Venting");
+    perk->description =
+      strdup("When a device would break, 10% per rank chance to disable it for 30 seconds instead.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_STABLE_CIRCUITRY_II;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 30;
+    perk->special_description =
+      strdup("On break: 10% per rank to disable for 30s instead of breaking.");
+
+    /* Adaptive Payload */
+    perk = &perk_list[PERK_ARTIFICER_ADAPTIVE_PAYLOAD];
+    perk->id = PERK_ARTIFICER_ADAPTIVE_PAYLOAD;
+    perk->name = strdup("Adaptive Payload");
+    perk->description = strdup("Violent devices gain +1 penetration-style bonus per rank.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_COMBAT_CALIBRATION;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Violent devices gain +1 per rank to resistance-piercing performance.");
+
+    /* Field Recompiler */
+    perk = &perk_list[PERK_ARTIFICER_FIELD_RECOMPILER];
+    perk->id = PERK_ARTIFICER_FIELD_RECOMPILER;
+    perk->name = strdup("Field Recompiler");
+    perk->description =
+      strdup("Once every 10 minutes, swap one spell in an existing device without destroying it.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_DUAL_LAYER_IMPRINT;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 600;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Unlocks `device recompile`; 10 minute cooldown.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -16087,11 +16228,121 @@ const char *get_perk_description(int perk_id)
 /* Get perk category name */
 const char *get_perk_category_name(int perk_category)
 {
-  /* Bounds check */
-  if (perk_category < 0 || perk_category > PERK_CATEGORY_ARCANE_CHANNELER)
+  switch (perk_category)
+  {
+  case PERK_CATEGORY_UNDEFINED:
+    return "Undefined";
+  case PERK_CATEGORY_WEAPON_SPECIALIST:
+    return "Weapon Specialist";
+  case PERK_CATEGORY_DEFENDER:
+    return "Defender";
+  case PERK_CATEGORY_TACTICAL_FIGHTER:
+    return "Tactical Fighter";
+  case PERK_CATEGORY_EVOKER:
+    return "Evoker";
+  case PERK_CATEGORY_CONTROLLER:
+    return "Controller";
+  case PERK_CATEGORY_VERSATILE_CASTER:
+    return "Versatile Caster";
+  case PERK_CATEGORY_DIVINE_HEALER:
+    return "Divine Healer";
+  case PERK_CATEGORY_BATTLE_CLERIC:
+    return "Battle Cleric";
+  case PERK_CATEGORY_DOMAIN_MASTER:
+    return "Domain Master";
+  case PERK_CATEGORY_ASSASSIN:
+    return "Assassin";
+  case PERK_CATEGORY_MASTER_THIEF:
+    return "Master Thief";
+  case PERK_CATEGORY_SHADOW_SCOUT:
+    return "Shadow Scout";
+  case PERK_CATEGORY_IRON_BODY:
+    return "Iron Body";
+  case PERK_CATEGORY_PERFECT_SELF:
+    return "Perfect Self";
+  case PERK_CATEGORY_WAY_OF_THE_OPEN_HAND:
+    return "Way of the Open Hand";
+  case PERK_CATEGORY_WAY_OF_THE_SHADOW:
+    return "Way of the Shadow";
+  case PERK_CATEGORY_WAY_OF_THE_FOUR_ELEMENTS:
+    return "Way of the Four Elements";
+  case PERK_CATEGORY_HUNTER:
+    return "Hunter";
+  case PERK_CATEGORY_BEAST_MASTER:
+    return "Beast Master";
+  case PERK_CATEGORY_WILDERNESS_WARRIOR:
+    return "Wilderness Warrior";
+  case PERK_CATEGORY_NATURES_WARRIOR:
+    return "Nature's Warrior";
+  case PERK_CATEGORY_SEASONS_HERALD:
+    return "Season's Herald";
+  case PERK_CATEGORY_NATURES_PROTECTOR:
+    return "Nature's Protector";
+  case PERK_CATEGORY_BERSERKER:
+    return "Berserker";
+  case PERK_CATEGORY_TOTEM_WARRIOR:
+    return "Totem Warrior";
+  case PERK_CATEGORY_PRIMAL_CHAMPION:
+    return "Primal Champion";
+  case PERK_CATEGORY_KNIGHT_OF_THE_CHALICE:
+    return "Knight of the Chalice";
+  case PERK_CATEGORY_SACRED_DEFENDER:
+    return "Sacred Defender";
+  case PERK_CATEGORY_DIVINE_CHAMPION:
+    return "Divine Champion";
+  case PERK_CATEGORY_SPELLSINGER:
+    return "Spellsinger";
+  case PERK_CATEGORY_WARCHANTER:
+    return "Warchanter";
+  case PERK_CATEGORY_SWASHBUCKLER:
+    return "Swashbuckler";
+  case PERK_CATEGORY_MUTAGENIST:
+    return "Mutagenist";
+  case PERK_CATEGORY_BOMB_CRAFTSMAN:
+    return "Bomb Craftsman";
+  case PERK_CATEGORY_EXTRACT_MASTER:
+    return "Extract Master";
+  case PERK_CATEGORY_TELEPATHIC_CONTROL:
+    return "Telepathic Control";
+  case PERK_CATEGORY_PSYCHOKINETIC_ARSENAL:
+    return "Psychokinetic Arsenal";
+  case PERK_CATEGORY_METACREATIVE_GENIUS:
+    return "Metacreative Genius";
+  case PERK_CATEGORY_TYRANNY_AND_FEAR:
+    return "Tyranny & Fear";
+  case PERK_CATEGORY_PROFANE_MIGHT:
+    return "Profane Might";
+  case PERK_CATEGORY_UNHOLY_RESILIENCE:
+    return "Unholy Resilience";
+  case PERK_CATEGORY_JUDGMENT_SPELLCASTING:
+    return "Judgment & Spellcasting";
+  case PERK_CATEGORY_HUNTERS_ARSENAL:
+    return "Hunter's Arsenal";
+  case PERK_CATEGORY_INVESTIGATION_PERCEPTION:
+    return "Investigation & Perception";
+  case PERK_CATEGORY_ADAPTABLE_TACTICS:
+    return "Adaptable Tactics";
+  case PERK_CATEGORY_EIDOLON_MASTERY:
+    return "Eidolon Mastery";
+  case PERK_CATEGORY_SUMMONING_EXCELLENCE:
+    return "Summoning Excellence";
+  case PERK_CATEGORY_ARCANE_CHANNELER:
+    return "Arcane Channeler";
+  case PERK_CATEGORY_ELDRITCH_MASTERY:
+    return "Eldritch Mastery";
+  case PERK_CATEGORY_PACT_BONDING:
+    return "Pact Bonding";
+  case PERK_CATEGORY_INVOCATION_MASTERY:
+    return "Invocation Mastery";
+  case PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING:
+    return "Weird Science Engineering";
+  case PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT:
+    return "Infusion & Battlefield Support";
+  case PERK_CATEGORY_CONSTRUCT_COMMAND:
+    return "Construct Command";
+  default:
     return "Unknown Category";
-
-  return perk_category_names[perk_category];
+  }
 }
 
 /*****************************************************************************
@@ -20649,7 +20900,7 @@ void list_perks_for_class(struct char_data *ch, int class_id)
   send_to_char(ch, "\tW* = Available to purchase\tn\r\n\r\n");
 
   /* Loop through each possible category and display perks for that category */
-  for (category = 0; category <= PERK_CATEGORY_PRIMAL_CHAMPION; category++)
+  for (category = 0; category <= PERK_CATEGORY_CONSTRUCT_COMMAND; category++)
   {
     /* Build list of perks in this category for this class */
     category_count = 0;
@@ -26766,7 +27017,8 @@ int get_artificer_device_efficiency_bonus(struct char_data *ch)
   if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
     return 0;
 
-  return get_perk_rank(ch, PERK_ARTIFICER_DEVICE_EFFICIENCY_I, CLASS_ARTIFICER);
+  return get_perk_rank(ch, PERK_ARTIFICER_DEVICE_EFFICIENCY_I, CLASS_ARTIFICER) +
+         get_perk_rank(ch, PERK_ARTIFICER_DEVICE_EFFICIENCY_II, CLASS_ARTIFICER);
 }
 
 int get_artificer_stable_circuitry_rank(struct char_data *ch)
@@ -26777,12 +27029,70 @@ int get_artificer_stable_circuitry_rank(struct char_data *ch)
   return get_perk_rank(ch, PERK_ARTIFICER_STABLE_CIRCUITRY_I, CLASS_ARTIFICER);
 }
 
+int get_artificer_stable_circuitry_break_save_chance(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_STABLE_CIRCUITRY_II, CLASS_ARTIFICER) * 10;
+}
+
 int get_artificer_arcane_battery_rank(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
     return 0;
 
-  return get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_I, CLASS_ARTIFICER);
+  return get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_I, CLASS_ARTIFICER) +
+         get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_II, CLASS_ARTIFICER);
+}
+
+int get_artificer_dual_layer_imprint_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_DUAL_LAYER_IMPRINT, CLASS_ARTIFICER);
+}
+
+int get_artificer_combat_calibration_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_COMBAT_CALIBRATION, CLASS_ARTIFICER);
+}
+
+int get_artificer_predictive_venting_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_PREDICTIVE_VENTING, CLASS_ARTIFICER);
+}
+
+int get_artificer_adaptive_payload_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_ADAPTIVE_PAYLOAD, CLASS_ARTIFICER);
+}
+
+int get_artificer_field_recompiler_cooldown(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || !has_perk(ch, PERK_ARTIFICER_FIELD_RECOMPILER))
+    return 0;
+
+  if (ch->player_specials->saved.field_recompiler_cooldown <= time(0))
+    return 0;
+
+  return (int)(ch->player_specials->saved.field_recompiler_cooldown - time(0));
+}
+
+bool has_artificer_field_recompiler(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_FIELD_RECOMPILER);
 }
 
 bool has_artificer_volatile_theorem(struct char_data *ch)

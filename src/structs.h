@@ -4496,11 +4496,23 @@
 #define PERK_ARTIFICER_ARCANE_BATTERY_I 1802
 #define PERK_ARTIFICER_VOLATILE_THEOREM 1803
 
+/* Weird Science Engineering - Tier 2 */
+#define PERK_ARTIFICER_DEVICE_EFFICIENCY_II 1804
+#define PERK_ARTIFICER_STABLE_CIRCUITRY_II 1805
+#define PERK_ARTIFICER_DUAL_LAYER_IMPRINT 1806
+#define PERK_ARTIFICER_COMBAT_CALIBRATION 1807
+
+/* Weird Science Engineering - Tier 3 */
+#define PERK_ARTIFICER_ARCANE_BATTERY_II 1808
+#define PERK_ARTIFICER_PREDICTIVE_VENTING 1809
+#define PERK_ARTIFICER_ADAPTIVE_PAYLOAD 1810
+#define PERK_ARTIFICER_FIELD_RECOMPILER 1811
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1804
+#define NUM_PERKS 1812
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -6821,6 +6833,7 @@ struct player_invention
   int reliability;
   int uses;                /* Number of times this device has been used */
   time_t cooldown_expires; /* Individual device cooldown timestamp */
+  time_t disabled_until;   /* Temporary disable timestamp (e.g. predictive venting) */
   int dc_penalty;          /* +2 DC penalty per failed out-of-charges attempt */
   bool broken;             /* Device is broken and cannot be used */
 };
@@ -7135,6 +7148,11 @@ struct player_special_data_saved
   /* Alchemist Chimeric Transmutation tracking (Mutagenist Tier 4) */
   time_t chimeric_breath_last_combat; /**< Timestamp of last combat end for chimeric breath */
   bool chimeric_breath_used;          /**< Whether chimeric breath was used this combat cycle */
+
+  /* Artificer Weird Science Engineering tracking */
+  time_t stable_circuitry_ii_cooldown; /**< Timestamp until Stable Circuitry II can prevent another break */
+  time_t field_recompiler_cooldown; /**< Timestamp until Field Recompiler can be used again */
+  bool was_fighting_last_tick; /**< Tracks combat->non-combat transition for recharge pulse bonuses */
 
   /* Wizard Evoker perks */
   time_t

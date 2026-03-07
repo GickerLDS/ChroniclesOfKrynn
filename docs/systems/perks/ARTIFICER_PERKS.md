@@ -85,7 +85,7 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
 11. **Adaptive Payload**
       - Cost: 3 points per rank
    - Max Rank: 2
-   - Effect: Violent devices gain +1 spell penetration style bonus per rank against resistive targets.
+   - Effect: Violent devices gain +2 spell penetration style bonus per rank against resistive targets.
    - Prerequisite: Combat Calibration (1)
 
 12. **Field Recompiler**

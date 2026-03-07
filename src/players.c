@@ -1418,6 +1418,22 @@ int load_char(const char *name, struct char_data *ch)
             ch->player_specials->saved.chimeric_breath_used = (used != 0);
           }
         }
+        else if (!strcmp(tag, "PASC"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.stable_circuitry_ii_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PAFR"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.field_recompiler_cooldown = (time_t)timestamp;
+          }
+        }
         else if (!strcmp(tag, "PMxS"))
         {
           long timestamp;
@@ -2847,8 +2863,8 @@ void save_char(struct char_data *ch, int mode)
       BUFFER_WRITE("%s\n", inv->keywords);
       BUFFER_WRITE("%s\n", inv->short_description);
       BUFFER_WRITE("%s\n", inv->long_description);
-      BUFFER_WRITE("%d %d %d %d %ld\n", inv->num_spells, inv->duration, inv->reliability, inv->uses,
-                   (long)inv->cooldown_expires);
+      BUFFER_WRITE("%d %d %d %d %ld %ld\n", inv->num_spells, inv->duration, inv->reliability,
+           inv->uses, (long)inv->cooldown_expires, (long)inv->disabled_until);
       /* Save spell effects */
       for (j = 0; j < inv->num_spells && j < MAX_INVENTION_SPELLS; j++)
         BUFFER_WRITE("%d\n", inv->spell_effects[j]);
@@ -3229,6 +3245,12 @@ void save_char(struct char_data *ch, int mode)
   /* Save Chimeric Transmutation (Alchemist) data */
   BUFFER_WRITE("PCBr: %ld %d\n", (long)ch->player_specials->saved.chimeric_breath_last_combat,
                ch->player_specials->saved.chimeric_breath_used ? 1 : 0);
+
+  /* Save Artificer Stable Circuitry II cooldown */
+  BUFFER_WRITE("PASC: %ld\n", (long)ch->player_specials->saved.stable_circuitry_ii_cooldown);
+
+  /* Save Artificer Field Recompiler cooldown */
+  BUFFER_WRITE("PAFR: %ld\n", (long)ch->player_specials->saved.field_recompiler_cooldown);
 
   /* Save Maximize Spell cooldown */
   BUFFER_WRITE("PMxS: %ld\n", (long)ch->player_specials->saved.maximize_spell_cooldown);
@@ -4909,25 +4931,29 @@ static void load_devices(FILE *fl, struct char_data *ch)
     /* Read long description */
     get_line(fl, inv->long_description);
 
-    /* Read num_spells, duration, reliability, and optionally uses, cooldown_expires */
+    /* Read num_spells, duration, reliability, and optionally uses/cooldowns */
     get_line(fl, line);
     long cooldown_long = 0;
-    int scanned = sscanf(line, "%d %d %d %d %ld", &inv->num_spells, &inv->duration,
-                         &inv->reliability, &inv->uses, &cooldown_long);
+    long disabled_long = 0;
+    int scanned = sscanf(line, "%d %d %d %d %ld %ld", &inv->num_spells, &inv->duration,
+               &inv->reliability, &inv->uses, &cooldown_long, &disabled_long);
 
     /* Handle backward compatibility - if only 3 values were read, initialize new fields */
     if (scanned < 4)
     {
       inv->uses = 0;             /* Default to no uses */
       inv->cooldown_expires = 0; /* Default to no cooldown */
+      inv->disabled_until = 0;
     }
     else if (scanned < 5)
     {
       inv->cooldown_expires = 0; /* Default to no cooldown if uses was read but not cooldown */
+      inv->disabled_until = 0;
     }
     else
     {
       inv->cooldown_expires = (time_t)cooldown_long;
+      inv->disabled_until = (scanned >= 6) ? (time_t)disabled_long : 0;
     }
 
     /* Read spell effects */

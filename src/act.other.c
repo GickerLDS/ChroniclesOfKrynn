@@ -11416,6 +11416,8 @@ ACMDU(do_device)
         ch, "  device add <device> <spell>             - Add another spell effect to a device\r\n");
     send_to_char(ch, "  device use <device> [target]            - Use a weird science device "
                      "(optional target)\r\n");
+    send_to_char(ch,
+           "  device recompile <device> <slot> <spell> - Field Recompiler swap (perk)\r\n");
     send_to_char(ch, "  device list                             - List your current devices\r\n");
     send_to_char(ch,
                  "  device info <device>                    - Get information about a device\r\n");
@@ -12375,6 +12377,141 @@ ACMDU(do_device)
     return;
   }
 
+  if (is_abbrev(arg1, "recompile"))
+  {
+    if (!has_artificer_field_recompiler(ch))
+    {
+      send_to_char(ch, "You have not purchased Field Recompiler.\r\n");
+      return;
+    }
+
+    if (!*arg2 || !*arg3)
+    {
+      send_to_char(ch, "Usage: device recompile <device> <slot> <spell>\r\n");
+      send_to_char(ch, "Swaps one spell in a device without destroying it.\r\n");
+      return;
+    }
+
+    int remaining = get_artificer_field_recompiler_cooldown(ch);
+    if (remaining > 0)
+    {
+      send_to_char(ch, "Field Recompiler is on cooldown for %d minute%s, %d second%s.\r\n",
+                   remaining / 60, (remaining / 60) == 1 ? "" : "s", remaining % 60,
+                   (remaining % 60) == 1 ? "" : "s");
+      return;
+    }
+
+    if (FIGHTING(ch) || char_has_mud_event(ch, eDEVICE_CREATION) || char_has_mud_event(ch, eDEVICE_REPAIR))
+    {
+      send_to_char(ch, "You need a stable workspace to recompile a device.\r\n");
+      return;
+    }
+
+    int inv_idx = atoi(arg2) - 1;
+    int slot_idx = atoi(arg3) - 1;
+    if (inv_idx < 0 || inv_idx >= ch->player_specials->saved.num_inventions)
+    {
+      send_to_char(ch, "No such invention. Use 'device list' to see your inventions.\r\n");
+      return;
+    }
+
+    struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
+    if (slot_idx < 0 || slot_idx >= inv->num_spells)
+    {
+      send_to_char(ch, "Invalid slot. Use a value from 1 to %d for this device.\r\n", inv->num_spells);
+      return;
+    }
+
+    if (inv->broken)
+    {
+      send_to_char(ch, "You cannot recompile a broken device. Repair it first.\r\n");
+      return;
+    }
+
+    char *spell_start = (char *)three_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2),
+                                                arg3, sizeof(arg3));
+    skip_spaces(&spell_start);
+    if (!*spell_start)
+    {
+      send_to_char(ch, "Usage: device recompile <device> <slot> <spell>\r\n");
+      return;
+    }
+
+    if (*spell_start == '"')
+    {
+      spell_start++;
+      {
+        char *end_quote = strrchr(spell_start, '"');
+        if (end_quote)
+          *end_quote = '\0';
+      }
+    }
+
+    int new_spell = find_skill_num(spell_start);
+    if (new_spell < 1)
+    {
+      send_to_char(ch, "That spell doesn't exist.\r\n");
+      return;
+    }
+
+    int wizard_level = spell_info[new_spell].min_level[CLASS_WIZARD];
+    int cleric_level = spell_info[new_spell].min_level[CLASS_CLERIC];
+    int spell_assignment_level = LVL_IMMORT;
+
+    if (wizard_level < LVL_IMMORT && cleric_level < LVL_IMMORT)
+      spell_assignment_level = MIN(wizard_level, cleric_level);
+    else if (wizard_level < LVL_IMMORT)
+      spell_assignment_level = wizard_level;
+    else if (cleric_level < LVL_IMMORT)
+      spell_assignment_level = cleric_level;
+
+    if (spell_assignment_level >= LVL_IMMORT || ((spell_assignment_level + 1) / 2) > max_spell_level)
+    {
+      send_to_char(ch, "That spell is not available to artificers of your level.\r\n");
+      return;
+    }
+
+    int old_level = inv->spell_levels[slot_idx];
+    if (old_level <= 0)
+      old_level = spell_info[inv->spell_effects[slot_idx]].min_level[CLASS_WIZARD];
+
+    int old_circle = (old_level > 0) ? ((old_level + 1) / 2) : 0;
+    int new_circle = (spell_assignment_level + 1) / 2;
+
+    if (old_circle > 0 && new_circle != old_circle)
+    {
+      send_to_char(ch, "Field Recompiler requires same-circle swaps (%d -> %d not allowed).\r\n",
+                   old_circle, new_circle);
+      return;
+    }
+
+    int k;
+    for (k = 0; k < inv->num_spells; k++)
+    {
+      if (k == slot_idx)
+        continue;
+
+      int existing_spell = inv->spell_effects[k];
+
+      if (spell_info[new_spell].violent != spell_info[existing_spell].violent)
+      {
+        send_to_char(ch,
+                     "You cannot mix violent and non-violent spells in the same device.\r\n");
+        return;
+      }
+    }
+
+    int old_spell = inv->spell_effects[slot_idx];
+    inv->spell_effects[slot_idx] = new_spell;
+    inv->spell_levels[slot_idx] = spell_assignment_level;
+    ch->player_specials->saved.field_recompiler_cooldown = time(0) + 600;
+
+    send_to_char(ch, "You recompile slot %d in %s, replacing %s with %s.\r\n", slot_idx + 1,
+                 inv->short_description, spell_info[old_spell].name, spell_info[new_spell].name);
+    act("$n quickly reconfigures an invention with practiced precision.", TRUE, ch, 0, 0, TO_ROOM);
+    return;
+  }
+
   if (is_abbrev(arg1, "overcharge"))
   {
     if (!has_artificer_volatile_theorem(ch))
@@ -12522,6 +12659,15 @@ ACMDU(do_device)
       return;
     }
 
+    if (inv->disabled_until > time(0))
+    {
+      int remaining = (int)(inv->disabled_until - time(0));
+      send_to_char(ch,
+                   "The device is venting volatile energy and is temporarily disabled (%d seconds).\r\n",
+                   remaining);
+      return;
+    }
+
     /* Determine if device contains violent or non-violent spells */
     int device_is_violent = 0;
     if (inv->num_spells > 0)
@@ -12574,6 +12720,10 @@ ACMDU(do_device)
     int times_used = inv->uses; /* Use persistent uses field */
     int reliability_bonus = inv->reliability;
     int penalty_growth = 4 - get_artificer_stable_circuitry_rank(ch);
+    int stable_circuitry_break_save_chance = get_artificer_stable_circuitry_break_save_chance(ch);
+    int dual_layer_imprint_rank = get_artificer_dual_layer_imprint_rank(ch);
+    int predictive_venting_rank = get_artificer_predictive_venting_rank(ch);
+    int adaptive_payload_rank = get_artificer_adaptive_payload_rank(ch);
     bool overcharge_on = is_artificer_volatile_theorem_on(ch);
 
     if (penalty_growth < 1)
@@ -12611,6 +12761,28 @@ ACMDU(do_device)
         int break_chance = 25;
         if (rand_number(1, 100) <= break_chance)
         {
+          if (stable_circuitry_break_save_chance > 0 &&
+              ch->player_specials->saved.stable_circuitry_ii_cooldown <= time(0) &&
+              rand_number(1, 100) <= stable_circuitry_break_save_chance)
+          {
+            ch->player_specials->saved.stable_circuitry_ii_cooldown = time(0) + 300;
+            send_to_char(ch,
+                         "Your stabilized circuitry catches the fault just in time, preventing a break!\r\n");
+            act("$n's invention shudders violently, then stabilizes at the last second.", TRUE, ch,
+                0, 0, TO_ROOM);
+            return;
+          }
+
+          if (predictive_venting_rank > 0 && rand_number(1, 100) <= (predictive_venting_rank * 10))
+          {
+            inv->disabled_until = time(0) + 30;
+            send_to_char(ch,
+                         "Predictive venting dumps excess arcana; the device is disabled for 30 seconds instead of breaking.\r\n");
+            act("$n's invention vents a burst of unstable energy and goes inert.", TRUE, ch, 0, 0,
+                TO_ROOM);
+            return;
+          }
+
           /* Device breaks! */
           send_to_char(ch, "The invention sparks, sputters, and breaks down completely!\r\n");
           act("$n's invention sparks and breaks down!", TRUE, ch, 0, 0, TO_ROOM);
@@ -12650,6 +12822,8 @@ ACMDU(do_device)
                              "\tRYou are caught in the explosion and take %d force damage!\tn\r\n",
                              damage);
                 GET_HIT(tch) -= damage;
+                send_to_char(ch,
+                       "  device recompile <device> <slot> <spell> - Field Recompiler swap (perk)\r\n");
 
                 /* Check if anyone died from the explosion */
                 if (GET_HIT(tch) <= 0)
@@ -12717,6 +12891,15 @@ ACMDU(do_device)
       int bonus_level = MAX(1, artificer_level / 10);
       effective_artificer_level += bonus_level;
     }
+
+    if (inv->num_spells > 1 && dual_layer_imprint_rank > 0)
+    {
+      int imprint_bonus = MAX(1, (effective_artificer_level * (dual_layer_imprint_rank * 5)) / 100);
+      effective_artificer_level += imprint_bonus;
+    }
+
+    if (device_is_violent && adaptive_payload_rank > 0)
+      effective_artificer_level += adaptive_payload_rank;
 
     for (i = 0; i < inv->num_spells; i++)
     {
@@ -12871,6 +13054,10 @@ ACMDU(do_device)
         {
           status = "BROKEN";
         }
+        else if (inv->disabled_until > time(0))
+        {
+          status = "DISABLED";
+        }
         else if (inv->cooldown_expires > time(0) && inv->uses == 0)
         {
           status = "COOLDOWN";
@@ -12964,8 +13151,14 @@ ACMDU(do_device)
     }
     send_to_char(ch, "  Uses: %d remaining out of %d total\r\n", uses_remaining, max_uses);
 
+    if (inv->disabled_until > time(0))
+    {
+      int seconds_left = (int)(inv->disabled_until - time(0));
+      send_to_char(ch, "  Status: DISABLED - venting for %d second%s\r\n", seconds_left,
+                   seconds_left == 1 ? "" : "s");
+    }
     /* Check if device is broken */
-    if (inv->cooldown_expires > time(0) && inv->uses == 0)
+    else if (inv->cooldown_expires > time(0) && inv->uses == 0)
     {
       int hours_left = (inv->cooldown_expires - time(0)) / 3600;
       int minutes_left = ((inv->cooldown_expires - time(0)) % 3600) / 60;
@@ -13267,7 +13460,13 @@ ACMDU(do_device)
     for (i = 0; i < ch->player_specials->saved.num_inventions; i++)
     {
       struct player_invention *inv = &ch->player_specials->saved.inventions[i];
-      if (inv->cooldown_expires > time(0))
+      if (inv->disabled_until > time(0))
+      {
+        int seconds_left = (int)(inv->disabled_until - time(0));
+        send_to_char(ch, "  [%d] %s - DISABLED: %d second%s\r\n", i + 1, inv->short_description,
+                     seconds_left, (seconds_left == 1) ? "" : "s");
+      }
+      else if (inv->cooldown_expires > time(0))
       {
         found_any_cooldowns = 1;
         int hours_left = (inv->cooldown_expires - time(0)) / 3600;
@@ -13398,6 +13597,7 @@ static void finalize_invention_creation(struct char_data *ch, const char *variab
   inv->reliability = reliability;
   inv->uses = 0;
   inv->cooldown_expires = 0;
+  inv->disabled_until = 0;
   inv->dc_penalty = 0;
 
   ch->player_specials->saved.num_inventions++;

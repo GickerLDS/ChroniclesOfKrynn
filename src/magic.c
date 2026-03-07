@@ -673,6 +673,8 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
   case CAST_DEVICE:
     challenge += level;
     challenge += GET_INT_BONUS(ch);
+    if (ch && spell_info[spellnum].violent)
+      challenge += get_artificer_combat_calibration_rank(ch);
     break;
   case CAST_SPELL:
   default:

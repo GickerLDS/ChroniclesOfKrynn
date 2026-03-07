@@ -2463,11 +2463,24 @@ void check_devices(void)
 
     i = d->character;
 
+    if (FIGHTING(i))
+      i->player_specials->saved.was_fighting_last_tick = TRUE;
+
     /* Artificer device recharge: Check every second, process when timer expires */
     if (CLASS_LEVEL(i, CLASS_ARTIFICER) > 0 && !FIGHTING(i) &&
         i->player_specials->saved.num_inventions > 0)
     {
       int recharge_rate = get_device_recharge_rate(i);
+
+      /* Arcane Battery II: first recharge pulse after combat ends happens 1 tick sooner. */
+      if (i->player_specials->saved.was_fighting_last_tick)
+      {
+        if (get_perk_rank(i, PERK_ARTIFICER_ARCANE_BATTERY_II, CLASS_ARTIFICER) > 0 &&
+            i->player_specials->saved.device_recharge_timer > 0)
+          i->player_specials->saved.device_recharge_timer--;
+
+        i->player_specials->saved.was_fighting_last_tick = FALSE;
+      }
 
       /* Decrement recharge timer */
       if (i->player_specials->saved.device_recharge_timer > 0)
