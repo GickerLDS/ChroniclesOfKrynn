@@ -171,6 +171,15 @@ bool concentration_check(struct char_data *ch, int spellnum)
   if (FIGHTING(ch) && !skill_check(ch, ABILITY_CONCENTRATION, concentration_dc) &&
       CASTING_CLASS(ch) != CLASS_ALCHEMIST && CASTING_CLASS(ch) != CLASS_SHADOW_DANCER)
   {
+    /* Witch of the Multiverse - auto-reroll failed concentration once per 10 minutes */
+    if (!IS_NPC(ch) && has_warlock_witch_of_the_multiverse(ch) && 
+        GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) == 0)
+    {
+      send_to_char(ch, "\tMThe multiverse bends to your will - your concentration is restored!\tn\r\n");
+      GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) = 100; /* 10 minutes = 100 ticks */
+      return TRUE;
+    }
+
     send_to_char(ch, "You lost your concentration!\r\n");
     act("$n's concentration is lost, and spell is aborted!", TRUE, ch, 0, 0, TO_ROOM);
     resetCastingData(ch);
@@ -1672,6 +1681,8 @@ void finishCasting(struct char_data *ch)
       GET_DC_BONUS(ch) += 2 * HAS_FEAT(ch, FEAT_EMPOWERED_MAGIC);
     if (!IS_NPC(ch) && get_inquisitor_supremacy_bonus(ch) > 0)
       GET_DC_BONUS(ch) += get_inquisitor_supremacy_bonus(ch);
+    if (!IS_NPC(ch) && has_warlock_eldritch_apotheosis(ch))
+      GET_DC_BONUS(ch) += 1;
   }
   else if (CASTING_SPELLNUM(ch) >= PSIONIC_POWER_START && CASTING_SPELLNUM(ch) <= PSIONIC_POWER_END)
   {
@@ -1912,6 +1923,12 @@ void finishCasting(struct char_data *ch)
       cast_level += get_summoner_epic_spellcasting_caster_level_bonus(ch);
     }
 
+    /* Warlock Invocation Mastery - Witch of the Multiverse (+2 caster level for warlock spells) */
+    if (!IS_NPC(ch) && has_warlock_witch_of_the_multiverse(ch) && GET_CASTING_CLASS(ch) == CLASS_WARLOCK)
+    {
+      cast_level += 2;
+    }
+
     call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic,
                cast_level, CAST_SPELL);
 
@@ -1932,6 +1949,18 @@ void finishCasting(struct char_data *ch)
         canCastAtWill(ch, spellnum) && GET_WARLOCK_WHISPERS_COOLDOWN(ch) <= 0)
     {
       GET_WARLOCK_WHISPERS_COOLDOWN(ch) = 50; /* 5 minutes = 50 ticks */
+    }
+
+    if (!IS_NPC(ch) && spellnum == SPELL_HOLD_MONSTER && has_warlock_chains_of_carceri(ch) &&
+        canCastAtWill(ch, spellnum) && GET_WARLOCK_CHAINS_COOLDOWN(ch) <= 0)
+    {
+      GET_WARLOCK_CHAINS_COOLDOWN(ch) = 50; /* 5 minutes = 50 ticks */
+    }
+
+    if (!IS_NPC(ch) && spellnum == SPELL_WIZARD_EYE && has_warlock_visions_of_distant_realms(ch) &&
+        canCastAtWill(ch, spellnum) && GET_WARLOCK_VISIONS_COOLDOWN(ch) <= 0)
+    {
+      GET_WARLOCK_VISIONS_COOLDOWN(ch) = 50; /* 5 minutes = 50 ticks */
     }
 
     /* Psionicist Telepathic Control Tier I mechanics */
@@ -2491,6 +2520,72 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
     else
       send_to_char(ch,
                    "Your Whispers of the Grave cannot cast that spell yet. Wait %d second%s.\r\n",
+                   seconds, (seconds != 1 ? "s" : ""));
+    return 0;
+    }
+  }
+
+  if (spellnum == SPELL_HOLD_MONSTER && has_warlock_chains_of_carceri(ch) &&
+      GET_WARLOCK_CHAINS_COOLDOWN(ch) > 0)
+  {
+    bool can_cast_via_other_means = FALSE;
+    int fallback_class = CLASS_UNDEFINED;
+
+    if (!IS_NPC(ch))
+      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+
+    if (fallback_class != CLASS_UNDEFINED)
+    {
+      can_cast_via_other_means = TRUE;
+      treat_as_at_will = FALSE;
+    }
+
+    if (!can_cast_via_other_means)
+    {
+    int seconds_left = GET_WARLOCK_CHAINS_COOLDOWN(ch) * 6;
+    int minutes = seconds_left / 60;
+    int seconds = seconds_left % 60;
+
+    if (minutes > 0)
+      send_to_char(ch,
+                   "Your Chains of Carceri cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
+                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+    else
+      send_to_char(ch,
+                   "Your Chains of Carceri cannot cast that spell yet. Wait %d second%s.\r\n",
+                   seconds, (seconds != 1 ? "s" : ""));
+    return 0;
+    }
+  }
+
+  if (spellnum == SPELL_WIZARD_EYE && has_warlock_visions_of_distant_realms(ch) &&
+      GET_WARLOCK_VISIONS_COOLDOWN(ch) > 0)
+  {
+    bool can_cast_via_other_means = FALSE;
+    int fallback_class = CLASS_UNDEFINED;
+
+    if (!IS_NPC(ch))
+      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+
+    if (fallback_class != CLASS_UNDEFINED)
+    {
+      can_cast_via_other_means = TRUE;
+      treat_as_at_will = FALSE;
+    }
+
+    if (!can_cast_via_other_means)
+    {
+    int seconds_left = GET_WARLOCK_VISIONS_COOLDOWN(ch) * 6;
+    int minutes = seconds_left / 60;
+    int seconds = seconds_left % 60;
+
+    if (minutes > 0)
+      send_to_char(ch,
+                   "Your Visions of Distant Realms cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
+                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+    else
+      send_to_char(ch,
+                   "Your Visions of Distant Realms cannot cast that spell yet. Wait %d second%s.\r\n",
                    seconds, (seconds != 1 ? "s" : ""));
     return 0;
     }
@@ -6497,6 +6592,11 @@ sbyte canCastAtWill(struct char_data *ch, int spellnum)
   if (spellnum == SPELL_ALTER_SELF && has_warlock_master_of_myriad_forms(ch))
     return true;
   if (spellnum == SPELL_ANIMATE_DEAD && has_warlock_whispers_of_the_grave(ch))
+    return true;
+  /* Tier 4 Invocation Mastery perks */
+  if (spellnum == SPELL_HOLD_MONSTER && has_warlock_chains_of_carceri(ch))
+    return true;
+  if (spellnum == SPELL_WIZARD_EYE && has_warlock_visions_of_distant_realms(ch))
     return true;
   if (isHighElfCantrip(ch, spellnum))
     return true;

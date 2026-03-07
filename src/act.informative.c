@@ -2929,6 +2929,27 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
                  GET_WARLOCK_WHISPERS_COOLDOWN(k) * 6);
   }
 
+  /* Warlock Chains of Carceri cooldown */
+  if (CONFIG_PERK_SYSTEM && !IS_NPC(k) && GET_WARLOCK_CHAINS_COOLDOWN(k) > 0)
+  {
+    send_to_char(ch, "Chains of Carceri (Hold Monster) - Duration: %d seconds\r\n",
+                 GET_WARLOCK_CHAINS_COOLDOWN(k) * 6);
+  }
+
+  /* Warlock Visions of Distant Realms cooldown */
+  if (CONFIG_PERK_SYSTEM && !IS_NPC(k) && GET_WARLOCK_VISIONS_COOLDOWN(k) > 0)
+  {
+    send_to_char(ch, "Visions of Distant Realms (Wizard Eye) - Duration: %d seconds\r\n",
+                 GET_WARLOCK_VISIONS_COOLDOWN(k) * 6);
+  }
+
+  /* Warlock Witch of the Multiverse concentration reroll cooldown */
+  if (CONFIG_PERK_SYSTEM && !IS_NPC(k) && GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(k) > 0)
+  {
+    send_to_char(ch, "Witch of the Multiverse (Concentration Reroll) - Duration: %d seconds\r\n",
+                 GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(k) * 6);
+  }
+
   /* PvP cooldown timer - only shows if PvP is enabled and time remaining */
   if (PRF_FLAGGED(k, PRF_PVP) && GET_PVP_TIMER(k) > 0)
   {

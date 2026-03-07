@@ -296,6 +296,12 @@ int get_warlock_book_of_ancient_secrets_cooldown(struct char_data *ch, int spell
 void set_warlock_book_of_ancient_secrets_cooldown(struct char_data *ch, int spellnum,
                                                   int cooldown_ticks);
 
+/* Invocation Mastery functions - Tier 4 */
+bool has_warlock_chains_of_carceri(struct char_data *ch);
+bool has_warlock_visions_of_distant_realms(struct char_data *ch);
+bool has_warlock_witch_of_the_multiverse(struct char_data *ch);
+bool has_warlock_eldritch_apotheosis(struct char_data *ch);
+
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
 int get_class_perks(int class_id, int *perk_ids, int max_perks);

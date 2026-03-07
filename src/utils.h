@@ -3032,6 +3032,9 @@ bool has_reach(struct char_data *ch);
 #define GET_WARLOCK_BOOK_SPELL(ch, i) (ch->player_specials->saved.warlock_book_spells[(i)])
 #define GET_WARLOCK_BOOK_COOLDOWN(ch, i) (ch->player_specials->saved.warlock_book_cooldowns[(i)])
 #define GET_WARLOCK_WHISPERS_COOLDOWN(ch) (ch->player_specials->saved.warlock_whispers_cooldown)
+#define GET_WARLOCK_CHAINS_COOLDOWN(ch) (ch->player_specials->saved.warlock_chains_cooldown)
+#define GET_WARLOCK_VISIONS_COOLDOWN(ch) (ch->player_specials->saved.warlock_visions_cooldown)
+#define GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) (ch->player_specials->saved.warlock_witch_concentration_cooldown)
 
 #define GET_SAGE_MOB_VNUM(ch) (ch->char_specials.sage_mob_vnum)
 

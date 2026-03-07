@@ -10619,6 +10619,8 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
             af[i].duration = af[i].duration * (100 + dur_bonus) / 100;
             if (af[i].duration < old_duration + 1)
               af[i].duration = old_duration + 1;
+            if (has_warlock_eldritch_apotheosis(ch))
+              af[i].duration++;
           }
         }
       }

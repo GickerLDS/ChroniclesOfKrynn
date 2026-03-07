@@ -510,6 +510,9 @@ int load_char(const char *name, struct char_data *ch)
     GET_WARLOCK_BOOK_COOLDOWN(ch, 0) = 0;
     GET_WARLOCK_BOOK_COOLDOWN(ch, 1) = 0;
     GET_WARLOCK_WHISPERS_COOLDOWN(ch) = 0;
+    GET_WARLOCK_CHAINS_COOLDOWN(ch) = 0;
+    GET_WARLOCK_VISIONS_COOLDOWN(ch) = 0;
+    GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) = 0;
     GET_PVP_TIMER(ch) = 0;
     GET_QUIT_SURVEY_DONE(ch) = FALSE;
     ch->player_specials->saved.last_device_recharge = 0;
@@ -1974,6 +1977,12 @@ int load_char(const char *name, struct char_data *ch)
           load_wands(fl, ch);
         else if (!strcmp(tag, "WhCd"))
           GET_WARLOCK_WHISPERS_COOLDOWN(ch) = atoi(line);
+        else if (!strcmp(tag, "WcCd"))
+          GET_WARLOCK_CHAINS_COOLDOWN(ch) = atoi(line);
+        else if (!strcmp(tag, "WvCd"))
+          GET_WARLOCK_VISIONS_COOLDOWN(ch) = atoi(line);
+        else if (!strcmp(tag, "WwCd"))
+          GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) = atoi(line);
         else if (!strcmp(tag, "Wimp"))
           GET_WIMP_LEV(ch) = atoi(line);
         else if (!strcmp(tag, "Ward"))
@@ -2641,6 +2650,12 @@ void save_char(struct char_data *ch, int mode)
     BUFFER_WRITE("BoC2: %d\n", GET_WARLOCK_BOOK_COOLDOWN(ch, 1));
   if (GET_WARLOCK_WHISPERS_COOLDOWN(ch) != 0)
     BUFFER_WRITE("WhCd: %d\n", GET_WARLOCK_WHISPERS_COOLDOWN(ch));
+  if (GET_WARLOCK_CHAINS_COOLDOWN(ch) != 0)
+    BUFFER_WRITE("WcCd: %d\n", GET_WARLOCK_CHAINS_COOLDOWN(ch));
+  if (GET_WARLOCK_VISIONS_COOLDOWN(ch) != 0)
+    BUFFER_WRITE("WvCd: %d\n", GET_WARLOCK_VISIONS_COOLDOWN(ch));
+  if (GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) != 0)
+    BUFFER_WRITE("WwCd: %d\n", GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch));
   BUFFER_WRITE("God : %d\n", GET_DEITY(ch));
   if (GET_AUTOCQUEST_VNUM(ch) != PFDEF_AUTOCQUEST_VNUM)
     BUFFER_WRITE("Cvnm: %d\n", GET_AUTOCQUEST_VNUM(ch));

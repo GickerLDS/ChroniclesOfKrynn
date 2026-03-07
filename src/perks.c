@@ -6021,6 +6021,78 @@ void define_warlock_perks(void)
   perk->special_description =
     strdup("You can cast Animate Dead once per 5 minutes. This perk allows you to engage with the undead.");
   perk->toggleable = false;
+
+  /* Chains of Carceri */
+  perk = &perk_list[PERK_WARLOCK_CHAINS_OF_CARCERI];
+  perk->id = PERK_WARLOCK_CHAINS_OF_CARCERI;
+  perk->name = strdup("Chains of Carceri");
+  perk->description = strdup("Cast Hold Monster once per 5 minutes.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_MASTER_OF_MYRIAD_FORMS;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* Can cast Hold Monster */
+  perk->effect_modifier = 300; /* 5 minutes cooldown */
+  perk->special_description =
+    strdup("You can cast Hold Monster once per 5 minutes. This perk allows you to bind powerful creatures.");
+  perk->toggleable = false;
+
+  /* Visions of Distant Realms */
+  perk = &perk_list[PERK_WARLOCK_VISIONS_OF_DISTANT_REALMS];
+  perk->id = PERK_WARLOCK_VISIONS_OF_DISTANT_REALMS;
+  perk->name = strdup("Visions of Distant Realms");
+  perk->description = strdup("Cast Wizard Eye once per 5 minutes.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_2;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* Can cast Wizard Eye */
+  perk->effect_modifier = 300; /* 5 minutes cooldown */
+  perk->special_description =
+    strdup("You can cast Wizard Eye once per 5 minutes. This perk allows you to see distant locations.");
+  perk->toggleable = false;
+
+  /* Witch of the Multiverse */
+  perk = &perk_list[PERK_WARLOCK_WITCH_OF_THE_MULTIVERSE];
+  perk->id = PERK_WARLOCK_WITCH_OF_THE_MULTIVERSE;
+  perk->name = strdup("Witch of the Multiverse");
+  perk->description = strdup("Warlock spells cast at +2 effective level. Auto-reroll failed concentration once per 10 minutes.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 6;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_VISIONS_OF_DISTANT_REALMS;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* +2 effective caster level */
+  perk->effect_modifier = 100; /* 10 minutes concentration reroll cooldown */
+  perk->special_description =
+    strdup("Your warlock spells are cast at +2 effective caster level. Additionally, once per 10 minutes, you automatically reroll a failed concentration check.");
+  perk->toggleable = false;
+
+  /* Eldritch Apotheosis */
+  perk = &perk_list[PERK_WARLOCK_ELDRITCH_APOTHEOSIS];
+  perk->id = PERK_WARLOCK_ELDRITCH_APOTHEOSIS;
+  perk->name = strdup("Eldritch Apotheosis");
+  perk->description = strdup("All spells gain +1 to save DC and +1 round duration.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 5;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_WITCH_OF_THE_MULTIVERSE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* +1 DC */
+  perk->effect_modifier = 1; /* +1 round duration */
+  perk->special_description =
+    strdup("Your mastery of eldritch magic approaches divine levels. All your spells gain +1 to save DC and last for +1 additional round.");
+  perk->toggleable = false;
 }
 
 /* Define Psionicist Perks */
@@ -26583,6 +26655,30 @@ bool has_warlock_whispers_of_the_grave(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
          has_perk(ch, PERK_WARLOCK_WHISPERS_OF_THE_GRAVE);
+}
+
+bool has_warlock_chains_of_carceri(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_CHAINS_OF_CARCERI);
+}
+
+bool has_warlock_visions_of_distant_realms(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_VISIONS_OF_DISTANT_REALMS);
+}
+
+bool has_warlock_witch_of_the_multiverse(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_WITCH_OF_THE_MULTIVERSE);
+}
+
+bool has_warlock_eldritch_apotheosis(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ELDRITCH_APOTHEOSIS);
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)

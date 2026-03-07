@@ -4476,6 +4476,12 @@
 #define PERK_WARLOCK_MASTER_OF_MYRIAD_FORMS 1743
 #define PERK_WARLOCK_WHISPERS_OF_THE_GRAVE 1744
 
+/** Tree 3: Invocation Mastery - Tier 4 */
+#define PERK_WARLOCK_CHAINS_OF_CARCERI 1745
+#define PERK_WARLOCK_VISIONS_OF_DISTANT_REALMS 1746
+#define PERK_WARLOCK_WITCH_OF_THE_MULTIVERSE 1747
+#define PERK_WARLOCK_ELDRITCH_APOTHEOSIS 1748
+
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
  * ============================================================================ */
@@ -4485,7 +4491,7 @@
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1740
+#define NUM_PERKS 1749
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -7047,6 +7053,11 @@ struct player_special_data_saved
 
   /* Warlock Invocation Mastery - Whispers of the Grave */
   int warlock_whispers_cooldown; // Animate Dead cooldown in ticks (5 minutes = 50 ticks)
+
+  /* Warlock Invocation Mastery - Tier 4 */
+  int warlock_chains_cooldown; // Hold Monster cooldown in ticks (5 minutes = 50 ticks)
+  int warlock_visions_cooldown; // Wizard Eye cooldown in ticks (5 minutes = 50 ticks)
+  int warlock_witch_concentration_cooldown; // Witch concentration reroll cooldown (10 minutes = 100 ticks)
 
   /* Artificer device recharge tracking */
   int device_recharge_timer;    // Timer tracking seconds until next device recharge check
