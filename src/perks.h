@@ -302,6 +302,13 @@ bool has_warlock_visions_of_distant_realms(struct char_data *ch);
 bool has_warlock_witch_of_the_multiverse(struct char_data *ch);
 bool has_warlock_eldritch_apotheosis(struct char_data *ch);
 
+/* Artificer Weird Science Engineering Tier I helper functions */
+int get_artificer_device_efficiency_bonus(struct char_data *ch);
+int get_artificer_stable_circuitry_rank(struct char_data *ch);
+int get_artificer_arcane_battery_rank(struct char_data *ch);
+bool has_artificer_volatile_theorem(struct char_data *ch);
+bool is_artificer_volatile_theorem_on(struct char_data *ch);
+
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
 int get_class_perks(int class_id, int *perk_ids, int max_perks);

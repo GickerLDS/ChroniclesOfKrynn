@@ -3202,6 +3202,11 @@
 #define PERK_CATEGORY_PACT_BONDING 50
 #define PERK_CATEGORY_INVOCATION_MASTERY 51
 
+/* Artificer Perk Categories */
+#define PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING 52
+#define PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT 53
+#define PERK_CATEGORY_CONSTRUCT_COMMAND 54
+
 
 /* Perk IDs - organized by class */
 /* Base perks start at 0, will define actual IDs in perks.c */
@@ -4485,13 +4490,17 @@
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
  * ============================================================================ */
-/* Not yet implemented */
+/* Weird Science Engineering - Tier 1 */
+#define PERK_ARTIFICER_DEVICE_EFFICIENCY_I 1800
+#define PERK_ARTIFICER_STABLE_CIRCUITRY_I 1801
+#define PERK_ARTIFICER_ARCANE_BATTERY_I 1802
+#define PERK_ARTIFICER_VOLATILE_THEOREM 1803
 
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1749
+#define NUM_PERKS 1804
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

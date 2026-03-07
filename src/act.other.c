@@ -11422,6 +11422,7 @@ ACMDU(do_device)
     send_to_char(ch, "  device rename <device> <new name>       - Change the name of a device\r\n");
     send_to_char(ch, "  device repair <device>                  - Repair a broken device (removes "
                      "instability)\r\n");
+    send_to_char(ch, "  device overcharge [on|off]              - Toggle Volatile Theorem overcharge mode\r\n");
     send_to_char(ch, "  device destroy <device>                 - Permanently destroy a device "
                      "(requires confirmation)\r\n");
     send_to_char(ch,
@@ -12374,6 +12375,44 @@ ACMDU(do_device)
     return;
   }
 
+  if (is_abbrev(arg1, "overcharge"))
+  {
+    if (!has_artificer_volatile_theorem(ch))
+    {
+      send_to_char(ch, "You have not purchased Volatile Theorem.\r\n");
+      return;
+    }
+
+    bool current = is_artificer_volatile_theorem_on(ch);
+
+    if (!*arg2)
+    {
+      send_to_char(ch, "Overcharge is currently %s%s%s.\r\n", current ? "\tG" : "\tr",
+                   current ? "ON" : "OFF", "\tn");
+      send_to_char(ch,
+                   "Usage: device overcharge <on|off>\r\n"
+                   "While ON: +10%% device effect magnitude, +2 instability growth on failures.\r\n");
+      return;
+    }
+
+    if (is_abbrev(arg2, "on"))
+    {
+      set_perk_toggle(ch, PERK_ARTIFICER_VOLATILE_THEOREM, TRUE);
+      send_to_char(ch, "Volatile Theorem overcharge toggled \tGON\tn.\r\n");
+      return;
+    }
+
+    if (is_abbrev(arg2, "off"))
+    {
+      set_perk_toggle(ch, PERK_ARTIFICER_VOLATILE_THEOREM, FALSE);
+      send_to_char(ch, "Volatile Theorem overcharge toggled \trOFF\tn.\r\n");
+      return;
+    }
+
+    send_to_char(ch, "Usage: device overcharge <on|off>\r\n");
+    return;
+  }
+
   if (is_abbrev(arg1, "use"))
   {
     if (!*arg2)
@@ -12529,10 +12568,19 @@ ACMDU(do_device)
     }
     int device_spell_count = inv->num_spells;
     int max_uses = 1 + (artificer_level / 2);
+    max_uses += get_artificer_device_efficiency_bonus(ch);
     if (HAS_FEAT(ch, FEAT_GNOMISH_TINKERING))
       max_uses += 1;            /* Gnomish Tinkering: +1 use per device */
     int times_used = inv->uses; /* Use persistent uses field */
     int reliability_bonus = inv->reliability;
+    int penalty_growth = 4 - get_artificer_stable_circuitry_rank(ch);
+    bool overcharge_on = is_artificer_volatile_theorem_on(ch);
+
+    if (penalty_growth < 1)
+      penalty_growth = 1;
+    if (overcharge_on)
+      penalty_growth += 2;
+
     if (times_used >= max_uses)
     {
       /* Device is over its normal use limit - requires Use Magic Device skill check */
@@ -12553,7 +12601,7 @@ ACMDU(do_device)
       {
         /* UMD check failed - device doesn't work and has a chance to break */
         /* Increase DC penalty by 4 for each failed attempt */
-        inv->dc_penalty += 4;
+        inv->dc_penalty += penalty_growth;
         send_to_char(ch, "The invention fails to activate and you struggle to make it work.\r\n");
         send_to_char(ch, "The device is becoming increasingly unstable! (DC penalty: +%d)\r\n",
                      inv->dc_penalty);
@@ -12632,7 +12680,7 @@ ACMDU(do_device)
       if (total < dc)
       {
         /* Increase DC penalty by 4 even on successful attempts when out of charges */
-        inv->dc_penalty += 4;
+        inv->dc_penalty += penalty_growth;
         send_to_char(ch, "The invention malfunctions and fails to activate.\r\n");
         send_to_char(ch, "The device is becoming increasingly unstable! (DC penalty: +%d)\r\n",
                      inv->dc_penalty);
@@ -12640,7 +12688,7 @@ ACMDU(do_device)
         return;
       }
       /* Success! But still increase DC penalty since device is out of charges */
-      inv->dc_penalty += 4;
+      inv->dc_penalty += penalty_growth;
       if (inv->dc_penalty > 4)
       {
         send_to_char(ch,
@@ -12663,12 +12711,19 @@ ACMDU(do_device)
       act("$n activates $s invention at you.", TRUE, ch, 0, target, TO_VICT);
     }
 
+    int effective_artificer_level = artificer_level;
+    if (overcharge_on)
+    {
+      int bonus_level = MAX(1, artificer_level / 10);
+      effective_artificer_level += bonus_level;
+    }
+
     for (i = 0; i < inv->num_spells; i++)
     {
       int spell_num = inv->spell_effects[i];
       if (spell_num > 0 && spell_num < NUM_SPELLS)
       {
-        call_magic(ch, target, obj_target, spell_num, 0, artificer_level, CAST_DEVICE);
+        call_magic(ch, target, obj_target, spell_num, 0, effective_artificer_level, CAST_DEVICE);
       }
     }
 
@@ -12679,6 +12734,7 @@ ACMDU(do_device)
 
     /* Show remaining charges */
     max_uses = 1 + (artificer_level / 2);
+    max_uses += get_artificer_device_efficiency_bonus(ch);
     if (HAS_FEAT(ch, FEAT_GNOMISH_TINKERING))
     {
       max_uses += 1;
@@ -12698,6 +12754,7 @@ ACMDU(do_device)
     send_to_char(ch, "Your weird science inventions:\r\n");
     int found_any = 0;
     int max_uses = 1 + (artificer_level / 2);
+    max_uses += get_artificer_device_efficiency_bonus(ch);
     if (HAS_FEAT(ch, FEAT_GNOMISH_TINKERING))
       max_uses += 1; /* Gnomish Tinkering: +1 use per device */
 
@@ -12853,6 +12910,7 @@ ACMDU(do_device)
     }
     struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
     int max_uses = 1 + (artificer_level / 2);
+    max_uses += get_artificer_device_efficiency_bonus(ch);
     if (HAS_FEAT(ch, FEAT_GNOMISH_TINKERING))
       max_uses += 1; /* Gnomish Tinkering: +1 use per device */
     int uses_remaining = max_uses - inv->uses;

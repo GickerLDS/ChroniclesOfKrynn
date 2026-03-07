@@ -2437,9 +2437,12 @@ void proc_d20_round(void)
 int get_device_recharge_rate(struct char_data *ch)
 {
   int recharge_rate = BASE_ARTIFICER_RECHARGE; /* Base recharge rate */
+  const int min_recharge_rate = 10;
 
-  /* TODO: Add feat/perk checks here to modify recharge_rate */
-  /* Example: if (HAS_FEAT(ch, FEAT_FASTER_RECHARGE)) recharge_rate -= 5; */
+  recharge_rate -= get_artificer_arcane_battery_rank(ch) * 2;
+
+  if (recharge_rate < min_recharge_rate)
+    recharge_rate = min_recharge_rate;
 
   return recharge_rate;
 }
@@ -2479,6 +2482,7 @@ void check_devices(void)
 
         artificer_level = CLASS_LEVEL(i, CLASS_ARTIFICER);
         max_uses = 1 + (artificer_level / 2);
+        max_uses += get_artificer_device_efficiency_bonus(i);
         if (HAS_FEAT(i, FEAT_GNOMISH_TINKERING))
           max_uses += 1;
 

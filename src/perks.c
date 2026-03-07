@@ -44,6 +44,7 @@
 /* Forward declarations */
 static void define_wizard_controller_perks(void);
 static void define_wizard_versatile_caster_perks(void);
+void define_artificer_perks(void);
 
 /* Global perk database - all defined perks */
 struct perk_data perk_list[NUM_PERKS];
@@ -170,6 +171,9 @@ void init_perks(void)
 
   /* Define Warlock Perks */
   define_warlock_perks();
+
+  /* Define Artificer Perks */
+  define_artificer_perks();
 
   log("Perks system initialized with %d defined perks.", count_defined_perks());
 }
@@ -12879,6 +12883,82 @@ void define_alchemist_perks(void)
       strdup("Perfect mastery: Extracts heal 10 HP and grant +10 max HP (5 min, stacks to +100).");
 }
 
+
+void define_artificer_perks(void)
+{
+  struct perk_data *perk;
+
+  /*** WEIRD SCIENCE ENGINEERING TREE - TIER I ***/
+
+  /* Device Efficiency I */
+  perk = &perk_list[PERK_ARTIFICER_DEVICE_EFFICIENCY_I];
+  perk->id = PERK_ARTIFICER_DEVICE_EFFICIENCY_I;
+  perk->name = strdup("Device Efficiency I");
+  perk->description = strdup("Weird science devices gain +1 max use per rank.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Adds +1 maximum device use per rank.");
+
+  /* Stable Circuitry I */
+  perk = &perk_list[PERK_ARTIFICER_STABLE_CIRCUITRY_I];
+  perk->id = PERK_ARTIFICER_STABLE_CIRCUITRY_I;
+  perk->name = strdup("Stable Circuitry I");
+  perk->description =
+    strdup("Reduce device DC penalty growth by 1 per rank when forcing exhausted devices.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description =
+    strdup("While forcing exhausted devices, instability growth is reduced by rank.");
+
+  /* Arcane Battery I */
+  perk = &perk_list[PERK_ARTIFICER_ARCANE_BATTERY_I];
+  perk->id = PERK_ARTIFICER_ARCANE_BATTERY_I;
+  perk->name = strdup("Arcane Battery I");
+  perk->description = strdup("Reduce personal device recharge interval by 2 seconds per rank.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 1;
+  perk->max_rank = 2;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2;
+  perk->effect_modifier = 0;
+  perk->special_description =
+    strdup("Reduces recharge interval by 2 seconds per rank, minimum floor applies.");
+
+  /* Volatile Theorem */
+  perk = &perk_list[PERK_ARTIFICER_VOLATILE_THEOREM];
+  perk->id = PERK_ARTIFICER_VOLATILE_THEOREM;
+  perk->name = strdup("Volatile Theorem");
+  perk->description = strdup("Unlocks device overcharge mode.");
+  perk->associated_class = CLASS_ARTIFICER;
+  perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+  perk->cost = 1;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 10;
+  perk->effect_modifier = 2;
+  perk->special_description =
+    strdup("Toggle overcharge: +10% effect magnitude, +2 instability pressure on failures.");
+  perk->toggleable = TRUE;
+}
 
 /* Alchemist Mutagenist helper implementations */
 int get_alchemist_mutagen_i_rank(struct char_data *ch)
@@ -26679,6 +26759,44 @@ bool has_warlock_eldritch_apotheosis(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
          has_perk(ch, PERK_WARLOCK_ELDRITCH_APOTHEOSIS);
+}
+
+int get_artificer_device_efficiency_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_DEVICE_EFFICIENCY_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_stable_circuitry_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_STABLE_CIRCUITRY_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_arcane_battery_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_I, CLASS_ARTIFICER);
+}
+
+bool has_artificer_volatile_theorem(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_VOLATILE_THEOREM);
+}
+
+bool is_artificer_volatile_theorem_on(struct char_data *ch)
+{
+  if (!has_artificer_volatile_theorem(ch))
+    return FALSE;
+
+  return is_perk_toggled_on(ch, PERK_ARTIFICER_VOLATILE_THEOREM);
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)
