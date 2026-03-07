@@ -1867,6 +1867,35 @@ void update_player_misc(void)
       }
     }
 
+    if (GET_WARLOCK_BOOK_COOLDOWN(ch, 0) > 0)
+    {
+      GET_WARLOCK_BOOK_COOLDOWN(ch, 0)--;
+      if (GET_WARLOCK_BOOK_COOLDOWN(ch, 0) == 0 && GET_WARLOCK_BOOK_SPELL(ch, 0) > 0)
+      {
+        send_to_char(ch, "Your Book of Ancient Secrets spell '%s' is ready again.\r\n",
+                     skill_name(GET_WARLOCK_BOOK_SPELL(ch, 0)));
+      }
+    }
+
+    if (GET_WARLOCK_BOOK_COOLDOWN(ch, 1) > 0)
+    {
+      GET_WARLOCK_BOOK_COOLDOWN(ch, 1)--;
+      if (GET_WARLOCK_BOOK_COOLDOWN(ch, 1) == 0 && GET_WARLOCK_BOOK_SPELL(ch, 1) > 0)
+      {
+        send_to_char(ch, "Your Book of Ancient Secrets spell '%s' is ready again.\r\n",
+                     skill_name(GET_WARLOCK_BOOK_SPELL(ch, 1)));
+      }
+    }
+
+    if (GET_WARLOCK_WHISPERS_COOLDOWN(ch) > 0)
+    {
+      GET_WARLOCK_WHISPERS_COOLDOWN(ch)--;
+      if (GET_WARLOCK_WHISPERS_COOLDOWN(ch) == 0)
+      {
+        send_to_char(ch, "Your Whispers of the Grave allows you to cast Animate Dead again.\r\n");
+      }
+    }
+
     if (IN_ROOM(ch) == 0 || IN_ROOM(ch) == NOWHERE ||
         GET_ROOM_VNUM(IN_ROOM(ch)) == CONFIG_MORTAL_START ||
         GET_ROOM_VNUM(IN_ROOM(ch)) == CONFIG_IMMORTAL_START)

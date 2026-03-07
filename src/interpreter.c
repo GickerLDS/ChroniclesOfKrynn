@@ -258,6 +258,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"blank", "blank", POS_RECLINING, do_consign_to_oblivion, 0, SCMD_BLANK, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"blindingspeed", "blindings", POS_STANDING, do_blinding_speed, 1, 0, FALSE, ACTION_NONE, {0, 0}, can_blinding_speed},
     {"blooddrain", "blooddrain", POS_RESTING, do_blood_drain, 0, 0, FALSE, ACTION_STANDARD, {0, 0}, NULL},
+    {"bookofancient", "bookofancient", POS_RECLINING, do_book, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"bombs", "bombs", POS_RESTING, do_bombs, 0, 0, FALSE, ACTION_STANDARD, {0, 0}, NULL},
     {"bonearmor", "bonearmor", POS_STANDING, do_need_craft_kit, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"bonuses", "bonuses", POS_RECLINING, do_craftbonuses, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},

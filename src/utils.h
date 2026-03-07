@@ -276,6 +276,8 @@ float rand_float(float from, float to);
 bool do_not_list_spell(int spellnum);
 void set_x_y_coords(int start, int *x, int *y, int *room);
 bool is_paladin_mount(struct char_data *ch, struct char_data *victim);
+bool is_blackguard_mount(struct char_data *ch, struct char_data *victim);
+bool is_mob_dragonrider_mount(struct char_data *ch, struct char_data *victim);
 char *randstring(int length);
 int combat_skill_roll(struct char_data *ch, int skillnum);
 int dice(int number, int size);
@@ -3026,6 +3028,10 @@ bool has_reach(struct char_data *ch);
 #define GET_BONUS_DOMAIN_REGEN_TIMER(ch) (ch->player_specials->saved.bonus_domain_regen_timer)
 #define GET_BONUS_SLOTS_USED(ch) (ch->player_specials->saved.bonus_slots_used)
 #define GET_BONUS_SLOTS_REGEN_TIMER(ch) (ch->player_specials->saved.bonus_slots_regen_timer)
+
+#define GET_WARLOCK_BOOK_SPELL(ch, i) (ch->player_specials->saved.warlock_book_spells[(i)])
+#define GET_WARLOCK_BOOK_COOLDOWN(ch, i) (ch->player_specials->saved.warlock_book_cooldowns[(i)])
+#define GET_WARLOCK_WHISPERS_COOLDOWN(ch) (ch->player_specials->saved.warlock_whispers_cooldown)
 
 #define GET_SAGE_MOB_VNUM(ch) (ch->char_specials.sage_mob_vnum)
 

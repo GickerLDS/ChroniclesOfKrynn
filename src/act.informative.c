@@ -2900,6 +2900,35 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
   if (GET_COSMIC_AWARENESS_COOLDOWN(k) > 0)
     send_to_char(ch, "Cosmic Awareness - Duration: %d seconds\r\n", GET_COSMIC_AWARENESS_COOLDOWN(k) * 6);
 
+  /* Warlock Book of Ancient Secrets cooldowns */
+  if (CONFIG_PERK_SYSTEM && !IS_NPC(k))
+  {
+    int max_spells = get_warlock_book_of_ancient_secrets_max_spells(k);
+    int i;
+    
+    if (max_spells > 0)
+    {
+      for (i = 0; i < max_spells; i++)
+      {
+        int spell_id = GET_WARLOCK_BOOK_SPELL(k, i);
+        int cooldown = GET_WARLOCK_BOOK_COOLDOWN(k, i);
+        
+        if (spell_id > 0 && cooldown > 0)
+        {
+          send_to_char(ch, "Book of Ancient Secrets (%s) - Duration: %d seconds\r\n",
+                       spell_name(spell_id), cooldown * 6);
+        }
+      }
+    }
+  }
+
+  /* Warlock Whispers of the Grave cooldown */
+  if (CONFIG_PERK_SYSTEM && !IS_NPC(k) && GET_WARLOCK_WHISPERS_COOLDOWN(k) > 0)
+  {
+    send_to_char(ch, "Whispers of the Grave (Animate Dead) - Duration: %d seconds\r\n",
+                 GET_WARLOCK_WHISPERS_COOLDOWN(k) * 6);
+  }
+
   /* PvP cooldown timer - only shows if PvP is enabled and time remaining */
   if (PRF_FLAGGED(k, PRF_PVP) && GET_PVP_TIMER(k) > 0)
   {

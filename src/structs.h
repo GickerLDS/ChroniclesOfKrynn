@@ -4469,6 +4469,13 @@
 #define PERK_WARLOCK_THIEF_OF_FIVE_FATES 1738
 #define PERK_WARLOCK_APPEARANCE_OF_SHADOWS 1739
 
+/** Tree 3: Invocation Mastery - Tier 3 */
+#define PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_1 1740
+#define PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_2 1741
+#define PERK_WARLOCK_ASCENDANT_STEP 1742
+#define PERK_WARLOCK_MASTER_OF_MYRIAD_FORMS 1743
+#define PERK_WARLOCK_WHISPERS_OF_THE_GRAVE 1744
+
 /* ============================================================================
  * ARTIFICER PERKS (1800-1899)
  * ============================================================================ */
@@ -7033,6 +7040,13 @@ struct player_special_data_saved
   int bonus_domain_regen_timer; // Timer for domain slot regeneration (ticks until next regen)
   int bonus_slots_used;         // Tracks used bonus any-level spell slots
   int bonus_slots_regen_timer;  // Timer for any-level slot regeneration (ticks until next regen)
+
+  /* Warlock Invocation Mastery - Book of Ancient Secrets */
+  int warlock_book_spells[2];    // Selected level 1 wizard/cleric spells (max 2)
+  int warlock_book_cooldowns[2]; // Per-spell cooldowns in ticks (5 minutes = 50 ticks)
+
+  /* Warlock Invocation Mastery - Whispers of the Grave */
+  int warlock_whispers_cooldown; // Animate Dead cooldown in ticks (5 minutes = 50 ticks)
 
   /* Artificer device recharge tracking */
   int device_recharge_timer;    // Timer tracking seconds until next device recharge check

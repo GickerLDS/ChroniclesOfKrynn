@@ -284,6 +284,18 @@ bool has_warlock_thief_of_five_fates(struct char_data *ch);
 bool has_warlock_appearance_of_shadows(struct char_data *ch);
 int get_perk_beguiling_influence_bonus(struct char_data *ch);
 
+/* Invocation Mastery functions - Tier 3 */
+bool has_warlock_book_of_ancient_secrets_1(struct char_data *ch);
+bool has_warlock_book_of_ancient_secrets_2(struct char_data *ch);
+bool has_warlock_ascendant_step(struct char_data *ch);
+bool has_warlock_master_of_myriad_forms(struct char_data *ch);
+bool has_warlock_whispers_of_the_grave(struct char_data *ch);
+int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch);
+bool is_warlock_book_of_ancient_secrets_spell(struct char_data *ch, int spellnum);
+int get_warlock_book_of_ancient_secrets_cooldown(struct char_data *ch, int spellnum);
+void set_warlock_book_of_ancient_secrets_cooldown(struct char_data *ch, int spellnum,
+                                                  int cooldown_ticks);
+
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
 int get_class_perks(int class_id, int *perk_ids, int max_perks);
@@ -1044,6 +1056,7 @@ bool has_paladin_beacon_of_hope(struct char_data *ch);
 /* Perk command functions (step 7) */
 ACMD_DECL(do_perk);
 ACMD_DECL(do_myperks);
+ACMD_DECL(do_book);
 
 /* Perk refund/reset functions (step 10) */
 bool remove_char_perk(struct char_data *ch, int perk_id,

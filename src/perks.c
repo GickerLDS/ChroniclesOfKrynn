@@ -39,6 +39,7 @@
 #include "constants.h"
 #include "perks.h"
 #include "mud_event.h"
+#include "spell_prep.h"
 
 /* Forward declarations */
 static void define_wizard_controller_perks(void);
@@ -5929,6 +5930,96 @@ void define_warlock_perks(void)
   perk->effect_modifier = 0;
   perk->special_description =
       strdup("Cast Disguise Self at will. Grants +10 to disguise skill while active.");
+  perk->toggleable = false;
+
+  /* Book of Ancient Secrets - Rank 1 */
+  perk = &perk_list[PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_1];
+  perk->id = PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_1;
+  perk->name = strdup("Book of Ancient Secrets (Rank 1)");
+  perk->description = strdup("Choose 1 level 1 wizard or cleric spell, castable once per 5 minutes.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_BEGUILING_INFLUENCE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* 1 spell choice */
+  perk->effect_modifier = 300; /* 5 minutes cooldown */
+  perk->special_description =
+    strdup("Choose 1 level 1 wizard or cleric spell and add it to your spellcasting. You can cast this spell once per 5 minutes.");
+  perk->toggleable = false;
+
+  /* Book of Ancient Secrets - Rank 2 */
+  perk = &perk_list[PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_2];
+  perk->id = PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_2;
+  perk->name = strdup("Book of Ancient Secrets (Rank 2)");
+  perk->description = strdup("Choose 2 level 1 wizard or cleric spells, castable once per 5 minutes each.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_1;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2; /* 2 spell choices */
+  perk->effect_modifier = 300; /* 5 minutes cooldown */
+  perk->special_description =
+    strdup("Choose 2 level 1 wizard or cleric spells and add them to your spellcasting. Each can be cast once per 5 minutes.");
+  perk->toggleable = false;
+
+  /* Ascendant Step */
+  perk = &perk_list[PERK_WARLOCK_ASCENDANT_STEP];
+  perk->id = PERK_WARLOCK_ASCENDANT_STEP;
+  perk->name = strdup("Ascendant Step");
+  perk->description = strdup("Cast Levitate on yourself at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_BEGUILING_INFLUENCE;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* Can levitate */
+  perk->effect_modifier = 0;
+  perk->special_description =
+    strdup("You can cast Levitate on yourself at will. This perk allows you to move vertically and hover.");
+  perk->toggleable = false;
+
+  /* Master of Myriad Forms */
+  perk = &perk_list[PERK_WARLOCK_MASTER_OF_MYRIAD_FORMS];
+  perk->id = PERK_WARLOCK_MASTER_OF_MYRIAD_FORMS;
+  perk->name = strdup("Master of Myriad Forms");
+  perk->description = strdup("Cast Alter Self on yourself at will.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_APPEARANCE_OF_SHADOWS;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* Can alter self at will */
+  perk->effect_modifier = 0;
+  perk->special_description =
+    strdup("You can cast Alter Self on yourself at will. You may assume the form of a Dragonlance race at any time.");
+  perk->toggleable = false;
+
+  /* Whispers of the Grave */
+  perk = &perk_list[PERK_WARLOCK_WHISPERS_OF_THE_GRAVE];
+  perk->id = PERK_WARLOCK_WHISPERS_OF_THE_GRAVE;
+  perk->name = strdup("Whispers of the Grave");
+  perk->description = strdup("Cast Animate Dead once per 5 minutes.");
+  perk->associated_class = CLASS_WARLOCK;
+  perk->perk_category = PERK_CATEGORY_INVOCATION_MASTERY;
+  perk->cost = 3;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = PERK_WARLOCK_THIEF_OF_FIVE_FATES;
+  perk->prerequisite_rank = 1;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1; /* Can animate dead */
+  perk->effect_modifier = 300; /* 5 minutes cooldown */
+  perk->special_description =
+    strdup("You can cast Animate Dead once per 5 minutes. This perk allows you to engage with the undead.");
   perk->toggleable = false;
 }
 
@@ -20560,6 +20651,203 @@ void list_my_perks(struct char_data *ch)
   send_to_char(ch, "Use 'perk toggle <name>' to toggle toggleable perks on/off.\r\n");
 }
 
+static bool is_book_of_ancient_secrets_valid_spell(struct char_data *ch, int spellnum)
+{
+  int wizard_circle = 0;
+  int cleric_circle = 0;
+
+  if (!ch || spellnum <= 0 || spellnum >= NUM_SPELLS)
+    return FALSE;
+
+  if (spell_info[spellnum].cant_cast)
+    return FALSE;
+
+  wizard_circle = compute_spells_circle(ch, CLASS_WIZARD, spellnum, 0, DOMAIN_UNDEFINED);
+  cleric_circle = compute_spells_circle(ch, CLASS_CLERIC, spellnum, 0, DOMAIN_UNDEFINED);
+
+  return (wizard_circle == 1 || cleric_circle == 1);
+}
+
+static int find_book_of_ancient_secrets_slot(struct char_data *ch, int spellnum)
+{
+  int i = 0;
+
+  if (!ch || spellnum <= 0)
+    return -1;
+
+  for (i = 0; i < 2; i++)
+  {
+    if (GET_WARLOCK_BOOK_SPELL(ch, i) == spellnum)
+      return i;
+  }
+
+  return -1;
+}
+
+static void display_book_of_ancient_secrets_status(struct char_data *ch)
+{
+  int i = 0;
+  int max_spells = get_warlock_book_of_ancient_secrets_max_spells(ch);
+
+  send_to_char(ch, "\tcBook of Ancient Secrets\tn\r\n");
+  send_to_char(ch, "Ranks/Slots unlocked: \tY%d\tn\r\n", max_spells);
+
+  for (i = 0; i < 2; i++)
+  {
+    int spellnum = GET_WARLOCK_BOOK_SPELL(ch, i);
+    int cooldown = GET_WARLOCK_BOOK_COOLDOWN(ch, i);
+
+    if (i < max_spells)
+    {
+      if (spellnum > 0 && spellnum < NUM_SPELLS)
+      {
+        if (cooldown > 0)
+          send_to_char(ch, "  Slot %d: %s \tr(%d sec remaining)\tn\r\n", i + 1,
+                       skill_name(spellnum), cooldown * 6);
+        else
+          send_to_char(ch, "  Slot %d: %s \tG(ready)\tn\r\n", i + 1, skill_name(spellnum));
+      }
+      else
+      {
+        send_to_char(ch, "  Slot %d: \tD(empty)\tn\r\n", i + 1);
+      }
+    }
+    else
+    {
+      send_to_char(ch, "  Slot %d: \tD(locked)\tn\r\n", i + 1);
+    }
+  }
+
+  send_to_char(ch, "\r\nUsage:\r\n");
+  send_to_char(ch, "  book list\r\n");
+  send_to_char(ch, "  book options\r\n");
+  send_to_char(ch, "  book set <slot> <spell name>\r\n");
+  send_to_char(ch, "  book clear <slot>\r\n");
+}
+
+ACMD(do_book)
+{
+  char local_argument[MAX_INPUT_LENGTH] = "\0";
+  char cmd_arg[MAX_INPUT_LENGTH] = "\0";
+  char arg1[MAX_INPUT_LENGTH] = "\0";
+  char arg2[MAX_INPUT_LENGTH] = "\0";
+  char spell_name[MAX_INPUT_LENGTH] = "\0";
+  int slot = -1;
+  int spellnum = 0;
+  int max_spells = 0;
+
+  if (IS_NPC(ch))
+  {
+    send_to_char(ch, "NPCs cannot use this command.\r\n");
+    return;
+  }
+
+  max_spells = get_warlock_book_of_ancient_secrets_max_spells(ch);
+  if (max_spells <= 0)
+  {
+    send_to_char(ch, "You do not possess Book of Ancient Secrets.\r\n");
+    return;
+  }
+
+  snprintf(local_argument, sizeof(local_argument), "%s", argument ? argument : "");
+  half_chop(local_argument, cmd_arg, arg1);
+
+  if (!*cmd_arg || is_abbrev(cmd_arg, "list") || is_abbrev(cmd_arg, "status"))
+  {
+    display_book_of_ancient_secrets_status(ch);
+    return;
+  }
+
+  if (is_abbrev(cmd_arg, "options"))
+  {
+    int i = 0;
+
+    send_to_char(ch, "\tcValid level 1 wizard/cleric spells:\tn\r\n");
+    for (i = 1; i < NUM_SPELLS; i++)
+    {
+      if (is_book_of_ancient_secrets_valid_spell(ch, i))
+        send_to_char(ch, "  %s\r\n", skill_name(i));
+    }
+    return;
+  }
+
+  if (is_abbrev(cmd_arg, "clear"))
+  {
+    one_argument(arg1, arg2, sizeof(arg2));
+    if (!*arg2 || !is_number(arg2))
+    {
+      send_to_char(ch, "Usage: book clear <slot>\r\n");
+      return;
+    }
+
+    slot = atoi(arg2) - 1;
+    if (slot < 0 || slot >= max_spells)
+    {
+      send_to_char(ch, "You can only clear slots 1 through %d.\r\n", max_spells);
+      return;
+    }
+
+    GET_WARLOCK_BOOK_SPELL(ch, slot) = 0;
+    GET_WARLOCK_BOOK_COOLDOWN(ch, slot) = 0;
+    send_to_char(ch, "You clear slot %d from your Book of Ancient Secrets.\r\n", slot + 1);
+    save_char(ch, 0);
+    return;
+  }
+
+  if (is_abbrev(cmd_arg, "set"))
+  {
+    half_chop(arg1, arg2, spell_name);
+
+    if (!*arg2 || !is_number(arg2) || !*spell_name)
+    {
+      send_to_char(ch, "Usage: book set <slot> <spell name>\r\n");
+      return;
+    }
+
+    slot = atoi(arg2) - 1;
+    if (slot < 0 || slot >= max_spells)
+    {
+      send_to_char(ch, "You can only set slots 1 through %d.\r\n", max_spells);
+      return;
+    }
+
+    spellnum = find_skill_num(spell_name);
+    if (spellnum <= 0 || spellnum >= NUM_SPELLS)
+    {
+      send_to_char(ch, "Unknown spell '%s'.\r\n", spell_name);
+      return;
+    }
+
+    if (!is_book_of_ancient_secrets_valid_spell(ch, spellnum))
+    {
+      send_to_char(ch, "That spell is not a valid level 1 wizard/cleric spell for this perk.\r\n");
+      return;
+    }
+
+    {
+      int existing_slot = find_book_of_ancient_secrets_slot(ch, spellnum);
+      if (existing_slot >= 0 && existing_slot != slot)
+      {
+        send_to_char(ch, "You already have %s selected in slot %d.\r\n", skill_name(spellnum),
+                     existing_slot + 1);
+        return;
+      }
+    }
+
+    GET_WARLOCK_BOOK_SPELL(ch, slot) = spellnum;
+    GET_WARLOCK_BOOK_COOLDOWN(ch, slot) = 0;
+    send_to_char(ch, "Slot %d now stores \tY%s\tn.\r\n", slot + 1, skill_name(spellnum));
+    save_char(ch, 0);
+    return;
+  }
+
+  send_to_char(ch, "Usage:\r\n");
+  send_to_char(ch, "  book list\r\n");
+  send_to_char(ch, "  book options\r\n");
+  send_to_char(ch, "  book set <slot> <spell name>\r\n");
+  send_to_char(ch, "  book clear <slot>\r\n");
+}
+
 /**
  * Main perk command - handles viewing and purchasing perks.
  *
@@ -26263,6 +26551,105 @@ int get_perk_beguiling_influence_bonus(struct char_data *ch)
     return 3;
 
   return 0;
+}
+
+/* Tier 3 Invocation Mastery helper functions */
+
+bool has_warlock_book_of_ancient_secrets_1(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_1);
+}
+
+bool has_warlock_book_of_ancient_secrets_2(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_BOOK_OF_ANCIENT_SECRETS_2);
+}
+
+bool has_warlock_ascendant_step(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_ASCENDANT_STEP);
+}
+
+bool has_warlock_master_of_myriad_forms(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_MASTER_OF_MYRIAD_FORMS);
+}
+
+bool has_warlock_whispers_of_the_grave(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_WARLOCK) > 0 &&
+         has_perk(ch, PERK_WARLOCK_WHISPERS_OF_THE_GRAVE);
+}
+
+int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_WARLOCK) <= 0)
+    return 0;
+
+  if (has_warlock_book_of_ancient_secrets_2(ch))
+    return 2;
+
+  if (has_warlock_book_of_ancient_secrets_1(ch))
+    return 1;
+
+  return 0;
+}
+
+bool is_warlock_book_of_ancient_secrets_spell(struct char_data *ch, int spellnum)
+{
+  int i = 0;
+  int max_spells = get_warlock_book_of_ancient_secrets_max_spells(ch);
+
+  if (!ch || spellnum <= 0 || max_spells <= 0)
+    return FALSE;
+
+  for (i = 0; i < max_spells; i++)
+  {
+    if (GET_WARLOCK_BOOK_SPELL(ch, i) == spellnum)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+int get_warlock_book_of_ancient_secrets_cooldown(struct char_data *ch, int spellnum)
+{
+  int i = 0;
+  int max_spells = get_warlock_book_of_ancient_secrets_max_spells(ch);
+
+  if (!ch || spellnum <= 0 || max_spells <= 0)
+    return 0;
+
+  for (i = 0; i < max_spells; i++)
+  {
+    if (GET_WARLOCK_BOOK_SPELL(ch, i) == spellnum)
+      return GET_WARLOCK_BOOK_COOLDOWN(ch, i);
+  }
+
+  return 0;
+}
+
+void set_warlock_book_of_ancient_secrets_cooldown(struct char_data *ch, int spellnum,
+                                                  int cooldown_ticks)
+{
+  int i = 0;
+  int max_spells = get_warlock_book_of_ancient_secrets_max_spells(ch);
+
+  if (!ch || spellnum <= 0 || max_spells <= 0)
+    return;
+
+  for (i = 0; i < max_spells; i++)
+  {
+    if (GET_WARLOCK_BOOK_SPELL(ch, i) == spellnum)
+    {
+      GET_WARLOCK_BOOK_COOLDOWN(ch, i) = MAX(0, cooldown_ticks);
+      return;
+    }
+  }
 }
 
 int class_to_perk_class(int class_type, int which_perk)

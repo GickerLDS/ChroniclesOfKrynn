@@ -13491,7 +13491,7 @@ void mag_points(int level, struct char_data *ch, struct char_data *victim, struc
     to_vict = "$n \tWheals\tn you.";
     break;
   case SPELL_HEAL_MOUNT:
-    if (!is_paladin_mount(ch, victim))
+    if (!is_paladin_mount(ch, victim) && !is_blackguard_mount(ch, victim) && !is_mob_dragonrider_mount(ch, victim))
     {
       send_to_char(ch, "You can only cast this upon your paladin mount.\r\n");
       return;

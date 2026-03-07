@@ -8749,6 +8749,44 @@ bool is_paladin_mount(struct char_data *ch, struct char_data *victim)
   }
   return false;
 }
+bool is_blackguard_mount(struct char_data *ch, struct char_data *victim)
+{
+  if (!victim)
+    return false;
+  if (!IS_NPC(victim))
+    return false;
+  if (!AFF_FLAGGED(victim, AFF_CHARM))
+    return false;
+  if (victim->master != ch)
+    return false;
+
+  switch (GET_MOB_VNUM(victim))
+  {
+  case MOB_BLACKGUARD_MOUNT:
+  case MOB_EPIC_BLACKGUARD_MOUNT:
+    return true;
+  }
+  return false;
+}
+
+bool is_mob_dragonrider_mount(struct char_data *ch, struct char_data *victim)
+{
+  if (!victim)
+    return false;
+  if (!IS_NPC(victim))
+    return false;
+  if (!AFF_FLAGGED(victim, AFF_CHARM))
+    return false;
+  if (victim->master != ch)
+    return false;
+
+  int mob_num = (GET_DRAGON_RIDER_DRAGON_TYPE(ch) + 40400);
+
+  if (GET_MOB_VNUM(victim) == mob_num)
+    return true;
+
+    return false;
+}
 
 // determines if vict is a valid mark target for various
 // assassin feat functionality

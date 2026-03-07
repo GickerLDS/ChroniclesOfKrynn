@@ -505,6 +505,11 @@ int load_char(const char *name, struct char_data *ch)
     GET_BONUS_DOMAIN_REGEN_TIMER(ch) = 0;
     GET_BONUS_SLOTS_USED(ch) = 0;
     GET_BONUS_SLOTS_REGEN_TIMER(ch) = 0;
+    GET_WARLOCK_BOOK_SPELL(ch, 0) = 0;
+    GET_WARLOCK_BOOK_SPELL(ch, 1) = 0;
+    GET_WARLOCK_BOOK_COOLDOWN(ch, 0) = 0;
+    GET_WARLOCK_BOOK_COOLDOWN(ch, 1) = 0;
+    GET_WARLOCK_WHISPERS_COOLDOWN(ch) = 0;
     GET_PVP_TIMER(ch) = 0;
     GET_QUIT_SURVEY_DONE(ch) = FALSE;
     ch->player_specials->saved.last_device_recharge = 0;
@@ -840,6 +845,14 @@ int load_char(const char *name, struct char_data *ch)
           ch->player.time.birth = atol(line);
         else if (!strcmp(tag, "Buff"))
           load_buffs(fl, ch);
+        else if (!strcmp(tag, "BoS1"))
+          GET_WARLOCK_BOOK_SPELL(ch, 0) = atoi(line);
+        else if (!strcmp(tag, "BoS2"))
+          GET_WARLOCK_BOOK_SPELL(ch, 1) = atoi(line);
+        else if (!strcmp(tag, "BoC1"))
+          GET_WARLOCK_BOOK_COOLDOWN(ch, 0) = atoi(line);
+        else if (!strcmp(tag, "BoC2"))
+          GET_WARLOCK_BOOK_COOLDOWN(ch, 1) = atoi(line);
         break;
 
       case 'C':
@@ -1959,6 +1972,8 @@ int load_char(const char *name, struct char_data *ch)
           GET_WEIGHT(ch) = atoi(line);
         else if (!strcmp(tag, "Wand"))
           load_wands(fl, ch);
+        else if (!strcmp(tag, "WhCd"))
+          GET_WARLOCK_WHISPERS_COOLDOWN(ch) = atoi(line);
         else if (!strcmp(tag, "Wimp"))
           GET_WIMP_LEV(ch) = atoi(line);
         else if (!strcmp(tag, "Ward"))
@@ -2616,6 +2631,16 @@ void save_char(struct char_data *ch, int mode)
     BUFFER_WRITE("BSlU: %d\n", GET_BONUS_SLOTS_USED(ch));
   if (GET_BONUS_SLOTS_REGEN_TIMER(ch) != 0)
     BUFFER_WRITE("BSlT: %d\n", GET_BONUS_SLOTS_REGEN_TIMER(ch));
+  if (GET_WARLOCK_BOOK_SPELL(ch, 0) != 0)
+    BUFFER_WRITE("BoS1: %d\n", GET_WARLOCK_BOOK_SPELL(ch, 0));
+  if (GET_WARLOCK_BOOK_SPELL(ch, 1) != 0)
+    BUFFER_WRITE("BoS2: %d\n", GET_WARLOCK_BOOK_SPELL(ch, 1));
+  if (GET_WARLOCK_BOOK_COOLDOWN(ch, 0) != 0)
+    BUFFER_WRITE("BoC1: %d\n", GET_WARLOCK_BOOK_COOLDOWN(ch, 0));
+  if (GET_WARLOCK_BOOK_COOLDOWN(ch, 1) != 0)
+    BUFFER_WRITE("BoC2: %d\n", GET_WARLOCK_BOOK_COOLDOWN(ch, 1));
+  if (GET_WARLOCK_WHISPERS_COOLDOWN(ch) != 0)
+    BUFFER_WRITE("WhCd: %d\n", GET_WARLOCK_WHISPERS_COOLDOWN(ch));
   BUFFER_WRITE("God : %d\n", GET_DEITY(ch));
   if (GET_AUTOCQUEST_VNUM(ch) != PFDEF_AUTOCQUEST_VNUM)
     BUFFER_WRITE("Cvnm: %d\n", GET_AUTOCQUEST_VNUM(ch));

@@ -1921,6 +1921,19 @@ void finishCasting(struct char_data *ch)
       GET_COSMIC_AWARENESS_COOLDOWN(ch) = 100; /* 10 minutes = 100 ticks */
     }
 
+    if (!IS_NPC(ch) && is_warlock_book_of_ancient_secrets_spell(ch, spellnum) &&
+        get_warlock_book_of_ancient_secrets_cooldown(ch, spellnum) <= 0 &&
+        canCastAtWill(ch, spellnum))
+    {
+      set_warlock_book_of_ancient_secrets_cooldown(ch, spellnum, 50); /* 5 minutes = 50 ticks */
+    }
+
+    if (!IS_NPC(ch) && spellnum == SPELL_ANIMATE_DEAD && has_warlock_whispers_of_the_grave(ch) &&
+        canCastAtWill(ch, spellnum) && GET_WARLOCK_WHISPERS_COOLDOWN(ch) <= 0)
+    {
+      GET_WARLOCK_WHISPERS_COOLDOWN(ch) = 50; /* 5 minutes = 50 ticks */
+    }
+
     /* Psionicist Telepathic Control Tier I mechanics */
     if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_PSIONICIST && is_spellnum_psionic(spellnum))
     {
@@ -2331,6 +2344,7 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
   int casting_time = 0;
   bool quickened = FALSE;
   int clevel = 0;
+  bool treat_as_at_will = FALSE;
   bool perfect_fabricator_active = FALSE; /* Track Perfect Fabricator usage across this cast */
 
   /* Pull through Perfect Fabricator state from do_gen_cast (if any) */
@@ -2345,6 +2359,8 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
     log("SYSERR: cast_spell trying to call spellnum %d/%d.", spellnum, TOP_SPELL_DEFINE);
     return (0);
   }
+
+  treat_as_at_will = canCastAtWill(ch, spellnum);
 
   /* these are all (most likely) deprecated dummy checks added by zusuk */
   if (ch && IN_ROOM(ch) > top_of_world)
@@ -2412,6 +2428,72 @@ int cast_spell(struct char_data *ch, struct char_data *tch, struct obj_data *tob
       send_to_char(ch, "You must wait %d second%s before manifesting cosmic awareness again.\r\n",
                    seconds, (seconds != 1 ? "s" : ""));
     return 0;
+  }
+
+  if (is_warlock_book_of_ancient_secrets_spell(ch, spellnum) &&
+      get_warlock_book_of_ancient_secrets_cooldown(ch, spellnum) > 0)
+  {
+    bool can_cast_via_other_means = FALSE;
+    int fallback_class = CLASS_UNDEFINED;
+
+    if (!IS_NPC(ch))
+      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+
+    if (fallback_class != CLASS_UNDEFINED)
+    {
+      can_cast_via_other_means = TRUE;
+      treat_as_at_will = FALSE;
+    }
+
+    if (!can_cast_via_other_means)
+    {
+    int seconds_left = get_warlock_book_of_ancient_secrets_cooldown(ch, spellnum) * 6;
+    int minutes = seconds_left / 60;
+    int seconds = seconds_left % 60;
+
+    if (minutes > 0)
+      send_to_char(ch,
+                   "Your Book of Ancient Secrets cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
+                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+    else
+      send_to_char(ch,
+                   "Your Book of Ancient Secrets cannot cast that spell yet. Wait %d second%s.\r\n",
+                   seconds, (seconds != 1 ? "s" : ""));
+    return 0;
+    }
+  }
+
+  if (spellnum == SPELL_ANIMATE_DEAD && has_warlock_whispers_of_the_grave(ch) &&
+      GET_WARLOCK_WHISPERS_COOLDOWN(ch) > 0)
+  {
+    bool can_cast_via_other_means = FALSE;
+    int fallback_class = CLASS_UNDEFINED;
+
+    if (!IS_NPC(ch))
+      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+
+    if (fallback_class != CLASS_UNDEFINED)
+    {
+      can_cast_via_other_means = TRUE;
+      treat_as_at_will = FALSE;
+    }
+
+    if (!can_cast_via_other_means)
+    {
+    int seconds_left = GET_WARLOCK_WHISPERS_COOLDOWN(ch) * 6;
+    int minutes = seconds_left / 60;
+    int seconds = seconds_left % 60;
+
+    if (minutes > 0)
+      send_to_char(ch,
+                   "Your Whispers of the Grave cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
+                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+    else
+      send_to_char(ch,
+                   "Your Whispers of the Grave cannot cast that spell yet. Wait %d second%s.\r\n",
+                   seconds, (seconds != 1 ? "s" : ""));
+    return 0;
+    }
   }
 
   if (char_has_mud_event(ch, eEPICMAGEARMOR) && spellnum == SPELL_EPIC_MAGE_ARMOR)
@@ -2831,7 +2913,7 @@ will be using for casting this spell */
            * - Notify player: "You channel your Spell Metamastery to enhance this spell without cost!"
            */
           ch_class = spell_prep_gen_extract(ch, spellnum, metamagic);
-          if (canCastAtWill(ch, spellnum))
+          if (treat_as_at_will)
           {
             ch_class = CLASS_WIZARD;
             clevel = GET_LEVEL(ch);
@@ -6406,6 +6488,15 @@ sbyte canCastAtWill(struct char_data *ch, int spellnum)
   if (spellnum == SPELL_BANE && has_warlock_thief_of_five_fates(ch))
     return true;
   if (spellnum == SPELL_DISGUISE_SELF && has_warlock_appearance_of_shadows(ch))
+    return true;
+  if (is_warlock_book_of_ancient_secrets_spell(ch, spellnum))
+    return true;
+  /* Tier 3 Invocation Mastery perks */
+  if (spellnum == SPELL_LEVITATE && has_warlock_ascendant_step(ch))
+    return true;
+  if (spellnum == SPELL_ALTER_SELF && has_warlock_master_of_myriad_forms(ch))
+    return true;
+  if (spellnum == SPELL_ANIMATE_DEAD && has_warlock_whispers_of_the_grave(ch))
     return true;
   if (isHighElfCantrip(ch, spellnum))
     return true;
