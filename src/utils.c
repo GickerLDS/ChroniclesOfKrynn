@@ -8109,6 +8109,7 @@ bool can_spell_be_revoked(int spellnum)
   case SPELL_DETECT_MAGIC:
   case SPELL_DETECT_POISON:
   case SPELL_DISGUISE_SELF:
+  case SPELL_ALTER_SELF:
   case SPELL_INVISIBLE:
   case SPELL_PROT_FROM_EVIL:
   case SPELL_SANCTUARY:

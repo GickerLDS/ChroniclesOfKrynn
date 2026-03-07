@@ -1044,6 +1044,9 @@ SAVING_WILL here...  */
     case SPELL_CHARM_ANIMAL:
       MANUAL_SPELL(spell_charm_animal);
       break;
+    case SPELL_ALTER_SELF:
+      MANUAL_SPELL(spell_alter_self);
+      break;
     case SPELL_CLAIRVOYANCE:
       MANUAL_SPELL(spell_clairvoyance);
       break;
@@ -4285,12 +4288,14 @@ void mag_assign_spells(void)
          "You feel less dexterous.", 2, 7, TRANSMUTATION, FALSE); // wiz2, cle1
   spello(SPELL_SCARE, "scare", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_AFFECTS, "You no longer feel scared.", 1, 7, NECROMANCY, FALSE); // wiz1, cle2
-    spello(SPELL_BANE, "bane", 0, 0, 0, POS_FIGHTING,
-      TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
-      "You no longer feel burdened by bane.", 2, 7, ENCHANTMENT, FALSE); // wiz1, cle1
-    spello(SPELL_DISGUISE_SELF, "disguise self", 0, 0, 0, POS_FIGHTING,
-      TAR_CHAR_ROOM | TAR_SELF_ONLY, FALSE, MAG_AFFECTS,
-      "Your illusionary disguise fades away.", 2, 7, ILLUSION, FALSE); // wiz1, cle1
+  spello(SPELL_BANE, "bane", 0, 0, 0, POS_FIGHTING,
+         TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
+         "You no longer feel burdened by bane.", 2, 7, ENCHANTMENT, FALSE); // wiz1, cle1
+  spello(SPELL_DISGUISE_SELF, "disguise self", 0, 0, 0, POS_FIGHTING,
+         TAR_CHAR_ROOM | TAR_SELF_ONLY, FALSE, MAG_AFFECTS,
+         "Your illusionary disguise fades away.", 2, 7, ILLUSION, FALSE); // wiz1, cle1
+  spello(SPELL_ALTER_SELF, "alter self", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_MANUAL,
+         "Your altered form fades away.", 2, 7, TRANSMUTATION, FALSE); // alchemist/bard/sorcerer/wizard/summoner @ lvl 2
   spello(SPELL_FEAR, "cause fear", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_AFFECTS, "You no longer feel afraid.", 1, 7, NECROMANCY, FALSE); // wiz4, cle5
   spello(SPELL_SUMMON_CREATURE_2, "summon creature ii", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,

@@ -1212,6 +1212,7 @@ void affect_remove_no_total(struct char_data *ch, struct affected_type *af)
 void affect_remove(struct char_data *ch, struct affected_type *af)
 {
   struct affected_type *temp = NULL;
+  int removed_spell = af->spell;
   // bool is_ac_new = false;
 
   if (ch->affected == NULL)
@@ -1260,6 +1261,13 @@ void affect_remove(struct char_data *ch, struct affected_type *af)
   REMOVE_FROM_LIST(af, ch->affected, next);
 
   free_affect(af);
+
+  if ((removed_spell == SPELL_DISGUISE_SELF || removed_spell == SPELL_ALTER_SELF) &&
+      !affected_by_spell(ch, SPELL_DISGUISE_SELF) &&
+      !affected_by_spell(ch, SPELL_ALTER_SELF))
+  {
+    GET_DISGUISE_RACE(ch) = 0;
+  }
 
   affect_total(ch);
   /* added by zusuk to address an issue with calculation not coming out correct

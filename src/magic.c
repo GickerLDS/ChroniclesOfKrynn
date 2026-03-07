@@ -6840,6 +6840,9 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
     break;
 
   case SPELL_DISGUISE_SELF:
+    if (affected_by_spell(victim, SPELL_ALTER_SELF))
+      affect_from_char(victim, SPELL_ALTER_SELF);
+
     af[0].location = APPLY_SKILL;
     af[0].specific = ABILITY_DISGUISE;
     af[0].modifier = 10;

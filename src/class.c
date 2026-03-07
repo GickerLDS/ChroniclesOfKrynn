@@ -4230,6 +4230,7 @@ void load_class_list(void)
   /* 2nd circle */
   spell_assignment(CLASS_WIZARD, SPELL_SHOCKING_GRASP, 3);
   spell_assignment(CLASS_WIZARD, SPELL_SCORCHING_RAY, 3);
+  spell_assignment(CLASS_WIZARD, SPELL_ALTER_SELF, 3);
   spell_assignment(CLASS_WIZARD, SPELL_CONTINUAL_FLAME, 3);
   spell_assignment(CLASS_WIZARD, SPELL_FOG_CLOUD, 3);
   spell_assignment(CLASS_WIZARD, SPELL_GUST_OF_WIND, 3);
@@ -5628,6 +5629,7 @@ void load_class_list(void)
   /*              class num      spell                   level acquired */
   /* 2nd circle */
   spell_assignment(CLASS_SORCERER, SPELL_SHOCKING_GRASP, 4);
+  spell_assignment(CLASS_SORCERER, SPELL_ALTER_SELF, 4);
   spell_assignment(CLASS_SORCERER, SPELL_SCORCHING_RAY, 4);
   spell_assignment(CLASS_SORCERER, SPELL_CONTINUAL_FLAME, 4);
   spell_assignment(CLASS_SORCERER, SPELL_FOG_CLOUD, 4);
@@ -6529,6 +6531,7 @@ void load_class_list(void)
   /* 2nd circle */
   spell_assignment(CLASS_BARD, SPELL_SUMMON_CREATURE_2, 4);
   spell_assignment(CLASS_BARD, SPELL_DEAFNESS, 4);
+  spell_assignment(CLASS_BARD, SPELL_ALTER_SELF, 4);
   spell_assignment(CLASS_BARD, SPELL_HIDEOUS_LAUGHTER, 4);
   spell_assignment(CLASS_BARD, SPELL_MIRROR_IMAGE, 4);
   spell_assignment(CLASS_BARD, SPELL_DETECT_INVIS, 4);
@@ -8494,6 +8497,7 @@ void load_class_list(void)
   spell_assignment(CLASS_ALCHEMIST, SPELL_SPIDER_CLIMB, 4);
   spell_assignment(CLASS_ALCHEMIST, SPELL_HUMAN_POTENTIAL, 4);
   spell_assignment(CLASS_ALCHEMIST, SPELL_PROTECTION_FROM_ARROWS, 4);
+  spell_assignment(CLASS_ALCHEMIST, SPELL_ALTER_SELF, 4);
   /* concoction circle 3 */
   spell_assignment(CLASS_ALCHEMIST, SPELL_CURE_SERIOUS, 7);
   spell_assignment(CLASS_ALCHEMIST, SPELL_DISPLACEMENT, 7);
@@ -8938,6 +8942,7 @@ void load_class_list(void)
 
   // spell circle 2
   spell_assignment(CLASS_SUMMONER, SPELL_MASS_ANT_HAUL, 4);
+  spell_assignment(CLASS_SUMMONER, SPELL_ALTER_SELF, 4);
   spell_assignment(CLASS_SUMMONER, SPELL_BARKSKIN, 4);
   spell_assignment(CLASS_SUMMONER, SPELL_ENDURANCE, 4);
   spell_assignment(CLASS_SUMMONER, SPELL_BLUR, 4);

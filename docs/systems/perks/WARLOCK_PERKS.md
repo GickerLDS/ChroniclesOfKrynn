@@ -351,28 +351,28 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 9. **Book of Ancient Secrets**
    - Cost: 3 points per rank
    - Max Rank: 2
-   - Effect: Store +1 ritual spell in your grimoire per rank (spells cast without expending slot when ritualized)
+   - Effect: Choose 1 level 1 wizard or cleric spell that you can cast once every 5 minutes. Each rank let's you choose a new spell.
    - Prerequisite: None
    - Notes: Ritual casting specialization, knowledge hoarding
 
 10. **Ascendant Step**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: Cast Levitate on yourself at will without expending spell slots
+    - Effect: Cast Levitate on yourself at will
     - Prerequisite: None
     - Notes: Utility mobility and traversal
 
 11. **Master of Myriad Forms**
     - Cost: 4 points
     - Max Rank: 1
-    - Effect: Cast Alter Self at will (polymorph body parts, gain skills, change appearance)
+    - Effect: Cast Alter Self at will
     - Prerequisite: Appearance of Shadows (max)
     - Notes: Advanced transformation ability
 
 12. **Whispers of the Grave**
     - Cost: 3 points per rank
     - Max Rank: 1
-    - Effect: Cast Speak with Dead at will; spirits provide more detailed answers with higher rank
+    - Effect: Cast Animate dead once per 5 minutes.
     - Prerequisite: Eldritch Sight (1 rank)
     - Notes: Necromantic divination, utility information gathering
 
@@ -383,28 +383,28 @@ Warlocks are masters of forbidden knowledge who have made pacts with otherworldl
 13. **Chains of Carceri**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Cast Hold Monster at will on celestials/fiends/elementals; target makes CHA save or is paralyzed
+    - Effect: Cast Hold Monster once every 5 minutes.
     - Prerequisite: Master of Myriad Forms
     - Notes: Powerful control ability vs specific creature types
 
 14. **Visions of Distant Realms**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Cast Arcane Eye at will; see through magical scrying (bypasses wards up to 3rd circle)
+    - Effect: Cast Wizard eye once per five minutes.
     - Prerequisite: Book of Ancient Secrets (max), Whispers of the Grave
     - Notes: Ultimate divination, information gathering
 
 15. **Witch of the Multiverse**
     - Cost: 6 points
     - Max Rank: 1
-    - Effect: Invocations cost half as much to maintain; reroll failed concentration checks once per long rest
+    - Effect: Warlock spells cast are done so at +2 effective level. Automatically reroll any failed concentration skill check once per 10 minutes.
     - Prerequisite: Visions of Distant Realms, Chains of Carceri
     - Notes: Capstone invocation mastery
 
 16. **Eldritch Apotheosis**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: All invocations gain +1 to save DCs, +1 to effect duration; patron grants your will over lesser beings
+    - Effect: All spells cast gain +1 to save DCs, +1 round to effect duration.
     - Prerequisite: Witch of the Multiverse
     - Notes: Representation of approaching warlock transcendence
 

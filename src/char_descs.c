@@ -435,8 +435,12 @@ char *current_wildshape_desc(struct char_data *ch)
 char *current_disguise_desc(struct char_data *ch)
 {
   static char desc[200];
+  int disguise_race = GET_DISGUISE_RACE(ch);
 
-  snprintf(desc, sizeof(desc), "%s (disguised)", current_short_desc(ch));
+  if (disguise_race > RACE_UNDEFINED && disguise_race < NUM_RACES && *race_list[disguise_race].type)
+    snprintf(desc, sizeof(desc), "%s (disguised as %s)", current_short_desc(ch), race_list[disguise_race].type);
+  else
+    snprintf(desc, sizeof(desc), "%s (disguised)", current_short_desc(ch));
 
   return desc;
 }

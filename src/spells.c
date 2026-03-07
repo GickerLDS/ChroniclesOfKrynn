@@ -39,6 +39,7 @@
 #include "evolutions.h"
 #include "feats.h"
 #include "routing.h"
+#include "race.h"
 
 /************************************************************/
 /*  Functions, Events, etc needed to perform manual spells  */
@@ -2164,6 +2165,142 @@ ASPELL(spell_geniekind)
     send_to_char(ch, "You were unable to summon any kind of genie.\r\n");
     break;
   }
+}
+
+static int find_alter_self_race(const char *arg)
+{
+  int i;
+
+  if (!arg || !*arg)
+    return RACE_UNDEFINED;
+
+  for (i = DL_RACE_START; i <= DL_RACE_END; i++)
+  {
+    if (!*race_list[i].name)
+      continue;
+
+    if (!race_list[i].is_pc)
+      continue;
+
+    if (is_abbrev(arg, race_list[i].name) || is_abbrev(arg, race_list[i].type))
+      return i;
+  }
+
+  return RACE_UNDEFINED;
+}
+
+static bool race_grants_vision_feat(int race, int feat)
+{
+  struct race_feat_assign *entry;
+
+  if (race <= RACE_UNDEFINED || race >= NUM_RACES)
+    return FALSE;
+
+  for (entry = race_list[race].featassign_list; entry != NULL; entry = entry->next)
+  {
+    if (entry->feat_num == feat)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+ASPELL(spell_alter_self)
+{
+  struct affected_type af;
+  int target_race;
+  int duration;
+
+  if (IS_NPC(ch))
+  {
+    send_to_char(ch, "Only players may alter their form.\r\n");
+    return;
+  }
+
+  if (IS_LICH(ch) || IS_VAMPIRE(ch))
+  {
+    send_to_char(ch, "Your undead nature resists this transformation.\r\n");
+    return;
+  }
+
+  if (affected_by_spell(ch, SPELL_POLYMORPH))
+  {
+    send_to_char(ch, "You cannot alter yourself while polymorphed.\r\n");
+    return;
+  }
+
+  target_race = find_alter_self_race(cast_arg2);
+
+  if (target_race == RACE_UNDEFINED || !race_list[target_race].is_pc)
+  {
+    send_to_char(ch, "Alter self into which playable race?\r\n");
+    return;
+  }
+
+  if (target_race < DL_RACE_START || target_race > DL_RACE_END)
+  {
+    send_to_char(ch, "You can only alter yourself into that race.\r\n");
+    return;
+  }
+
+  if (target_race == RACE_LICH || target_race == RACE_VAMPIRE)
+  {
+    send_to_char(ch, "You cannot assume that form.\r\n");
+    return;
+  }
+
+  duration = MAX(1, level * 10);
+
+  if (affected_by_spell(ch, SPELL_DISGUISE_SELF))
+    affect_from_char(ch, SPELL_DISGUISE_SELF);
+
+  if (affected_by_spell(ch, SPELL_ALTER_SELF))
+    affect_from_char(ch, SPELL_ALTER_SELF);
+
+  GET_DISGUISE_RACE(ch) = target_race;
+
+  memset(&af, 0, sizeof(af));
+  af.spell = SPELL_ALTER_SELF;
+  af.duration = duration;
+  af.location = APPLY_SKILL;
+  af.specific = ABILITY_DISGUISE;
+  af.modifier = 10;
+  af.bonus_type = BONUS_TYPE_COMPETENCE;
+  SET_BIT_AR(af.bitvector, AFF_MIND_BLANK);
+  affect_to_char(ch, &af);
+
+  memset(&af, 0, sizeof(af));
+  af.spell = SPELL_ALTER_SELF;
+  af.duration = duration;
+  af.location = (race_list[target_race].size <= SIZE_SMALL) ? APPLY_DEX : APPLY_STR;
+  af.modifier = 2;
+  af.bonus_type = BONUS_TYPE_ENHANCEMENT;
+  affect_to_char(ch, &af);
+
+  if (race_grants_vision_feat(target_race, FEAT_INFRAVISION))
+  {
+    memset(&af, 0, sizeof(af));
+    af.spell = SPELL_ALTER_SELF;
+    af.duration = duration;
+    af.location = APPLY_NONE;
+    af.modifier = 0;
+    SET_BIT_AR(af.bitvector, AFF_INFRAVISION);
+    affect_to_char(ch, &af);
+  }
+
+  if (race_grants_vision_feat(target_race, FEAT_ULTRAVISION))
+  {
+    memset(&af, 0, sizeof(af));
+    af.spell = SPELL_ALTER_SELF;
+    af.duration = duration;
+    af.location = APPLY_NONE;
+    af.modifier = 0;
+    SET_BIT_AR(af.bitvector, AFF_ULTRAVISION);
+    affect_to_char(ch, &af);
+  }
+
+  send_to_char(ch, "Your features shift into a new form.\r\n");
+  act("$n's features shift and reform into a different visage.", TRUE, ch, 0, 0, TO_ROOM);
 }
 
 ASPELL(spell_polymorph)
