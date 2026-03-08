@@ -4508,11 +4508,17 @@
 #define PERK_ARTIFICER_ADAPTIVE_PAYLOAD 1810
 #define PERK_ARTIFICER_FIELD_RECOMPILER 1811
 
+/* Weird Science Engineering - Tier 4 */
+#define PERK_ARTIFICER_MASTER_BATTERY_ARCHITECTURE 1812
+#define PERK_ARTIFICER_PERFECTED_WEIRD_SCIENCE 1813
+#define PERK_ARTIFICER_SPELL_STORED_CASCADE 1814
+#define PERK_ARTIFICER_UNBOUND_INVENTION 1815
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1812
+#define NUM_PERKS 1816
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -7148,6 +7154,10 @@ struct player_special_data_saved
   /* Alchemist Chimeric Transmutation tracking (Mutagenist Tier 4) */
   time_t chimeric_breath_last_combat; /**< Timestamp of last combat end for chimeric breath */
   bool chimeric_breath_used;          /**< Whether chimeric breath was used this combat cycle */
+
+  /* Artificer Spell-Stored Cascade tracking (Weird Science Tier 4) */
+  time_t cascade_last_combat;         /**< Timestamp of last combat end for cascade */
+  bool cascade_used;                  /**< Whether cascade was used this combat cycle */
 
   /* Artificer Weird Science Engineering tracking */
   time_t stable_circuitry_ii_cooldown; /**< Timestamp until Stable Circuitry II can prevent another break */

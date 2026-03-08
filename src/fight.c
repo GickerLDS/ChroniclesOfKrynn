@@ -1895,6 +1895,7 @@ void stop_fighting(struct char_data *ch)
   {
     update_perfect_kill_combat_end(ch);
     update_chimeric_transmutation_combat_end(ch);
+    update_cascade_combat_end(ch);
 
     /* Blackguard: Reset Resilient Corruption stacks when leaving combat */
     reset_blackguard_resilient_corruption(ch);

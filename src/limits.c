@@ -2533,8 +2533,19 @@ void check_devices(void)
             else if (inv->uses > 0)
             {
               inv->uses--;
-              send_to_char(i, "\tgYour device '%s' has recharged. (Uses remaining: %d/%d)\tn\r\n",
-                           inv->short_description, max_uses - inv->uses, max_uses);
+              
+              /* Master Battery Architecture: 5% chance to restore 2 uses instead of 1 */
+              if (has_artificer_master_battery_architecture(i) && rand_number(1, 100) <= 5 && inv->uses > 0)
+              {
+                inv->uses--;
+                send_to_char(i, "\tgYour device '%s' has recharged TWICE! (Uses remaining: %d/%d)\tn\r\n",
+                             inv->short_description, max_uses - inv->uses, max_uses);
+              }
+              else
+              {
+                send_to_char(i, "\tgYour device '%s' has recharged. (Uses remaining: %d/%d)\tn\r\n",
+                             inv->short_description, max_uses - inv->uses, max_uses);
+              }
             }
           }
         }

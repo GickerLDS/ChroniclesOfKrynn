@@ -11759,6 +11759,14 @@ ACMDU(do_device)
       for (j = 0; j < 4; j++)
         max_circles[j] = weird_science_table[19].devices[j];
     }
+    
+    /* Unbound Invention: +1 to all circle limits */
+    if (has_artificer_unbound_invention(ch))
+    {
+      for (j = 0; j < 4; j++)
+        max_circles[j]++;
+    }
+    
     /* Count current spell circles used */
     int used_circles[4] = {0, 0, 0, 0};
     for (i = 0; i < ch->player_specials->saved.num_inventions; i++)
@@ -11953,12 +11961,16 @@ ACMDU(do_device)
     }
 
     /* Store invention in player data instead of creating an object */
-    if (ch->player_specials->saved.num_inventions >= MAX_PLAYER_INVENTIONS)
+    int max_devices_allowed = MAX_PLAYER_INVENTIONS;
+    if (has_artificer_unbound_invention(ch))
+      max_devices_allowed++;
+    
+    if (ch->player_specials->saved.num_inventions >= max_devices_allowed)
     {
       send_to_char(ch,
                    "You have reached the maximum number of inventions (%d). Remove one before "
                    "creating another.\r\n",
-                   MAX_PLAYER_INVENTIONS);
+                   max_devices_allowed);
       return;
     }
 
@@ -12720,6 +12732,7 @@ ACMDU(do_device)
     int times_used = inv->uses; /* Use persistent uses field */
     int reliability_bonus = inv->reliability;
     int penalty_growth = 4 - get_artificer_stable_circuitry_rank(ch);
+    int overcharge_penalty = 0;
     int stable_circuitry_break_save_chance = get_artificer_stable_circuitry_break_save_chance(ch);
     int dual_layer_imprint_rank = get_artificer_dual_layer_imprint_rank(ch);
     int predictive_venting_rank = get_artificer_predictive_venting_rank(ch);
@@ -12729,7 +12742,10 @@ ACMDU(do_device)
     if (penalty_growth < 1)
       penalty_growth = 1;
     if (overcharge_on)
-      penalty_growth += 2;
+    {
+      overcharge_penalty = 2;
+      penalty_growth += overcharge_penalty;
+    }
 
     if (times_used >= max_uses)
     {
@@ -12862,12 +12878,24 @@ ACMDU(do_device)
         return;
       }
       /* Success! But still increase DC penalty since device is out of charges */
-      inv->dc_penalty += penalty_growth;
+      int penalty_to_add = penalty_growth;
+      
+      /* Perfected Weird Science: successful overcharge doesn't add instability penalty */
+      if (overcharge_on && overcharge_penalty > 0 && has_artificer_perfected_weird_science(ch))
+        penalty_to_add -= overcharge_penalty;
+      
+      inv->dc_penalty += penalty_to_add;
       if (inv->dc_penalty > 4)
       {
         send_to_char(ch,
                      "You manage to coax the depleted device to work, but it's getting harder... "
                      "(DC penalty: +%d)\r\n",
+                     inv->dc_penalty);
+      }
+      else if (overcharge_on && has_artificer_perfected_weird_science(ch) && inv->dc_penalty > 0)
+      {
+        send_to_char(ch,
+                     "Your perfected overcharge technique keeps the device stable. (DC penalty: +%d)\r\n",
                      inv->dc_penalty);
       }
     }
@@ -12886,6 +12914,28 @@ ACMDU(do_device)
     }
 
     int effective_artificer_level = artificer_level;
+    
+    /* Spell-Stored Cascade: Once per combat, first device gets +10% damage/duration */
+    if (has_artificer_spell_stored_cascade(ch))
+    {
+      time_t current_time = time(0);
+      /* Reset cascade if 60 seconds have passed since last combat */
+      if (ch->player_specials->saved.cascade_last_combat > 0 &&
+          (current_time - ch->player_specials->saved.cascade_last_combat) >= 60)
+      {
+        ch->player_specials->saved.cascade_used = FALSE;
+      }
+      
+      /* Apply cascade if not used yet this combat */
+      if (!ch->player_specials->saved.cascade_used)
+      {
+        ch->player_specials->saved.cascade_used = TRUE;
+        int cascade_bonus = MAX(1, (effective_artificer_level * 10) / 100);
+        effective_artificer_level += cascade_bonus;
+        send_to_char(ch, "\tYYour stored cascade energy surges through the device!\tn\r\n");
+      }
+    }
+    
     if (overcharge_on)
     {
       int bonus_level = MAX(1, artificer_level / 10);
@@ -13349,6 +13399,13 @@ ACMDU(do_device)
     {
       for (j = 0; j < 4; j++)
         max_circles[j] = weird_science_table[19].devices[j];
+    }
+
+    /* Unbound Invention: +1 to all circle limits */
+    if (has_artificer_unbound_invention(ch))
+    {
+      for (j = 0; j < 4; j++)
+        max_circles[j]++;
     }
 
     /* Count current spell circles used */

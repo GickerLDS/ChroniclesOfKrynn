@@ -13099,6 +13099,74 @@ void define_artificer_perks(void)
     perk->effect_value = 600;
     perk->effect_modifier = 0;
     perk->special_description = strdup("Unlocks `device recompile`; 10 minute cooldown.");
+
+    /* Master Battery Architecture */
+    perk = &perk_list[PERK_ARTIFICER_MASTER_BATTERY_ARCHITECTURE];
+    perk->id = PERK_ARTIFICER_MASTER_BATTERY_ARCHITECTURE;
+    perk->name = strdup("Master Battery Architecture");
+    perk->description =
+      strdup("Device recharge interval reduced by an additional 2 seconds; recharge has 5% chance on completion to recharge 2 uses instead of one.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_ARCANE_BATTERY_II;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 5;
+    perk->special_description = strdup("-2s recharge; 5% chance to restore 2 uses on recharge.");
+
+    /* Perfected Weird Science */
+    perk = &perk_list[PERK_ARTIFICER_PERFECTED_WEIRD_SCIENCE];
+    perk->id = PERK_ARTIFICER_PERFECTED_WEIRD_SCIENCE;
+    perk->name = strdup("Perfected Weird Science");
+    perk->description =
+      strdup("Overcharge no longer increases self-instability on success; retains risk on failure.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_PREDICTIVE_VENTING;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Successful overcharge no longer adds instability.");
+
+    /* Spell-Stored Cascade */
+    perk = &perk_list[PERK_ARTIFICER_SPELL_STORED_CASCADE];
+    perk->id = PERK_ARTIFICER_SPELL_STORED_CASCADE;
+    perk->name = strdup("Spell-Stored Cascade");
+    perk->description =
+      strdup("Once per combat, first device activation will deal +10% damage and/or duration.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_ADAPTIVE_PAYLOAD;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("First device use per combat: +10% damage/duration.");
+
+    /* Unbound Invention */
+    perk = &perk_list[PERK_ARTIFICER_UNBOUND_INVENTION];
+    perk->id = PERK_ARTIFICER_UNBOUND_INVENTION;
+    perk->name = strdup("Unbound Invention");
+    perk->description =
+      strdup("+1 max active device slot and +1 max spell circle budget in weird science allocation rules.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_FIELD_RECOMPILER;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 1;
+    perk->special_description = strdup("+1 device slot; +1 to all circle limits.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -13245,6 +13313,15 @@ void update_chimeric_transmutation_combat_end(struct char_data *ch)
   if (!has_perk(ch, PERK_ALCHEMIST_CHIMERIC_TRANSMUTATION))
     return;
   ch->player_specials->saved.chimeric_breath_last_combat = time(0);
+}
+
+void update_cascade_combat_end(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return;
+  if (!has_perk(ch, PERK_ARTIFICER_SPELL_STORED_CASCADE))
+    return;
+  ch->player_specials->saved.cascade_last_combat = time(0);
 }
 
 /* Bomb Craftsman Tier I helpers */
@@ -27042,8 +27119,14 @@ int get_artificer_arcane_battery_rank(struct char_data *ch)
   if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
     return 0;
 
-  return get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_I, CLASS_ARTIFICER) +
-         get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_II, CLASS_ARTIFICER);
+  int total = get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_I, CLASS_ARTIFICER) +
+              get_perk_rank(ch, PERK_ARTIFICER_ARCANE_BATTERY_II, CLASS_ARTIFICER);
+  
+  /* Master Battery Architecture adds another -2s */
+  if (has_artificer_master_battery_architecture(ch))
+    total += 1;
+  
+  return total;
 }
 
 int get_artificer_dual_layer_imprint_rank(struct char_data *ch)
@@ -27107,6 +27190,30 @@ bool is_artificer_volatile_theorem_on(struct char_data *ch)
     return FALSE;
 
   return is_perk_toggled_on(ch, PERK_ARTIFICER_VOLATILE_THEOREM);
+}
+
+bool has_artificer_master_battery_architecture(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_MASTER_BATTERY_ARCHITECTURE);
+}
+
+bool has_artificer_perfected_weird_science(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_PERFECTED_WEIRD_SCIENCE);
+}
+
+bool has_artificer_spell_stored_cascade(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_SPELL_STORED_CASCADE);
+}
+
+bool has_artificer_unbound_invention(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_UNBOUND_INVENTION);
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)

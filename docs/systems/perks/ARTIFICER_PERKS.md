@@ -99,7 +99,7 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
 13. **Master Battery Architecture**
       - Cost: 5 points
    - Max Rank: 1
-   - Effect: Device recharge interval reduced by an additional 4 seconds; recharge can affect two eligible devices every other pulse.
+   - Effect: Device recharge interval reduced by an additional 2 seconds; recharge has 5% chance on completion to recharge 2 uses instead of one.
    - Prerequisite: Arcane Battery II (2)
 
 14. **Perfected Weird Science**

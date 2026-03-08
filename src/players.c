@@ -1418,6 +1418,16 @@ int load_char(const char *name, struct char_data *ch)
             ch->player_specials->saved.chimeric_breath_used = (used != 0);
           }
         }
+        else if (!strcmp(tag, "PCSc"))
+        {
+          long timestamp;
+          int used;
+          if (sscanf(line, "%ld %d", &timestamp, &used) == 2)
+          {
+            ch->player_specials->saved.cascade_last_combat = (time_t)timestamp;
+            ch->player_specials->saved.cascade_used = (used != 0);
+          }
+        }
         else if (!strcmp(tag, "PASC"))
         {
           long timestamp;
@@ -3245,6 +3255,10 @@ void save_char(struct char_data *ch, int mode)
   /* Save Chimeric Transmutation (Alchemist) data */
   BUFFER_WRITE("PCBr: %ld %d\n", (long)ch->player_specials->saved.chimeric_breath_last_combat,
                ch->player_specials->saved.chimeric_breath_used ? 1 : 0);
+
+  /* Save Artificer Spell-Stored Cascade data */
+  BUFFER_WRITE("PCSc: %ld %d\n", (long)ch->player_specials->saved.cascade_last_combat,
+               ch->player_specials->saved.cascade_used ? 1 : 0);
 
   /* Save Artificer Stable Circuitry II cooldown */
   BUFFER_WRITE("PASC: %ld\n", (long)ch->player_specials->saved.stable_circuitry_ii_cooldown);

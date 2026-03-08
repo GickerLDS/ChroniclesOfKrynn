@@ -315,6 +315,10 @@ int get_artificer_field_recompiler_cooldown(struct char_data *ch);
 bool has_artificer_field_recompiler(struct char_data *ch);
 bool has_artificer_volatile_theorem(struct char_data *ch);
 bool is_artificer_volatile_theorem_on(struct char_data *ch);
+bool has_artificer_master_battery_architecture(struct char_data *ch);
+bool has_artificer_perfected_weird_science(struct char_data *ch);
+bool has_artificer_spell_stored_cascade(struct char_data *ch);
+bool has_artificer_unbound_invention(struct char_data *ch);
 
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
@@ -390,6 +394,9 @@ bool has_alchemist_perfect_mutagen(struct char_data *ch);
 bool can_use_chimeric_transmutation(struct char_data *ch);
 void use_chimeric_transmutation(struct char_data *ch);
 void update_chimeric_transmutation_combat_end(struct char_data *ch);
+
+/* Artificer Spell-Stored Cascade helpers */
+void update_cascade_combat_end(struct char_data *ch);
 
 /* Bomb Craftsman Tier I helpers */
 int get_alchemist_bomb_damage_bonus(struct char_data *ch);
