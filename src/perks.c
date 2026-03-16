@@ -13167,6 +13167,76 @@ void define_artificer_perks(void)
     perk->effect_value = 1;
     perk->effect_modifier = 1;
     perk->special_description = strdup("+1 device slot; +1 to all circle limits.");
+
+    /*** INFUSION & BATTLEFIELD SUPPORT TREE - TIER I ***/
+
+    /* Infusion Theory I */
+    perk = &perk_list[PERK_ARTIFICER_INFUSION_THEORY_I];
+    perk->id = PERK_ARTIFICER_INFUSION_THEORY_I;
+    perk->name = strdup("Infusion Theory I");
+    perk->description =
+      strdup("+1 save DC per rank to artificer-delivered support/control spell and device effects.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Non-violent CAST_DEVICE/CAST_SPELL save DC +1 per rank.");
+
+    /* Flash Insight I */
+    perk = &perk_list[PERK_ARTIFICER_FLASH_INSIGHT_I];
+    perk->id = PERK_ARTIFICER_FLASH_INSIGHT_I;
+    perk->name = strdup("Flash Insight I");
+    perk->description =
+      strdup("Once per 5 minutes, as a swift action grant an ally +1 per rank to next save or skill check.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 300;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Command: flashinsight <ally>; 5 minute cooldown.");
+
+    /* Tool Adept */
+    perk = &perk_list[PERK_ARTIFICER_TOOL_ADEPT];
+    perk->id = PERK_ARTIFICER_TOOL_ADEPT;
+    perk->name = strdup("Tool Adept");
+    perk->description =
+      strdup("+1 per rank to disable device and use magic device checks.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 1;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Disable Device and Use Magic Device checks gain +1 per rank.");
+
+    /* Emergency Infusion */
+    perk = &perk_list[PERK_ARTIFICER_EMERGENCY_INFUSION];
+    perk->id = PERK_ARTIFICER_EMERGENCY_INFUSION;
+    perk->name = strdup("Emergency Infusion");
+    perk->description =
+      strdup("Swift action: gain +2 to a random ability score for 1 minute (5 minute cooldown).");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 1;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 60;
+    perk->special_description = strdup("Command: emergencyinfusion; random +2 ability for 1 minute.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -17493,6 +17563,15 @@ int get_perk_skill_bonus(struct char_data *ch, int skill_num)
   case ABILITY_SLEIGHT_OF_HAND:
   case ABILITY_DISABLE_DEVICE:
     bonus += get_perk_fast_hands_bonus(ch);
+    break;
+  }
+
+  /* Artificer Tool Adept applies to disable device and use magic device */
+  switch (skill_num)
+  {
+  case ABILITY_DISABLE_DEVICE:
+  case ABILITY_USE_MAGIC_DEVICE:
+    bonus += get_artificer_tool_adept_bonus(ch);
     break;
   }
 
@@ -27214,6 +27293,36 @@ bool has_artificer_unbound_invention(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
          has_perk(ch, PERK_ARTIFICER_UNBOUND_INVENTION);
+}
+
+int get_artificer_infusion_theory_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_INFUSION_THEORY_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_flash_insight_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_FLASH_INSIGHT_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_tool_adept_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_TOOL_ADEPT, CLASS_ARTIFICER);
+}
+
+bool has_artificer_emergency_infusion(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_EMERGENCY_INFUSION);
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)

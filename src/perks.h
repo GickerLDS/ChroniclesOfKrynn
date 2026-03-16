@@ -319,6 +319,10 @@ bool has_artificer_master_battery_architecture(struct char_data *ch);
 bool has_artificer_perfected_weird_science(struct char_data *ch);
 bool has_artificer_spell_stored_cascade(struct char_data *ch);
 bool has_artificer_unbound_invention(struct char_data *ch);
+int get_artificer_infusion_theory_bonus(struct char_data *ch);
+int get_artificer_flash_insight_bonus(struct char_data *ch);
+int get_artificer_tool_adept_bonus(struct char_data *ch);
+bool has_artificer_emergency_infusion(struct char_data *ch);
 
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);

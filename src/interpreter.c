@@ -452,11 +452,13 @@ cpp_extern const struct command_info cmd_info[] = {
     {"extort", "extort", POS_DEAD, do_extort, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"extracts", "extracts", POS_RECLINING, do_spells, 1, SCMD_CONCOCT, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"extractlist", "extractlist", POS_RECLINING, do_spelllist, 1, SCMD_CONCOCT, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"emergencyinfusion", "emergencyinfusion", POS_STANDING, do_emergencyinfusion, 1, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
     {"eyeofknowledge", "eyeofknowledge", POS_STANDING, do_eyeofknowledge, 0, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
     {"exempt", "exempt", POS_RECLINING, do_consign_to_oblivion, 0, SCMD_EXEMPT, FALSE, ACTION_NONE, {0, 0}, NULL},
 
     /* {"command", "sort_as", minimum_position, *command_pointer, minimum_level, subcmd, ignore_wait, actions_required, {action_cooldowns}, *command_check_pointer},*/
     {"faithfulstrike", "faithfulstrike", POS_FIGHTING, do_faithful_strike, 1, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
+    {"flashinsight", "flashinsight", POS_STANDING, do_flashinsight, 1, 0, FALSE, ACTION_SWIFT, {0, 0}, NULL},
     {"feats", "fea", POS_SLEEPING, do_feats, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"featlisting", "featlisting", POS_SLEEPING, do_featlisting, LVL_IMMORT, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"featset", "featset", POS_SLEEPING, do_featset, LVL_IMPL, 0, TRUE, ACTION_NONE, {0, 0}, NULL},

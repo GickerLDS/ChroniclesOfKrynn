@@ -4514,11 +4514,17 @@
 #define PERK_ARTIFICER_SPELL_STORED_CASCADE 1814
 #define PERK_ARTIFICER_UNBOUND_INVENTION 1815
 
+/* Infusion & Battlefield Support - Tier 1 */
+#define PERK_ARTIFICER_INFUSION_THEORY_I 1816
+#define PERK_ARTIFICER_FLASH_INSIGHT_I 1817
+#define PERK_ARTIFICER_TOOL_ADEPT 1818
+#define PERK_ARTIFICER_EMERGENCY_INFUSION 1819
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1816
+#define NUM_PERKS 1820
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -7163,6 +7169,12 @@ struct player_special_data_saved
   time_t stable_circuitry_ii_cooldown; /**< Timestamp until Stable Circuitry II can prevent another break */
   time_t field_recompiler_cooldown; /**< Timestamp until Field Recompiler can be used again */
   bool was_fighting_last_tick; /**< Tracks combat->non-combat transition for recharge pulse bonuses */
+
+  /* Artificer Infusion & Battlefield Support tracking */
+  time_t flash_insight_cooldown; /**< Timestamp until Flash Insight can be used again */
+  time_t emergency_infusion_cooldown; /**< Timestamp until Emergency Infusion can be used again */
+  int flash_insight_bonus; /**< Bonus applied to next saving throw or skill check */
+  time_t flash_insight_expires; /**< Expiration timestamp for pending Flash Insight bonus */
 
   /* Wizard Evoker perks */
   time_t

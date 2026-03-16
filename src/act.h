@@ -739,6 +739,8 @@ ACMD_DECL(do_sorcerer_arcane_apotheosis);
 ACMD_DECL(do_imbuearrow);
 ACMD_DECL(do_abundantstep);
 ACMD_DECL(do_device);
+ACMD_DECL(do_flashinsight);
+ACMD_DECL(do_emergencyinfusion);
 ACMD_DECL(do_animatedead);
 ACMD_DECL(do_rescue);
 ACMDCHECK(can_rescue);

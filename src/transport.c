@@ -1338,7 +1338,7 @@ void process_walkto_actions(void)
 {
   struct descriptor_data *d = NULL;
   struct char_data *ch = NULL;
-  int dir = 0;
+  int dir = 0, distance = 0;
   room_rnum destination = NOWHERE;
 
   for (d = descriptor_list; d; d = d->next)
@@ -1378,12 +1378,13 @@ void process_walkto_actions(void)
       }
       else if (GET_WALKTO_LOC(ch))
       {
+        distance = count_rooms_between(IN_ROOM(ch), destination);
         if (*GET_WALKTO_DEST_LABEL(ch))
-          send_to_char(ch, "You continue walking to %s.  Type walkto cancel to stop.\r\n",
-                       GET_WALKTO_DEST_LABEL(ch));
+          send_to_char(ch, "You continue walking to %s.  %d rooms to go. Type walkto cancel to stop.\r\n",
+                       GET_WALKTO_DEST_LABEL(ch), distance);
         else
-          send_to_char(ch, "You continue walking to '%s'.  Type walkto cancel to stop.\r\n",
-                       get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))));
+          send_to_char(ch, "You continue walking to '%s'.  %d rooms to go. Type walkto cancel to stop.\r\n",
+                       get_walkto_landmark_name(walkto_vnum_to_list_row(GET_WALKTO_LOC(ch))), distance);
       }
     }
   }

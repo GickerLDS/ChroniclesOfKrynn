@@ -11300,6 +11300,163 @@ ACMD(do_pick_lock)
   USE_MOVE_ACTION(ch);
 }
 
+ACMDU(do_flashinsight)
+{
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  struct char_data *vict = NULL;
+  int bonus = 0;
+
+  if (IS_NPC(ch))
+  {
+    send_to_char(ch, "Only player characters can use this perk.\r\n");
+    return;
+  }
+
+  bonus = get_artificer_flash_insight_bonus(ch);
+  if (bonus <= 0)
+  {
+    send_to_char(ch, "You have not purchased Flash Insight I.\r\n");
+    return;
+  }
+
+  if (!is_action_available(ch, atSWIFT, TRUE))
+  {
+    send_to_char(ch, "You need a swift action to use Flash Insight.\r\n");
+    return;
+  }
+
+  if (ch->player_specials->saved.flash_insight_cooldown > time(0))
+  {
+    int remaining = (int)(ch->player_specials->saved.flash_insight_cooldown - time(0));
+    send_to_char(ch, "Flash Insight is on cooldown for %d minute%s, %d second%s.\r\n",
+                 remaining / 60, (remaining / 60) == 1 ? "" : "s", remaining % 60,
+                 (remaining % 60) == 1 ? "" : "s");
+    return;
+  }
+
+  one_argument(argument, arg, sizeof(arg));
+  if (!*arg)
+  {
+    send_to_char(ch, "Usage: flashinsight <ally>\r\n");
+    return;
+  }
+
+  vict = get_char_vis(ch, arg, NULL, FIND_CHAR_ROOM);
+  if (!vict)
+  {
+    send_to_char(ch, "There is no one here by that name.\r\n");
+    return;
+  }
+
+  if (vict == ch)
+  {
+    send_to_char(ch, "Flash Insight I must target an ally.\r\n");
+    return;
+  }
+
+  if (IS_NPC(vict))
+  {
+    send_to_char(ch, "Flash Insight can only be granted to player allies.\r\n");
+    return;
+  }
+
+  if (!is_player_grouped(ch, vict))
+  {
+    send_to_char(ch, "You can only grant Flash Insight to a grouped ally.\r\n");
+    return;
+  }
+
+  vict->player_specials->saved.flash_insight_bonus = bonus;
+  vict->player_specials->saved.flash_insight_expires = time(0) + 60;
+
+  ch->player_specials->saved.flash_insight_cooldown = time(0) + 300;
+  USE_SWIFT_ACTION(ch);
+
+  send_to_char(ch, "You deliver a flash of tactical insight to %s (+%d to next save or skill check).\r\n",
+               GET_NAME(vict), bonus);
+  send_to_char(vict, "%s grants you a flash of insight (+%d to your next saving throw or skill check).\r\n",
+               GET_NAME(ch), bonus);
+  act("$n gestures sharply, sharing a burst of battlefield insight with $N.", TRUE, ch, 0, vict,
+      TO_NOTVICT);
+}
+
+ACMDU(do_emergencyinfusion)
+{
+  struct affected_type af;
+  int choices[6] = {APPLY_STR, APPLY_DEX, APPLY_CON, APPLY_INT, APPLY_WIS, APPLY_CHA};
+  int selected = 0;
+  const char *stat_name = "attribute";
+
+  if (IS_NPC(ch))
+  {
+    send_to_char(ch, "Only player characters can use this perk.\r\n");
+    return;
+  }
+
+  if (!has_artificer_emergency_infusion(ch))
+  {
+    send_to_char(ch, "You have not purchased Emergency Infusion.\r\n");
+    return;
+  }
+
+  if (!is_action_available(ch, atSWIFT, TRUE))
+  {
+    send_to_char(ch, "You need a swift action to use Emergency Infusion.\r\n");
+    return;
+  }
+
+  if (ch->player_specials->saved.emergency_infusion_cooldown > time(0))
+  {
+    int remaining = (int)(ch->player_specials->saved.emergency_infusion_cooldown - time(0));
+    send_to_char(ch, "Emergency Infusion is on cooldown for %d minute%s, %d second%s.\r\n",
+                 remaining / 60, (remaining / 60) == 1 ? "" : "s", remaining % 60,
+                 (remaining % 60) == 1 ? "" : "s");
+    return;
+  }
+
+  while (affected_by_spell(ch, PERK_ARTIFICER_EMERGENCY_INFUSION))
+    affect_from_char(ch, PERK_ARTIFICER_EMERGENCY_INFUSION);
+
+  selected = choices[rand_number(0, 5)];
+
+  switch (selected)
+  {
+  case APPLY_STR:
+    stat_name = "strength";
+    break;
+  case APPLY_DEX:
+    stat_name = "dexterity";
+    break;
+  case APPLY_CON:
+    stat_name = "constitution";
+    break;
+  case APPLY_INT:
+    stat_name = "intelligence";
+    break;
+  case APPLY_WIS:
+    stat_name = "wisdom";
+    break;
+  case APPLY_CHA:
+    stat_name = "charisma";
+    break;
+  }
+
+  new_affect(&af);
+  af.spell = PERK_ARTIFICER_EMERGENCY_INFUSION;
+  af.duration = 10; /* ~1 minute */
+  af.location = selected;
+  af.modifier = 2;
+  af.bonus_type = BONUS_TYPE_UNIVERSAL;
+  affect_to_char(ch, &af);
+
+  ch->player_specials->saved.emergency_infusion_cooldown = time(0) + 300;
+  USE_SWIFT_ACTION(ch);
+
+  send_to_char(ch, "You trigger an emergency infusion, boosting your %s by +2 for 1 minute.\r\n",
+               stat_name);
+  act("$n injects a volatile infusion and surges with sudden power.", TRUE, ch, 0, 0, TO_ROOM);
+}
+
 ACMDU(do_device)
 {
   char arg1[MAX_INPUT_LENGTH] = {'\0'};

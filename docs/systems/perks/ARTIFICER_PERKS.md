@@ -136,19 +136,19 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
 2. **Flash Insight I**
       - Cost: 1 point per rank
    - Max Rank: 3
-   - Effect: Reaction, limited uses: grant +1 per rank to an ally save or skill check within range.
+   - Effect: Once per 5 minutes use a swift action to give an ally +1 per rank to their next saving throw or skill check.
    - Prerequisite: None
 
 3. **Tool Adept**
       - Cost: 1 point per rank
    - Max Rank: 2
-   - Effect: +2 per rank to tool-tagged utility checks (disable, identify, tune, repair style checks).
+   - Effect: +1  per rank to disable device and use magic device checks
    - Prerequisite: None
 
 4. **Emergency Infusion**
       - Cost: 1 point
    - Max Rank: 1
-   - Effect: Unlock short-cooldown emergency buff cast as move/swift-equivalent depending on effect school.
+   - Effect: Swift action to give +2 to random ability score (str,con,dex,int,wis,cha) for 1 minute, 5 minute cooldown.
    - Prerequisite: None
 
 ### Tier 2 (2 points each)

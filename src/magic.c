@@ -675,6 +675,8 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     challenge += GET_INT_BONUS(ch);
     if (ch && spell_info[spellnum].violent)
       challenge += get_artificer_combat_calibration_rank(ch);
+    if (ch && !spell_info[spellnum].violent)
+      challenge += get_artificer_infusion_theory_bonus(ch);
     break;
   case CAST_SPELL:
   default:
@@ -698,6 +700,9 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
       /* Add domain focus bonus for domain spells */
       if (is_domain_spell_of_ch(ch, spellnum))
         challenge += get_cleric_domain_focus_bonus(ch);
+
+      if (!spell_info[spellnum].violent)
+        challenge += get_artificer_infusion_theory_bonus(ch);
     }
     break;
   }
@@ -1011,6 +1016,17 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
         }
       }
     }
+  }
+
+  /* Artificer Flash Insight I: +bonus to next saving throw, then consumed */
+  if (!IS_NPC(vict) && vict->player_specials->saved.flash_insight_bonus > 0 &&
+      vict->player_specials->saved.flash_insight_expires > time(0))
+  {
+    int insight_bonus = vict->player_specials->saved.flash_insight_bonus;
+    savethrow += insight_bonus;
+    vict->player_specials->saved.flash_insight_bonus = 0;
+    vict->player_specials->saved.flash_insight_expires = 0;
+    send_to_char(vict, "\tY[Flash Insight +%d]\tn\r\n", insight_bonus);
   }
 
   savethrow = MAX(1, savethrow);

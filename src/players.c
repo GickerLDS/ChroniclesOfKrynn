@@ -516,6 +516,10 @@ int load_char(const char *name, struct char_data *ch)
     GET_PVP_TIMER(ch) = 0;
     GET_QUIT_SURVEY_DONE(ch) = FALSE;
     ch->player_specials->saved.last_device_recharge = 0;
+    ch->player_specials->saved.flash_insight_cooldown = 0;
+    ch->player_specials->saved.emergency_infusion_cooldown = 0;
+    ch->player_specials->saved.flash_insight_bonus = 0;
+    ch->player_specials->saved.flash_insight_expires = 0;
 
     for (i = 0; i < MAX_CURRENT_QUESTS; i++)
     { /* loop through all the character's quest slots */
@@ -1442,6 +1446,32 @@ int load_char(const char *name, struct char_data *ch)
           if (sscanf(line, "%ld", &timestamp) == 1)
           {
             ch->player_specials->saved.field_recompiler_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PAFI"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.flash_insight_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PAEI"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.emergency_infusion_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PAFB"))
+        {
+          int bonus;
+          long timestamp;
+          if (sscanf(line, "%d %ld", &bonus, &timestamp) == 2)
+          {
+            ch->player_specials->saved.flash_insight_bonus = bonus;
+            ch->player_specials->saved.flash_insight_expires = (time_t)timestamp;
           }
         }
         else if (!strcmp(tag, "PMxS"))
@@ -3265,6 +3295,12 @@ void save_char(struct char_data *ch, int mode)
 
   /* Save Artificer Field Recompiler cooldown */
   BUFFER_WRITE("PAFR: %ld\n", (long)ch->player_specials->saved.field_recompiler_cooldown);
+
+  /* Save Artificer Infusion & Battlefield Support cooldown/bonus state */
+  BUFFER_WRITE("PAFI: %ld\n", (long)ch->player_specials->saved.flash_insight_cooldown);
+  BUFFER_WRITE("PAEI: %ld\n", (long)ch->player_specials->saved.emergency_infusion_cooldown);
+  BUFFER_WRITE("PAFB: %d %ld\n", ch->player_specials->saved.flash_insight_bonus,
+               (long)ch->player_specials->saved.flash_insight_expires);
 
   /* Save Maximize Spell cooldown */
   BUFFER_WRITE("PMxS: %ld\n", (long)ch->player_specials->saved.maximize_spell_cooldown);
