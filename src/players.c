@@ -520,6 +520,9 @@ int load_char(const char *name, struct char_data *ch)
     ch->player_specials->saved.emergency_infusion_cooldown = 0;
     ch->player_specials->saved.flash_insight_bonus = 0;
     ch->player_specials->saved.flash_insight_expires = 0;
+    ch->player_specials->saved.flash_insight_survival_only = FALSE;
+    ch->player_specials->saved.aegis_protocol_cooldown = 0;
+    ch->player_specials->saved.soulbound_infusion_cooldown = 0;
 
     for (i = 0; i < MAX_CURRENT_QUESTS; i++)
     { /* loop through all the character's quest slots */
@@ -1474,12 +1477,28 @@ int load_char(const char *name, struct char_data *ch)
             ch->player_specials->saved.flash_insight_expires = (time_t)timestamp;
           }
         }
+        else if (!strcmp(tag, "PAFS"))
+        {
+          int enabled;
+          if (sscanf(line, "%d", &enabled) == 1)
+          {
+            ch->player_specials->saved.flash_insight_survival_only = (enabled != 0);
+          }
+        }
         else if (!strcmp(tag, "PAAP"))
         {
           long timestamp;
           if (sscanf(line, "%ld", &timestamp) == 1)
           {
             ch->player_specials->saved.aegis_protocol_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PASI"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.soulbound_infusion_cooldown = (time_t)timestamp;
           }
         }
         else if (!strcmp(tag, "PMxS"))
@@ -3309,7 +3328,9 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("PAEI: %ld\n", (long)ch->player_specials->saved.emergency_infusion_cooldown);
   BUFFER_WRITE("PAFB: %d %ld\n", ch->player_specials->saved.flash_insight_bonus,
                (long)ch->player_specials->saved.flash_insight_expires);
+  BUFFER_WRITE("PAFS: %d\n", ch->player_specials->saved.flash_insight_survival_only ? 1 : 0);
   BUFFER_WRITE("PAAP: %ld\n", (long)ch->player_specials->saved.aegis_protocol_cooldown);
+  BUFFER_WRITE("PASI: %ld\n", (long)ch->player_specials->saved.soulbound_infusion_cooldown);
 
   /* Save Maximize Spell cooldown */
   BUFFER_WRITE("PMxS: %ld\n", (long)ch->player_specials->saved.maximize_spell_cooldown);

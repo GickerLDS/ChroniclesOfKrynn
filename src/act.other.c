@@ -11303,8 +11303,11 @@ ACMD(do_pick_lock)
 ACMDU(do_flashinsight)
 {
   char arg[MAX_INPUT_LENGTH] = {'\0'};
+  char mode[MAX_INPUT_LENGTH] = {'\0'};
   struct char_data *vict = NULL;
   int bonus = 0;
+  bool survival_mode = FALSE;
+  bool can_target_self = FALSE;
 
   if (IS_NPC(ch))
   {
@@ -11337,7 +11340,24 @@ ACMDU(do_flashinsight)
   one_argument(argument, arg, sizeof(arg));
   if (!*arg)
   {
-    send_to_char(ch, "Usage: flashinsight <ally>\r\n");
+    send_to_char(ch, "Usage: flashinsight <ally> [survival]\r\n");
+    return;
+  }
+
+  argument = one_argument(argument, arg, sizeof(arg));
+  one_argument(argument, mode, sizeof(mode));
+  survival_mode = (*mode && is_abbrev(mode, "survival"));
+  can_target_self = survival_mode && has_artificer_genius_under_pressure(ch);
+
+  if (*mode && !survival_mode)
+  {
+    send_to_char(ch, "Unknown Flash Insight mode. Try 'flashinsight <target> survival'.\r\n");
+    return;
+  }
+
+  if (survival_mode && !has_artificer_genius_under_pressure(ch))
+  {
+    send_to_char(ch, "You have not purchased Genius Under Pressure.\r\n");
     return;
   }
 
@@ -11350,8 +11370,11 @@ ACMDU(do_flashinsight)
 
   if (vict == ch)
   {
-    send_to_char(ch, "Flash Insight I must target an ally.\r\n");
-    return;
+    if (!can_target_self)
+    {
+      send_to_char(ch, "Flash Insight I must target an ally unless you use the survival mode from Genius Under Pressure.\r\n");
+      return;
+    }
   }
 
   if (IS_NPC(vict))
@@ -11360,24 +11383,44 @@ ACMDU(do_flashinsight)
     return;
   }
 
-  if (!is_player_grouped(ch, vict))
+  if (vict != ch && !is_player_grouped(ch, vict))
   {
     send_to_char(ch, "You can only grant Flash Insight to a grouped ally.\r\n");
     return;
   }
 
+  if (survival_mode)
+    bonus *= 2;
+
   vict->player_specials->saved.flash_insight_bonus = bonus;
   vict->player_specials->saved.flash_insight_expires = time(0) + 60;
+  vict->player_specials->saved.flash_insight_survival_only = survival_mode;
 
   ch->player_specials->saved.flash_insight_cooldown = time(0) + 300;
   USE_SWIFT_ACTION(ch);
 
-  send_to_char(ch, "You deliver a flash of tactical insight to %s (+%d to next save or skill check).\r\n",
-               GET_NAME(vict), bonus);
-  send_to_char(vict, "%s grants you a flash of insight (+%d to your next saving throw or skill check).\r\n",
-               GET_NAME(ch), bonus);
-  act("$n gestures sharply, sharing a burst of battlefield insight with $N.", TRUE, ch, 0, vict,
-      TO_NOTVICT);
+  if (survival_mode)
+  {
+    send_to_char(ch,
+                 "You lock in a crisis response for %s (+%d to the next death or poison-style save).\r\n",
+                 vict == ch ? "yourself" : GET_NAME(vict), bonus);
+    send_to_char(vict,
+                 "%s calibrates a crisis response for you (+%d to your next death or poison-style save).\r\n",
+                 GET_NAME(ch), bonus);
+    act("$n makes a razor-fast adjustment, priming $N for a lethal or toxic threat.", TRUE, ch,
+        0, vict, TO_NOTVICT);
+  }
+  else
+  {
+    send_to_char(ch,
+                 "You deliver a flash of tactical insight to %s (+%d to next save or skill check).\r\n",
+                 GET_NAME(vict), bonus);
+    send_to_char(vict,
+                 "%s grants you a flash of insight (+%d to your next saving throw or skill check).\r\n",
+                 GET_NAME(ch), bonus);
+    act("$n gestures sharply, sharing a burst of battlefield insight with $N.", TRUE, ch, 0,
+        vict, TO_NOTVICT);
+  }
 }
 
 ACMDU(do_emergencyinfusion)
@@ -11704,7 +11747,8 @@ ACMDU(do_device)
     /* Check if we have available device slots (not under cooldown) */
     int available_slots = 0;
     int max_devices = 0;
-    int spell_matrix_rank = get_artificer_spell_matrix_i_rank(ch);
+    int spell_matrix_rank = get_artificer_spell_matrix_capacity(ch);
+    bool spell_matrix_ii = has_artificer_spell_matrix_ii(ch);
     int support_matrix_used = count_artificer_support_devices(ch);
     int support_matrix_available = MAX(0, spell_matrix_rank - support_matrix_used);
 
@@ -12222,7 +12266,14 @@ ACMDU(do_device)
     int creation_time = total_spell_levels * 30; /* 30 seconds per spell level */
 
     if (spell_matrix_requested && support_matrix_available > 0)
+    {
+      if (spell_matrix_ii && !FIGHTING(ch))
+        creation_time = 1;
+
       send_to_char(ch, "Your spell matrix stores this support profile outside your normal invention budget.\r\n");
+      if (spell_matrix_ii && !FIGHTING(ch))
+        send_to_char(ch, "Spell Matrix II lets you reconfigure that support profile almost instantly out of combat.\r\n");
+    }
 
     /* Check if player is already creating an invention */
     if (char_has_mud_event(ch, eDEVICE_CREATION))

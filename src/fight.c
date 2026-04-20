@@ -6230,6 +6230,80 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   /* Blackguard: Undying Vigor - survive killing blow once per day */
   if (GET_HIT(victim) <= 0 && !IS_NPC(victim))
   {
+    if (has_artificer_soulbound_infusion(victim) &&
+        victim->player_specials->saved.soulbound_infusion_cooldown <= time(0))
+    {
+      int invention_idx = -1;
+      int support_idx = -1;
+      int inv_i = 0;
+      char invention_name[MAX_INVENTION_SHORTDESC] = { '\0' };
+
+      for (inv_i = 0; inv_i < victim->player_specials->saved.num_inventions; inv_i++)
+      {
+        struct player_invention *inv = &victim->player_specials->saved.inventions[inv_i];
+        int spell_i = 0;
+        bool support_device = TRUE;
+
+        if (inv->broken)
+          continue;
+
+        if (invention_idx < 0)
+          invention_idx = inv_i;
+
+        for (spell_i = 0; spell_i < inv->num_spells; spell_i++)
+        {
+          int spellnum = inv->spell_effects[spell_i];
+
+          if (spellnum <= 0 || spellnum >= NUM_SPELLS || spell_info[spellnum].violent)
+          {
+            support_device = FALSE;
+            break;
+          }
+        }
+
+        if (support_device)
+        {
+          support_idx = inv_i;
+          break;
+        }
+      }
+
+      if (support_idx >= 0)
+        invention_idx = support_idx;
+
+      if (invention_idx >= 0)
+      {
+        snprintf(invention_name, sizeof(invention_name), "%s",
+                 victim->player_specials->saved.inventions[invention_idx].short_description);
+
+        for (inv_i = invention_idx; inv_i < victim->player_specials->saved.num_inventions - 1; inv_i++)
+        {
+          victim->player_specials->saved.inventions[inv_i] =
+            victim->player_specials->saved.inventions[inv_i + 1];
+        }
+        memset(&victim->player_specials->saved.inventions[
+                 victim->player_specials->saved.num_inventions - 1],
+               0, sizeof(struct player_invention));
+        victim->player_specials->saved.num_inventions--;
+        victim->player_specials->saved.soulbound_infusion_cooldown = time(0) + (15 * 60);
+        GET_HIT(victim) = 1;
+        update_pos(victim);
+
+        send_to_char(victim,
+                     "One of your bound infusions burns out as Soulbound Infusion keeps you standing at 1 HP.\r\n");
+        if (*invention_name)
+          send_to_char(victim, "%s is consumed in the process.\r\n", invention_name);
+        if (ch && ch != victim)
+        {
+          send_to_char(ch,
+                       "%s refuses to fall as a soulbound infusion detonates into a defensive surge!\r\n",
+                       GET_NAME(victim));
+        }
+        act("$n staggers but refuses to fall as a bound invention burns away in a flash of protective energy.",
+            FALSE, victim, 0, 0, TO_ROOM);
+      }
+    }
+
     if (trigger_blackguard_undying_vigor(victim))
     {
       /* Undying Vigor triggered, victim survives with 1 HP */

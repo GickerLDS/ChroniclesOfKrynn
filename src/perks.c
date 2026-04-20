@@ -13373,6 +13373,74 @@ void define_artificer_perks(void)
     perk->effect_value = 2;
     perk->effect_modifier = 10;
     perk->special_description = strdup("Gain +2 to recipe crafting checks and reduce eligible crafting time by 10%.");
+
+    /*** INFUSION & BATTLEFIELD SUPPORT TREE - TIER IV ***/
+
+    /* Spell Matrix II */
+    perk = &perk_list[PERK_ARTIFICER_SPELL_MATRIX_II];
+    perk->id = PERK_ARTIFICER_SPELL_MATRIX_II;
+    perk->name = strdup("Spell Matrix II");
+    perk->description =
+      strdup("Gain one more support matrix slot and swap support matrices almost instantly out of combat.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_SPELL_MATRIX_I;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds one extra support-only spell matrix slot and lets support matrix devices be rebuilt in 1 second while out of combat.");
+
+    /* Genius Under Pressure */
+    perk = &perk_list[PERK_ARTIFICER_GENIUS_UNDER_PRESSURE];
+    perk->id = PERK_ARTIFICER_GENIUS_UNDER_PRESSURE;
+    perk->name = strdup("Genius Under Pressure");
+    perk->description =
+      strdup("Flash Insight can protect you or an ally against death and poison saves with double bonus.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_AEGIS_PROTOCOL;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 300;
+    perk->special_description = strdup("Command: flashinsight <target> survival; doubles Flash Insight for the next death/poison-style save and may target yourself.");
+
+    /* Soulbound Infusion */
+    perk = &perk_list[PERK_ARTIFICER_SOULBOUND_INFUSION];
+    perk->id = PERK_ARTIFICER_SOULBOUND_INFUSION;
+    perk->name = strdup("Soulbound Infusion");
+    perk->description = strdup("Once per 15 minutes, consume one prepared invention to survive a killing blow at 1 HP.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_HARMONIC_STABILIZERS;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 900;
+    perk->special_description = strdup("When you would drop to 0 HP, one prepared invention burns out and leaves you at 1 HP. Cooldown: 15 minutes.");
+
+    /* Grand Artifice */
+    perk = &perk_list[PERK_ARTIFICER_GRAND_ARTIFICE];
+    perk->id = PERK_ARTIFICER_GRAND_ARTIFICE;
+    perk->name = strdup("Grand Artifice");
+    perk->description = strdup("Gain +1 to all saves per two active infused effects on equipped crafted gear, up to +3.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_SPELL_MATRIX_II;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 3;
+    perk->special_description = strdup("Every two positive affects on your equipped crafted gear grant +1 to all saves, up to +3.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -17649,6 +17717,8 @@ int get_perk_save_bonus(struct char_data *ch, int save_type)
 
   /* Also add universal save bonuses (effect_modifier = -1) */
   bonus += get_perk_bonus(ch, PERK_EFFECT_SAVE, -1);
+
+  bonus += get_artificer_grand_artifice_save_bonus(ch);
 
   return bonus;
 }
@@ -27504,6 +27574,22 @@ int get_artificer_spell_matrix_i_rank(struct char_data *ch)
   return get_perk_rank(ch, PERK_ARTIFICER_SPELL_MATRIX_I, CLASS_ARTIFICER);
 }
 
+bool has_artificer_spell_matrix_ii(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_SPELL_MATRIX_II);
+}
+
+int get_artificer_spell_matrix_capacity(struct char_data *ch)
+{
+  int capacity = get_artificer_spell_matrix_i_rank(ch);
+
+  if (has_artificer_spell_matrix_ii(ch))
+    capacity++;
+
+  return capacity;
+}
+
 int get_artificer_aegis_protocol_rank(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
@@ -27524,6 +27610,62 @@ bool has_artificer_efficient_crafter(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
          has_perk(ch, PERK_ARTIFICER_EFFICIENT_CRAFTER);
+}
+
+bool has_artificer_genius_under_pressure(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_GENIUS_UNDER_PRESSURE);
+}
+
+bool has_artificer_soulbound_infusion(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_SOULBOUND_INFUSION);
+}
+
+static int count_artificer_infused_gear_effects(struct char_data *ch)
+{
+  int count = 0;
+  int wear_slot = 0;
+
+  if (!ch)
+    return 0;
+
+  for (wear_slot = 0; wear_slot < NUM_WEARS; wear_slot++)
+  {
+    int affect_index = 0;
+    struct obj_data *obj = GET_EQ(ch, wear_slot);
+
+    if (!obj || !OBJ_FLAGGED(obj, ITEM_CRAFTED))
+      continue;
+
+    for (affect_index = 0; affect_index < MAX_OBJ_AFFECT; affect_index++)
+    {
+      if (obj->affected[affect_index].location == APPLY_NONE)
+        continue;
+      if (obj->affected[affect_index].modifier <= 0)
+        continue;
+
+      count++;
+    }
+  }
+
+  return count;
+}
+
+int get_artificer_grand_artifice_save_bonus(struct char_data *ch)
+{
+  int infused_effects = 0;
+
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+  if (!has_perk(ch, PERK_ARTIFICER_GRAND_ARTIFICE))
+    return 0;
+
+  infused_effects = count_artificer_infused_gear_effects(ch);
+
+  return MIN(3, infused_effects / 2);
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)

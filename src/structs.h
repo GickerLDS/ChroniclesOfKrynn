@@ -4532,11 +4532,17 @@
 #define PERK_ARTIFICER_REINFORCING_MOTIF 1826
 #define PERK_ARTIFICER_EFFICIENT_CRAFTER 1827
 
+/* Infusion & Battlefield Support - Tier 4 */
+#define PERK_ARTIFICER_SPELL_MATRIX_II 1828
+#define PERK_ARTIFICER_GENIUS_UNDER_PRESSURE 1829
+#define PERK_ARTIFICER_SOULBOUND_INFUSION 1830
+#define PERK_ARTIFICER_GRAND_ARTIFICE 1831
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1828
+#define NUM_PERKS 1832
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -7187,7 +7193,9 @@ struct player_special_data_saved
   time_t emergency_infusion_cooldown; /**< Timestamp until Emergency Infusion can be used again */
   int flash_insight_bonus; /**< Bonus applied to next saving throw or skill check */
   time_t flash_insight_expires; /**< Expiration timestamp for pending Flash Insight bonus */
+  bool flash_insight_survival_only; /**< Pending Flash Insight applies only to death/poison-style saves */
   time_t aegis_protocol_cooldown; /**< Timestamp until Aegis Protocol can trigger again */
+  time_t soulbound_infusion_cooldown; /**< Timestamp until Soulbound Infusion can trigger again */
 
   /* Wizard Evoker perks */
   time_t

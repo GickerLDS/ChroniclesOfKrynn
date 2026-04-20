@@ -1023,10 +1023,18 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
       vict->player_specials->saved.flash_insight_expires > time(0))
   {
     int insight_bonus = vict->player_specials->saved.flash_insight_bonus;
-    savethrow += insight_bonus;
-    vict->player_specials->saved.flash_insight_bonus = 0;
-    vict->player_specials->saved.flash_insight_expires = 0;
-    send_to_char(vict, "\tY[Flash Insight +%d]\tn\r\n", insight_bonus);
+    bool survival_only = vict->player_specials->saved.flash_insight_survival_only;
+    bool survival_save = (type == SAVING_DEATH || type == SAVING_POISON ||
+                          casttype == CAST_WEAPON_POISON || is_poison_spell(spellnum));
+
+    if (!survival_only || survival_save)
+    {
+      savethrow += insight_bonus;
+      vict->player_specials->saved.flash_insight_bonus = 0;
+      vict->player_specials->saved.flash_insight_expires = 0;
+      vict->player_specials->saved.flash_insight_survival_only = FALSE;
+      send_to_char(vict, "\tY[Flash Insight +%d]\tn\r\n", insight_bonus);
+    }
   }
 
   savethrow = MAX(1, savethrow);

@@ -2095,11 +2095,14 @@ int skill_roll(struct char_data *ch, int skillnum)
     if (ch->player_specials->saved.flash_insight_bonus > 0 &&
         ch->player_specials->saved.flash_insight_expires > time(0))
     {
-      int insight_bonus = ch->player_specials->saved.flash_insight_bonus;
-      roll += insight_bonus;
-      ch->player_specials->saved.flash_insight_bonus = 0;
-      ch->player_specials->saved.flash_insight_expires = 0;
-      send_to_char(ch, "\tY[Flash Insight +%d]\tn ", insight_bonus);
+      if (!ch->player_specials->saved.flash_insight_survival_only)
+      {
+        int insight_bonus = ch->player_specials->saved.flash_insight_bonus;
+        roll += insight_bonus;
+        ch->player_specials->saved.flash_insight_bonus = 0;
+        ch->player_specials->saved.flash_insight_expires = 0;
+        send_to_char(ch, "\tY[Flash Insight +%d]\tn ", insight_bonus);
+      }
     }
 
     if (skillnum == ABILITY_ANIMAL_HANDLING)

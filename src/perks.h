@@ -326,9 +326,14 @@ int get_artificer_resonant_imbuement_rank(struct char_data *ch);
 int get_artificer_harmonic_stabilizers_bonus(struct char_data *ch);
 bool has_artificer_emergency_infusion(struct char_data *ch);
 int get_artificer_spell_matrix_i_rank(struct char_data *ch);
+bool has_artificer_spell_matrix_ii(struct char_data *ch);
+int get_artificer_spell_matrix_capacity(struct char_data *ch);
 int get_artificer_aegis_protocol_rank(struct char_data *ch);
 int get_artificer_reinforcing_motif_rank(struct char_data *ch);
 bool has_artificer_efficient_crafter(struct char_data *ch);
+bool has_artificer_genius_under_pressure(struct char_data *ch);
+bool has_artificer_soulbound_infusion(struct char_data *ch);
+int get_artificer_grand_artifice_save_bonus(struct char_data *ch);
 
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);
