@@ -47,6 +47,7 @@
 #include "crafting_recipes.h"
 
 #define GOLEM_RECALL_COOLDOWN 300  // 5 minutes in seconds
+#define GOLEM_BATTLEFIELD_RETRIEVAL_COOLDOWN 30
 
 ACMD_DECL(do_practice);
 
@@ -11502,6 +11503,46 @@ bool has_golem_follower(struct char_data *ch)
   return false;
 }
 
+static struct char_data *get_active_golem_follower(struct char_data *ch)
+{
+  struct follow_type *k;
+
+  if (!ch)
+    return NULL;
+
+  for (k = ch->followers; k; k = k->next)
+  {
+    if (IS_PET(k->follower) && MOB_FLAGGED(k->follower, MOB_GOLEM))
+      return k->follower;
+  }
+
+  return NULL;
+}
+
+static void battlefield_retrieve_active_golem(struct char_data *ch, struct char_data *golem)
+{
+  if (!ch || !golem)
+    return;
+
+  if (!has_artificer_battlefield_retrieval(ch))
+  {
+    send_to_char(ch, "You have not purchased Battlefield Retrieval.\r\n");
+    return;
+  }
+
+  if (!can_recall_golem(ch))
+    return;
+
+  ch->char_specials.saved.golem_stored_hp = MAX(1, GET_HIT(golem));
+  ch->char_specials.saved.golem_recall_cooldown = time(NULL) + GOLEM_BATTLEFIELD_RETRIEVAL_COOLDOWN;
+
+  send_to_char(ch, "You collapse your golem into a compact battlefield retrieval matrix.\r\n");
+  act("$n gestures sharply and $s golem folds into a compact lattice of arcane components.",
+      FALSE, ch, 0, 0, TO_ROOM);
+
+  extract_char(golem);
+}
+
 /**
  * Recover materials from a golem when it's destroyed or dies
  * recovery_percent: percentage of original materials to recover (e.g., 50 for 50%)
@@ -11665,6 +11706,8 @@ void craft_golem_complete(struct char_data *ch)
     load_mtrigger(golem);
     add_follower(golem, ch);
 
+    sync_artificer_construct_command_bonuses(golem);
+
     // Auto-join group if creator is leading a group
     if (!GROUP(golem) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
       join_group(golem, GROUP(ch));
@@ -11672,6 +11715,7 @@ void craft_golem_complete(struct char_data *ch)
     // Store golem info for recall
     ch->char_specials.saved.golem_stored_type = GET_CRAFT(ch).golem_type;
     ch->char_specials.saved.golem_stored_size = GET_CRAFT(ch).golem_size;
+    ch->char_specials.saved.golem_stored_hp = 0;
   }
   else
   {
@@ -11780,13 +11824,24 @@ void recall_golem(struct char_data *ch)
   
   load_mtrigger(golem);
   add_follower(golem, ch);
+
+  sync_artificer_construct_command_bonuses(golem);
+
+  if (ch->char_specials.saved.golem_stored_hp > 0)
+  {
+    GET_HIT(golem) = MIN(GET_MAX_HIT(golem), MAX(1, ch->char_specials.saved.golem_stored_hp));
+  }
   
   // Auto-join group if creator is leading a group
   if (!GROUP(golem) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
     join_group(golem, GROUP(ch));
   
   // Set cooldown
-  ch->char_specials.saved.golem_recall_cooldown = time(NULL) + GOLEM_RECALL_COOLDOWN;
+  ch->char_specials.saved.golem_recall_cooldown =
+      time(NULL) + (ch->char_specials.saved.golem_stored_hp > 0
+                        ? GOLEM_BATTLEFIELD_RETRIEVAL_COOLDOWN
+                        : GOLEM_RECALL_COOLDOWN);
+  ch->char_specials.saved.golem_stored_hp = 0;
 }
 
 // Shutdown an active golem to allow crafting a different type
@@ -11866,6 +11921,7 @@ void shutdown_golem(struct char_data *ch, struct char_data *golem)
   // Clear stored golem so they can build a new type
   ch->char_specials.saved.golem_stored_type = GOLEM_TYPE_NONE;
   ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
+  ch->char_specials.saved.golem_stored_hp = 0;
   ch->char_specials.saved.golem_recall_cooldown = 0;
   
   extract_char(golem);
@@ -12019,11 +12075,14 @@ void upgrade_golem(struct char_data *ch, struct char_data *golem, int new_size)
   load_mtrigger(golem);
   add_follower(golem, ch);
 
+  sync_artificer_construct_command_bonuses(golem);
+
   if (!GROUP(golem) && GROUP(ch) && GROUP_LEADER(GROUP(ch)) == ch)
     join_group(golem, GROUP(ch));
   
   /* Update the stored golem size */
   ch->char_specials.saved.golem_stored_size = new_size;
+  ch->char_specials.saved.golem_stored_hp = 0;
 }
 
 #define MAX_GOLEM_TRANSFER_REQUESTS 20
@@ -12242,11 +12301,15 @@ void transfer_golem(struct char_data *ch, struct char_data *golem, struct char_d
 
   ch->char_specials.saved.golem_stored_type = GOLEM_TYPE_NONE;
   ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
+  ch->char_specials.saved.golem_stored_hp = 0;
   ch->char_specials.saved.golem_recall_cooldown = 0;
 
   target->char_specials.saved.golem_stored_type = golem_type;
   target->char_specials.saved.golem_stored_size = golem_size;
+  target->char_specials.saved.golem_stored_hp = 0;
   target->char_specials.saved.golem_recall_cooldown = 0;
+
+  sync_artificer_construct_command_bonuses(golem);
 
   send_to_char(ch, "You transfer your %s %s golem to %s.\r\n",
                golem_size_names[golem_size], golem_type_names[golem_type], GET_NAME(target));
@@ -12532,7 +12595,8 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     send_to_char(ch, "  craft golem show - Display current golem project\r\n");
     send_to_char(ch, "  craft golem reset - Reset golem project\r\n");
     send_to_char(ch, "  craft golem start - Begin construction\r\n");
-    send_to_char(ch, "  craft golem recall - Recall your destroyed golem (5 min cooldown)\r\n");
+    send_to_char(ch, "  craft golem recall - Recall your stored golem; with Battlefield Retrieval this also stows an active one\r\n");
+    send_to_char(ch, "  craft golem deploy - Alias for recall when redeploying a stored golem\r\n");
     send_to_char(ch, "  craft golem shutdown - Shutdown your golem to build a new type\r\n");
     send_to_char(ch, "  craft golem upgrade (small|medium|large|huge) - Upgrade golem to larger size\r\n");
     send_to_char(ch, "  craft golem transfer <golem> <player> - Transfer your golem to another player\r\n");
@@ -12564,24 +12628,22 @@ void newcraft_golem(struct char_data *ch, const char *argument)
       GET_CRAFT(ch).craft_duration = MAX(GET_CRAFT(ch).craft_duration, 1);
     }
   }
-  else if (is_abbrev(arg1, "recall"))
+  else if (is_abbrev(arg1, "recall") || is_abbrev(arg1, "deploy"))
   {
-    recall_golem(ch);
+    struct char_data *golem = get_active_golem_follower(ch);
+
+    if (golem)
+    {
+      battlefield_retrieve_active_golem(ch, golem);
+    }
+    else
+    {
+      recall_golem(ch);
+    }
   }
   else if (is_abbrev(arg1, "shutdown"))
   {
-    struct char_data *golem = NULL;
-    struct follow_type *k;
-    
-    // Find the golem follower
-    for (k = ch->followers; k; k = k->next)
-    {
-      if (IS_PET(k->follower) && MOB_FLAGGED(k->follower, MOB_GOLEM))
-      {
-        golem = k->follower;
-        break;
-      }
-    }
+    struct char_data *golem = get_active_golem_follower(ch);
     
     if (!golem)
     {
@@ -12594,7 +12656,6 @@ void newcraft_golem(struct char_data *ch, const char *argument)
   else if (is_abbrev(arg1, "upgrade"))
   {
     struct char_data *golem = NULL;
-    struct follow_type *k;
     int new_size = -1;
     
     if (!*arg2)
@@ -12618,14 +12679,7 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     }
     
     /* Find the golem follower */
-    for (k = ch->followers; k; k = k->next)
-    {
-      if (IS_PET(k->follower) && MOB_FLAGGED(k->follower, MOB_GOLEM))
-      {
-        golem = k->follower;
-        break;
-      }
-    }
+    golem = get_active_golem_follower(ch);
     
     if (!golem)
     {

@@ -4538,11 +4538,17 @@
 #define PERK_ARTIFICER_SOULBOUND_INFUSION 1830
 #define PERK_ARTIFICER_GRAND_ARTIFICE 1831
 
+/* Construct Command - Tier 1 */
+#define PERK_ARTIFICER_CONSTRUCT_TUNING_I 1832
+#define PERK_ARTIFICER_TARGETING_LATTICE_I 1833
+#define PERK_ARTIFICER_REINFORCED_CHASSIS_I 1834
+#define PERK_ARTIFICER_BATTLEFIELD_RETRIEVAL 1835
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1832
+#define NUM_PERKS 1836
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -6551,6 +6557,7 @@ struct char_special_data_saved
   /* Golem crafting info - saved to pfile */
   int golem_stored_type;                     // Type of golem stored for recall (GOLEM_TYPE_*)
   int golem_stored_size;                     // Size of golem stored for recall (GOLEM_SIZE_*)
+  int golem_stored_hp;                       // HP preserved for quick battlefield redeploys
   time_t golem_recall_cooldown;              // When golem can be recalled again
 };
 

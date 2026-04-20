@@ -334,6 +334,11 @@ bool has_artificer_efficient_crafter(struct char_data *ch);
 bool has_artificer_genius_under_pressure(struct char_data *ch);
 bool has_artificer_soulbound_infusion(struct char_data *ch);
 int get_artificer_grand_artifice_save_bonus(struct char_data *ch);
+int get_artificer_construct_tuning_i_rank(struct char_data *ch);
+int get_artificer_targeting_lattice_i_rank(struct char_data *ch);
+int get_artificer_reinforced_chassis_i_rank(struct char_data *ch);
+bool has_artificer_battlefield_retrieval(struct char_data *ch);
+void sync_artificer_construct_command_bonuses(struct char_data *golem);
 
 /* Lookup functions */
 struct perk_data *get_perk_by_id(int perk_id);

@@ -13441,6 +13441,72 @@ void define_artificer_perks(void)
     perk->effect_value = 1;
     perk->effect_modifier = 3;
     perk->special_description = strdup("Every two positive affects on your equipped crafted gear grant +1 to all saves, up to +3.");
+
+    /*** CONSTRUCT COMMAND TREE - TIER I ***/
+
+    /* Construct Tuning I */
+    perk = &perk_list[PERK_ARTIFICER_CONSTRUCT_TUNING_I];
+    perk->id = PERK_ARTIFICER_CONSTRUCT_TUNING_I;
+    perk->name = strdup("Construct Tuning I");
+    perk->description = strdup("Your commanded construct gains +2% max HP and +1 accuracy per rank.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 1;
+    perk->special_description = strdup("Your active golem gains +2% maximum hit points and +1 hitroll per rank.");
+
+    /* Targeting Lattice I */
+    perk = &perk_list[PERK_ARTIFICER_TARGETING_LATTICE_I];
+    perk->id = PERK_ARTIFICER_TARGETING_LATTICE_I;
+    perk->name = strdup("Targeting Lattice I");
+    perk->description = strdup("Your construct gains +1 accuracy and +1 damage per rank against the target you are currently fighting.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Your active golem gains +1 hit and +1 damage per rank while attacking the same target as you.");
+
+    /* Reinforced Chassis I */
+    perk = &perk_list[PERK_ARTIFICER_REINFORCED_CHASSIS_I];
+    perk->id = PERK_ARTIFICER_REINFORCED_CHASSIS_I;
+    perk->name = strdup("Reinforced Chassis I");
+    perk->description = strdup("Your construct gains +1 AC per rank and minor DR scaling.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 1;
+    perk->special_description = strdup("Your active golem gains +1 AC and DR equal to rank, bypassed by magic weapons.");
+
+    /* Battlefield Retrieval */
+    perk = &perk_list[PERK_ARTIFICER_BATTLEFIELD_RETRIEVAL];
+    perk->id = PERK_ARTIFICER_BATTLEFIELD_RETRIEVAL;
+    perk->name = strdup("Battlefield Retrieval");
+    perk->description = strdup("Unlock rapid recall and redeploy for your active golem with a brief lockout.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 1;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 30;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("craft golem recall can now stow an active golem and redeploy it after a short lockout while preserving its HP.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -27666,6 +27732,112 @@ int get_artificer_grand_artifice_save_bonus(struct char_data *ch)
   infused_effects = count_artificer_infused_gear_effects(ch);
 
   return MIN(3, infused_effects / 2);
+}
+
+int get_artificer_construct_tuning_i_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_CONSTRUCT_TUNING_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_targeting_lattice_i_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_TARGETING_LATTICE_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_reinforced_chassis_i_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_REINFORCED_CHASSIS_I, CLASS_ARTIFICER);
+}
+
+bool has_artificer_battlefield_retrieval(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_BATTLEFIELD_RETRIEVAL);
+}
+
+void sync_artificer_construct_command_bonuses(struct char_data *golem)
+{
+  struct char_data *master = NULL;
+  struct damage_reduction_type *dr = NULL;
+  struct damage_reduction_type *next_dr = NULL;
+  int old_max_hit = 0;
+  int current_hit = 0;
+  int tuning_rank = 0;
+  int chassis_rank = 0;
+
+  if (!golem || !IS_NPC(golem) || !MOB_FLAGGED(golem, MOB_GOLEM))
+    return;
+
+  old_max_hit = MAX(1, GET_MAX_HIT(golem));
+  current_hit = GET_HIT(golem);
+  master = golem->master;
+
+  if (master && !IS_NPC(master))
+  {
+    tuning_rank = get_artificer_construct_tuning_i_rank(master);
+    chassis_rank = get_artificer_reinforced_chassis_i_rank(master);
+  }
+
+  GET_MAX_HIT(golem) = GET_REAL_MAX_HIT(golem);
+  GET_HITROLL(golem) = GET_REAL_HITROLL(golem);
+  GET_AC(golem) = GET_REAL_AC(golem);
+
+  for (dr = GET_DR(golem); dr != NULL; dr = next_dr)
+  {
+    next_dr = dr->next;
+    if (dr->feat == PERK_ARTIFICER_REINFORCED_CHASSIS_I)
+    {
+      struct damage_reduction_type *temp;
+
+      REMOVE_FROM_LIST(dr, GET_DR(golem), next);
+      temp = dr;
+      free(temp);
+    }
+  }
+
+  if (tuning_rank > 0)
+  {
+    GET_MAX_HIT(golem) += (GET_REAL_MAX_HIT(golem) * (tuning_rank * 2)) / 100;
+    GET_HITROLL(golem) += tuning_rank;
+  }
+
+  if (chassis_rank > 0)
+  {
+    struct damage_reduction_type *new_dr = NULL;
+
+    GET_AC(golem) -= chassis_rank * 10;
+
+    CREATE(new_dr, struct damage_reduction_type, 1);
+    new_dr->duration = 0;
+    new_dr->amount = chassis_rank;
+    new_dr->max_damage = -1;
+    new_dr->spell = 0;
+    new_dr->feat = PERK_ARTIFICER_REINFORCED_CHASSIS_I;
+    new_dr->bypass_cat[0] = DR_BYPASS_CAT_MAGIC;
+    new_dr->bypass_val[0] = 0;
+    new_dr->bypass_cat[1] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[1] = 0;
+    new_dr->bypass_cat[2] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[2] = 0;
+    new_dr->next = GET_DR(golem);
+    GET_DR(golem) = new_dr;
+  }
+
+  if (current_hit >= old_max_hit)
+    GET_HIT(golem) = GET_MAX_HIT(golem);
+  else if (current_hit > 0)
+    GET_HIT(golem) = MIN(GET_MAX_HIT(golem), MAX(1, (current_hit * GET_MAX_HIT(golem)) / old_max_hit));
+  else
+    GET_HIT(golem) = current_hit;
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)

@@ -685,6 +685,7 @@ int load_char(const char *name, struct char_data *ch)
     /* Initialize golem crafting info */
     ch->char_specials.saved.golem_stored_type = GOLEM_TYPE_NONE;
     ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
+    ch->char_specials.saved.golem_stored_hp = 0;
     ch->char_specials.saved.golem_recall_cooldown = 0;
 
     for (i = 0; i < NUM_LANGUAGES; i++)
@@ -1130,6 +1131,8 @@ int load_char(const char *name, struct char_data *ch)
           ch->char_specials.saved.golem_stored_type = atoi(line);
         else if (!strcmp(tag, "GolS"))
           ch->char_specials.saved.golem_stored_size = atoi(line);
+        else if (!strcmp(tag, "GolH"))
+          ch->char_specials.saved.golem_stored_hp = atoi(line);
         else if (!strcmp(tag, "GolC"))
           ch->char_specials.saved.golem_recall_cooldown = atol(line);
         else if (!strcmp(tag, "God "))
@@ -2771,6 +2774,8 @@ void save_char(struct char_data *ch, int mode)
   {
     BUFFER_WRITE("GolT: %d\n", ch->char_specials.saved.golem_stored_type);
     BUFFER_WRITE("GolS: %d\n", ch->char_specials.saved.golem_stored_size);
+    if (ch->char_specials.saved.golem_stored_hp > 0)
+      BUFFER_WRITE("GolH: %d\n", ch->char_specials.saved.golem_stored_hp);
   }
   if (ch->char_specials.saved.golem_recall_cooldown != 0)
     BUFFER_WRITE("GolC: %ld\n", ch->char_specials.saved.golem_recall_cooldown);

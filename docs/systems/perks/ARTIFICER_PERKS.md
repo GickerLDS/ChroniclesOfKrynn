@@ -243,10 +243,10 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
    - Effect: Your commanded construct gains +2% max HP and +1 accuracy per rank.
    - Prerequisite: None
 
-2. **Command Uplink I**
+2. **Targeting Lattice I**
       - Cost: 1 point per rank
    - Max Rank: 3
-   - Effect: +1 command responsiveness per rank (faster command resolution / reduced idle delay).
+   - Effect: Your construct gains +1 accuracy and +1 damage per rank against the target you are currently fighting.
    - Prerequisite: None
 
 3. **Reinforced Chassis I**
@@ -269,11 +269,11 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
    - Effect: Additional +3% max HP and +1 damage per rank to commanded construct.
    - Prerequisite: Construct Tuning I (3)
 
-6. **Command Uplink II**
+6. **Targeting Lattice II**
       - Cost: 2 points per rank
    - Max Rank: 2
-   - Effect: Additional command latency reduction and +5% per rank chance to avoid command interruption.
-   - Prerequisite: Command Uplink I (3)
+   - Effect: Your construct gains an additional +1 damage per rank against your current target and takes 5% less damage per rank from that target.
+   - Prerequisite: Targeting Lattice I (3)
 
 7. **Arcane Servomotors**
       - Cost: 2 points per rank
@@ -299,7 +299,7 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
       - Cost: 3 points per rank
    - Max Rank: 2
    - Effect: Unlock stance commands (`guard`, `pressure`) and grant +1 tactical bonus per rank in active stance.
-   - Prerequisite: Command Uplink II (1)
+   - Prerequisite: Targeting Lattice II (1)
 
 11. **Companion Conduit**
       - Cost: 3 points per rank
@@ -320,7 +320,7 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
       - Cost: 5 points
    - Max Rank: 1
    - Effect: Construct gains one extra action-equivalent command each combat round with reduced potency.
-   - Prerequisite: Tactical Directives (2), Command Uplink II (2)
+   - Prerequisite: Tactical Directives (2), Targeting Lattice II (2)
 
 14. **Fortress Engine**
       - Cost: 5 points

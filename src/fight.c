@@ -2085,6 +2085,8 @@ static void make_corpse(struct char_data *ch)
     /* Recover materials (25% of original cost) from golem death */
     extern void recover_golem_materials(struct char_data * ch, struct char_data * golem,
                                         int recovery_percent);
+    if (!IS_NPC(ch->master))
+      ch->master->char_specials.saved.golem_stored_hp = 0;
     recover_golem_materials(ch->master, ch, 25);
   }
 
@@ -6746,6 +6748,7 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
   int dambonus = mod;
   bool display_mode = FALSE;
   int str_bonus = GET_STR_BONUS(ch);
+  int targeting_lattice_bonus = 0;
   char strength[200];
 
   if (w_type == -1)
@@ -6785,6 +6788,18 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
   }
   if (display_mode)
     send_to_char(ch, "Damroll: \tR%d\tn\r\n", GET_DAMROLL(ch));
+
+  if (vict && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      FIGHTING(ch->master) == vict)
+  {
+    targeting_lattice_bonus = get_artificer_targeting_lattice_i_rank(ch->master);
+    if (targeting_lattice_bonus > 0)
+    {
+      dambonus += targeting_lattice_bonus;
+      if (display_mode)
+        send_to_char(ch, "Targeting Lattice I: \tR+%d\tn\r\n", targeting_lattice_bonus);
+    }
+  }
 
   if (HAS_REAL_FEAT(ch, FEAT_DRAGONBORN_FURY) && (GET_HIT(ch) * 2) < GET_MAX_HIT(ch))
   {
@@ -11895,6 +11910,12 @@ int attack_roll(struct char_data *ch,     /* Attacker */
   int attack_bonus = compute_attack_bonus(ch, victim, attack_type);
   int victim_ac = compute_armor_class(ch, victim, is_touch, MODE_ARMOR_CLASS_NORMAL);
 
+  if (victim && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      FIGHTING(ch->master) == victim)
+  {
+    attack_bonus += get_artificer_targeting_lattice_i_rank(ch->master);
+  }
+
   /* Perfect Deflection: negate one incoming ranged/bomb attack and reflect force damage */
   if (victim && AFF_FLAGGED(victim, AFF_PERFECT_DEFLECTION_ACTIVE) &&
       (attack_type == ATTACK_TYPE_RANGED || attack_type == ATTACK_TYPE_BOMB_TOSS))
@@ -11974,6 +11995,12 @@ int attack_roll_with_critical(struct char_data *ch,     /* Attacker */
 
   int attack_bonus = compute_attack_bonus(ch, victim, attack_type);
   int victim_ac = compute_armor_class(ch, victim, is_touch, MODE_ARMOR_CLASS_NORMAL);
+
+  if (victim && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      FIGHTING(ch->master) == victim)
+  {
+    attack_bonus += get_artificer_targeting_lattice_i_rank(ch->master);
+  }
 
   int diceroll = d20(ch);
   if (diceroll >= critical_threshold &&
