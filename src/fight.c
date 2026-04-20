@@ -6171,6 +6171,50 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
 
   GET_HIT(victim) -= dam;
 
+  if (dam > 0 && !IS_NPC(victim) && GROUP(victim) && is_spell_or_power(w_type) == 2)
+  {
+    struct group_data *group = GROUP(victim);
+    struct char_data *best_artificer = NULL;
+    struct char_data *k = NULL;
+    struct iterator_data it;
+    int best_rank = 0;
+
+    for (k = (struct char_data *)merge_iterator(&it, group->members); k != NULL;
+         k = (struct char_data *)next_in_list(&it))
+    {
+      int rank = 0;
+
+      if (k == victim || IS_NPC(k) || IN_ROOM(k) != IN_ROOM(victim))
+        continue;
+
+      rank = get_artificer_aegis_protocol_rank(k);
+      if (rank <= 0)
+        continue;
+      if (k->player_specials->saved.aegis_protocol_cooldown > time(0))
+        continue;
+      if (rank > best_rank)
+      {
+        best_rank = rank;
+        best_artificer = k;
+      }
+    }
+
+    if (best_artificer)
+    {
+      int shield = MAX(1, (GET_MAX_HIT(victim) * (best_rank * 3)) / 100);
+
+      GET_HIT(victim) = MIN(GET_MAX_HIT(victim) + 50, GET_HIT(victim) + shield);
+      best_artificer->player_specials->saved.aegis_protocol_cooldown = time(0) + 30;
+
+      send_to_char(best_artificer,
+                   "Aegis Protocol flares around %s, granting %d temporary hit points.\r\n",
+                   GET_NAME(victim), shield);
+      send_to_char(victim,
+                   "%s's Aegis Protocol cushions the spell impact with %d temporary hit points.\r\n",
+                   GET_NAME(best_artificer), shield);
+    }
+  }
+
   /* Blackguard: Soul Carapace - convert portion of incoming damage to temp HP */
   if (dam > 0 && !IS_NPC(victim))
   {

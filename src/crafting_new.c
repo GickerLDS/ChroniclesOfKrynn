@@ -35,6 +35,7 @@
 #include "resource_system.h"
 #include "domains_schools.h"
 #include "brew.h"
+#include "perks.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -3276,6 +3277,13 @@ bool is_wearing_tool_for_crafting_ability(struct char_data *ch, int ability)
   return has_tool;
 }
 
+static bool artificer_efficient_crafter_applies(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && has_artificer_efficient_crafter(ch) &&
+         GET_CRAFT(ch).crafting_recipe > CRAFT_RECIPE_NONE &&
+         GET_CRAFT(ch).crafting_item_type != CRAFT_TYPE_GOLEM;
+}
+
 void begin_current_craft(struct char_data *ch)
 {
   if (!is_craft_ready(ch, TRUE))
@@ -3298,6 +3306,8 @@ void begin_current_craft(struct char_data *ch)
 
   /* Apply rapid talent reduction, but don't go below 1 second */
   seconds -= rapid_reduction;
+  if (artificer_efficient_crafter_applies(ch))
+    seconds = (seconds * 90) / 100;
   if (seconds < 1)
     seconds = 1;
 
@@ -3784,6 +3794,9 @@ bool create_craft_skill_check(struct char_data *ch, struct obj_data *obj, int sk
     
     skill_mod += elbow_grease_bonus;
   }
+
+  if (artificer_efficient_crafter_applies(ch))
+    skill_mod += 2;
 
   if ((20 + skill_mod) < dc)
   {

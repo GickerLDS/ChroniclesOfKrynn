@@ -10622,6 +10622,28 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
       if (af[i].modifier > 0)
         af[i].modifier = af[i].modifier * get_spell_potency_bonus(ch) / 100;
     }
+
+    if (!spell_info[spellnum].violent && ch && !IS_NPC(ch) &&
+        (casttype == CAST_DEVICE || CASTING_CLASS(ch) == CLASS_ARTIFICER) && victim &&
+        (victim == ch || (!IS_NPC(victim) && is_player_grouped(ch, victim))))
+    {
+      int reinforcing_motif_bonus = get_artificer_reinforcing_motif_rank(ch) * 10;
+
+      if (reinforcing_motif_bonus > 0)
+      {
+        for (i = 0; i < MAX_SPELL_AFFECTS; i++)
+        {
+          if (af[i].duration > 0)
+          {
+            int old_duration = af[i].duration;
+            af[i].duration = af[i].duration * (100 + reinforcing_motif_bonus) / 100;
+            if (af[i].duration < old_duration + 1)
+              af[i].duration = old_duration + 1;
+          }
+        }
+      }
+    }
+
     /* Ectoplasmic Artisan I: +10% duration on metacreative buffs */
     if (is_spellnum_psionic(spellnum) && psionic_powers[spellnum].power_type == METACREATIVITY &&
         !spell_info[spellnum].violent)

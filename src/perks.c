@@ -13237,6 +13237,142 @@ void define_artificer_perks(void)
     perk->effect_value = 2;
     perk->effect_modifier = 60;
     perk->special_description = strdup("Command: emergencyinfusion; random +2 ability for 1 minute.");
+
+    /*** INFUSION & BATTLEFIELD SUPPORT TREE - TIER II ***/
+
+    /* Infusion Theory II */
+    perk = &perk_list[PERK_ARTIFICER_INFUSION_THEORY_II];
+    perk->id = PERK_ARTIFICER_INFUSION_THEORY_II;
+    perk->name = strdup("Infusion Theory II");
+    perk->description = strdup("Additional +1 save DC per rank to eligible support/control effects.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_INFUSION_THEORY_I;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds +1 save DC per rank to non-violent artificer support/control effects.");
+
+    /* Flash Insight II */
+    perk = &perk_list[PERK_ARTIFICER_FLASH_INSIGHT_II];
+    perk->id = PERK_ARTIFICER_FLASH_INSIGHT_II;
+    perk->name = strdup("Flash Insight II");
+    perk->description = strdup("Flash Insight grants an additional +1 bonus per rank.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_FLASH_INSIGHT_I;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Flash Insight gains +1 additional bonus per rank.");
+
+    /* Resonant Imbuement */
+    perk = &perk_list[PERK_ARTIFICER_RESONANT_IMBUEMENT];
+    perk->id = PERK_ARTIFICER_RESONANT_IMBUEMENT;
+    perk->name = strdup("Resonant Imbuement");
+    perk->description =
+      strdup("Beneficial single-target device buffs have a 10% chance per rank to affect another grouped ally in the room.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_EMERGENCY_INFUSION;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("On eligible non-violent single-target device buffs: 10% per rank to splash to one random grouped ally in-room.");
+
+    /* Harmonic Stabilizers */
+    perk = &perk_list[PERK_ARTIFICER_HARMONIC_STABILIZERS];
+    perk->id = PERK_ARTIFICER_HARMONIC_STABILIZERS;
+    perk->name = strdup("Harmonic Stabilizers");
+    perk->description = strdup("+1 per rank to concentration and use magic device checks.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_TOOL_ADEPT;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Concentration and Use Magic Device gain +1 per rank.");
+
+    /*** INFUSION & BATTLEFIELD SUPPORT TREE - TIER III ***/
+
+    /* Spell Matrix I */
+    perk = &perk_list[PERK_ARTIFICER_SPELL_MATRIX_I];
+    perk->id = PERK_ARTIFICER_SPELL_MATRIX_I;
+    perk->name = strdup("Spell Matrix I");
+    perk->description =
+      strdup("Gain one extra prepared support-device matrix slot per rank for non-violent inventions.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_INFUSION_THEORY_II;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Each rank grants one extra support-only device matrix slot that does not consume normal device circle budgets.");
+
+    /* Aegis Protocol */
+    perk = &perk_list[PERK_ARTIFICER_AEGIS_PROTOCOL];
+    perk->id = PERK_ARTIFICER_AEGIS_PROTOCOL;
+    perk->name = strdup("Aegis Protocol");
+    perk->description =
+      strdup("When an ally nearby takes spell damage, grant shielding equal to 3% max HP per rank (30 second cooldown).");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_FLASH_INSIGHT_II;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 3;
+    perk->effect_modifier = 30;
+    perk->special_description = strdup("When a grouped ally in-room takes spell damage, grant temporary shielding equal to 3% max HP per rank. Internal cooldown: 30 seconds.");
+
+    /* Reinforcing Motif */
+    perk = &perk_list[PERK_ARTIFICER_REINFORCING_MOTIF];
+    perk->id = PERK_ARTIFICER_REINFORCING_MOTIF;
+    perk->name = strdup("Reinforcing Motif");
+    perk->description = strdup("Artificer support buff durations increase by 10% per rank.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_RESONANT_IMBUEMENT;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Non-violent artificer support buffs cast on yourself or allies last 10% longer per rank.");
+
+    /* Efficient Crafter */
+    perk = &perk_list[PERK_ARTIFICER_EFFICIENT_CRAFTER];
+    perk->id = PERK_ARTIFICER_EFFICIENT_CRAFTER;
+    perk->name = strdup("Efficient Crafter");
+    perk->description = strdup("Gain +2 on crafting checks and 10% faster non-golem recipe crafting.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_TOOL_ADEPT;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 10;
+    perk->special_description = strdup("Gain +2 to recipe crafting checks and reduce eligible crafting time by 10%.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -17572,6 +17708,15 @@ int get_perk_skill_bonus(struct char_data *ch, int skill_num)
   case ABILITY_DISABLE_DEVICE:
   case ABILITY_USE_MAGIC_DEVICE:
     bonus += get_artificer_tool_adept_bonus(ch);
+    break;
+  }
+
+  /* Artificer Harmonic Stabilizers applies to concentration and use magic device */
+  switch (skill_num)
+  {
+  case ABILITY_CONCENTRATION:
+  case ABILITY_USE_MAGIC_DEVICE:
+    bonus += get_artificer_harmonic_stabilizers_bonus(ch);
     break;
   }
 
@@ -27297,18 +27442,28 @@ bool has_artificer_unbound_invention(struct char_data *ch)
 
 int get_artificer_infusion_theory_bonus(struct char_data *ch)
 {
+  int bonus = 0;
+
   if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
     return 0;
 
-  return get_perk_rank(ch, PERK_ARTIFICER_INFUSION_THEORY_I, CLASS_ARTIFICER);
+  bonus += get_perk_rank(ch, PERK_ARTIFICER_INFUSION_THEORY_I, CLASS_ARTIFICER);
+  bonus += get_perk_rank(ch, PERK_ARTIFICER_INFUSION_THEORY_II, CLASS_ARTIFICER);
+
+  return bonus;
 }
 
 int get_artificer_flash_insight_bonus(struct char_data *ch)
 {
+  int bonus = 0;
+
   if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
     return 0;
 
-  return get_perk_rank(ch, PERK_ARTIFICER_FLASH_INSIGHT_I, CLASS_ARTIFICER);
+  bonus += get_perk_rank(ch, PERK_ARTIFICER_FLASH_INSIGHT_I, CLASS_ARTIFICER);
+  bonus += get_perk_rank(ch, PERK_ARTIFICER_FLASH_INSIGHT_II, CLASS_ARTIFICER);
+
+  return bonus;
 }
 
 int get_artificer_tool_adept_bonus(struct char_data *ch)
@@ -27319,10 +27474,56 @@ int get_artificer_tool_adept_bonus(struct char_data *ch)
   return get_perk_rank(ch, PERK_ARTIFICER_TOOL_ADEPT, CLASS_ARTIFICER);
 }
 
+int get_artificer_resonant_imbuement_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_RESONANT_IMBUEMENT, CLASS_ARTIFICER);
+}
+
+int get_artificer_harmonic_stabilizers_bonus(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_HARMONIC_STABILIZERS, CLASS_ARTIFICER);
+}
+
 bool has_artificer_emergency_infusion(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
          has_perk(ch, PERK_ARTIFICER_EMERGENCY_INFUSION);
+}
+
+int get_artificer_spell_matrix_i_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_SPELL_MATRIX_I, CLASS_ARTIFICER);
+}
+
+int get_artificer_aegis_protocol_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_AEGIS_PROTOCOL, CLASS_ARTIFICER);
+}
+
+int get_artificer_reinforcing_motif_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_REINFORCING_MOTIF, CLASS_ARTIFICER);
+}
+
+bool has_artificer_efficient_crafter(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_EFFICIENT_CRAFTER);
 }
 
 int get_warlock_book_of_ancient_secrets_max_spells(struct char_data *ch)

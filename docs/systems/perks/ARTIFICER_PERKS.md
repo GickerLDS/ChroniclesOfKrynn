@@ -160,21 +160,21 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
    - Prerequisite: Infusion Theory I (3)
 
 6. **Flash Insight II**
-      - Cost: 2 points per rank
-   - Max Rank: 2
-   - Effect: Reaction bonus increases by +1 per rank and gains one additional daily use per rank.
+      - Cost: 4 points per rank
+   - Max Rank: 1
+   - Effect: Bonus increases to +2
    - Prerequisite: Flash Insight I (3)
 
 7. **Resonant Imbuement**
       - Cost: 2 points per rank
    - Max Rank: 2
-   - Effect: Beneficial single-target infusions gain 10% per rank chance to splash to one nearby ally at 50% value.
+   - Effect: Beneficial single-target device buffs has a 10% chance per rank to affect a random other party member in the same room.
    - Prerequisite: Emergency Infusion
 
 8. **Harmonic Stabilizers**
       - Cost: 2 points per rank
    - Max Rank: 2
-   - Effect: +1 concentration and +1 interruption resistance per rank while channeling item/device magic.
+   - Effect: +1 concentration and use magic device skill per rank 
    - Prerequisite: Tool Adept (1)
 
 ### Tier 3 (3 points each)

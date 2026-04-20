@@ -11457,6 +11457,63 @@ ACMDU(do_emergencyinfusion)
   act("$n injects a volatile infusion and surges with sudden power.", TRUE, ch, 0, 0, TO_ROOM);
 }
 
+static bool invention_is_support_device(const struct player_invention *inv)
+{
+  int i = 0;
+
+  if (!inv || inv->num_spells <= 0)
+    return FALSE;
+
+  for (i = 0; i < inv->num_spells; i++)
+  {
+    int spell_num = inv->spell_effects[i];
+
+    if (spell_num <= 0 || spell_num >= NUM_SPELLS)
+      return FALSE;
+    if (spell_info[spell_num].violent)
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+static bool requested_device_is_support_device(const int *spell_nums, int num_spells)
+{
+  int i = 0;
+
+  if (!spell_nums || num_spells <= 0)
+    return FALSE;
+
+  for (i = 0; i < num_spells; i++)
+  {
+    int spell_num = spell_nums[i];
+
+    if (spell_num <= 0 || spell_num >= NUM_SPELLS)
+      return FALSE;
+    if (spell_info[spell_num].violent)
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+static int count_artificer_support_devices(struct char_data *ch)
+{
+  int count = 0;
+  int i = 0;
+
+  if (!ch)
+    return 0;
+
+  for (i = 0; i < ch->player_specials->saved.num_inventions; i++)
+  {
+    if (invention_is_support_device(&ch->player_specials->saved.inventions[i]))
+      count++;
+  }
+
+  return count;
+}
+
 ACMDU(do_device)
 {
   char arg1[MAX_INPUT_LENGTH] = {'\0'};
@@ -11647,6 +11704,9 @@ ACMDU(do_device)
     /* Check if we have available device slots (not under cooldown) */
     int available_slots = 0;
     int max_devices = 0;
+    int spell_matrix_rank = get_artificer_spell_matrix_i_rank(ch);
+    int support_matrix_used = count_artificer_support_devices(ch);
+    int support_matrix_available = MAX(0, spell_matrix_rank - support_matrix_used);
 
     /* Calculate max devices based on artificer level using weird_science_table */
     for (i = 1; i <= max_spell_level; i++)
@@ -11670,13 +11730,6 @@ ACMDU(do_device)
       }
     }
 
-    if (available_slots <= 0)
-    {
-      send_to_char(ch, "All your device slots are on cooldown. Use 'device cooldown' to check when "
-                       "slots become available.\r\n");
-      return;
-    }
-
     if (!*arg2)
     {
       send_to_char(ch, "Create what spell device? Example: device create fireball\r\n");
@@ -11685,6 +11738,9 @@ ACMDU(do_device)
       send_to_char(ch, "You can combine multiple spells: device create fireball shield \"cure "
                        "light wounds\"\r\n");
       send_to_char(ch, "Available device slots: %d\r\n", available_slots);
+      if (support_matrix_available > 0)
+        send_to_char(ch, "Available support matrix profile%s: %d\r\n",
+                     support_matrix_available == 1 ? "" : "s", support_matrix_available);
       return;
     }
 
@@ -11696,6 +11752,7 @@ ACMDU(do_device)
     int spell_nums[4] = {0, 0, 0, 0};
     int num_spells = 0;
     int highest_device_level = 0;
+    bool spell_matrix_requested = FALSE;
 
     /* Parse spell arguments from the full argument string */
     char *parse_ptr = (char *)argument;
@@ -11926,9 +11983,17 @@ ACMDU(do_device)
     
     /* Count current spell circles used */
     int used_circles[4] = {0, 0, 0, 0};
+    int support_matrix_exempt = spell_matrix_rank;
     for (i = 0; i < ch->player_specials->saved.num_inventions; i++)
     {
       struct player_invention *inv = &ch->player_specials->saved.inventions[i];
+
+      if (support_matrix_exempt > 0 && invention_is_support_device(inv))
+      {
+        support_matrix_exempt--;
+        continue;
+      }
+
       for (j = 0; j < inv->num_spells; j++)
       {
         int spellnum = inv->spell_effects[j];
@@ -11970,150 +12035,159 @@ ACMDU(do_device)
         }
       }
     }
-    /* Count new invention's spell circles - try lower circle first, use higher if needed */
     int new_circles[4] = {0, 0, 0, 0};
     int spell_chosen_levels[4] = {0, 0, 0, 0}; /* Track which level was chosen for each spell */
 
-    for (i = 0; i < num_spells; i++)
+    if (!(spell_matrix_requested && support_matrix_available > 0))
     {
-      int wizard_level = spell_wizard_levels[i];
-      int cleric_level = spell_cleric_levels[i];
-
-      if (wizard_level == 0 && cleric_level == 0)
+      /* Count new invention's spell circles - try lower circle first, use higher if needed */
+      for (i = 0; i < num_spells; i++)
       {
-        continue; /* Skip spells not available to artificers */
-      }
+        int wizard_level = spell_wizard_levels[i];
+        int cleric_level = spell_cleric_levels[i];
 
-      /* Determine which circles this spell could use */
-      int lower_circle = -1, higher_circle = -1;
-      int lower_level = 0, higher_level = 0;
+        if (wizard_level == 0 && cleric_level == 0)
+        {
+          continue; /* Skip spells not available to artificers */
+        }
 
-      if (wizard_level > 0 && cleric_level > 0)
-      {
-        /* Spell available on both lists - determine lower and higher */
-        if (wizard_level < cleric_level)
+        /* Determine which circles this spell could use */
+        int lower_circle = -1, higher_circle = -1;
+        int lower_level = 0, higher_level = 0;
+
+        if (wizard_level > 0 && cleric_level > 0)
         {
-          lower_level = wizard_level;
-          higher_level = cleric_level;
+          if (wizard_level < cleric_level)
+          {
+            lower_level = wizard_level;
+            higher_level = cleric_level;
+          }
+          else if (cleric_level < wizard_level)
+          {
+            lower_level = cleric_level;
+            higher_level = wizard_level;
+          }
+          else
+          {
+            lower_level = wizard_level;
+            higher_level = 0;
+          }
         }
-        else if (cleric_level < wizard_level)
+        else if (wizard_level > 0)
         {
-          lower_level = cleric_level;
-          higher_level = wizard_level;
-        }
-        else
-        {
-          /* Same level on both lists - just use one */
           lower_level = wizard_level;
           higher_level = 0;
         }
-      }
-      else if (wizard_level > 0)
-      {
-        lower_level = wizard_level;
-        higher_level = 0;
-      }
-      else
-      {
-        lower_level = cleric_level;
-        higher_level = 0;
-      }
-
-      /* Convert levels to circles */
-      if (lower_level >= 1 && lower_level <= 7)
-      {
-        lower_circle = (lower_level + 1) / 2 - 1;
-      }
-      if (higher_level >= 1 && higher_level <= 7)
-      {
-        higher_circle = (higher_level + 1) / 2 - 1;
-      }
-
-      /* Try to use the lower circle first, then higher if lower is full */
-      int chosen_circle = -1;
-      int chosen_level = 0;
-
-      if (lower_circle >= 0 && lower_circle < 4)
-      {
-        /* Check if lower circle has room */
-        if (used_circles[lower_circle] + new_circles[lower_circle] < max_circles[lower_circle])
+        else
         {
-          chosen_circle = lower_circle;
-          chosen_level = lower_level;
+          lower_level = cleric_level;
+          higher_level = 0;
         }
-        else if (higher_circle >= 0 && higher_circle < 4)
-        {
-          /* Lower circle full, try higher circle */
-          if (used_circles[higher_circle] + new_circles[higher_circle] < max_circles[higher_circle])
-          {
-            chosen_circle = higher_circle;
-            chosen_level = higher_level;
-          }
-        }
-      }
 
-      if (chosen_circle >= 0)
-      {
-        new_circles[chosen_circle]++;
-        spell_chosen_levels[i] = chosen_level;
-      }
-      else
-      {
-        /* No available circle for this spell */
-        const char *spell_name = spell_info[spell_nums[i]].name;
-        send_to_char(ch, "Cannot create device: No available circle slots for spell '%s'.\r\n",
-                     spell_name);
+        if (lower_level >= 1 && lower_level <= 7)
+          lower_circle = (lower_level + 1) / 2 - 1;
+        if (higher_level >= 1 && higher_level <= 7)
+          higher_circle = (higher_level + 1) / 2 - 1;
+
+        int chosen_circle = -1;
+        int chosen_level = 0;
 
         if (lower_circle >= 0 && lower_circle < 4)
         {
-          int circle_level = lower_circle + 1;
-          const char *ordinal = (circle_level == 1)   ? "st"
-                                : (circle_level == 2) ? "nd"
-                                : (circle_level == 3) ? "rd"
-                                                      : "th";
-          send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level, ordinal,
-                       lower_level, used_circles[lower_circle] + new_circles[lower_circle],
-                       max_circles[lower_circle]);
+          if (used_circles[lower_circle] + new_circles[lower_circle] < max_circles[lower_circle])
+          {
+            chosen_circle = lower_circle;
+            chosen_level = lower_level;
+          }
+          else if (higher_circle >= 0 && higher_circle < 4)
+          {
+            if (used_circles[higher_circle] + new_circles[higher_circle] <
+                max_circles[higher_circle])
+            {
+              chosen_circle = higher_circle;
+              chosen_level = higher_level;
+            }
+          }
         }
-        if (higher_circle >= 0 && higher_circle < 4 && higher_circle != lower_circle)
+
+        if (chosen_circle >= 0)
         {
-          int circle_level = higher_circle + 1;
+          new_circles[chosen_circle]++;
+          spell_chosen_levels[i] = chosen_level;
+        }
+        else
+        {
+          const char *spell_name = spell_info[spell_nums[i]].name;
+          send_to_char(ch, "Cannot create device: No available circle slots for spell '%s'.\r\n",
+                       spell_name);
+
+          if (lower_circle >= 0 && lower_circle < 4)
+          {
+            int circle_level = lower_circle + 1;
+            const char *ordinal = (circle_level == 1)   ? "st"
+                                  : (circle_level == 2) ? "nd"
+                                  : (circle_level == 3) ? "rd"
+                                                        : "th";
+            send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level,
+                         ordinal, lower_level,
+                         used_circles[lower_circle] + new_circles[lower_circle],
+                         max_circles[lower_circle]);
+          }
+          if (higher_circle >= 0 && higher_circle < 4 && higher_circle != lower_circle)
+          {
+            int circle_level = higher_circle + 1;
+            const char *ordinal = (circle_level == 1)   ? "st"
+                                  : (circle_level == 2) ? "nd"
+                                  : (circle_level == 3) ? "rd"
+                                                        : "th";
+            send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level,
+                         ordinal, higher_level,
+                         used_circles[higher_circle] + new_circles[higher_circle],
+                         max_circles[higher_circle]);
+          }
+          return;
+        }
+      }
+
+      /* Final check: verify total circles don't exceed limits */
+      for (i = 0; i < 4; i++)
+      {
+        if (used_circles[i] + new_circles[i] > max_circles[i])
+        {
+          int circle_level = i + 1;
           const char *ordinal = (circle_level == 1)   ? "st"
                                 : (circle_level == 2) ? "nd"
                                 : (circle_level == 3) ? "rd"
                                                       : "th";
-          send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level, ordinal,
-                       higher_level, used_circles[higher_circle] + new_circles[higher_circle],
-                       max_circles[higher_circle]);
+          send_to_char(ch,
+                       "You can't create this invention: it would exceed your allowed number of %d%s "
+                       "circle spells (%d max, you have %d).\r\n",
+                       circle_level, ordinal, max_circles[i], used_circles[i]);
+          char spell_list_o[MAX_STRING_LENGTH * 4];
+          strcpy(spell_list_o, spell_info[spell_nums[0]].name);
+          for (j = 1; j < num_spells; j++)
+          {
+            strcat(spell_list_o, "/");
+            strcat(spell_list_o, spell_info[spell_nums[j]].name);
+          }
+          send_to_char(ch, "Spells attempted to add: %s\r\n", spell_list_o);
+          return;
         }
-        return;
       }
     }
-
-    /* Final check: verify total circles don't exceed limits */
-    for (i = 0; i < 4; i++)
+    else
     {
-      if (used_circles[i] + new_circles[i] > max_circles[i])
+      for (i = 0; i < num_spells; i++)
       {
-        int circle_level = i + 1;
-        const char *ordinal = (circle_level == 1)   ? "st"
-                              : (circle_level == 2) ? "nd"
-                              : (circle_level == 3) ? "rd"
-                                                    : "th";
-        send_to_char(ch,
-                     "You can't create this invention: it would exceed your allowed number of %d%s "
-                     "circle spells (%d max, you have %d).\r\n",
-                     circle_level, ordinal, max_circles[i], used_circles[i]);
-        /* Build spell list for user feedback */
-        char spell_list_o[MAX_STRING_LENGTH * 4];
-        strcpy(spell_list_o, spell_info[spell_nums[0]].name);
-        for (j = 1; j < num_spells; j++)
-        {
-          strcat(spell_list_o, "/");
-          strcat(spell_list_o, spell_info[spell_nums[j]].name);
-        }
-        send_to_char(ch, "Spells attempted to add: %s\r\n", spell_list_o);
-        return;
+        int wizard_level = spell_wizard_levels[i];
+        int cleric_level = spell_cleric_levels[i];
+
+        if (wizard_level > 0 && cleric_level > 0)
+          spell_chosen_levels[i] = MIN(wizard_level, cleric_level);
+        else if (wizard_level > 0)
+          spell_chosen_levels[i] = wizard_level;
+        else
+          spell_chosen_levels[i] = cleric_level;
       }
     }
 
@@ -12121,6 +12195,7 @@ ACMDU(do_device)
     int max_devices_allowed = MAX_PLAYER_INVENTIONS;
     if (has_artificer_unbound_invention(ch))
       max_devices_allowed++;
+    max_devices_allowed += spell_matrix_rank;
     
     if (ch->player_specials->saved.num_inventions >= max_devices_allowed)
     {
@@ -12145,6 +12220,9 @@ ACMDU(do_device)
     }
 
     int creation_time = total_spell_levels * 30; /* 30 seconds per spell level */
+
+    if (spell_matrix_requested && support_matrix_available > 0)
+      send_to_char(ch, "Your spell matrix stores this support profile outside your normal invention budget.\r\n");
 
     /* Check if player is already creating an invention */
     if (char_has_mud_event(ch, eDEVICE_CREATION))
@@ -12894,6 +12972,7 @@ ACMDU(do_device)
     int dual_layer_imprint_rank = get_artificer_dual_layer_imprint_rank(ch);
     int predictive_venting_rank = get_artificer_predictive_venting_rank(ch);
     int adaptive_payload_rank = get_artificer_adaptive_payload_rank(ch);
+    int resonant_imbuement_rank = get_artificer_resonant_imbuement_rank(ch);
     bool overcharge_on = is_artificer_volatile_theorem_on(ch);
 
     if (penalty_growth < 1)
@@ -13114,6 +13193,63 @@ ACMDU(do_device)
       if (spell_num > 0 && spell_num < NUM_SPELLS)
       {
         call_magic(ch, target, obj_target, spell_num, 0, effective_artificer_level, CAST_DEVICE);
+
+        if (resonant_imbuement_rank > 0 && !device_is_violent && target && !obj_target &&
+            IN_ROOM(target) == IN_ROOM(ch) &&
+            IS_SET(spell_info[spell_num].routines, MAG_AFFECTS) &&
+            !IS_SET(spell_info[spell_num].routines, MAG_GROUPS) &&
+            !IS_SET(spell_info[spell_num].routines, MAG_MASSES) &&
+            !IS_SET(spell_info[spell_num].routines, MAG_AREAS) &&
+            rand_number(1, 100) <= (resonant_imbuement_rank * 10))
+        {
+          struct char_data *tch = NULL;
+          struct char_data *splash_target = NULL;
+          int candidate_count = 0;
+          int pick = 0;
+
+          for (tch = world[IN_ROOM(ch)].people; tch; tch = tch->next_in_room)
+          {
+            if (IS_NPC(tch))
+              continue;
+            if (!is_player_grouped(ch, tch))
+              continue;
+            if (tch == target)
+              continue;
+            candidate_count++;
+          }
+
+          if (candidate_count > 0)
+          {
+            pick = rand_number(1, candidate_count);
+            for (tch = world[IN_ROOM(ch)].people; tch; tch = tch->next_in_room)
+            {
+              if (IS_NPC(tch))
+                continue;
+              if (!is_player_grouped(ch, tch))
+                continue;
+              if (tch == target)
+                continue;
+
+              pick--;
+              if (pick == 0)
+              {
+                splash_target = tch;
+                break;
+              }
+            }
+          }
+
+          if (splash_target)
+          {
+            call_magic(ch, splash_target, NULL, spell_num, 0, effective_artificer_level,
+                       CAST_DEVICE);
+            send_to_char(ch, "Resonant imbuement echoes %s onto %s.\r\n",
+                         spell_info[spell_num].name, GET_NAME(splash_target));
+            send_to_char(splash_target,
+                         "%s's resonant imbuement causes %s to spill over onto you.\r\n",
+                         GET_NAME(ch), spell_info[spell_num].name);
+          }
+        }
       }
     }
 
@@ -13937,6 +14073,15 @@ EVENTFUNC(event_device_progress)
     return 0;
   }
 
+
+    spell_matrix_requested = requested_device_is_support_device(spell_nums, num_spells);
+
+    if (available_slots <= 0 && !(spell_matrix_requested && support_matrix_available > 0))
+    {
+      send_to_char(ch, "All your device slots are on cooldown. Use 'device cooldown' to check when "
+                       "slots become available.\r\n");
+      return;
+    }
   ch = (struct char_data *)pMudEvent->pStruct;
 
   if (!ch)

@@ -1474,6 +1474,14 @@ int load_char(const char *name, struct char_data *ch)
             ch->player_specials->saved.flash_insight_expires = (time_t)timestamp;
           }
         }
+        else if (!strcmp(tag, "PAAP"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.aegis_protocol_cooldown = (time_t)timestamp;
+          }
+        }
         else if (!strcmp(tag, "PMxS"))
         {
           long timestamp;
@@ -3301,6 +3309,7 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("PAEI: %ld\n", (long)ch->player_specials->saved.emergency_infusion_cooldown);
   BUFFER_WRITE("PAFB: %d %ld\n", ch->player_specials->saved.flash_insight_bonus,
                (long)ch->player_specials->saved.flash_insight_expires);
+  BUFFER_WRITE("PAAP: %ld\n", (long)ch->player_specials->saved.aegis_protocol_cooldown);
 
   /* Save Maximize Spell cooldown */
   BUFFER_WRITE("PMxS: %ld\n", (long)ch->player_specials->saved.maximize_spell_cooldown);
