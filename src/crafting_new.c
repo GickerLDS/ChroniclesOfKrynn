@@ -48,6 +48,8 @@
 
 #define GOLEM_RECALL_COOLDOWN 300  // 5 minutes in seconds
 #define GOLEM_BATTLEFIELD_RETRIEVAL_COOLDOWN 30
+#define GOLEM_SIEGE_FRAME_SLAM_COOLDOWN 30
+#define GOLEM_OMNI_FORGE_COMMANDER_COOLDOWN (60 * 60)
 
 ACMD_DECL(do_practice);
 
@@ -11503,7 +11505,7 @@ bool has_golem_follower(struct char_data *ch)
   return false;
 }
 
-static struct char_data *get_active_golem_follower(struct char_data *ch)
+struct char_data *get_active_golem_follower(struct char_data *ch)
 {
   struct follow_type *k;
 
@@ -12584,8 +12586,16 @@ void cancel_golem_transfer(struct char_data *ch)
 void newcraft_golem(struct char_data *ch, const char *argument)
 {
   char arg1[200], arg2[MAX_INPUT_LENGTH];
+  const char *directive_name = "none";
 
   half_chop_c(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+
+  if (ch->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_GUARD)
+    directive_name = "guard";
+  else if (ch->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_PRESSURE)
+    directive_name = "pressure";
+  else if (ch->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_SUPPORT)
+    directive_name = "support";
 
   if (!*arg1)
   {
@@ -12599,6 +12609,16 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     send_to_char(ch, "  craft golem deploy - Alias for recall when redeploying a stored golem\r\n");
     send_to_char(ch, "  craft golem shutdown - Shutdown your golem to build a new type\r\n");
     send_to_char(ch, "  craft golem upgrade (small|medium|large|huge) - Upgrade golem to larger size\r\n");
+    if (get_artificer_tactical_directives_rank(ch) > 0)
+    {
+      send_to_char(ch, "  craft golem guard - Toggle the guard directive (+AC stance)\r\n");
+      send_to_char(ch, "  craft golem pressure - Toggle the pressure directive (+hit stance)\r\n");
+      send_to_char(ch, "  craft golem stance - Show the current directive\r\n");
+    }
+    if (has_artificer_arcana_siege_frame(ch))
+      send_to_char(ch, "  craft golem slam <target> <direction> - Use your siege-frame knockback slam\r\n");
+    if (has_artificer_omni_forge_commander(ch))
+      send_to_char(ch, "  craft golem refit <defense|offense|support> - Refit your active construct out of combat\r\n");
     send_to_char(ch, "  craft golem transfer <golem> <player> - Transfer your golem to another player\r\n");
     send_to_char(ch, "  craft golem confirm <code> - Confirm a pending golem transfer\r\n");
     send_to_char(ch, "  craft golem cancel - Cancel a pending golem transfer\r\n");
@@ -12688,6 +12708,214 @@ void newcraft_golem(struct char_data *ch, const char *argument)
     }
     
     upgrade_golem(ch, golem, new_size);
+  }
+  else if (is_abbrev(arg1, "stance") || is_abbrev(arg1, "directive"))
+  {
+    if (get_artificer_tactical_directives_rank(ch) <= 0)
+    {
+      send_to_char(ch, "You have not purchased Tactical Directives.\r\n");
+      return;
+    }
+
+    send_to_char(ch, "Your current golem directive is %s.\r\n", directive_name);
+  }
+  else if (is_abbrev(arg1, "guard") || is_abbrev(arg1, "pressure"))
+  {
+    struct char_data *golem = NULL;
+    int new_directive = is_abbrev(arg1, "guard") ? GOLEM_DIRECTIVE_GUARD : GOLEM_DIRECTIVE_PRESSURE;
+
+    if (get_artificer_tactical_directives_rank(ch) <= 0)
+    {
+      send_to_char(ch, "You have not purchased Tactical Directives.\r\n");
+      return;
+    }
+
+    if (ch->char_specials.saved.golem_directive == new_directive)
+    {
+      ch->char_specials.saved.golem_directive = GOLEM_DIRECTIVE_NONE;
+      send_to_char(ch, "You clear your golem's active directive.\r\n");
+    }
+    else
+    {
+      ch->char_specials.saved.golem_directive = new_directive;
+      send_to_char(ch, "You set your golem's directive to %s.\r\n",
+                   new_directive == GOLEM_DIRECTIVE_GUARD ? "guard" : "pressure");
+    }
+
+    golem = get_active_golem_follower(ch);
+    if (golem)
+    {
+      sync_artificer_construct_command_bonuses(golem);
+      send_to_char(ch, "%s adjusts to the new directive.\r\n", GET_NAME(golem));
+    }
+    else
+    {
+      send_to_char(ch, "The directive will apply when your next golem is active.\r\n");
+    }
+  }
+  else if (is_abbrev(arg1, "slam"))
+  {
+    char target_arg[MAX_INPUT_LENGTH] = {'\0'};
+    char dir_arg[MAX_INPUT_LENGTH] = {'\0'};
+    struct char_data *golem = NULL;
+    struct char_data *victim = NULL;
+    int dir = -1;
+    int slam_damage = 0;
+    bool free_command = FALSE;
+    int i = 0;
+
+    if (!has_artificer_arcana_siege_frame(ch))
+    {
+      send_to_char(ch, "You have not purchased Arcana Siege Frame.\r\n");
+      return;
+    }
+
+    two_arguments(arg2, target_arg, sizeof(target_arg), dir_arg, sizeof(dir_arg));
+    if (!*target_arg || !*dir_arg)
+    {
+      send_to_char(ch, "Usage: craft golem slam <target> <direction>\r\n");
+      return;
+    }
+
+    golem = get_active_golem_follower(ch);
+    if (!golem)
+    {
+      send_to_char(ch, "You do not have an active golem.\r\n");
+      return;
+    }
+
+    if (!(victim = get_char_room_vis(ch, target_arg, NULL)))
+    {
+      send_to_char(ch, "There is no one here by that name.\r\n");
+      return;
+    }
+
+    if (victim == ch || victim == golem)
+    {
+      send_to_char(ch, "Choose a hostile target for the slam.\r\n");
+      return;
+    }
+
+    for (i = 0; i < NUM_OF_DIRS; i++)
+    {
+      if (is_abbrev(dirs[i], dir_arg))
+      {
+        dir = i;
+        break;
+      }
+    }
+
+    if (dir < 0 || dir >= NUM_OF_DIRS)
+    {
+      send_to_char(ch, "That is not a valid direction.\r\n");
+      return;
+    }
+
+    free_command = ch->player_specials->saved.omni_forge_free_command &&
+                   (FIGHTING(ch) || FIGHTING(golem));
+    if (!free_command && ch->player_specials->saved.siege_frame_slam_cooldown > time(0))
+    {
+      int seconds_left = (int)(ch->player_specials->saved.siege_frame_slam_cooldown - time(0));
+      send_to_char(ch, "Your siege-frame slam is recharging for %d more second%s.\r\n",
+                   seconds_left, seconds_left == 1 ? "" : "s");
+      return;
+    }
+
+    if (attack_roll(golem, victim, ATTACK_TYPE_PRIMARY, FALSE, 1) <= 0)
+    {
+      act("$N braces and your golem's siege-frame slam glances away harmlessly.", FALSE, ch, 0,
+          victim, TO_CHAR);
+      act("$n's golem slams into you, but you hold your ground.", FALSE, ch, 0, victim, TO_VICT);
+      act("$n's golem slams into $N, but the impact fails to dislodge $M.", FALSE, ch, 0, victim,
+          TO_NOTVICT);
+      ch->player_specials->saved.siege_frame_slam_cooldown =
+          time(0) + GOLEM_SIEGE_FRAME_SLAM_COOLDOWN;
+      if (free_command)
+        ch->player_specials->saved.omni_forge_free_command = FALSE;
+      return;
+    }
+
+    slam_damage = dice(MAX(2, GET_LEVEL(golem) / 10), 6) + MAX(0, GET_STR_BONUS(golem));
+    act("You command $N to release a siege-frame slam!", FALSE, ch, 0, golem, TO_CHAR);
+    act("$n's golem crashes forward in a wave of force!", FALSE, ch, 0, 0, TO_ROOM);
+    damage(golem, victim, slam_damage, TYPE_UNDEFINED, DAM_FORCE, FALSE);
+
+    if (victim && GET_POS(victim) > POS_DEAD && GET_SIZE(victim) < GET_SIZE(golem) &&
+        !MOB_FLAGGED(victim, MOB_NOBASH) && GET_PUSHED_TIMER(victim) <= 0 &&
+        push_attempt(golem, victim, TRUE))
+    {
+      GET_PUSHED_TIMER(victim) = 10;
+      perform_move_full(victim, dir, FALSE, FALSE);
+    }
+    else if (victim && GET_POS(victim) > POS_DEAD)
+    {
+      perform_knockdown(golem, victim, SKILL_BASH, FALSE, TRUE);
+    }
+
+    ch->player_specials->saved.siege_frame_slam_cooldown =
+        time(0) + GOLEM_SIEGE_FRAME_SLAM_COOLDOWN;
+    if (free_command)
+      ch->player_specials->saved.omni_forge_free_command = FALSE;
+  }
+  else if (is_abbrev(arg1, "refit"))
+  {
+    struct char_data *golem = NULL;
+    int new_directive = GOLEM_DIRECTIVE_NONE;
+
+    if (!has_artificer_omni_forge_commander(ch))
+    {
+      send_to_char(ch, "You have not purchased Omni-Forge Commander.\r\n");
+      return;
+    }
+
+    golem = get_active_golem_follower(ch);
+    if (!golem)
+    {
+      send_to_char(ch, "You need an active golem to refit.\r\n");
+      return;
+    }
+
+    if (FIGHTING(ch) || FIGHTING(golem))
+    {
+      send_to_char(ch, "Omni-Forge refits can only be performed out of combat.\r\n");
+      return;
+    }
+
+    if (ch->player_specials->saved.omni_forge_commander_cooldown > time(0))
+    {
+      int seconds_left = (int)(ch->player_specials->saved.omni_forge_commander_cooldown - time(0));
+      int minutes_left = seconds_left / 60;
+      seconds_left %= 60;
+      send_to_char(ch, "Omni-Forge Commander is recharging for %d minute%s %d second%s.\r\n",
+                   minutes_left, minutes_left == 1 ? "" : "s", seconds_left,
+                   seconds_left == 1 ? "" : "s");
+      return;
+    }
+
+    if (is_abbrev(arg2, "defense") || is_abbrev(arg2, "guard"))
+      new_directive = GOLEM_DIRECTIVE_GUARD;
+    else if (is_abbrev(arg2, "offense") || is_abbrev(arg2, "pressure"))
+      new_directive = GOLEM_DIRECTIVE_PRESSURE;
+    else if (is_abbrev(arg2, "support"))
+      new_directive = GOLEM_DIRECTIVE_SUPPORT;
+    else
+    {
+      send_to_char(ch, "Usage: craft golem refit <defense|offense|support>\r\n");
+      return;
+    }
+
+    ch->char_specials.saved.golem_directive = new_directive;
+    ch->player_specials->saved.omni_forge_commander_cooldown =
+        time(0) + GOLEM_OMNI_FORGE_COMMANDER_COOLDOWN;
+    ch->player_specials->saved.omni_forge_free_command = TRUE;
+    sync_artificer_construct_command_bonuses(golem);
+
+    send_to_char(ch,
+                 "You refit your golem into %s mode. The next eligible command in combat will be free.\r\n",
+                 new_directive == GOLEM_DIRECTIVE_GUARD ? "defense" :
+                 new_directive == GOLEM_DIRECTIVE_PRESSURE ? "offense" : "support");
+    act("$n rapidly reconfigures $s golem with a flurry of omni-forge adjustments.", FALSE, ch,
+        0, 0, TO_ROOM);
   }
   else if (is_abbrev(arg1, "transfer"))
   {

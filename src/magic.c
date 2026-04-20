@@ -41,6 +41,7 @@
 #include "spatial_audio.h"
 #include "wilderness.h"
 #include "perks.h"
+#include "crafting_new.h"
 
 // external
 extern struct raff_node *raff_list;
@@ -4093,6 +4094,18 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
                          true);
         send_to_char(ch, "\tG[Shared Spells: Companion buffed]\tn ");
       }
+    }
+  }
+
+  if (!recursive_call && !IS_NPC(ch) && ch == victim && !spell_info[spellnum].violent &&
+      (casttype == CAST_DEVICE || CASTING_CLASS(ch) == CLASS_ARTIFICER))
+  {
+    struct char_data *golem = get_active_golem_follower(ch);
+
+    if (golem && get_artificer_companion_conduit_rank(ch) > 0)
+    {
+      mag_affects_full(level, ch, golem, wpn, spellnum, savetype, casttype, metamagic, true);
+      send_to_char(ch, "\tG[Companion Conduit: Construct buffed]\tn ");
     }
   }
 
@@ -10648,6 +10661,32 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
             if (af[i].duration < old_duration + 1)
               af[i].duration = old_duration + 1;
           }
+        }
+      }
+    }
+
+    if (recursive_call && victim && IS_NPC(victim) && MOB_FLAGGED(victim, MOB_GOLEM) && ch &&
+        victim->master == ch && !spell_info[spellnum].violent &&
+        (casttype == CAST_DEVICE || CASTING_CLASS(ch) == CLASS_ARTIFICER) &&
+        get_artificer_companion_conduit_rank(ch) > 0)
+    {
+      int conduit_pct = get_artificer_companion_conduit_rank(ch) * 30;
+
+      if (has_artificer_omni_forge_commander(ch) &&
+          ch->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_SUPPORT)
+        conduit_pct = MAX(conduit_pct, 100);
+
+      for (i = 0; i < MAX_SPELL_AFFECTS; i++)
+      {
+        if (af[i].duration > 0)
+          af[i].duration = MAX(1, (af[i].duration * conduit_pct) / 100);
+        if (af[i].location != APPLY_NONE && af[i].modifier != 0)
+        {
+          int scaled_modifier = (abs(af[i].modifier) * conduit_pct) / 100;
+
+          if (scaled_modifier < 1)
+            scaled_modifier = 1;
+          af[i].modifier = af[i].modifier < 0 ? -scaled_modifier : scaled_modifier;
         }
       }
     }

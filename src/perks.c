@@ -13573,6 +13573,138 @@ void define_artificer_perks(void)
     perk->effect_value = 5;
     perk->effect_modifier = 0;
     perk->special_description = strdup("Your active golem takes 5% less damage per rank from area spells and cannot be knocked down by friendly effects resolved through the shared knockdown system.");
+
+    /*** CONSTRUCT COMMAND TREE - TIER III ***/
+
+    /* Reinforced Chassis II */
+    perk = &perk_list[PERK_ARTIFICER_REINFORCED_CHASSIS_II];
+    perk->id = PERK_ARTIFICER_REINFORCED_CHASSIS_II;
+    perk->name = strdup("Reinforced Chassis II");
+    perk->description = strdup("Your construct gains an additional +1 AC per rank and improved DR scaling against non-magical attacks.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_REINFORCED_CHASSIS_I;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 2;
+    perk->special_description = strdup("Your active golem gains an additional +1 AC and +2 DR per rank, with the added DR bypassed by magic weapons.");
+
+    /* Tactical Directives */
+    perk = &perk_list[PERK_ARTIFICER_TACTICAL_DIRECTIVES];
+    perk->id = PERK_ARTIFICER_TACTICAL_DIRECTIVES;
+    perk->name = strdup("Tactical Directives");
+    perk->description = strdup("Unlock guard and pressure directives for your construct, granting +1 tactical bonus per rank in the active stance.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_TARGETING_LATTICE_II;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Guard stance grants +1 AC per rank; pressure stance grants +1 hit per rank.");
+
+    /* Companion Conduit */
+    perk = &perk_list[PERK_ARTIFICER_COMPANION_CONDUIT];
+    perk->id = PERK_ARTIFICER_COMPANION_CONDUIT;
+    perk->name = strdup("Companion Conduit");
+    perk->description = strdup("A portion of your artificer support buffs on yourself transfer to your active construct.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_ARCANE_SERVOMOTORS;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 30;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("When you apply a non-violent artificer buff to yourself, your active golem receives a mirrored version at 30% effectiveness per rank.");
+
+    /* Salvage Discipline */
+    perk = &perk_list[PERK_ARTIFICER_SALVAGE_DISCIPLINE];
+    perk->id = PERK_ARTIFICER_SALVAGE_DISCIPLINE;
+    perk->name = strdup("Salvage Discipline");
+    perk->description = strdup("Gain +5% material chance and +5% mote chance when salvaging items.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_CONSTRUCT_TUNING_II;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 5;
+    perk->special_description = strdup("Salvage attempts gain +5% material recovery chance and +5% mote recovery chance, without increasing gold returns.");
+
+    /*** CONSTRUCT COMMAND TREE - TIER IV ***/
+
+    /* Master Construct Protocol */
+    perk = &perk_list[PERK_ARTIFICER_MASTER_CONSTRUCT_PROTOCOL];
+    perk->id = PERK_ARTIFICER_MASTER_CONSTRUCT_PROTOCOL;
+    perk->name = strdup("Master Construct Protocol");
+    perk->description = strdup("Your construct gains one extra low-potency attack each combat round.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_TACTICAL_DIRECTIVES;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = -4;
+    perk->special_description = strdup("Your active golem makes one additional primary attack each combat round at reduced accuracy.");
+
+    /* Fortress Engine */
+    perk = &perk_list[PERK_ARTIFICER_FORTRESS_ENGINE];
+    perk->id = PERK_ARTIFICER_FORTRESS_ENGINE;
+    perk->name = strdup("Fortress Engine");
+    perk->description = strdup("While your construct is active, you and it share 10% of incoming damage.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_REINFORCED_CHASSIS_II;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("While your active golem is present, 10% of incoming damage is redirected between you and the construct without reducing the original hit below 1.");
+
+    /* Arcana Siege Frame */
+    perk = &perk_list[PERK_ARTIFICER_ARCANA_SIEGE_FRAME];
+    perk->id = PERK_ARTIFICER_ARCANA_SIEGE_FRAME;
+    perk->name = strdup("Arcana Siege Frame");
+    perk->description = strdup("Your construct's basic attacks gain anti-resistance pressure and unlock a short-cooldown slam with knockback.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_CONSTRUCT_TUNING_II;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 30;
+    perk->special_description = strdup("Your active golem gains bonus damage against targets with DR or spell resistance and can use 'craft golem slam <target> <direction>' on a short cooldown.");
+
+    /* Omni-Forge Commander */
+    perk = &perk_list[PERK_ARTIFICER_OMNI_FORGE_COMMANDER];
+    perk->id = PERK_ARTIFICER_OMNI_FORGE_COMMANDER;
+    perk->name = strdup("Omni-Forge Commander");
+    perk->description = strdup("Out of combat, refit your active construct into defense, offense, or support mode; the next combat command is free.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 5;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_ARTIFICER_MASTER_CONSTRUCT_PROTOCOL;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 60;
+    perk->effect_modifier = 1;
+    perk->special_description = strdup("Unlocks 'craft golem refit <defense|offense|support>' once per long interval; support mode maximizes Companion Conduit transfer, and the next eligible golem command in combat ignores cooldown.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -27856,6 +27988,60 @@ int get_artificer_golem_safeguards_rank(struct char_data *ch)
   return get_perk_rank(ch, PERK_ARTIFICER_GOLEM_SAFEGUARDS, CLASS_ARTIFICER);
 }
 
+int get_artificer_reinforced_chassis_ii_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_REINFORCED_CHASSIS_II, CLASS_ARTIFICER);
+}
+
+int get_artificer_tactical_directives_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_TACTICAL_DIRECTIVES, CLASS_ARTIFICER);
+}
+
+int get_artificer_companion_conduit_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_COMPANION_CONDUIT, CLASS_ARTIFICER);
+}
+
+bool has_artificer_salvage_discipline(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_SALVAGE_DISCIPLINE);
+}
+
+bool has_artificer_master_construct_protocol(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_MASTER_CONSTRUCT_PROTOCOL);
+}
+
+bool has_artificer_fortress_engine(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_FORTRESS_ENGINE);
+}
+
+bool has_artificer_arcana_siege_frame(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_ARCANA_SIEGE_FRAME);
+}
+
+bool has_artificer_omni_forge_commander(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
+         has_perk(ch, PERK_ARTIFICER_OMNI_FORGE_COMMANDER);
+}
+
 bool has_artificer_battlefield_retrieval(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
@@ -27872,6 +28058,8 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   int tuning_rank = 0;
   int tuning_ii_rank = 0;
   int chassis_rank = 0;
+  int chassis_ii_rank = 0;
+  int tactical_rank = 0;
 
   if (!golem || !IS_NPC(golem) || !MOB_FLAGGED(golem, MOB_GOLEM))
     return;
@@ -27885,6 +28073,8 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
     tuning_rank = get_artificer_construct_tuning_i_rank(master);
     tuning_ii_rank = get_artificer_construct_tuning_ii_rank(master);
     chassis_rank = get_artificer_reinforced_chassis_i_rank(master);
+    chassis_ii_rank = get_artificer_reinforced_chassis_ii_rank(master);
+    tactical_rank = get_artificer_tactical_directives_rank(master);
   }
 
   GET_MAX_HIT(golem) = GET_REAL_MAX_HIT(golem);
@@ -27894,7 +28084,8 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   for (dr = GET_DR(golem); dr != NULL; dr = next_dr)
   {
     next_dr = dr->next;
-    if (dr->feat == PERK_ARTIFICER_REINFORCED_CHASSIS_I)
+    if (dr->feat == PERK_ARTIFICER_REINFORCED_CHASSIS_I ||
+        dr->feat == PERK_ARTIFICER_REINFORCED_CHASSIS_II)
     {
       struct damage_reduction_type *temp;
 
@@ -27935,6 +28126,34 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
     new_dr->bypass_val[2] = 0;
     new_dr->next = GET_DR(golem);
     GET_DR(golem) = new_dr;
+  }
+
+  if (chassis_ii_rank > 0)
+  {
+    struct damage_reduction_type *new_dr = NULL;
+
+    GET_AC(golem) -= chassis_ii_rank * 10;
+
+    CREATE(new_dr, struct damage_reduction_type, 1);
+    new_dr->duration = 0;
+    new_dr->amount = chassis_ii_rank * 2;
+    new_dr->max_damage = -1;
+    new_dr->spell = 0;
+    new_dr->feat = PERK_ARTIFICER_REINFORCED_CHASSIS_II;
+    new_dr->bypass_cat[0] = DR_BYPASS_CAT_MAGIC;
+    new_dr->bypass_val[0] = 0;
+    new_dr->bypass_cat[1] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[1] = 0;
+    new_dr->bypass_cat[2] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[2] = 0;
+    new_dr->next = GET_DR(golem);
+    GET_DR(golem) = new_dr;
+  }
+
+  if (master && !IS_NPC(master) && tactical_rank > 0 &&
+      master->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_GUARD)
+  {
+    GET_AC(golem) -= tactical_rank * 10;
   }
 
   if (current_hit >= old_max_hit)

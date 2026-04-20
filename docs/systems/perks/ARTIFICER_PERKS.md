@@ -298,13 +298,13 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
 10. **Tactical Directives**
       - Cost: 3 points per rank
    - Max Rank: 2
-   - Effect: Unlock stance commands (`guard`, `pressure`) and grant +1 tactical bonus per rank in active stance.
+   - Effect: Unlock `craft golem guard`, `craft golem pressure`, and `craft golem stance`. Guard grants +1 AC per rank; Pressure grants +1 hit per rank.
    - Prerequisite: Targeting Lattice II (1)
 
 11. **Companion Conduit**
       - Cost: 3 points per rank
    - Max Rank: 2
-   - Effect: A portion of your infusion/support buffs transfer to construct at 30% per rank effectiveness.
+   - Effect: Non-violent artificer self-buffs, including device-applied self-buffs, mirror to your active golem at 30% effectiveness per rank.
    - Prerequisite: Arcane Servomotors (1)
 
 12. **Salvage Discipline**
@@ -319,25 +319,25 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
 13. **Master Construct Protocol**
       - Cost: 5 points
    - Max Rank: 1
-   - Effect: Construct gains one extra action-equivalent command each combat round with reduced potency.
+   - Effect: Your active golem makes one extra primary attack each combat round at reduced accuracy.
    - Prerequisite: Tactical Directives (2), Targeting Lattice II (2)
 
 14. **Fortress Engine**
       - Cost: 5 points
    - Max Rank: 1
-   - Effect: While construct is active, you and construct share 10% incoming damage (cannot reduce below 1).
+   - Effect: While your active golem is present in the room, 10% of incoming damage is redirected between artificer and construct without reducing the original hit below 1.
    - Prerequisite: Reinforced Chassis II (2), Golem Safeguards (2)
 
 15. **Arcana Siege Frame**
       - Cost: 5 points
    - Max Rank: 1
-   - Effect: Construct basic attacks gain conditional anti-resistance profile and one short-cooldown slam with knockback.
+   - Effect: Your active golem gains +2 damage against targets with DR or spell resistance and unlocks `craft golem slam <target> <direction>` on a 30-second cooldown. Slam deals force damage and either pushes a smaller target in the chosen direction or knocks it down.
    - Prerequisite: Construct Tuning II (2), Companion Conduit (1)
 
 16. **Omni-Forge Commander**
       - Cost: 5 points
    - Max Rank: 1
-   - Effect: Once per long interval, instantly refit active construct mode (defense/offense/support) out of combat; first command in next combat is free.
+   - Effect: Unlock `craft golem refit <defense|offense|support>` out of combat on a 1-hour cooldown. Refit swaps the golem to guard, pressure, or support mode; support mode raises Companion Conduit transfer to 100%, and the next eligible combat command ignores cooldown.
    - Prerequisite: Master Construct Protocol, Arcana Siege Frame
 
 ---
@@ -347,7 +347,7 @@ Artificers in Luminari blend arcane method, magical engineering, and practical b
 ### Crafting restraint policy (for martificer balance)
 Only three perks directly improve crafting/salvage throughput:
 - **Efficient Crafter** (modest +2 check, 10% time only)
-- **Salvage Discipline** (+material/mote chance only, no gold boost)
+- **Salvage Discipline** (+material/mote chance in `do_salvage()` only, no gold boost)
 - Existing baseline class feat **Elbow Grease** remains primary crafting driver
 
 This keeps artificer power centered on combat invention, support reactions, and construct play rather than economy dominance.

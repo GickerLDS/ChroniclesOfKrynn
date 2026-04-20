@@ -4550,11 +4550,23 @@
 #define PERK_ARTIFICER_ARCANE_SERVOMOTORS 1838
 #define PERK_ARTIFICER_GOLEM_SAFEGUARDS 1839
 
+/* Construct Command - Tier 3 */
+#define PERK_ARTIFICER_REINFORCED_CHASSIS_II 1840
+#define PERK_ARTIFICER_TACTICAL_DIRECTIVES 1841
+#define PERK_ARTIFICER_COMPANION_CONDUIT 1842
+#define PERK_ARTIFICER_SALVAGE_DISCIPLINE 1843
+
+/* Construct Command - Tier 4 */
+#define PERK_ARTIFICER_MASTER_CONSTRUCT_PROTOCOL 1844
+#define PERK_ARTIFICER_FORTRESS_ENGINE 1845
+#define PERK_ARTIFICER_ARCANA_SIEGE_FRAME 1846
+#define PERK_ARTIFICER_OMNI_FORGE_COMMANDER 1847
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1840
+#define NUM_PERKS 1848
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
@@ -6464,6 +6476,11 @@ struct char_ability_data
   sbyte con;   /**< Constitution */
   sbyte cha;   /**< Charisma */
 
+
+#define GOLEM_DIRECTIVE_NONE 0
+#define GOLEM_DIRECTIVE_GUARD 1
+#define GOLEM_DIRECTIVE_PRESSURE 2
+#define GOLEM_DIRECTIVE_SUPPORT 3
   /*unused*/ sbyte str_add; /**< Strength multiplier if str = 18. Usually from 0 to 100 */
 };
 #define NUM_ABILITY_MODS 6
@@ -6565,6 +6582,7 @@ struct char_special_data_saved
   int golem_stored_size;                     // Size of golem stored for recall (GOLEM_SIZE_*)
   int golem_stored_hp;                       // HP preserved for quick battlefield redeploys
   time_t golem_recall_cooldown;              // When golem can be recalled again
+  int golem_directive;                       // Active construct directive (GOLEM_DIRECTIVE_*)
 };
 
 /* not saved player data used for condensed combat */
@@ -7209,6 +7227,11 @@ struct player_special_data_saved
   bool flash_insight_survival_only; /**< Pending Flash Insight applies only to death/poison-style saves */
   time_t aegis_protocol_cooldown; /**< Timestamp until Aegis Protocol can trigger again */
   time_t soulbound_infusion_cooldown; /**< Timestamp until Soulbound Infusion can trigger again */
+
+  /* Artificer Construct Command tracking */
+  time_t siege_frame_slam_cooldown; /**< Timestamp until Arcana Siege Frame slam can be used again */
+  time_t omni_forge_commander_cooldown; /**< Timestamp until Omni-Forge Commander refit can be used again */
+  bool omni_forge_free_command; /**< First eligible golem command in the next combat ignores cooldown */
 
   /* Wizard Evoker perks */
   time_t

@@ -38,6 +38,7 @@
 #include "item.h"
 #include "feats.h"
 #include "alchemy.h"
+#include "perks.h"
 #include "mysql.h"
 #include "metamagic_science.h"
 #include "treasure.h"
@@ -9449,6 +9450,7 @@ ACMD(do_salvage)
   int material_amount = 0;
   int mote_amount = 0;
   int level_adjustment = 0;
+  int salvage_bonus = 0;
 
   one_argument(argument, arg, sizeof(arg));
 
@@ -9507,6 +9509,9 @@ ACMD(do_salvage)
 
   /* Calculate chance for crafting material: (artificer_level / 3) + 10 */
   chance = (artificer_level / 3) + 10;
+  salvage_bonus = has_artificer_salvage_discipline(ch) ? 5 : 0;
+
+  chance += salvage_bonus;
 
   /* Give gold to the character */
   increase_gold(ch, gold_value);
@@ -9536,7 +9541,8 @@ ACMD(do_salvage)
   }
 
   /* Check for elemental mote rewards (half the material chance) */
-  mote_chance = chance / 2;
+  mote_chance = ((artificer_level / 3) + 10) / 2;
+  mote_chance += salvage_bonus;
   for (i = 0; i < MAX_OBJ_AFFECT; i++)
   {
     if (obj->affected[i].location != APPLY_NONE && rand_number(1, 100) <= mote_chance)

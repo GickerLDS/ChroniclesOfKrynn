@@ -52,6 +52,8 @@
 #include "perks.h"
 #include "routing.h"
 #include "movement_cost.h"
+#include "crafting_new.h"
+#include "crafting_new.h"
 
 /* toggle for debug mode
    true = annoying messages used for debugging
@@ -115,6 +117,9 @@ struct attack_hit_type attack_damage_type_text[NUM_ATTACK_DAMAGE_TYPE_TEXT] = {
 
 };
 
+  if (vict && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      has_artificer_arcana_siege_frame(ch->master) &&
+      (GET_DR(vict) != NULL || GET_SPELL_RES(vict) > 0))
 /* local (file scope only) variables */
 static struct char_data *next_combat_list = NULL;
 
@@ -255,6 +260,9 @@ void guard_check(struct char_data *ch, struct char_data *vict)
       }
     }
   }
+    if (dam > 1 && victim)
+    {
+      if (!IS_NPC(victim) && has_artificer_fortress_engine(victim))
 }
 
 /* rewritten subfunction
@@ -758,6 +766,8 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
    */
 
   /**********/
+  if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      has_artificer_master_construct_protocol(ch->master))
   /* bonus types */
 
   /* bonus type racial */
@@ -6191,6 +6201,43 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
     }
   }
 
+  if (dam > 1 && victim)
+  {
+    if (!IS_NPC(victim) && has_artificer_fortress_engine(victim))
+    {
+      struct char_data *golem = get_active_golem_follower(victim);
+      int shared_damage = dam / 10;
+
+      if (golem && IN_ROOM(golem) == IN_ROOM(victim) && GET_POS(golem) > POS_DEAD &&
+          shared_damage > 0)
+      {
+        shared_damage = MIN(shared_damage, dam - 1);
+        dam -= shared_damage;
+        GET_HIT(golem) -= shared_damage;
+        update_pos(golem);
+        send_to_char(victim, "Fortress Engine diverts %d damage to your construct.\r\n",
+                     shared_damage);
+      }
+    }
+    else if (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_GOLEM) && victim->master &&
+             !IS_NPC(victim->master) && has_artificer_fortress_engine(victim->master) &&
+             IN_ROOM(victim->master) == IN_ROOM(victim) && GET_POS(victim->master) > POS_DEAD)
+    {
+      int shared_damage = dam / 10;
+
+      if (shared_damage > 0)
+      {
+        shared_damage = MIN(shared_damage, dam - 1);
+        dam -= shared_damage;
+        GET_HIT(victim->master) -= shared_damage;
+        update_pos(victim->master);
+        send_to_char(victim->master,
+                     "Fortress Engine diverts %d damage from your construct to you.\r\n",
+                     shared_damage);
+      }
+    }
+  }
+
   GET_HIT(victim) -= dam;
 
   if (dam > 0 && !IS_NPC(victim) && GROUP(victim) && is_spell_or_power(w_type) == 2)
@@ -6820,6 +6867,15 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
       if (display_mode)
         send_to_char(ch, "Targeting Lattice: \tR+%d\tn\r\n", targeting_lattice_bonus);
     }
+  }
+
+  if (vict && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      has_artificer_arcana_siege_frame(ch->master) &&
+      (GET_DR(vict) != NULL || GET_SPELL_RES(vict) > 0))
+  {
+    dambonus += 2;
+    if (display_mode)
+      send_to_char(ch, "Arcana Siege Frame: \tR+2\tn\r\n");
   }
 
   if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master))
@@ -11949,6 +12005,12 @@ int attack_roll(struct char_data *ch,     /* Attacker */
     attack_bonus += get_artificer_targeting_lattice_i_rank(ch->master);
   }
 
+  if (victim && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      ch->master->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_PRESSURE)
+  {
+    attack_bonus += get_artificer_tactical_directives_rank(ch->master);
+  }
+
   /* Perfect Deflection: negate one incoming ranged/bomb attack and reflect force damage */
   if (victim && AFF_FLAGGED(victim, AFF_PERFECT_DEFLECTION_ACTIVE) &&
       (attack_type == ATTACK_TYPE_RANGED || attack_type == ATTACK_TYPE_BOMB_TOSS))
@@ -12033,6 +12095,12 @@ int attack_roll_with_critical(struct char_data *ch,     /* Attacker */
       FIGHTING(ch->master) == victim)
   {
     attack_bonus += get_artificer_targeting_lattice_i_rank(ch->master);
+  }
+
+  if (victim && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      ch->master->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_PRESSURE)
+  {
+    attack_bonus += get_artificer_tactical_directives_rank(ch->master);
   }
 
   int diceroll = d20(ch);
@@ -16158,6 +16226,27 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
         compute_hit_damage(ch, ch, TYPE_UNDEFINED_WTYPE, NO_DICEROLL, MODE_DISPLAY_OFFHAND, FALSE,
                            ATTACK_TYPE_OFFHAND, 0);
       }
+    }
+  }
+
+  if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
+      has_artificer_master_construct_protocol(ch->master))
+  {
+    numAttacks++;
+    if (mode == NORMAL_ATTACK_ROUTINE)
+    {
+      if (valid_fight_cond(ch, FALSE) && (phase == PHASE_0 || phase == PHASE_3))
+      {
+        send_to_char(ch->master, "\tW[Master Construct Protocol]\tn ");
+        hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, -4, ATTACK_TYPE_PRIMARY);
+      }
+    }
+    else if (mode == DISPLAY_ROUTINE_POTENTIAL)
+    {
+      send_to_char(ch, "Mainhand (Master Construct Protocol), Attack Bonus:  %d; ",
+                   compute_attack_bonus(ch, ch, ATTACK_TYPE_PRIMARY) - 4);
+      compute_hit_damage(ch, ch, TYPE_UNDEFINED_WTYPE, NO_DICEROLL, MODE_DISPLAY_PRIMARY, FALSE,
+                         ATTACK_TYPE_PRIMARY, 0);
     }
   }
   return numAttacks;

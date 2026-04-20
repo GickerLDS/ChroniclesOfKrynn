@@ -341,6 +341,14 @@ int get_artificer_construct_tuning_ii_rank(struct char_data *ch);
 int get_artificer_targeting_lattice_ii_rank(struct char_data *ch);
 int get_artificer_arcane_servomotors_rank(struct char_data *ch);
 int get_artificer_golem_safeguards_rank(struct char_data *ch);
+int get_artificer_reinforced_chassis_ii_rank(struct char_data *ch);
+int get_artificer_tactical_directives_rank(struct char_data *ch);
+int get_artificer_companion_conduit_rank(struct char_data *ch);
+bool has_artificer_salvage_discipline(struct char_data *ch);
+bool has_artificer_master_construct_protocol(struct char_data *ch);
+bool has_artificer_fortress_engine(struct char_data *ch);
+bool has_artificer_arcana_siege_frame(struct char_data *ch);
+bool has_artificer_omni_forge_commander(struct char_data *ch);
 bool has_artificer_battlefield_retrieval(struct char_data *ch);
 void sync_artificer_construct_command_bonuses(struct char_data *golem);
 

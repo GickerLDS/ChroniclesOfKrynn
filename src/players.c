@@ -523,6 +523,9 @@ int load_char(const char *name, struct char_data *ch)
     ch->player_specials->saved.flash_insight_survival_only = FALSE;
     ch->player_specials->saved.aegis_protocol_cooldown = 0;
     ch->player_specials->saved.soulbound_infusion_cooldown = 0;
+    ch->player_specials->saved.siege_frame_slam_cooldown = 0;
+    ch->player_specials->saved.omni_forge_commander_cooldown = 0;
+    ch->player_specials->saved.omni_forge_free_command = FALSE;
 
     for (i = 0; i < MAX_CURRENT_QUESTS; i++)
     { /* loop through all the character's quest slots */
@@ -687,6 +690,7 @@ int load_char(const char *name, struct char_data *ch)
     ch->char_specials.saved.golem_stored_size = GOLEM_SIZE_SMALL;
     ch->char_specials.saved.golem_stored_hp = 0;
     ch->char_specials.saved.golem_recall_cooldown = 0;
+    ch->char_specials.saved.golem_directive = GOLEM_DIRECTIVE_NONE;
 
     for (i = 0; i < NUM_LANGUAGES; i++)
       ch->player_specials->saved.languages_known[i] = 0;
@@ -1135,6 +1139,8 @@ int load_char(const char *name, struct char_data *ch)
           ch->char_specials.saved.golem_stored_hp = atoi(line);
         else if (!strcmp(tag, "GolC"))
           ch->char_specials.saved.golem_recall_cooldown = atol(line);
+        else if (!strcmp(tag, "GolD"))
+          ch->char_specials.saved.golem_directive = atoi(line);
         else if (!strcmp(tag, "God "))
           GET_DEITY(ch) = atoi(line);
         else if (!strcmp(tag, "GMCP") && ch->desc)
@@ -1502,6 +1508,30 @@ int load_char(const char *name, struct char_data *ch)
           if (sscanf(line, "%ld", &timestamp) == 1)
           {
             ch->player_specials->saved.soulbound_infusion_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PASM"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.siege_frame_slam_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PAOM"))
+        {
+          long timestamp;
+          if (sscanf(line, "%ld", &timestamp) == 1)
+          {
+            ch->player_specials->saved.omni_forge_commander_cooldown = (time_t)timestamp;
+          }
+        }
+        else if (!strcmp(tag, "PAOF"))
+        {
+          int enabled;
+          if (sscanf(line, "%d", &enabled) == 1)
+          {
+            ch->player_specials->saved.omni_forge_free_command = (enabled != 0);
           }
         }
         else if (!strcmp(tag, "PMxS"))
@@ -2779,6 +2809,8 @@ void save_char(struct char_data *ch, int mode)
   }
   if (ch->char_specials.saved.golem_recall_cooldown != 0)
     BUFFER_WRITE("GolC: %ld\n", ch->char_specials.saved.golem_recall_cooldown);
+  if (ch->char_specials.saved.golem_directive != GOLEM_DIRECTIVE_NONE)
+    BUFFER_WRITE("GolD: %d\n", ch->char_specials.saved.golem_directive);
 
   if (DRAGON_MAGIC_USES(ch) != PFDEF_DRAGON_MAGIC_USES)
     BUFFER_WRITE("DrMU: %d\n", DRAGON_MAGIC_USES(ch));
@@ -3336,6 +3368,9 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("PAFS: %d\n", ch->player_specials->saved.flash_insight_survival_only ? 1 : 0);
   BUFFER_WRITE("PAAP: %ld\n", (long)ch->player_specials->saved.aegis_protocol_cooldown);
   BUFFER_WRITE("PASI: %ld\n", (long)ch->player_specials->saved.soulbound_infusion_cooldown);
+  BUFFER_WRITE("PASM: %ld\n", (long)ch->player_specials->saved.siege_frame_slam_cooldown);
+  BUFFER_WRITE("PAOM: %ld\n", (long)ch->player_specials->saved.omni_forge_commander_cooldown);
+  BUFFER_WRITE("PAOF: %d\n", ch->player_specials->saved.omni_forge_free_command ? 1 : 0);
 
   /* Save Maximize Spell cooldown */
   BUFFER_WRITE("PMxS: %ld\n", (long)ch->player_specials->saved.maximize_spell_cooldown);
