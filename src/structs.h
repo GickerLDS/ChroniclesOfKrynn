@@ -4544,11 +4544,17 @@
 #define PERK_ARTIFICER_REINFORCED_CHASSIS_I 1834
 #define PERK_ARTIFICER_BATTLEFIELD_RETRIEVAL 1835
 
+/* Construct Command - Tier 2 */
+#define PERK_ARTIFICER_CONSTRUCT_TUNING_II 1836
+#define PERK_ARTIFICER_TARGETING_LATTICE_II 1837
+#define PERK_ARTIFICER_ARCANE_SERVOMOTORS 1838
+#define PERK_ARTIFICER_GOLEM_SAFEGUARDS 1839
+
 /* ============================================================================
  * TOTAL PERK COUNT
  * ============================================================================ */
 /* Total number of defined perks - update this as perks are added */
-#define NUM_PERKS 1836
+#define NUM_PERKS 1840
 
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20

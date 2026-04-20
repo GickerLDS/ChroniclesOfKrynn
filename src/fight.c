@@ -6116,6 +6116,26 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
     }
   }
 
+  if (dam > 0 && victim && IS_NPC(victim) && MOB_FLAGGED(victim, MOB_GOLEM) && victim->master &&
+      !IS_NPC(victim->master))
+  {
+    int targeting_lattice_reduction = 0;
+    int golem_safeguards_reduction = 0;
+
+    if (ch && FIGHTING(victim->master) == ch)
+      targeting_lattice_reduction = get_artificer_targeting_lattice_ii_rank(victim->master) * 5;
+
+    if (is_spell_or_power(w_type) == 2 && w_type > 0 && w_type < NUM_SPELLS &&
+        IS_SET(spell_info[w_type].routines, MAG_AREAS))
+      golem_safeguards_reduction = get_artificer_golem_safeguards_rank(victim->master) * 5;
+
+    if (targeting_lattice_reduction > 0)
+      dam = dam * (100 - targeting_lattice_reduction) / 100;
+
+    if (golem_safeguards_reduction > 0)
+      dam = dam * (100 - golem_safeguards_reduction) / 100;
+  }
+
   /* Paladin Sacred Defender perk: Divine Sacrifice - take damage for ally */
   if (!IS_NPC(victim) && GROUP(victim) && (GET_HIT(victim) - dam) <= 0)
   {
@@ -6793,11 +6813,24 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
       FIGHTING(ch->master) == vict)
   {
     targeting_lattice_bonus = get_artificer_targeting_lattice_i_rank(ch->master);
+    targeting_lattice_bonus += get_artificer_targeting_lattice_ii_rank(ch->master);
     if (targeting_lattice_bonus > 0)
     {
       dambonus += targeting_lattice_bonus;
       if (display_mode)
-        send_to_char(ch, "Targeting Lattice I: \tR+%d\tn\r\n", targeting_lattice_bonus);
+        send_to_char(ch, "Targeting Lattice: \tR+%d\tn\r\n", targeting_lattice_bonus);
+    }
+  }
+
+  if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master))
+  {
+    int construct_tuning_ii_bonus = get_artificer_construct_tuning_ii_rank(ch->master);
+
+    if (construct_tuning_ii_bonus > 0)
+    {
+      dambonus += construct_tuning_ii_bonus;
+      if (display_mode)
+        send_to_char(ch, "Construct Tuning II: \tR+%d\tn\r\n", construct_tuning_ii_bonus);
     }
   }
 

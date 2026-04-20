@@ -98,6 +98,14 @@ int get_speed(struct char_data *ch, sbyte to_display)
   if (affected_by_spell(ch, AFFECT_RALLYING_CRY))
     speed += 5;
 
+  if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master))
+  {
+    int servomotor_rank = get_artificer_arcane_servomotors_rank(ch->master);
+
+    if (servomotor_rank > 0)
+      speed = speed * (100 + (servomotor_rank * 5)) / 100;
+  }
+
   // if they're slowed, it's half regardless.  Same with entangled.
   // if they're blind, they can make an acrobatics check against dc 10
   // to avoid halving their speed, but we only want to do this is the

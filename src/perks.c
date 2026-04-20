@@ -13507,6 +13507,72 @@ void define_artificer_perks(void)
     perk->effect_value = 30;
     perk->effect_modifier = 0;
     perk->special_description = strdup("craft golem recall can now stow an active golem and redeploy it after a short lockout while preserving its HP.");
+
+    /*** CONSTRUCT COMMAND TREE - TIER II ***/
+
+    /* Construct Tuning II */
+    perk = &perk_list[PERK_ARTIFICER_CONSTRUCT_TUNING_II];
+    perk->id = PERK_ARTIFICER_CONSTRUCT_TUNING_II;
+    perk->name = strdup("Construct Tuning II");
+    perk->description = strdup("Your commanded construct gains an additional +3% max HP and +1 damage per rank.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_CONSTRUCT_TUNING_I;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 3;
+    perk->effect_modifier = 1;
+    perk->special_description = strdup("Your active golem gains an additional +3% maximum hit points and +1 damage per rank.");
+
+    /* Targeting Lattice II */
+    perk = &perk_list[PERK_ARTIFICER_TARGETING_LATTICE_II];
+    perk->id = PERK_ARTIFICER_TARGETING_LATTICE_II;
+    perk->name = strdup("Targeting Lattice II");
+    perk->description = strdup("Your construct gains an additional +1 damage per rank against your current target and takes 5% less damage per rank from that target.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_TARGETING_LATTICE_I;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 5;
+    perk->special_description = strdup("Your active golem gains +1 damage per rank against your current target and takes 5% less damage per rank from that target.");
+
+    /* Arcane Servomotors */
+    perk = &perk_list[PERK_ARTIFICER_ARCANE_SERVOMOTORS];
+    perk->id = PERK_ARTIFICER_ARCANE_SERVOMOTORS;
+    perk->name = strdup("Arcane Servomotors");
+    perk->description = strdup("Your construct gains +5% movement and reposition speed per rank.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_BATTLEFIELD_RETRIEVAL;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Your active golem gains +5% movement speed per rank through enhanced servomotors.");
+
+    /* Golem Safeguards */
+    perk = &perk_list[PERK_ARTIFICER_GOLEM_SAFEGUARDS];
+    perk->id = PERK_ARTIFICER_GOLEM_SAFEGUARDS;
+    perk->name = strdup("Golem Safeguards");
+    perk->description = strdup("Your construct takes 5% less area-spell damage per rank and ignores friendly knockdown attempts.");
+    perk->associated_class = CLASS_ARTIFICER;
+    perk->perk_category = PERK_CATEGORY_CONSTRUCT_COMMAND;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_ARTIFICER_REINFORCED_CHASSIS_I;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Your active golem takes 5% less damage per rank from area spells and cannot be knocked down by friendly effects resolved through the shared knockdown system.");
 }
 
 /* Alchemist Mutagenist helper implementations */
@@ -27758,6 +27824,38 @@ int get_artificer_reinforced_chassis_i_rank(struct char_data *ch)
   return get_perk_rank(ch, PERK_ARTIFICER_REINFORCED_CHASSIS_I, CLASS_ARTIFICER);
 }
 
+int get_artificer_construct_tuning_ii_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_CONSTRUCT_TUNING_II, CLASS_ARTIFICER);
+}
+
+int get_artificer_targeting_lattice_ii_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_TARGETING_LATTICE_II, CLASS_ARTIFICER);
+}
+
+int get_artificer_arcane_servomotors_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_ARCANE_SERVOMOTORS, CLASS_ARTIFICER);
+}
+
+int get_artificer_golem_safeguards_rank(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || CLASS_LEVEL(ch, CLASS_ARTIFICER) <= 0)
+    return 0;
+
+  return get_perk_rank(ch, PERK_ARTIFICER_GOLEM_SAFEGUARDS, CLASS_ARTIFICER);
+}
+
 bool has_artificer_battlefield_retrieval(struct char_data *ch)
 {
   return ch && !IS_NPC(ch) && CLASS_LEVEL(ch, CLASS_ARTIFICER) > 0 &&
@@ -27772,6 +27870,7 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   int old_max_hit = 0;
   int current_hit = 0;
   int tuning_rank = 0;
+  int tuning_ii_rank = 0;
   int chassis_rank = 0;
 
   if (!golem || !IS_NPC(golem) || !MOB_FLAGGED(golem, MOB_GOLEM))
@@ -27784,6 +27883,7 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   if (master && !IS_NPC(master))
   {
     tuning_rank = get_artificer_construct_tuning_i_rank(master);
+    tuning_ii_rank = get_artificer_construct_tuning_ii_rank(master);
     chassis_rank = get_artificer_reinforced_chassis_i_rank(master);
   }
 
@@ -27808,6 +27908,11 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   {
     GET_MAX_HIT(golem) += (GET_REAL_MAX_HIT(golem) * (tuning_rank * 2)) / 100;
     GET_HITROLL(golem) += tuning_rank;
+  }
+
+  if (tuning_ii_rank > 0)
+  {
+    GET_MAX_HIT(golem) += (GET_REAL_MAX_HIT(golem) * (tuning_ii_rank * 3)) / 100;
   }
 
   if (chassis_rank > 0)

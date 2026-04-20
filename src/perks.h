@@ -337,6 +337,10 @@ int get_artificer_grand_artifice_save_bonus(struct char_data *ch);
 int get_artificer_construct_tuning_i_rank(struct char_data *ch);
 int get_artificer_targeting_lattice_i_rank(struct char_data *ch);
 int get_artificer_reinforced_chassis_i_rank(struct char_data *ch);
+int get_artificer_construct_tuning_ii_rank(struct char_data *ch);
+int get_artificer_targeting_lattice_ii_rank(struct char_data *ch);
+int get_artificer_arcane_servomotors_rank(struct char_data *ch);
+int get_artificer_golem_safeguards_rank(struct char_data *ch);
 bool has_artificer_battlefield_retrieval(struct char_data *ch);
 void sync_artificer_construct_command_bonuses(struct char_data *golem);
 

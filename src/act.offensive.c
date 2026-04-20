@@ -1492,6 +1492,27 @@ bool perform_knockdown(struct char_data *ch, struct char_data *vict, int skill, 
     return FALSE;
   }
 
+  if (IS_NPC(vict) && MOB_FLAGGED(vict, MOB_GOLEM) && vict->master && !IS_NPC(vict->master) &&
+      get_artificer_golem_safeguards_rank(vict->master) > 0)
+  {
+    bool friendly_knockdown = FALSE;
+
+    if (ch == vict->master)
+      friendly_knockdown = TRUE;
+    else if (ch && ch->master == vict->master)
+      friendly_knockdown = TRUE;
+    else if (ch && !IS_NPC(ch) && GROUP(vict->master) && GROUP(ch) == GROUP(vict->master))
+      friendly_knockdown = TRUE;
+
+    if (friendly_knockdown)
+    {
+      if (display)
+        send_to_char(ch, "%s's golem safeguards keep the construct anchored in place.\r\n",
+                     GET_NAME(vict->master));
+      return FALSE;
+    }
+  }
+
   if (ROOM_FLAGGED(IN_ROOM(ch), ROOM_SINGLEFILE) && ch->next_in_room != vict &&
       vict->next_in_room != ch && skill != SPELL_BANISHING_BLADE)
   {
