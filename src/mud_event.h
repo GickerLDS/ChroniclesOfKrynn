@@ -207,6 +207,8 @@ typedef enum
   eBEACON_OF_HOPE,                   /* Beacon of Hope daily cooldown */
   eFIST_OF_FOUR_THUNDERS,            /* Fist of Four Thunders lightning strike */
   eSAVAGE_CHARGE_USED,               /* Savage Charge used this rage */
+  eBERSERKER_FRENZY_COOLDOWN,        /* Frenzied Berserker 5-minute cooldown */
+  eBERSERKER_FRENZY_USED,            /* Frenzied Berserker used this rage */
   eDIVINE_SACRIFICE,                 /* Divine Sacrifice damage transfer cooldown */
   eRADIANT_AURA,                     /* Radiant Aura periodic undead damage */
   ePALADIN_CHANNEL_ENERGY,           /* Paladin Channel Energy perk daily uses */

@@ -427,6 +427,9 @@ struct mud_event_list mud_event_index[] = {
     {"Fist of Four Thunders", event_fist_of_four_thunders, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED,
      0},
     {"Savage Charge Used", event_countdown, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED, 0},
+    {"Frenzied Berserker Cooldown", event_countdown, EVENT_CHAR,
+     "You can unleash your frenzy again.", NULL, FEAT_UNDEFINED, 0},
+    {"Frenzied Berserker Used", event_countdown, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED, 0},
     {"Divine Sacrifice", event_countdown, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED, 0},
     // 175
     {"Radiant Aura", event_radiant_aura, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED, 0},

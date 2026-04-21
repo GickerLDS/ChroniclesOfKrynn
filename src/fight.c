@@ -7091,10 +7091,7 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
     int righteous_dice = get_inquisitor_righteous_strike_dice(ch);
     if (righteous_dice > 0)
     {
-      int righteous_damage = 0;
-      int i;
-      for (i = 0; i < righteous_dice * 2; i++)
-        righteous_damage += dice(2, 6);
+      int righteous_damage = dice(righteous_dice * 2, 6);
 
       dambonus += righteous_damage;
       ch->player_specials->inq_righteous_strike_rounds--; /* Consume the bonus after use */
@@ -8505,6 +8502,11 @@ int determine_critical_multiplier(struct char_data *ch, struct obj_data *wielded
     crit_multi++;
   }
 
+  if (!IS_NPC(ch) && affected_by_spell(ch, AFFECT_BERSERKER_FRENZY))
+  {
+    crit_multi += 2;
+  }
+
   /* establish some caps */
   if (crit_multi < CRIT_MULTI_MIN)
     crit_multi = CRIT_MULTI_MIN;
@@ -9188,6 +9190,28 @@ int compute_hit_damage(struct char_data *ch, struct char_data *victim, int w_typ
           dam += dice(dev_crit_dice, 6);
         }
 
+        if (has_berserker_blood_frenzy(ch) && affected_by_spell(ch, SKILL_RAGE) &&
+            rand_number(1, 100) <= 20)
+        {
+          struct affected_type af;
+
+          if (affected_by_spell(ch, AFFECT_BERSERKER_BLOOD_FRENZY))
+            affect_from_char(ch, AFFECT_BERSERKER_BLOOD_FRENZY);
+
+          new_affect(&af);
+          af.spell = AFFECT_BERSERKER_BLOOD_FRENZY;
+          af.duration = 3;
+          af.location = APPLY_SPECIAL;
+          af.modifier = 1;
+          af.bonus_type = BONUS_TYPE_CIRCUMSTANCE;
+          SET_BIT_AR(af.bitvector, AFF_HASTE);
+          affect_to_char(ch, &af);
+
+          send_to_char(ch, "\tRYour blood frenzy explodes into a burst of speed!\tn\r\n");
+          act("\tR$n flies into a blood frenzy, moving with terrifying speed!\tn", FALSE, ch, 0,
+              0, TO_ROOM);
+        }
+
         /* Carnage perk - splash damage on crits */
         if (has_berserker_carnage(ch))
         {
@@ -9389,6 +9413,21 @@ int compute_hit_damage(struct char_data *ch, struct char_data *victim, int w_typ
         }
       }
     } /* END critical hit */
+
+    if (AFF_FLAGGED(ch, AFF_CHARGING) && affected_by_spell(ch, AFFECT_BERSERKER_DEATH_FROM_ABOVE))
+    {
+      dam += damage_holder;
+
+      if (victim)
+      {
+        act("\tY[\tRDEATH FROM ABOVE\tY]\tn You crash into $N with bone-rattling force!", FALSE,
+            ch, 0, victim, TO_CHAR);
+        act("\tY[\tRDEATH FROM ABOVE\tY]\tn $n crashes into you with bone-rattling force!",
+            FALSE, ch, 0, victim, TO_VICT);
+        act("\tY[\tRDEATH FROM ABOVE\tY]\tn $n crashes into $N with bone-rattling force!",
+            FALSE, ch, 0, victim, TO_NOTVICT);
+      }
+    }
 
     /* mounted charging character using charging weapons, whether this goes up
      * top or bottom of dam calculation can have a dramatic effect on this number */
@@ -15182,6 +15221,43 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
       act("\tRYour overwhelming power attack staggers $N!\tn", FALSE, ch, 0, victim, TO_CHAR);
       act("\tR$n's overwhelming power attack staggers YOU!\tn", FALSE, ch, 0, victim, TO_VICT);
       act("\tR$n's overwhelming power attack staggers $N!\tn", FALSE, ch, 0, victim, TO_NOTVICT);
+    }
+  }
+
+  if (!IS_NPC(ch) && has_berserker_relentless_assault(ch) &&
+      affected_by_spell(ch, AFFECT_BERSERKER_BLOOD_FRENZY) && AFF_FLAGGED(ch, AFF_POWER_ATTACK) &&
+      dam > 0 && victim && !DEAD(victim))
+  {
+    struct affected_type *af = NULL;
+    int current_penalty = 0;
+
+    for (af = victim->affected; af; af = af->next)
+    {
+      if (af->spell == AFFECT_BERSERKER_RELENTLESS_ASSAULT && af->location == APPLY_AC_NEW &&
+          af->modifier < 0)
+      {
+        current_penalty += -af->modifier;
+      }
+    }
+
+    if (current_penalty < 5)
+    {
+      struct affected_type debuff;
+
+      new_affect(&debuff);
+      debuff.spell = AFFECT_BERSERKER_RELENTLESS_ASSAULT;
+      debuff.duration = 3;
+      debuff.location = APPLY_AC_NEW;
+      debuff.modifier = -1;
+      debuff.bonus_type = BONUS_TYPE_UNDEFINED;
+      affect_to_char(victim, &debuff);
+
+      act("\tRYour relentless assault tears away $N's defenses!\tn", FALSE, ch, 0, victim,
+          TO_CHAR);
+      act("\tR$n's relentless assault tears away your defenses!\tn", FALSE, ch, 0, victim,
+          TO_VICT);
+      act("\tR$n's relentless assault tears away $N's defenses!\tn", FALSE, ch, 0, victim,
+          TO_NOTVICT);
     }
   }
 

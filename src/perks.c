@@ -3005,9 +3005,8 @@ int get_inquisitor_greater_judgment_type(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
     return 0;
-  /* This would be stored in a character variable or affect modifier */
-  /* Placeholder - implement via character struct if needed */
-  return 0;
+
+  return ch->player_specials->inq_greater_judgment_type;
 }
 
 /**
@@ -23703,59 +23702,86 @@ bool has_druid_elemental_mastery(struct char_data *ch)
 
 int get_berserker_power_attack_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_POWER_ATTACK_MASTERY_1, CLASS_BERSERKER) +
+         (get_perk_rank(ch, PERK_BERSERKER_POWER_ATTACK_MASTERY_2, CLASS_BERSERKER) * 2);
 }
 int get_berserker_rage_damage_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return (get_perk_rank(ch, PERK_BERSERKER_RAGE_DAMAGE_1, CLASS_BERSERKER) * 2) +
+         (get_perk_rank(ch, PERK_BERSERKER_RAGE_DAMAGE_2, CLASS_BERSERKER) * 3);
 }
 int get_berserker_critical_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_IMPROVED_CRITICAL_1, CLASS_BERSERKER);
 }
 bool has_berserker_cleaving_strikes(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_CLEAVING_STRIKES);
 }
 int get_berserker_cleave_bonus(struct char_data *ch)
 {
-  return 0;
+  return has_berserker_cleaving_strikes(ch) ? 2 : 0;
 }
 bool has_berserker_blood_frenzy(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_BLOOD_FRENZY);
 }
 int get_berserker_devastating_critical_dice(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_DEVASTATING_CRITICAL, CLASS_BERSERKER);
 }
 int get_berserker_power_attack_mastery_3_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_POWER_ATTACK_MASTERY_3, CLASS_BERSERKER) * 2;
 }
 bool has_berserker_overwhelming_force(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_OVERWHELMING_FORCE);
 }
 int get_berserker_crimson_rage_bonus(struct char_data *ch)
 {
-  return 0;
+  int current_hp = 0;
+  int missing_percent = 0;
+
+  if (!ch || IS_NPC(ch) || !has_perk(ch, PERK_BERSERKER_CRIMSON_RAGE) ||
+      !affected_by_spell(ch, SKILL_RAGE) || GET_MAX_HIT(ch) <= 0)
+    return 0;
+
+  current_hp = MAX(0, GET_HIT(ch));
+  missing_percent = ((GET_MAX_HIT(ch) - current_hp) * 100) / GET_MAX_HIT(ch);
+
+  return MIN(9, MAX(0, missing_percent / 10));
 }
 bool has_berserker_carnage(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_CARNAGE);
 }
 bool has_berserker_frenzied_berserker(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_FRENZIED_BERSERKER);
 }
 bool has_berserker_relentless_assault(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_RELENTLESS_ASSAULT);
 }
 bool has_berserker_death_from_above(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_DEATH_FROM_ABOVE);
 }
 int get_berserker_thick_skin_bonus(struct char_data *ch)
 {

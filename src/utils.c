@@ -5472,6 +5472,8 @@ int get_daily_uses(struct char_data *ch, int featnum)
     break;
   case FEAT_JUDGEMENT:
     daily_uses += ((CLASS_LEVEL(ch, CLASS_INQUISITOR) - 1) / 3) + 1;
+    if (!IS_NPC(ch) && has_inquisitor_versatile_judgment(ch))
+      daily_uses += 1;
     break;
   case FEAT_TRUE_JUDGEMENT:
     daily_uses += CLASS_LEVEL(ch, CLASS_INQUISITOR) / 5;

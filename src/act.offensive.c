@@ -1461,6 +1461,9 @@ void perform_charge(struct char_data *ch, struct char_data *vict)
   if (!FIGHTING(ch) && vict && vict != ch)
     hit(ch, vict, TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, FALSE);
 
+  if (affected_by_spell(ch, AFFECT_BERSERKER_DEATH_FROM_ABOVE))
+    affect_from_char(ch, AFFECT_BERSERKER_DEATH_FROM_ABOVE);
+
   if (vict && vict != ch)
   {
     if (GET_POS(ch) > POS_STUNNED && (FIGHTING(ch) == NULL))
@@ -3814,11 +3817,27 @@ void clear_rage(struct char_data *ch)
   {
     change_event_duration(ch, eCOME_AND_GET_ME, 0);
   }
+  if (char_has_mud_event(ch, eBERSERKER_FRENZY_USED))
+  {
+    event_cancel_specific(ch, eBERSERKER_FRENZY_USED);
+  }
 
   /* Clear Indomitable Will auto-success flag when rage ends */
   if (affected_by_spell(ch, PERK_BERSERKER_INDOMITABLE_WILL))
   {
     affect_from_char(ch, PERK_BERSERKER_INDOMITABLE_WILL);
+  }
+  if (affected_by_spell(ch, AFFECT_BERSERKER_FRENZY))
+  {
+    affect_from_char(ch, AFFECT_BERSERKER_FRENZY);
+  }
+  if (affected_by_spell(ch, AFFECT_BERSERKER_BLOOD_FRENZY))
+  {
+    affect_from_char(ch, AFFECT_BERSERKER_BLOOD_FRENZY);
+  }
+  if (affected_by_spell(ch, AFFECT_BERSERKER_DEATH_FROM_ABOVE))
+  {
+    affect_from_char(ch, AFFECT_BERSERKER_DEATH_FROM_ABOVE);
   }
 
   /* Remove whatever HP we granted.  This may kill the character. */
@@ -4170,6 +4189,55 @@ ACMD(do_sprint)
   USE_MOVE_ACTION(ch);
 
   return;
+}
+
+ACMDCHECK(can_frenzy)
+{
+  ACMDCHECK_PERMFAIL_IF(!has_berserker_frenzied_berserker(ch),
+                        "You don't know how to unleash that kind of frenzy!\r\n");
+  ACMDCHECK_TEMPFAIL_IF(!affected_by_spell(ch, SKILL_RAGE),
+                        "You must be raging to unleash your frenzy!\r\n");
+  ACMDCHECK_TEMPFAIL_IF(affected_by_spell(ch, AFFECT_BERSERKER_FRENZY),
+                        "You are already in a killing frenzy!\r\n");
+  ACMDCHECK_TEMPFAIL_IF(char_has_mud_event(ch, eBERSERKER_FRENZY_USED),
+                        "You can only use frenzy once per rage.\r\n");
+  ACMDCHECK_TEMPFAIL_IF(char_has_mud_event(ch, eBERSERKER_FRENZY_COOLDOWN),
+                        "You must recover before you can frenzy again.\r\n");
+  return CAN_CMD;
+}
+
+ACMD(do_frenzy)
+{
+  struct affected_type af;
+  int duration = 5;
+
+  PREREQ_CAN_FIGHT();
+  PREREQ_CHECK(can_frenzy);
+
+  send_to_char(ch, "You surrender to a murderous frenzy, striking with brutal precision!\r\n");
+  act("$n surrenders to a murderous frenzy, eyes burning with savage focus!", FALSE, ch, 0, 0,
+      TO_ROOM);
+
+  new_affect(&af);
+  af.spell = AFFECT_BERSERKER_FRENZY;
+  af.duration = duration;
+  af.location = APPLY_HITROLL;
+  af.modifier = 4;
+  af.bonus_type = BONUS_TYPE_CIRCUMSTANCE;
+  affect_to_char(ch, &af);
+
+  new_affect(&af);
+  af.spell = AFFECT_BERSERKER_FRENZY;
+  af.duration = duration;
+  af.location = APPLY_DAMROLL;
+  af.modifier = 6;
+  af.bonus_type = BONUS_TYPE_CIRCUMSTANCE;
+  affect_to_char(ch, &af);
+
+  attach_mud_event(new_mud_event(eBERSERKER_FRENZY_USED, ch, NULL), 10 * 60 * PASSES_PER_SEC);
+  attach_mud_event(new_mud_event(eBERSERKER_FRENZY_COOLDOWN, ch, NULL), 5 * 60 * PASSES_PER_SEC);
+
+  USE_SWIFT_ACTION(ch);
 }
 
 ACMD(do_reckless_abandon)
@@ -8571,6 +8639,12 @@ ACMDCHECK(can_charge)
   return CAN_CMD;
 }
 
+ACMDCHECK(can_leap)
+{
+  ACMDCHECK_PERMFAIL_IF(!has_berserker_death_from_above(ch), "You have no idea how.\r\n");
+  return CAN_CMD;
+}
+
 ACMDCHECK(can_bodyslam)
 {
   return CAN_CMD;
@@ -11217,6 +11291,50 @@ ACMD(do_charge)
     send_to_char(ch, "You are not in combat, nor have you specified a target to charge.\r\n");
     return;
   }
+
+  perform_charge(ch, vict);
+}
+
+ACMD(do_leap)
+{
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  struct affected_type af;
+  struct char_data *vict = NULL;
+
+  PREREQ_CAN_FIGHT();
+  PREREQ_NOT_PEACEFUL_ROOM();
+  PREREQ_IN_POSITION(POS_SITTING, "You need to stand to leap!\r\n");
+  PREREQ_CHECK(can_leap);
+
+  if (FIGHTING(ch))
+  {
+    send_to_char(ch, "You can only use leap to start a fight.\r\n");
+    return;
+  }
+
+  one_argument(argument, arg, sizeof(arg));
+  if (!(vict = get_char_room_vis(ch, arg, NULL)))
+  {
+    send_to_char(ch, "Leap at who?\r\n");
+    return;
+  }
+
+  if (vict == ch)
+  {
+    send_to_char(ch, "Aren't we funny today...\r\n");
+    return;
+  }
+
+  new_affect(&af);
+  af.spell = AFFECT_BERSERKER_DEATH_FROM_ABOVE;
+  af.duration = 1;
+  af.location = APPLY_SPECIAL;
+  af.modifier = 1;
+  af.bonus_type = BONUS_TYPE_CIRCUMSTANCE;
+  affect_to_char(ch, &af);
+
+  send_to_char(ch, "You hurl yourself forward in a devastating leap!\r\n");
+  act("$n hurls $mself forward in a devastating leap!", FALSE, ch, 0, 0, TO_ROOM);
 
   perform_charge(ch, vict);
 }

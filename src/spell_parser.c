@@ -3083,6 +3083,7 @@ will be using for casting this spell */
       if (result && !IS_NPC(ch) && has_inquisitor_righteous_strike(ch) &&
           GET_CASTING_CLASS(ch) == CLASS_INQUISITOR)
       {
+        ch->player_specials->inq_last_spell_cast = spellnum;
         ch->player_specials->inq_righteous_strike_rounds = 1;
       }
 
@@ -5690,6 +5691,16 @@ void mag_assign_spells(void)
 
   spello(AFFECT_PERSISTENT_JUDGMENT, "persistent judgment", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
          MAG_AREAS, NULL, 0, 0, ENCHANTMENT, FALSE);
+    spello(AFFECT_BERSERKER_BLOOD_FRENZY, "blood frenzy", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+      FALSE, MAG_AFFECTS, "Your blood frenzy slows and the surge of speed fades.", 0, 0,
+      TRANSMUTATION, FALSE);
+    spello(AFFECT_BERSERKER_FRENZY, "frenzied berserker", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+      FALSE, MAG_AFFECTS, "Your killing frenzy burns out.", 0, 0, ENCHANTMENT, FALSE);
+    spello(AFFECT_BERSERKER_DEATH_FROM_ABOVE, "death from above", 0, 0, 0, POS_FIGHTING,
+      TAR_IGNORE, FALSE, MAG_AFFECTS, NULL, 0, 0, TRANSMUTATION, FALSE);
+    spello(AFFECT_BERSERKER_RELENTLESS_ASSAULT, "relentless assault", 0, 0, 0, POS_FIGHTING,
+      TAR_IGNORE, TRUE, MAG_AFFECTS, "You recover some of your footing.", 0, 0,
+      ENCHANTMENT, FALSE);
 
   // 2nd level spell
   spello(SPELL_PROTECTION_FROM_ARROWS, "protection from arrows", 79, 64, 1, POS_FIGHTING,
