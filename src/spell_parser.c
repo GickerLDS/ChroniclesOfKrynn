@@ -370,14 +370,18 @@ static void say_spell(struct char_data *ch, int spellnum, struct char_data *tch,
 
   if (tch != NULL && tch != ch && IN_ROOM(tch) == IN_ROOM(ch))
   {
+    char spoken_words[64] = {'\0'};
+
+    strlcpy(spoken_words, attempt > dc_of_id ? spell_name(spellnum) : buf, sizeof(spoken_words));
+
     if (!start)
       snprintf(buf1, sizeof(buf1), "\tn$n \tcstares at you and utters the words, '\tC%s\tc'.\tn",
-               attempt > dc_of_id ? spell_name(spellnum) : buf);
+               spoken_words);
     else
       snprintf(buf1, sizeof(buf1),
                "\tn$n \tcweaves $s hands in an intricate pattern and begins to chant the words, "
                "'\tC%s\tc' at you.\tn",
-               attempt > dc_of_id ? spell_name(spellnum) : buf);
+               spoken_words);
     act(buf1, FALSE, ch, NULL, tch, TO_VICT);
   }
 }

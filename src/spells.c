@@ -2917,11 +2917,13 @@ ASPELL(spell_summon_instrument)
   instrument->name = strdup(instrument_lower);
 
   char short_buf[MAX_STRING_LENGTH] = {'\0'};
-  snprintf(short_buf, sizeof(short_buf), "a summoned %s", instrument_lower);
+  snprintf(short_buf, sizeof(short_buf), "a summoned %.*s",
+           (int)(sizeof(short_buf) - strlen("a summoned ") - 1), instrument_lower);
   instrument->short_description = strdup(short_buf);
 
   char long_buf[MAX_STRING_LENGTH] = {'\0'};
-  snprintf(long_buf, sizeof(long_buf), "A summoned %s lies here, waiting to make music.",
+  snprintf(long_buf, sizeof(long_buf), "A summoned %.*s lies here, waiting to make music.",
+           (int)(sizeof(long_buf) - strlen("A summoned ") - strlen(" lies here, waiting to make music.") - 1),
            instrument_lower);
   instrument->description = strdup(long_buf);
 

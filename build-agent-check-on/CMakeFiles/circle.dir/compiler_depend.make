@@ -4888,6 +4888,7 @@ CMakeFiles/circle.dir/src/craft.c.o: /home/krynn/code/src/craft.c \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
 
 CMakeFiles/circle.dir/src/crafting_new.c.o: /home/krynn/code/src/crafting_new.c \
+  /home/krynn/code/src/act.h \
   /home/krynn/code/src/assign_wpn_armor.h \
   /home/krynn/code/src/bool.h \
   /home/krynn/code/src/brew.h \
@@ -4904,6 +4905,7 @@ CMakeFiles/circle.dir/src/crafting_new.c.o: /home/krynn/code/src/crafting_new.c 
   /home/krynn/code/src/dg_scripts.h \
   /home/krynn/code/src/domains_schools.h \
   /home/krynn/code/src/feats.h \
+  /home/krynn/code/src/fight.h \
   /home/krynn/code/src/genolc.h \
   /home/krynn/code/src/handler.h \
   /home/krynn/code/src/help.h \

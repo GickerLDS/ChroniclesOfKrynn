@@ -896,7 +896,9 @@ static void shopping_buy(char *arg, struct char_data *ch, struct char_data *keep
   }
   strlcpy(tempstr, times_message(ch->carrying, 0, bought), sizeof(tempstr));
 
-  snprintf(tempbuf, sizeof(tempbuf), "$n buys %s.", tempstr);
+  strlcpy(tempbuf, "$n buys ", sizeof(tempbuf));
+  strlcat(tempbuf, tempstr, sizeof(tempbuf));
+  strlcat(tempbuf, ".", sizeof(tempbuf));
   act(tempbuf, FALSE, ch, obj, 0, TO_ROOM);
 
   if (obj && OBJ_FLAGGED(obj, ITEM_QUEST))

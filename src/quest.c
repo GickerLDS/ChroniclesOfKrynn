@@ -2478,8 +2478,9 @@ ACMDU(do_walkto_quest)
   GET_WALKTO_CONFIRM(ch) = strdup(confirm_code);
   GET_WALKTO_PENDING_ROOM(ch) = target_room;
   GET_WALKTO_PENDING_QUEST_INDEX(ch) = selected_quest;
-  snprintf(GET_WALKTO_DEST_LABEL(ch), MAX_INPUT_LENGTH, "%s '%s'",
+  snprintf(GET_WALKTO_DEST_LABEL(ch), MAX_INPUT_LENGTH, "%s '%.*s'",
            is_master ? "your quest master" : "your quest target",
+           (int)(MAX_INPUT_LENGTH - strlen(is_master ? "your quest master" : "your quest target") - 4),
            *destination_name ? destination_name : "Unknown");
 
   /* Check if player has No Walk-To Confirmation flag */

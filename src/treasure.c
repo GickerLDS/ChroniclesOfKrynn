@@ -2297,7 +2297,7 @@ void award_magic_armor(struct char_data *ch, int grade, int wear_slot, int sourc
   // Set descriptions
   obj->short_description = strdup(desc);
   desc[0] = toupper(desc[0]);
-  strncat(desc, " is lying here.", MEDIUM_STRING);
+  strlcat(desc, " is lying here.", sizeof(desc));
   obj->description = strdup(desc);
 
   /* END DESCRIPTION SECTION */
@@ -2540,10 +2540,10 @@ void award_magic_armor_suit(struct char_data *ch, int grade, int source_level)
   desch[0] = toupper(desch[0]);
   desca[0] = toupper(desca[0]);
   descl[0] = toupper(descl[0]);
-  strncat(descb, " is lying here.", MEDIUM_STRING);
-  strncat(desch, " is lying here.", MEDIUM_STRING);
-  strncat(desca, " is lying here.", MEDIUM_STRING);
-  strncat(descl, " is lying here.", MEDIUM_STRING);
+  strlcat(descb, " is lying here.", sizeof(descb));
+  strlcat(desch, " is lying here.", sizeof(desch));
+  strlcat(desca, " is lying here.", sizeof(desca));
+  strlcat(descl, " is lying here.", sizeof(descl));
   body->description = strdup(descb);
   head->description = strdup(desch);
   arms->description = strdup(desca);

@@ -21,6 +21,8 @@
 #include "treasure.h"
 #include "mudlim.h"
 #include "spec_procs.h" /* For GET_ABILITY() */
+#include "act.h"
+#include "fight.h"
 #include "item.h"
 #include "quest.h"
 #include "assign_wpn_armor.h"

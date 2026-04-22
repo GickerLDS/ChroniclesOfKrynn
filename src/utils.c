@@ -8800,7 +8800,7 @@ bool is_mob_dragonrider_mount(struct char_data *ch, struct char_data *victim)
   if (GET_MOB_VNUM(victim) == mob_num)
     return true;
 
-    return false;
+  return false;
 }
 
 // determines if vict is a valid mark target for various
