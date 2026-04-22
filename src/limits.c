@@ -1199,6 +1199,24 @@ void run_autowiz(void)
 #define MIN_NUM_MOBS_TO_KILL_15 59
 #define MIN_NUM_MOBS_TO_KILL_20 120
 #define MIN_NUM_MOBS_TO_KILL_25 185
+
+static long int get_minimum_experience_floor(struct char_data *ch)
+{
+  if (IS_NPC(ch) || GET_LEVEL(ch) >= LVL_IMMORT)
+    return 0;
+
+  switch (CONFIG_MINIMUM_EXP)
+  {
+  case MINIMUM_EXP_FLOOR_CURRENT_LEVEL:
+    return level_exp(ch, GET_LEVEL(ch));
+  case MINIMUM_EXP_FLOOR_PREVIOUS_LEVEL:
+    return level_exp(ch, MAX(0, GET_LEVEL(ch) - 1));
+  case MINIMUM_EXP_FLOOR_ZERO:
+  default:
+    return 0;
+  }
+}
+
 int gain_exp(struct char_data *ch, int gain, int mode)
 {
   long int xp_to_lvl = 0;
@@ -1376,6 +1394,9 @@ int gain_exp(struct char_data *ch, int gain, int mode)
   }
   else if (gain < 0)
   {
+    long int old_exp;
+    long int minimum_exp;
+
     gain = MAX(-CONFIG_MAX_EXP_LOSS, gain); /* Cap max exp lost per death */
 
     /* end game characters get hit much harder */
@@ -1385,11 +1406,16 @@ int gain_exp(struct char_data *ch, int gain, int mode)
     }
 
     /* bam - hit 'em! */
+    old_exp = GET_EXP(ch);
+    minimum_exp = get_minimum_experience_floor(ch);
     GET_EXP(ch) += gain;
-    if (GET_EXP(ch) < 0)
-      GET_EXP(ch) = 0;
+    if (GET_EXP(ch) < minimum_exp)
+      GET_EXP(ch) = minimum_exp;
 
-    send_to_char(ch, "You lose %d experience points!", gain);
+    if (old_exp > GET_EXP(ch))
+      send_to_char(ch, "You lose %ld experience points!", old_exp - GET_EXP(ch));
+    else
+      send_to_char(ch, "You do not lose any experience points.");
   }
 
   if (GET_LEVEL(ch) >= LVL_IMMORT && !PLR_FLAGGED(ch, PLR_NOWIZLIST))

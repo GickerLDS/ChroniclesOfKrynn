@@ -2772,6 +2772,14 @@ bool can_blood_drain_target(struct char_data *ch, struct char_data *vict);
 #define CONFIG_ALCHEMY_PREP_TIME config_info.player_config.alchemy_mem_times
 /** This is the modified percentage of experience lost when a player dies */
 #define CONFIG_DEATH_EXP_LOSS config_info.player_config.death_exp_loss_penalty
+/** Experience loss cannot reduce a player below zero experience */
+#define MINIMUM_EXP_FLOOR_ZERO 0
+/** Experience loss cannot reduce a player below their current level minimum */
+#define MINIMUM_EXP_FLOOR_CURRENT_LEVEL 1
+/** Experience loss cannot reduce a player below their previous level minimum */
+#define MINIMUM_EXP_FLOOR_PREVIOUS_LEVEL 2
+/** This controls the minimum experience floor enforced during experience loss */
+#define CONFIG_MINIMUM_EXP config_info.player_config.minimum_experience
 
 // extra game data
 #define CONFIG_CAMPAIGN config_info.extra.campaign

@@ -376,6 +376,9 @@ int exp_level_difference = 3;
 // This affects how much exp is lost when a player dies.
 int death_exp_loss_penalty = 100;
 
+// 0 = zero, 1 = current level minimum, 2 = previous level minimum
+int minimum_experience = 0;
+
 // these values apply to mobs created with any kind
 // of summoning spell, such as summon creature, dragon knight,
 // mummy dust, etc.

@@ -8190,6 +8190,9 @@ struct player_config_data
 
   // death penalty exp loss modifier
   int death_exp_loss_penalty;
+
+  // 0 = zero, 1 = current level minimum, 2 = previous level minimum
+  int minimum_experience;
 };
 
 struct extra_game_data

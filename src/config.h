@@ -121,6 +121,7 @@ extern int summon_21_30_hp;
 extern int summon_21_30_hit_and_dam;
 extern int summon_21_30_ac;
 extern int death_exp_loss_penalty;
+extern int minimum_experience;
 extern int psionic_mem_times;
 extern int divine_mem_times;
 extern int arcane_mem_times;

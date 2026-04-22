@@ -7578,6 +7578,9 @@ static void load_default_config(void)
   CONFIG_MOB_ROGUES_AS = 100;
   CONFIG_MOB_ROGUES_GOLD = 100;
 
+  /* Player config defaults. */
+  CONFIG_MINIMUM_EXP = minimum_experience;
+
   /* Extra game options - defaults to 0 (Full for exp options) */
   CONFIG_CAMPAIGN = 0;
   CONFIG_BAG_SYSTEM = 0;
@@ -7806,6 +7809,8 @@ void load_config(void)
         CONFIG_MAX_PC_CORPSE_TIME = num;
       else if (!str_cmp(tag, "max_playing"))
         CONFIG_MAX_PLAYING = num;
+      else if (!str_cmp(tag, "minimum_experience"))
+        CONFIG_MINIMUM_EXP = num;
       else if (!str_cmp(tag, "menu"))
       {
         if (CONFIG_MENU)

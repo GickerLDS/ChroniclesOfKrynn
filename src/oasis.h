@@ -609,6 +609,7 @@ i added this trying to debug issues with qedit-copy -zusuk
 #define CEDIT_HAPPY_HOUR_HARVESTING_MATERIALS 133
 #define CEDIT_HAPPY_HOUR_HARVESTING_MOTES_CHANCE 134
 #define CEDIT_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED 135
+#define CEDIT_PLAYER_OPTIONS_MINIMUM_EXP 136
 
 /* Hedit Submodes of connectedness. */
 #define HEDIT_CONFIRM_SAVESTRING 0

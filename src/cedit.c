@@ -183,6 +183,7 @@ static void cedit_setup(struct descriptor_data *d)
   OLC_CONFIG(d)->player_config.armor_class_cap = CONFIG_PLAYER_AC_CAP;
   OLC_CONFIG(d)->player_config.group_level_difference_restriction = CONFIG_EXP_LEVEL_DIFFERENCE;
   OLC_CONFIG(d)->player_config.death_exp_loss_penalty = CONFIG_DEATH_EXP_LOSS;
+  OLC_CONFIG(d)->player_config.minimum_experience = CONFIG_MINIMUM_EXP;
   OLC_CONFIG(d)->player_config.level_1_10_summon_hp = CONFIG_SUMMON_LEVEL_1_10_HP;
   OLC_CONFIG(d)->player_config.level_1_10_summon_hit_and_dam = CONFIG_SUMMON_LEVEL_1_10_HIT_DAM;
   OLC_CONFIG(d)->player_config.level_1_10_summon_ac = CONFIG_SUMMON_LEVEL_1_10_AC;
@@ -371,6 +372,7 @@ static void cedit_save_internally(struct descriptor_data *d)
   CONFIG_PLAYER_AC_CAP = OLC_CONFIG(d)->player_config.armor_class_cap;
   CONFIG_EXP_LEVEL_DIFFERENCE = OLC_CONFIG(d)->player_config.group_level_difference_restriction;
   CONFIG_DEATH_EXP_LOSS = OLC_CONFIG(d)->player_config.death_exp_loss_penalty;
+  CONFIG_MINIMUM_EXP = OLC_CONFIG(d)->player_config.minimum_experience;
   CONFIG_SUMMON_LEVEL_1_10_HP = OLC_CONFIG(d)->player_config.level_1_10_summon_hp;
   CONFIG_SUMMON_LEVEL_1_10_HIT_DAM = OLC_CONFIG(d)->player_config.level_1_10_summon_hit_and_dam;
   CONFIG_SUMMON_LEVEL_1_10_AC = OLC_CONFIG(d)->player_config.level_1_10_summon_ac;
@@ -949,6 +951,10 @@ int save_config(IDXTYPE nowhere)
           "* Percentage compared to normal, for exp loss when a player dies.\n"
           "death_exp_loss_penalty = %d\n\n",
           CONFIG_DEATH_EXP_LOSS);
+          fprintf(fl,
+            "* Minimum experience floor for experience loss (0 = zero, 1 = current level minimum, 2 = previous level minimum).\n"
+            "minimum_experience = %d\n\n",
+            CONFIG_MINIMUM_EXP);
 
   fprintf(fl,
           "* Percentage of summoned charmies hp compared to normal, level 1-10 summons.\n"
@@ -1165,6 +1171,20 @@ static void cedit_disp_happy_hour_options(struct descriptor_data *d)
   OLC_MODE(d) = CEDIT_HAPPY_HOUR_MENU;
 }
 
+static const char *cedit_minimum_experience_label(int option)
+{
+  switch (option)
+  {
+  case MINIMUM_EXP_FLOOR_CURRENT_LEVEL:
+    return "Current Level";
+  case MINIMUM_EXP_FLOOR_PREVIOUS_LEVEL:
+    return "Previous Level";
+  case MINIMUM_EXP_FLOOR_ZERO:
+  default:
+    return "Zero";
+  }
+}
+
 static void cedit_disp_player_options(struct descriptor_data *d)
 {
   get_char_colors(d->character);
@@ -1200,6 +1220,9 @@ static void cedit_disp_player_options(struct descriptor_data *d)
       "%sJ%s) Level 21-30 Summon HP Percentage             : %s%d%%\r\n"
       "%sK%s) Level 21-30 Summon Hit & Dam Roll Percentage : %s%d%%\r\n"
       "%sL%s) Level 21-30 Summon AC Percentage             : %s%d%%\r\n"
+      "%sM%s) Minimum Experience Floor                     : %s%s\r\n"
+      "\r\n"
+      "      0 = Zero, 1 = Current Level, 2 = Previous Level\r\n"
       "\r\n"
       "%sQ%s) Exit To The Main Menu\r\n"
       "Enter your choice : ",
@@ -1233,6 +1256,8 @@ static void cedit_disp_player_options(struct descriptor_data *d)
       grn, nrm, cyn, OLC_CONFIG(d)->player_config.level_21_30_summon_hp,          // J
       grn, nrm, cyn, OLC_CONFIG(d)->player_config.level_21_30_summon_hit_and_dam, // K
       grn, nrm, cyn, OLC_CONFIG(d)->player_config.level_21_30_summon_ac,          // L
+
+      grn, nrm, cyn, cedit_minimum_experience_label(OLC_CONFIG(d)->player_config.minimum_experience),
 
       grn, nrm);
 
@@ -1838,6 +1863,12 @@ void cedit_parse(struct descriptor_data *d, char *arg)
       write_to_output(d, "Enter the percentage compared to normal for summoned mobs armor class, "
                          "summons level 21-30: ");
       OLC_MODE(d) = CEDIT_PLAYER_OPTIONS_SUMMON_30_AC;
+      return;
+    case 'm':
+    case 'M':
+      write_to_output(
+          d, "Enter minimum experience floor (0 = zero, 1 = current level, 2 = previous level) : ");
+      OLC_MODE(d) = CEDIT_PLAYER_OPTIONS_MINIMUM_EXP;
       return;
 
     case 'q':
@@ -2816,6 +2847,35 @@ void cedit_parse(struct descriptor_data *d, char *arg)
       cedit_disp_player_options(d);
     }
     break;
+
+  case CEDIT_PLAYER_OPTIONS_MINIMUM_EXP:
+  {
+    int minimum_exp_option;
+
+    if (!*arg || !is_number(arg))
+    {
+      write_to_output(
+          d, "That is an invalid choice!\r\n"
+             "Enter minimum experience floor (0 = zero, 1 = current level, 2 = previous level) : ");
+    }
+    else
+    {
+      minimum_exp_option = atoi(arg);
+      if (minimum_exp_option < MINIMUM_EXP_FLOOR_ZERO ||
+          minimum_exp_option > MINIMUM_EXP_FLOOR_PREVIOUS_LEVEL)
+      {
+        write_to_output(
+            d, "That is an invalid choice!\r\n"
+               "Enter minimum experience floor (0 = zero, 1 = current level, 2 = previous level) : ");
+      }
+      else
+      {
+        OLC_CONFIG(d)->player_config.minimum_experience = minimum_exp_option;
+        cedit_disp_player_options(d);
+      }
+    }
+    break;
+  }
 
   case CEDIT_PLAYER_OPTIONS_SUMMON_10_HP:
     if (!*arg)
