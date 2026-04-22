@@ -240,6 +240,7 @@ typedef enum
   eSINISTER_RECOVERY,       /* Blackguard Sinister Recovery self-heal cooldown */
   eSHADE_STEP,              /* Blackguard Shade Step usage cooldown */
   eUNDYING_VIGOR,           /* Blackguard Undying Vigor death-save daily cooldown */
+  eSUPREME_STYLE_ATTACK,    /* Bard Supreme Style extra attack 3-round gate */
   eEMPOWERED_JUDGMENT_DUAL, /* Inquisitor Empowered Judgment dual judgment encounter gate */
   eSWIFT_SPELLCASTER_USED,  /* Inquisitor Swift Spellcaster casting time reduction used */
   eJUDGMENT_RECOVERY_USED,  /* Inquisitor Judgment Recovery kill-triggered use used */

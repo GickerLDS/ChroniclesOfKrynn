@@ -60,6 +60,7 @@ int get_insightful_talent_bonus(struct char_data *ch, int skill);
 int get_efficient_talent_bonus(struct char_data *ch, int skill);
 void return_efficient_saved_materials(struct char_data *ch);
 void save_char_pets(struct char_data *ch);
+bool can_recall_golem(struct char_data *ch);
 
 int materials_sort_info[NUM_CRAFT_MATS];
 

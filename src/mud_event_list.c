@@ -464,6 +464,8 @@ struct mud_event_list mud_event_index[] = {
     {"Cataclysmic Smite", event_daily_use_cooldown, EVENT_CHAR,
      "You can unleash Cataclysmic Smite again.", NULL, FEAT_UNDEFINED, 0},
     {"Graveborn Vigor", event_countdown, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED, 0},
+    {"Supreme Style Attack", event_countdown, EVENT_CHAR,
+     "Your supreme style is ready to open another extra attack.", NULL, FEAT_UNDEFINED, 0},
     {"Sinister Recovery", event_daily_use_cooldown, EVENT_CHAR,
      "You feel ready to channel sinister recovery again.", NULL, FEAT_UNDEFINED, 0},
     {"Shade Step", event_countdown, EVENT_CHAR, "You slip back into the shadows.", NULL,

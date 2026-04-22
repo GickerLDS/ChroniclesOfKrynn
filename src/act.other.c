@@ -14124,15 +14124,6 @@ EVENTFUNC(event_device_progress)
     return 0;
   }
 
-
-    spell_matrix_requested = requested_device_is_support_device(spell_nums, num_spells);
-
-    if (available_slots <= 0 && !(spell_matrix_requested && support_matrix_available > 0))
-    {
-      send_to_char(ch, "All your device slots are on cooldown. Use 'device cooldown' to check when "
-                       "slots become available.\r\n");
-      return;
-    }
   ch = (struct char_data *)pMudEvent->pStruct;
 
   if (!ch)

@@ -51,48 +51,62 @@ struct perk_data perk_list[NUM_PERKS];
 
 /* Perk category names for display */
 const char *perk_category_names[] = {
-    "Undefined",                  /* 0 - PERK_CATEGORY_UNDEFINED */
-    "Weapon Specialist",          /* 1 - PERK_CATEGORY_WEAPON_SPECIALIST */
-    "Defender",                   /* 2 - PERK_CATEGORY_DEFENDER */
-    "Tactical Fighter",           /* 3 - PERK_CATEGORY_TACTICAL_FIGHTER */
-    "Evoker",                     /* 4 - PERK_CATEGORY_EVOKER */
-    "Controller",                 /* 5 - PERK_CATEGORY_CONTROLLER */
-    "Versatile Caster",           /* 6 - PERK_CATEGORY_VERSATILE_CASTER */
-    "Divine Healer",              /* 7 - PERK_CATEGORY_DIVINE_HEALER */
-    "Battle Cleric",              /* 8 - PERK_CATEGORY_BATTLE_CLERIC */
-    "Domain Master",              /* 9 - PERK_CATEGORY_DOMAIN_MASTER */
-    "Assassin",                   /* 10 - PERK_CATEGORY_ASSASSIN */
-    "Master Thief",               /* 11 - PERK_CATEGORY_MASTER_THIEF */
-    "Shadow Scout",               /* 12 - PERK_CATEGORY_SHADOW_SCOUT */
-    "Iron Body",                  /* 13 - PERK_CATEGORY_IRON_BODY */
-    "Perfect Self",               /* 14 - PERK_CATEGORY_PERFECT_SELF */
-    "Way of the Open Hand",       /* 15 - PERK_CATEGORY_WAY_OF_THE_OPEN_HAND */
-    "Way of the Shadow",          /* 16 - PERK_CATEGORY_WAY_OF_THE_SHADOW */
-    "Hunter",                     /* 17 - PERK_CATEGORY_HUNTER */
-    "Beast Master",               /* 18 - PERK_CATEGORY_BEAST_MASTER */
-    "Wilderness Warrior",         /* 19 - PERK_CATEGORY_WILDERNESS_WARRIOR */
-    "Berserker",                  /* 19 - PERK_CATEGORY_BERSERKER */
-    "Totem Warrior",              /* 20 - PERK_CATEGORY_TOTEM_WARRIOR */
-    "Primal Champion",            /* 21 - PERK_CATEGORY_PRIMAL_CHAMPION */
-    "Mutagenist",                 /* 33 - PERK_CATEGORY_MUTAGENIST */
-    "Bomb Craftsman",             /* 34 - PERK_CATEGORY_BOMB_CRAFTSMAN */
-    "Extract Master",             /* 35 - PERK_CATEGORY_EXTRACT_MASTER */
-    "Telepathic Control",         /* 36 - PERK_CATEGORY_TELEPATHIC_CONTROL */
-    "Psychokinetic Arsenal",      /* 37 - PERK_CATEGORY_PSYCHOKINETIC_ARSENAL */
-    "Metacreative Genius",        /* 38 - PERK_CATEGORY_METACREATIVE_GENIUS */
-    "Tyranny & Fear",             /* 39 - PERK_CATEGORY_TYRANNY_AND_FEAR */
-    "Profane Might",              /* 40 - PERK_CATEGORY_PROFANE_MIGHT */
-    "Unholy Resilience",          /* 41 - PERK_CATEGORY_UNHOLY_RESILIENCE */
-    "Judgment & Spellcasting",    /* 42 - PERK_CATEGORY_JUDGMENT_SPELLCASTING */
-    "Hunter's Arsenal",           /* 43 - PERK_CATEGORY_HUNTERS_ARSENAL */
-    "Investigation & Perception", /* 44 - PERK_CATEGORY_INVESTIGATION_PERCEPTION */
-    "Adaptable Tactics",          /* 45 - PERK_CATEGORY_ADAPTABLE_TACTICS */
-    "Eidolon Mastery",            /* 46 - PERK_CATEGORY_EIDOLON_MASTERY */
-    "Summoning Excellence",       /* 47 - PERK_CATEGORY_SUMMONING_EXCELLENCE */
-    "Arcane Channeler",           /* 48 - PERK_CATEGORY_ARCANE_CHANNELER */
-    "Eldritch Mastery",           /* 49 - PERK_CATEGORY_ELDRITCH_MASTERY */
-    "Pact Bonding",               /* 50 - PERK_CATEGORY_PACT_BONDING */
-    "\n"                          /* Terminator */
+  "Undefined",                      /* 0 - PERK_CATEGORY_UNDEFINED */
+  "Weapon Specialist",              /* 1 - PERK_CATEGORY_WEAPON_SPECIALIST */
+  "Defender",                       /* 2 - PERK_CATEGORY_DEFENDER */
+  "Tactical Fighter",               /* 3 - PERK_CATEGORY_TACTICAL_FIGHTER */
+  "Evoker",                         /* 4 - PERK_CATEGORY_EVOKER */
+  "Controller",                     /* 5 - PERK_CATEGORY_CONTROLLER */
+  "Versatile Caster",               /* 6 - PERK_CATEGORY_VERSATILE_CASTER */
+  "Divine Healer",                  /* 7 - PERK_CATEGORY_DIVINE_HEALER */
+  "Battle Cleric",                  /* 8 - PERK_CATEGORY_BATTLE_CLERIC */
+  "Domain Master",                  /* 9 - PERK_CATEGORY_DOMAIN_MASTER */
+  "Assassin",                       /* 10 - PERK_CATEGORY_ASSASSIN */
+  "Master Thief",                   /* 11 - PERK_CATEGORY_MASTER_THIEF */
+  "Shadow Scout",                   /* 12 - PERK_CATEGORY_SHADOW_SCOUT */
+  "Iron Body",                      /* 13 - PERK_CATEGORY_IRON_BODY */
+  "Perfect Self",                   /* 14 - PERK_CATEGORY_PERFECT_SELF */
+  "Way of the Open Hand",           /* 15 - PERK_CATEGORY_WAY_OF_THE_OPEN_HAND */
+  "Way of the Shadow",              /* 16 - PERK_CATEGORY_WAY_OF_THE_SHADOW */
+  "Way of the Four Elements",       /* 17 - PERK_CATEGORY_WAY_OF_THE_FOUR_ELEMENTS */
+  "Hunter",                         /* 18 - PERK_CATEGORY_HUNTER */
+  "Beast Master",                   /* 19 - PERK_CATEGORY_BEAST_MASTER */
+  "Wilderness Warrior",             /* 20 - PERK_CATEGORY_WILDERNESS_WARRIOR */
+  "Nature's Warrior",               /* 21 - PERK_CATEGORY_NATURES_WARRIOR */
+  "Season's Herald",                /* 22 - PERK_CATEGORY_SEASONS_HERALD */
+  "Nature's Protector",             /* 23 - PERK_CATEGORY_NATURES_PROTECTOR */
+  "Berserker",                      /* 24 - PERK_CATEGORY_BERSERKER */
+  "Totem Warrior",                  /* 25 - PERK_CATEGORY_TOTEM_WARRIOR */
+  "Primal Champion",                /* 26 - PERK_CATEGORY_PRIMAL_CHAMPION */
+  "Knight of the Chalice",          /* 27 - PERK_CATEGORY_KNIGHT_OF_THE_CHALICE */
+  "Sacred Defender",                /* 28 - PERK_CATEGORY_SACRED_DEFENDER */
+  "Divine Champion",                /* 29 - PERK_CATEGORY_DIVINE_CHAMPION */
+  "Spellsinger",                    /* 30 - PERK_CATEGORY_SPELLSINGER */
+  "Warchanter",                     /* 31 - PERK_CATEGORY_WARCHANTER */
+  "Swashbuckler",                   /* 32 - PERK_CATEGORY_SWASHBUCKLER */
+  "Mutagenist",                     /* 33 - PERK_CATEGORY_MUTAGENIST */
+  "Bomb Craftsman",                 /* 34 - PERK_CATEGORY_BOMB_CRAFTSMAN */
+  "Extract Master",                 /* 35 - PERK_CATEGORY_EXTRACT_MASTER */
+  "Telepathic Control",             /* 36 - PERK_CATEGORY_TELEPATHIC_CONTROL */
+  "Psychokinetic Arsenal",          /* 37 - PERK_CATEGORY_PSYCHOKINETIC_ARSENAL */
+  "Metacreative Genius",            /* 38 - PERK_CATEGORY_METACREATIVE_GENIUS */
+  "Tyranny & Fear",                 /* 39 - PERK_CATEGORY_TYRANNY_AND_FEAR */
+  "Profane Might",                  /* 40 - PERK_CATEGORY_PROFANE_MIGHT */
+  "Unholy Resilience",              /* 41 - PERK_CATEGORY_UNHOLY_RESILIENCE */
+  "Judgment & Spellcasting",        /* 42 - PERK_CATEGORY_JUDGMENT_SPELLCASTING */
+  "Hunter's Arsenal",               /* 43 - PERK_CATEGORY_HUNTERS_ARSENAL */
+  "Investigation & Perception",     /* 44 - PERK_CATEGORY_INVESTIGATION_PERCEPTION */
+  "Adaptable Tactics",              /* 45 - PERK_CATEGORY_ADAPTABLE_TACTICS */
+  "Eidolon Mastery",                /* 46 - PERK_CATEGORY_EIDOLON_MASTERY */
+  "Summoning Excellence",           /* 47 - PERK_CATEGORY_SUMMONING_EXCELLENCE */
+  "Arcane Channeler",               /* 48 - PERK_CATEGORY_ARCANE_CHANNELER */
+  "Eldritch Mastery",               /* 49 - PERK_CATEGORY_ELDRITCH_MASTERY */
+  "Pact Bonding",                   /* 50 - PERK_CATEGORY_PACT_BONDING */
+  "Invocation Mastery",             /* 51 - PERK_CATEGORY_INVOCATION_MASTERY */
+  "Weird Science Engineering",      /* 52 - PERK_CATEGORY_WEIRD_SCIENCE_ENGINEERING */
+  "Infusion & Battlefield Support", /* 53 - PERK_CATEGORY_INFUSION_BATTLEFIELD_SUPPORT */
+  "Construct Command",              /* 54 - PERK_CATEGORY_CONSTRUCT_COMMAND */
+  NULL
 };
 /* Forward declarations for perk definition functions */
 void define_bard_perks(void);
@@ -141,6 +155,9 @@ void init_perks(void)
 
   /* Define Ranger Perks */
   define_ranger_perks();
+
+  /* Define Druid Perks */
+  define_druid_perks();
 
   /* Define Barbarian Perks */
   /* Define Bard Perks */
@@ -769,8 +786,6 @@ void define_blackguard_perks(void)
   perk->special_description =
       strdup("Command 'shadestep'; swift action, grants brief blur/concealment and positions you "
              "defensively. 1-minute cooldown.");
-  perk->special_description =
-      strdup("Improves power attack: +2 damage, reduces to-hit penalty to -1");
 
 
   /* Tier 3: Soul Carapace */
@@ -1400,68 +1415,8 @@ void define_inquisitor_perks(void)
                                      "rank on all attacks until end of turn (melee and ranged).");
   perk->toggleable = false;
 
-    /**************************************************************************
-     * TREE 2: HUNTER'S ARSENAL - Tier 4
-     **************************************************************************/
-
-    /* Tier 4: Supreme Hunter (1 rank, 4 points) */
-    perk = &perk_list[PERK_INQUISITOR_SUPREME_HUNTER];
-    perk->id = PERK_INQUISITOR_SUPREME_HUNTER;
-    perk->name = strdup("Supreme Hunter");
-  perk->description = strdup("Become the ultimate predator.");
-  perk->associated_class = CLASS_INQUISITOR;
-  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
-  perk->cost = 4;
-  perk->max_rank = 1;
-  perk->prerequisite_perk = -1;
-  perk->prerequisite_rank = 0;
-  perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 4; /* +4 to Studied Target */
-  perk->effect_modifier = 0;
-  perk->special_description = strdup(
-      "Your Studied Target bonus increases by +4. Time to study is halved (swift action instead of move action).");
-    perk->id = PERK_INQUISITOR_LEGENDARY_TRACKER;
-    perk->name = strdup("Legendary Tracker");
-  perk->description = strdup("Track any creature at any distance.");
-  perk->associated_class = CLASS_INQUISITOR;
-  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
-  perk->cost = 4;
-  perk->max_rank = 1;
-  perk->prerequisite_perk = -1;
-  perk->prerequisite_rank = 0;
-  perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 1;
-  perk->effect_modifier = 0;
-  perk->special_description = strdup(
-      "You can track creatures at extreme distances. Maximum tracking distance: 50 + (Survival skill * 10) rooms.");
-    perk->id = PERK_INQUISITOR_INSTANT_DEATH;
-    perk->name = strdup("Instant Death");
-  perk->description = strdup("Deliver a killing strike with perfect precision.");
-  perk->associated_class = CLASS_INQUISITOR;
-  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
-  perk->cost = 4;
-  perk->max_rank = 1;
-  perk->prerequisite_perk = -1;
-  perk->prerequisite_rank = 0;
-  perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 3; /* 3% chance */
-  perk->effect_modifier = 0;
-  perk->special_description = strdup(
-      "3% chance when you hit with an attack against a studied target to force a Fortitude save (DC 10 + half level + Wisdom modifier). On failure, target takes +15d6 damage; on success, it takes +8d6 damage.");
-    perk->id = PERK_INQUISITOR_PERFECT_PREDATOR;
-    perk->name = strdup("Perfect Predator");
-  perk->description = strdup("Achieve mastery over the hunt.");
-  perk->associated_class = CLASS_INQUISITOR;
-  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
-  perk->cost = 4;
-  perk->max_rank = 1;
-  perk->prerequisite_perk = -1;
-  perk->prerequisite_rank = 0;
-  perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 4; /* +4 favored enemy bonus */
-  perk->effect_modifier = 0;
-  perk->special_description = strdup(
-      "All your favored enemy bonuses increase by +4. In your favored terrains, you gain true sight and can see perfectly in all lighting conditions.");
+  /* Tier 3: Master Tracker (1 rank, 3 points) */
+  perk = &perk_list[PERK_INQUISITOR_MASTER_TRACKER];
   perk->id = PERK_INQUISITOR_MASTER_TRACKER;
   perk->name = strdup("Master Tracker");
   perk->description = strdup("Track prey across any trail and sense nearby quarries.");
@@ -1477,6 +1432,75 @@ void define_inquisitor_perks(void)
   perk->special_description = strdup(
       "Ignore mundane tracking limitations; sense when your studied quarry enters your area.");
   perk->toggleable = false;
+
+  /**************************************************************************
+   * TREE 2: HUNTER'S ARSENAL - Tier 4
+   **************************************************************************/
+
+  /* Tier 4: Supreme Hunter (1 rank, 4 points) */
+  perk = &perk_list[PERK_INQUISITOR_SUPREME_HUNTER];
+  perk->id = PERK_INQUISITOR_SUPREME_HUNTER;
+  perk->name = strdup("Supreme Hunter");
+  perk->description = strdup("Become the ultimate predator.");
+  perk->associated_class = CLASS_INQUISITOR;
+  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 4; /* +4 to Studied Target */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "Your Studied Target bonus increases by +4. Time to study is halved (swift action instead of move action).");
+
+  perk = &perk_list[PERK_INQUISITOR_LEGENDARY_TRACKER];
+  perk->id = PERK_INQUISITOR_LEGENDARY_TRACKER;
+  perk->name = strdup("Legendary Tracker");
+  perk->description = strdup("Track any creature at any distance.");
+  perk->associated_class = CLASS_INQUISITOR;
+  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "You can track creatures at extreme distances. Maximum tracking distance: 50 + (Survival skill * 10) rooms.");
+
+  perk = &perk_list[PERK_INQUISITOR_INSTANT_DEATH];
+  perk->id = PERK_INQUISITOR_INSTANT_DEATH;
+  perk->name = strdup("Instant Death");
+  perk->description = strdup("Deliver a killing strike with perfect precision.");
+  perk->associated_class = CLASS_INQUISITOR;
+  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 3; /* 3% chance */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "3% chance when you hit with an attack against a studied target to force a Fortitude save (DC 10 + half level + Wisdom modifier). On failure, target takes +15d6 damage; on success, it takes +8d6 damage.");
+
+  perk = &perk_list[PERK_INQUISITOR_PERFECT_PREDATOR];
+  perk->id = PERK_INQUISITOR_PERFECT_PREDATOR;
+  perk->name = strdup("Perfect Predator");
+  perk->description = strdup("Achieve mastery over the hunt.");
+  perk->associated_class = CLASS_INQUISITOR;
+  perk->perk_category = PERK_CATEGORY_HUNTERS_ARSENAL;
+  perk->cost = 4;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 4; /* +4 favored enemy bonus */
+  perk->effect_modifier = 0;
+  perk->special_description = strdup(
+      "All your favored enemy bonuses increase by +4. In your favored terrains, you gain true sight and can see perfectly in all lighting conditions.");
 
   /* Tier 3: Wilderness Stride (2 ranks, 3 points each) */
   perk = &perk_list[PERK_INQUISITOR_WILDERNESS_STRIDE];
@@ -11329,6 +11353,234 @@ void define_ranger_perks(void)
   perk->effect_value = 2;
   perk->effect_modifier = 4;
   perk->special_description = strdup("+2 to hit, +4 to damage when dual wielding (capstone)");
+}
+
+/* Define Druid Perks */
+void define_druid_perks(void)
+{
+  struct perk_data *perk;
+
+#define INIT_DRUID_PERK(perk_id, perk_name, perk_desc, category_id, point_cost, rank_cap,         \
+                        prereq_id, prereq_rank_value, value, modifier, special_desc)               \
+  do                                                                                               \
+  {                                                                                                \
+    perk = &perk_list[perk_id];                                                                    \
+    perk->id = perk_id;                                                                            \
+    perk->name = strdup(perk_name);                                                                \
+    perk->description = strdup(perk_desc);                                                         \
+    perk->associated_class = CLASS_DRUID;                                                          \
+    perk->perk_category = category_id;                                                             \
+    perk->cost = point_cost;                                                                       \
+    perk->max_rank = rank_cap;                                                                     \
+    perk->prerequisite_perk = prereq_id;                                                           \
+    perk->prerequisite_rank = prereq_rank_value;                                                   \
+    perk->effect_type = PERK_EFFECT_SPECIAL;                                                       \
+    perk->effect_value = value;                                                                    \
+    perk->effect_modifier = modifier;                                                              \
+    perk->special_description = strdup(special_desc);                                              \
+    perk->toggleable = false;                                                                      \
+  } while (0)
+
+  /**************************************************************************
+   * TREE 1: NATURE'S WARRIOR
+   **************************************************************************/
+  INIT_DRUID_PERK(PERK_DRUID_WILD_SHAPE_ENHANCEMENT_1, "Wild Shape Enhancement I",
+                  "Improve your accuracy and ferocity while wild shaped.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 1, 5, -1, 0, 1, 0,
+                  "+1 attack and damage while wild shaped per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_ARMOR_1, "Natural Armor I",
+                  "Reinforce your wild shaped body with thicker hide.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 1, 3, -1, 0, 1, 0,
+                  "+1 natural armor while wild shaped per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_WEAPONS_1, "Natural Weapons I",
+                  "Sharpen your claws, fangs, and other natural weapons.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 1, 3, -1, 0, 1, 4,
+                  "Your natural weapons gain +1d4 damage per rank while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_PRIMAL_INSTINCT_1, "Primal Instinct I",
+                  "Your beast form becomes tougher and harder to bring down.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 1, 3, -1, 0, 10, 0,
+                  "+10 hit points while wild shaped per rank.");
+
+  INIT_DRUID_PERK(PERK_DRUID_WILD_SHAPE_ENHANCEMENT_2, "Wild Shape Enhancement II",
+                  "Further improve your wild shape combat prowess.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 2, 3, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_1, 5, 1,
+                  0, "Additional +1 attack and damage per rank while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_ARMOR_2, "Natural Armor II",
+                  "Your natural defenses harden even further.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 2, 2, PERK_DRUID_NATURAL_ARMOR_1, 3, 1, 0,
+                  "Additional +1 natural armor per rank while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_WEAPONS_2, "Natural Weapons II",
+                  "Your natural attacks find weak points more easily.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 2, 1, PERK_DRUID_NATURAL_WEAPONS_1, 3, 19, 0,
+                  "Natural weapon critical threat range improves to 19-20 while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_IMPROVED_WILD_SHAPE, "Improved Wild Shape",
+                  "Slip into beast form with practiced speed.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 2, 1, -1, 0, 1, 0,
+                  "Wild shape may be activated as a swifter transformation in future hooks.");
+
+  INIT_DRUID_PERK(PERK_DRUID_WILD_SHAPE_ENHANCEMENT_3, "Wild Shape Enhancement III",
+                  "Perfect your offensive instincts in animal form.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 3, 2, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_2, 3, 1,
+                  0, "Additional +1 attack and damage per rank while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_ARMOR_3, "Natural Armor III",
+                  "Your hide and scales become exceptionally resilient.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 3, 2, PERK_DRUID_NATURAL_ARMOR_2, 2, 1, 0,
+                  "Additional +1 natural armor per rank while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_PRIMAL_INSTINCT_2, "Primal Instinct II",
+                  "Draw deeper vitality from the wild.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 3, 2, PERK_DRUID_PRIMAL_INSTINCT_1, 3, 15, 0,
+                  "Additional +15 hit points per rank while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_MIGHTY_WILD_SHAPE, "Mighty Wild Shape",
+                  "Your wild shape swells with primal strength.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 3, 1, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_2, 3, 4,
+                  4, "+4 Strength and +4 Constitution while wild shaped.");
+
+  INIT_DRUID_PERK(PERK_DRUID_ELEMENTAL_WILD_SHAPE, "Elemental Wild Shape",
+                  "Your elemental forms gain greater destructive force.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 4, 1, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_3, 2, 3,
+                  6, "Elemental forms gain +3 attack, +6 damage, +3 natural armor, and +50 hit points.");
+  INIT_DRUID_PERK(PERK_DRUID_PRIMAL_AVATAR, "Primal Avatar",
+                  "Your wild shape reaches apex predatory speed.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 4, 1, PERK_DRUID_MIGHTY_WILD_SHAPE, 1, 1, 4,
+                  "Gain one extra attack per round and +4 Dexterity while wild shaped.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_FURY, "Natural Fury",
+                  "Critical hits in wild shape become brutally decisive.",
+                  PERK_CATEGORY_NATURES_WARRIOR, 4, 1, PERK_DRUID_NATURAL_WEAPONS_2, 1, 3, 0,
+                  "Critical hits with natural weapons deal triple damage while wild shaped.");
+
+  /**************************************************************************
+   * TREE 2: SEASON'S HERALD
+   **************************************************************************/
+  INIT_DRUID_PERK(PERK_DRUID_SPELL_POWER_1, "Spell Power I",
+                  "Your elemental spells strike harder.", PERK_CATEGORY_SEASONS_HERALD, 1, 5,
+                  -1, 0, 1, 0, "+1 damage per die per rank on druid spells.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURES_FOCUS_1, "Nature's Focus I",
+                  "The natural world sharpens your spellcraft.",
+                  PERK_CATEGORY_SEASONS_HERALD, 1, 3, -1, 0, 1, 0,
+                  "+1 spell save DC per rank on druid spells.");
+  INIT_DRUID_PERK(PERK_DRUID_ELEMENTAL_MANIPULATION_1, "Elemental Manipulation I",
+                  "Add extra elemental force to your magic.",
+                  PERK_CATEGORY_SEASONS_HERALD, 1, 3, -1, 0, 2, 6,
+                  "Elemental spells gain +2d6 damage per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_EFFICIENT_CASTER, "Efficient Caster",
+                  "You prepare low-circle magic with exceptional efficiency.",
+                  PERK_CATEGORY_SEASONS_HERALD, 1, 1, -1, 0, 1, 0,
+                  "Gain +1 prepared spell slot for circles 1-3.");
+
+  INIT_DRUID_PERK(PERK_DRUID_SPELL_POWER_2, "Spell Power II",
+                  "Push even more elemental force through your spells.",
+                  PERK_CATEGORY_SEASONS_HERALD, 2, 3, PERK_DRUID_SPELL_POWER_1, 5, 1, 0,
+                  "Additional +1 damage per die per rank on druid spells.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURES_FOCUS_2, "Nature's Focus II",
+                  "Your command of natural magic becomes harder to resist.",
+                  PERK_CATEGORY_SEASONS_HERALD, 2, 2, PERK_DRUID_NATURES_FOCUS_1, 3, 1, 0,
+                  "Additional +1 spell save DC per rank on druid spells.");
+  INIT_DRUID_PERK(PERK_DRUID_ELEMENTAL_MANIPULATION_2, "Elemental Manipulation II",
+                  "Layer stronger elemental energy into your spells.",
+                  PERK_CATEGORY_SEASONS_HERALD, 2, 2, PERK_DRUID_ELEMENTAL_MANIPULATION_1, 3, 3,
+                  6, "Elemental spells gain +3d6 damage per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_SPELL_CRITICAL, "Spell Critical",
+                  "Your druid spells sometimes erupt with amplified force.",
+                  PERK_CATEGORY_SEASONS_HERALD, 2, 1, PERK_DRUID_SPELL_POWER_1, 5, 5, 15,
+                  "Druid spells gain a 5% critical chance for 1.5x damage.");
+
+  INIT_DRUID_PERK(PERK_DRUID_SPELL_POWER_3, "Spell Power III",
+                  "Perfect the raw output of your destructive magic.",
+                  PERK_CATEGORY_SEASONS_HERALD, 3, 2, PERK_DRUID_SPELL_POWER_2, 3, 1, 0,
+                  "Additional +1 damage per die per rank on druid spells.");
+  INIT_DRUID_PERK(PERK_DRUID_STORM_CALLER, "Storm Caller",
+                  "Lightning answers your call with lingering fury.",
+                  PERK_CATEGORY_SEASONS_HERALD, 3, 1, PERK_DRUID_ELEMENTAL_MANIPULATION_2, 2, 25,
+                  50, "Lightning spells have a 25% chance to strike again for half damage.");
+  INIT_DRUID_PERK(PERK_DRUID_ELEMENTAL_MANIPULATION_3, "Elemental Manipulation III",
+                  "Your elemental magic becomes devastating.",
+                  PERK_CATEGORY_SEASONS_HERALD, 3, 2, PERK_DRUID_ELEMENTAL_MANIPULATION_2, 2, 4,
+                  6, "Elemental spells gain +4d6 damage per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURES_WRATH, "Nature's Wrath",
+                  "Storms, wildfire, and frost answer your rage more often.",
+                  PERK_CATEGORY_SEASONS_HERALD, 3, 1, PERK_DRUID_SPELL_CRITICAL, 1, 10, 15,
+                  "Increase druid spell critical chance by 10%.");
+
+  INIT_DRUID_PERK(PERK_DRUID_FORCE_OF_NATURE, "Force of Nature",
+                  "Your elemental spells tear through resistance.",
+                  PERK_CATEGORY_SEASONS_HERALD, 4, 1, PERK_DRUID_SPELL_POWER_3, 2, 1, 0,
+                  "Elemental druid spell damage bypasses damage resistance.");
+  INIT_DRUID_PERK(PERK_DRUID_ELEMENTAL_MASTERY, "Elemental Mastery",
+                  "Channel perfect elemental power into a single spell.",
+                  PERK_CATEGORY_SEASONS_HERALD, 4, 1, PERK_DRUID_ELEMENTAL_MANIPULATION_3, 2, 1,
+                  300, "Use elemental mastery to maximize your next elemental spell with a 5 minute cooldown.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURES_VENGEANCE, "Nature's Vengeance",
+                  "Your spell criticals become catastrophic.",
+                  PERK_CATEGORY_SEASONS_HERALD, 4, 1, PERK_DRUID_NATURES_WRATH, 1, 20, 0,
+                  "Druid spell criticals deal double damage.");
+
+  /**************************************************************************
+   * TREE 3: NATURE'S PROTECTOR
+   **************************************************************************/
+  INIT_DRUID_PERK(PERK_DRUID_HEALING_SPRING_1, "Healing Spring I",
+                  "Your healing magic restores more life.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 1, 5, -1, 0, 3, 0,
+                  "+3 healing per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_ANIMAL_BOND_1, "Animal Bond I",
+                  "Strengthen your animal companion.", PERK_CATEGORY_NATURES_PROTECTOR, 1, 3,
+                  -1, 0, 10, 1, "Animal companion gains +10 hit points and +1 attack/damage per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_REMEDY_1, "Natural Remedy I",
+                  "Your regenerative magic lingers longer.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 1, 3, -1, 0, 1, 0,
+                  "+1 healing per regeneration tick per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURES_BLESSING, "Nature's Blessing",
+                  "Your supportive druid buffs endure longer.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 1, 1, -1, 0, 25, 0,
+                  "Beneficial druid buffs last 25% longer.");
+
+  INIT_DRUID_PERK(PERK_DRUID_HEALING_SPRING_2, "Healing Spring II",
+                  "Further deepen the restorative power of your healing.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 2, 3, PERK_DRUID_HEALING_SPRING_1, 5, 4, 0,
+                  "Additional +4 healing per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_ANIMAL_BOND_2, "Animal Bond II",
+                  "Your companion grows hardier and deadlier.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 2, 2, PERK_DRUID_ANIMAL_BOND_1, 3, 15, 2,
+                  "Animal companion gains +15 hit points and +2 attack/damage per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_NATURAL_REMEDY_2, "Natural Remedy II",
+                  "Your regenerative spells mend wounds more efficiently.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 2, 2, PERK_DRUID_NATURAL_REMEDY_1, 3, 2, 0,
+                  "Additional +2 healing per regeneration tick per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_COMPANION_ENHANCEMENT, "Companion Enhancement",
+                  "Refine your companion into a better battlefield ally.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 2, 1, PERK_DRUID_ANIMAL_BOND_1, 1, 2, 10,
+                  "Animal companion gains +2 natural armor and 10% movement speed.");
+
+  INIT_DRUID_PERK(PERK_DRUID_HEALING_SPRING_3, "Healing Spring III",
+                  "Your healing magic reaches its most potent form.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 3, 2, PERK_DRUID_HEALING_SPRING_2, 3, 5, 0,
+                  "Additional +5 healing per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_ANIMAL_BOND_3, "Animal Bond III",
+                  "Your companion becomes a fearsome packmate.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 3, 2, PERK_DRUID_ANIMAL_BOND_2, 2, 20, 3,
+                  "Animal companion gains +20 hit points and +3 attack/damage per rank.");
+  INIT_DRUID_PERK(PERK_DRUID_REJUVENATION, "Rejuvenation",
+                  "Your strongest healing carries cleansing life energy.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 3, 1, PERK_DRUID_HEALING_SPRING_2, 3, 15, 0,
+                  "Healing has a 15% chance to remove a negative effect.");
+  INIT_DRUID_PERK(PERK_DRUID_PACK_LEADER, "Pack Leader",
+                  "Your companion learns to weather danger at your side.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 3, 1, PERK_DRUID_COMPANION_ENHANCEMENT, 1, 4,
+                  0, "Animal companion gains +4 to all saves.");
+
+  INIT_DRUID_PERK(PERK_DRUID_NATURES_GUARDIAN, "Nature's Guardian",
+                  "The wild refuses to let you fall so easily.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 4, 1, PERK_DRUID_HEALING_SPRING_3, 2, 50, 600,
+                  "When reduced below 25% hit points, recover to 50% once every 10 minutes.");
+  INIT_DRUID_PERK(PERK_DRUID_VITAL_SURGE, "Vital Surge",
+                  "Your healing briefly overflows into extra vitality.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 4, 1, PERK_DRUID_REJUVENATION, 1, 25, 5,
+                  "Healing grants temporary maximum hit points equal to 25% of the heal for 5 rounds.");
+  INIT_DRUID_PERK(PERK_DRUID_ALPHA_COMPANION, "Alpha Companion",
+                  "Your companion ascends into a dire apex predator.",
+                  PERK_CATEGORY_NATURES_PROTECTOR, 4, 1, PERK_DRUID_ANIMAL_BOND_3, 2, 2, 5,
+                  "Your companion becomes dire, gains doubled physical stats and hit points, +5 natural armor, +3 attack/damage, and one extra attack.");
+
+#undef INIT_DRUID_PERK
 }
 
 /* Define Bard Perks */
@@ -23608,96 +23860,149 @@ bool check_monk_extra_flurry_attack(struct char_data *ch)
 }
 
 /* =============================================================== */
-/* DRUID PERK HELPER FUNCTIONS - STUBS (NOT YET IMPLEMENTED)      */
+/* DRUID PERK HELPER FUNCTIONS                                    */
 /* =============================================================== */
 
 int get_druid_wild_shape_attack_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_1, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_2, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_WILD_SHAPE_ENHANCEMENT_3, CLASS_DRUID);
 }
 int get_druid_wild_shape_damage_bonus(struct char_data *ch)
 {
-  return 0;
+  return get_druid_wild_shape_attack_bonus(ch);
 }
 int get_druid_natural_armor_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_DRUID_NATURAL_ARMOR_1, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_NATURAL_ARMOR_2, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_NATURAL_ARMOR_3, CLASS_DRUID);
 }
 int get_druid_wild_shape_hp_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return (get_perk_rank(ch, PERK_DRUID_PRIMAL_INSTINCT_1, CLASS_DRUID) * 10) +
+         (get_perk_rank(ch, PERK_DRUID_PRIMAL_INSTINCT_2, CLASS_DRUID) * 15);
 }
 int get_druid_natural_weapons_damage_dice(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_DRUID_NATURAL_WEAPONS_1, CLASS_DRUID);
 }
 bool has_druid_natural_weapons_improved_crit(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_NATURAL_WEAPONS_2);
+}
+bool is_druid_in_elemental_form(struct char_data *ch)
+{
+  return ch && !IS_NPC(ch) && IS_WILDSHAPED(ch) && IS_MORPHED(ch) == RACE_TYPE_ELEMENTAL;
 }
 int get_druid_elemental_attack_bonus(struct char_data *ch)
 {
-  return 0;
+  return is_druid_in_elemental_form(ch) && has_perk(ch, PERK_DRUID_ELEMENTAL_WILD_SHAPE) ? 3 : 0;
 }
 int get_druid_elemental_damage_bonus(struct char_data *ch)
 {
-  return 0;
+  return is_druid_in_elemental_form(ch) && has_perk(ch, PERK_DRUID_ELEMENTAL_WILD_SHAPE) ? 6 : 0;
 }
 int get_druid_elemental_armor_bonus(struct char_data *ch)
 {
-  return 0;
+  return is_druid_in_elemental_form(ch) && has_perk(ch, PERK_DRUID_ELEMENTAL_WILD_SHAPE) ? 3 : 0;
 }
 int get_druid_elemental_hp_bonus(struct char_data *ch)
 {
-  return 0;
+  return is_druid_in_elemental_form(ch) && has_perk(ch, PERK_DRUID_ELEMENTAL_WILD_SHAPE) ? 50 : 0;
 }
 bool has_druid_primal_avatar(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_PRIMAL_AVATAR);
 }
 bool has_druid_natural_fury(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_NATURAL_FURY);
 }
 int get_druid_spell_power_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_DRUID_SPELL_POWER_1, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_SPELL_POWER_2, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_SPELL_POWER_3, CLASS_DRUID);
 }
 int get_druid_spell_dc_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_DRUID_NATURES_FOCUS_1, CLASS_DRUID) +
+         get_perk_rank(ch, PERK_DRUID_NATURES_FOCUS_2, CLASS_DRUID);
 }
 int get_druid_elemental_damage_dice(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return (get_perk_rank(ch, PERK_DRUID_ELEMENTAL_MANIPULATION_1, CLASS_DRUID) * 2) +
+         (get_perk_rank(ch, PERK_DRUID_ELEMENTAL_MANIPULATION_2, CLASS_DRUID) * 3) +
+         (get_perk_rank(ch, PERK_DRUID_ELEMENTAL_MANIPULATION_3, CLASS_DRUID) * 4);
 }
 bool check_druid_spell_critical(struct char_data *ch)
 {
-  return FALSE;
+  int chance = 0;
+
+  if (!ch || IS_NPC(ch) || GET_CASTING_CLASS(ch) != CLASS_DRUID)
+    return FALSE;
+
+  if (has_perk(ch, PERK_DRUID_SPELL_CRITICAL))
+    chance += 5;
+  if (has_perk(ch, PERK_DRUID_NATURES_WRATH))
+    chance += 10;
+
+  return chance > 0 && rand_number(1, 100) <= chance;
 }
 float get_druid_spell_critical_multiplier(struct char_data *ch)
 {
+  if (!ch || IS_NPC(ch))
+    return 1.0;
+
+  if (has_perk(ch, PERK_DRUID_NATURES_VENGEANCE))
+    return 2.0;
+  if (has_perk(ch, PERK_DRUID_SPELL_CRITICAL) || has_perk(ch, PERK_DRUID_NATURES_WRATH))
+    return 1.5;
+
   return 1.0;
 }
 int get_druid_bonus_spell_slots(struct char_data *ch)
 {
-  return 0;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_EFFICIENT_CASTER) ? 1 : 0;
 }
 bool has_druid_force_of_nature(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_FORCE_OF_NATURE);
 }
 bool has_druid_storm_caller(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_STORM_CALLER);
 }
 bool has_druid_elemental_mastery(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_DRUID_ELEMENTAL_MASTERY);
 }
 
 /* =============================================================== */
-/* BERSERKER PERK HELPER FUNCTIONS - STUBS (NOT YET IMPLEMENTED)  */
+/* BERSERKER PERK HELPER FUNCTIONS                                 */
 /* =============================================================== */
 
 int get_berserker_power_attack_bonus(struct char_data *ch)
@@ -26507,6 +26812,39 @@ int get_bard_flourish_ac_bonus(struct char_data *ch)
  * TIER 4 SWASHBUCKLER PERK FUNCTIONS (Capstone Perks)
  * ============================================================================ */
 
+static bool bard_has_supreme_style_weapon(struct char_data *ch)
+{
+  struct obj_data *wielded = NULL;
+  int weapon_type = 0;
+  bool is_finesse = FALSE;
+
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  wielded = GET_EQ(ch, WEAR_WIELD_1);
+  if (!wielded || GET_OBJ_TYPE(wielded) != ITEM_WEAPON)
+    return FALSE;
+
+  weapon_type = GET_OBJ_VAL(wielded, 0);
+
+  if (GET_OBJ_SIZE(wielded) < GET_SIZE(ch))
+    is_finesse = TRUE;
+  if (IS_SET(weapon_list[weapon_type].weaponFlags, WEAPON_FLAG_BALANCED))
+    is_finesse = TRUE;
+
+  if (is_finesse)
+    return TRUE;
+
+  if (!GET_EQ(ch, WEAR_WIELD_OFFHAND))
+  {
+    int size = GET_OBJ_SIZE(wielded);
+    if (size <= SIZE_SMALL || size == SIZE_MEDIUM)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
 /**
  * Check if character has Swashbuckler's Supreme Style perk.
  * Grants +2 to hit, +2 dodge AC, +2 crit confirm, +1 attack per 3 rounds with finesse/1H weapons.
@@ -26533,7 +26871,7 @@ bool is_affected_by_supreme_style(struct char_data *ch)
   if (!ch || IS_NPC(ch))
     return FALSE;
 
-  return affected_by_spell(ch, AFFECT_BARD_SUPREME_STYLE);
+  return has_bard_supreme_style(ch) && bard_has_supreme_style_weapon(ch);
 }
 
 /**
@@ -26551,7 +26889,6 @@ int get_bard_supreme_style_tohit_bonus(struct char_data *ch)
   if (!has_bard_supreme_style(ch))
     return 0;
 
-  /* TODO: Verify wielding appropriate weapon type (finesse or single 1H) */
   if (is_affected_by_supreme_style(ch))
     return 2;
 
@@ -26573,7 +26910,6 @@ int get_bard_supreme_style_ac_bonus(struct char_data *ch)
   if (!has_bard_supreme_style(ch))
     return 0;
 
-  /* TODO: Verify wielding appropriate weapon type (finesse or single 1H) */
   if (is_affected_by_supreme_style(ch))
     return 2;
 
@@ -26595,7 +26931,6 @@ int get_bard_supreme_style_crit_confirm_bonus(struct char_data *ch)
   if (!has_bard_supreme_style(ch))
     return 0;
 
-  /* TODO: Verify wielding appropriate weapon type (finesse or single 1H) */
   if (is_affected_by_supreme_style(ch))
     return 2;
 
@@ -28105,7 +28440,7 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
 
   GET_MAX_HIT(golem) = GET_REAL_MAX_HIT(golem);
   GET_HITROLL(golem) = GET_REAL_HITROLL(golem);
-  GET_AC(golem) = GET_REAL_AC(golem);
+  golem->points.armor = GET_REAL_AC(golem);
 
   for (dr = GET_DR(golem); dr != NULL; dr = next_dr)
   {
@@ -28136,7 +28471,7 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   {
     struct damage_reduction_type *new_dr = NULL;
 
-    GET_AC(golem) -= chassis_rank * 10;
+    golem->points.armor -= chassis_rank * 10;
 
     CREATE(new_dr, struct damage_reduction_type, 1);
     new_dr->duration = 0;
@@ -28158,7 +28493,7 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   {
     struct damage_reduction_type *new_dr = NULL;
 
-    GET_AC(golem) -= chassis_ii_rank * 10;
+    golem->points.armor -= chassis_ii_rank * 10;
 
     CREATE(new_dr, struct damage_reduction_type, 1);
     new_dr->duration = 0;
@@ -28179,7 +28514,7 @@ void sync_artificer_construct_command_bonuses(struct char_data *golem)
   if (master && !IS_NPC(master) && tactical_rank > 0 &&
       master->char_specials.saved.golem_directive == GOLEM_DIRECTIVE_GUARD)
   {
-    GET_AC(golem) -= tactical_rank * 10;
+    golem->points.armor -= tactical_rank * 10;
   }
 
   if (current_hit >= old_max_hit)

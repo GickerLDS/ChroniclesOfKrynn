@@ -117,9 +117,6 @@ struct attack_hit_type attack_damage_type_text[NUM_ATTACK_DAMAGE_TYPE_TEXT] = {
 
 };
 
-  if (vict && IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
-      has_artificer_arcana_siege_frame(ch->master) &&
-      (GET_DR(vict) != NULL || GET_SPELL_RES(vict) > 0))
 /* local (file scope only) variables */
 static struct char_data *next_combat_list = NULL;
 
@@ -260,9 +257,6 @@ void guard_check(struct char_data *ch, struct char_data *vict)
       }
     }
   }
-    if (dam > 1 && victim)
-    {
-      if (!IS_NPC(victim) && has_artificer_fortress_engine(victim))
 }
 
 /* rewritten subfunction
@@ -706,9 +700,7 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
 
      So we have to extract these aff values separately and make sure they are applying
      respective bonuses to the right bonus-types
-   *note:  base armor class of stock code system is a system of 100 vs 10 of pathfinder
-   */
-  /* increment through all the affections on the character, check for matches */
+   *note:  base armor class of stock code system is a system of 100 vs 10 of pathfinder */
   for (affections = ch->affected; affections; affections = next)
   {
     next = affections->next;
@@ -766,8 +758,6 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
    */
 
   /**********/
-  if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_GOLEM) && ch->master && !IS_NPC(ch->master) &&
-      has_artificer_master_construct_protocol(ch->master))
   /* bonus types */
 
   /* bonus type racial */
@@ -13931,18 +13921,35 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
           can_trigger_relentless_assault(ch))
       {
         bool trigger = FALSE;
+        struct char_data *relentless_target = victim;
         if (AFF_FLAGGED(ch, AFF_CHARGING))
           trigger = TRUE;
         else if (victim_is_dead)
-          trigger = FALSE; /* No current target; selection logic not implemented */
+        {
+          struct char_data *tch = NULL;
+
+          for (tch = world[IN_ROOM(ch)].people; tch; tch = tch->next_in_room)
+          {
+            if (tch == ch || tch == victim)
+              continue;
+            if (is_player_grouped(tch, ch))
+              continue;
+            if (!FIGHTING(tch) || !is_player_grouped(FIGHTING(tch), ch))
+              continue;
+
+            relentless_target = tch;
+            trigger = TRUE;
+            break;
+          }
+        }
 
         if (trigger)
         {
           trigger_relentless_assault(ch);
-          if (!victim_is_dead && IN_ROOM(ch) == IN_ROOM(victim) && GET_POS(ch) > POS_DEAD)
+          if (relentless_target && IN_ROOM(ch) == IN_ROOM(relentless_target) && GET_POS(ch) > POS_DEAD)
           {
             /* Immediate bonus attack */
-            hit(ch, victim, TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, FALSE);
+            hit(ch, relentless_target, TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, FALSE);
           }
         }
       }
@@ -15509,6 +15516,20 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
     attacks_at_max_bab++;
   }
 
+  if (mode == NORMAL_ATTACK_ROUTINE && phase == PHASE_1 && !IS_NPC(ch) &&
+      has_bard_supreme_style(ch) && is_affected_by_supreme_style(ch) &&
+      !char_has_mud_event(ch, eSUPREME_STYLE_ATTACK))
+  {
+    attach_mud_event(new_mud_event(eSUPREME_STYLE_ATTACK, ch, NULL), 18 * PASSES_PER_SEC);
+
+    if (FIGHTING(ch) && valid_fight_cond(ch, FALSE))
+    {
+      send_to_char(ch, "Your supreme style opens an extra attack!\r\n");
+      act("$n's supreme style opens an extra attack!", FALSE, ch, 0, 0, TO_ROOM);
+      hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, ATTACK_TYPE_PRIMARY);
+    }
+  }
+
   /* eldritch blast is incredibly finnicky and complex so to make it more manageable
     players can use autoblast. Autoblast is neat and the best way to get the full
     mileage out of striking-type casters. In this case we assume if the player
@@ -15620,6 +15641,17 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
     }
 
     /* END Early exits from ranged combat! */
+
+    if (mode == NORMAL_ATTACK_ROUTINE && !IS_NPC(ch))
+    {
+      int quick_draw_speed_bonus = get_ranger_attack_speed_bonus(ch);
+      if (quick_draw_speed_bonus > 0 && rand_number(1, 100) <= quick_draw_speed_bonus)
+      {
+        ranged_attacks++;
+        attacks_at_max_bab++;
+        send_to_char(ch, "Your Quick Draw speed grants you an extra ranged attack this round!\r\n");
+      }
+    }
 
     ranged_attacks += bonus_mainhand_attacks;
 
