@@ -36,6 +36,55 @@ bool pubsub_system_enabled = FALSE;
 /* External variables */
 extern MYSQL *conn;
 
+static void pubsub_free_metadata(struct pubsub_message_metadata *metadata)
+{
+  if (!metadata)
+    return;
+
+  free(metadata->sender_real_name);
+  free(metadata->sender_title);
+  free(metadata->sender_class);
+  free(metadata->sender_race);
+  free(metadata->origin_area_name);
+  free(metadata->context_type);
+  free(metadata->trigger_event);
+  free(metadata->related_object);
+  free(metadata->handler_chain);
+  free(metadata->processing_notes);
+  free(metadata);
+}
+
+static void pubsub_free_fields(struct pubsub_message_fields *fields)
+{
+  int i;
+
+  if (!fields)
+    return;
+
+  if (fields->field_names)
+  {
+    for (i = 0; i < fields->field_count; i++)
+      free(fields->field_names[i]);
+    free(fields->field_names);
+  }
+
+  if (fields->field_values)
+  {
+    for (i = 0; i < fields->field_count; i++)
+      free(fields->field_values[i]);
+    free(fields->field_values);
+  }
+
+  if (fields->field_types)
+  {
+    for (i = 0; i < fields->field_count; i++)
+      free(fields->field_types[i]);
+    free(fields->field_types);
+  }
+
+  free(fields);
+}
+
 /*
  * Initialize the PubSub system
  */
@@ -1206,15 +1255,9 @@ void pubsub_free_message(struct pubsub_message *msg)
 
   /* Free enhanced structures */
   if (msg->metadata_v3)
-  {
-    /* TODO: Implement pubsub_free_metadata when we need it */
-    free(msg->metadata_v3);
-  }
+    pubsub_free_metadata(msg->metadata_v3);
   if (msg->fields)
-  {
-    /* TODO: Implement pubsub_free_fields when we need it */
-    free(msg->fields);
-  }
+    pubsub_free_fields(msg->fields);
 
   /* Free the message itself */
   free(msg);

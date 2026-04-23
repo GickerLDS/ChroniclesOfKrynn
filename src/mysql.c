@@ -2110,7 +2110,10 @@ void load_regions()
   }
 
   if ((numrows = mysql_num_rows(result)) < 1)
+  {
+    mysql_free_result(result);
     return;
+  }
   else
   {
     if (region_table != NULL)
@@ -2632,7 +2635,10 @@ void load_paths()
   }
 
   if ((numrows = mysql_num_rows(result)) < 1)
+  {
+    mysql_free_result(result);
     return;
+  }
   else
   {
     /* Allocate memory for all of the region data. */
@@ -2642,9 +2648,9 @@ void load_paths()
       for (j = 0; j <= top_of_path_table; j++)
       {
         free(path_table[j].name);
-        // free(path_table[i].glyphs[GLYPH_TYPE_PATH_NS]);
-        // free(path_table[i].glyphs[GLYPH_TYPE_PATH_EW]);
-        // free(path_table[i].glyphs[GLYPH_TYPE_PATH_INT]);
+        free(path_table[j].glyphs[GLYPH_TYPE_PATH_NS]);
+        free(path_table[j].glyphs[GLYPH_TYPE_PATH_EW]);
+        free(path_table[j].glyphs[GLYPH_TYPE_PATH_INT]);
         free(path_table[j].vertices);
       }
       free(path_table);

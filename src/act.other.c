@@ -11304,6 +11304,7 @@ ACMDU(do_flashinsight)
 {
   char arg[MAX_INPUT_LENGTH] = {'\0'};
   char mode[MAX_INPUT_LENGTH] = {'\0'};
+  const char *remaining_args = argument;
   struct char_data *vict = NULL;
   int bonus = 0;
   bool survival_mode = FALSE;
@@ -11337,15 +11338,15 @@ ACMDU(do_flashinsight)
     return;
   }
 
-  one_argument(argument, arg, sizeof(arg));
+  one_argument(remaining_args, arg, sizeof(arg));
   if (!*arg)
   {
     send_to_char(ch, "Usage: flashinsight <ally> [survival]\r\n");
     return;
   }
 
-  argument = one_argument(argument, arg, sizeof(arg));
-  one_argument(argument, mode, sizeof(mode));
+  remaining_args = one_argument(remaining_args, arg, sizeof(arg));
+  one_argument(remaining_args, mode, sizeof(mode));
   survival_mode = (*mode && is_abbrev(mode, "survival"));
   can_target_self = survival_mode && has_artificer_genius_under_pressure(ch);
 
@@ -11510,26 +11511,6 @@ static bool invention_is_support_device(const struct player_invention *inv)
   for (i = 0; i < inv->num_spells; i++)
   {
     int spell_num = inv->spell_effects[i];
-
-    if (spell_num <= 0 || spell_num >= NUM_SPELLS)
-      return FALSE;
-    if (spell_info[spell_num].violent)
-      return FALSE;
-  }
-
-  return TRUE;
-}
-
-static bool requested_device_is_support_device(const int *spell_nums, int num_spells)
-{
-  int i = 0;
-
-  if (!spell_nums || num_spells <= 0)
-    return FALSE;
-
-  for (i = 0; i < num_spells; i++)
-  {
-    int spell_num = spell_nums[i];
 
     if (spell_num <= 0 || spell_num >= NUM_SPELLS)
       return FALSE;
