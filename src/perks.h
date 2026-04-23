@@ -366,6 +366,7 @@ void init_stage_data(struct char_data *ch);
 void update_stage_data(struct char_data *ch);
 int calculate_stage_xp_needed(struct char_data *ch);
 bool check_stage_advancement(struct char_data *ch, int *perk_points_awarded);
+bool reconcile_legacy_perk_progress(struct char_data *ch, int *points_granted);
 void award_stage_perk_points(struct char_data *ch, int class_id);
 
 /* Perk point tracking functions (step 4) */

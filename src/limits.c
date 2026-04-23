@@ -1200,7 +1200,7 @@ void run_autowiz(void)
 #define MIN_NUM_MOBS_TO_KILL_20 120
 #define MIN_NUM_MOBS_TO_KILL_25 185
 
-static long int get_minimum_experience_floor(struct char_data *ch)
+long int get_minimum_experience_floor(struct char_data *ch)
 {
   if (IS_NPC(ch) || GET_LEVEL(ch) >= LVL_IMMORT)
     return 0;

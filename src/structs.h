@@ -7201,6 +7201,7 @@ struct player_special_data_saved
   int perk_points[NUM_CLASSES]; /**< Unspent perk points per class */
   struct char_perk_data *perks; /**< Linked list of acquired perks */
   byte perk_toggles[32];        /**< Bitfield tracking toggled perks (256 perks max, 1 bit each) */
+  bool perk_legacy_migrated;    /**< TRUE once legacy perk/stage catch-up has been applied */
 
   /* Perfect Kill tracking (Rogue Assassin perk) */
   time_t perfect_kill_last_combat; /**< Timestamp of last combat end */

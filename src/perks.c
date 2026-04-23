@@ -17407,6 +17407,193 @@ bool check_stage_advancement(struct char_data *ch, int *perk_points_awarded)
   return advanced;
 }
 
+static int get_total_spent_perk_points(struct char_data *ch)
+{
+  struct char_perk_data *char_perk;
+  int spent = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  for (char_perk = ch->player_specials->saved.perks; char_perk; char_perk = char_perk->next)
+  {
+    struct perk_data *perk_def = get_perk_by_id(char_perk->perk_id);
+    if (!perk_def)
+      continue;
+
+    spent += perk_def->cost * char_perk->current_rank;
+  }
+
+  return spent;
+}
+
+static int pick_likely_starting_class(struct char_data *ch)
+{
+  int i;
+  int best_class = CLASS_UNDEFINED;
+  int best_level = -1;
+
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    if (CLASS_LEVEL(ch, i) > best_level)
+    {
+      best_level = CLASS_LEVEL(ch, i);
+      best_class = i;
+    }
+  }
+
+  return best_class;
+}
+
+static int calculate_stage_awards_from_current_xp(struct char_data *ch, int *resulting_stage)
+{
+  int current_level_xp;
+  int stage_xp_needed;
+  int stage = 0;
+  int stage_awards = 0;
+
+  if (!ch)
+    return 0;
+
+  if (GET_LEVEL(ch) >= LVL_IMMORT)
+  {
+    if (resulting_stage)
+      *resulting_stage = STAGES_PER_LEVEL;
+    return 0;
+  }
+
+  current_level_xp = level_exp(ch, GET_LEVEL(ch));
+  stage_xp_needed = calculate_stage_xp_needed(ch);
+
+  if (stage_xp_needed <= 0)
+  {
+    if (resulting_stage)
+      *resulting_stage = 0;
+    return 0;
+  }
+
+  while (stage < STAGES_PER_LEVEL && GET_EXP(ch) >= (current_level_xp + (stage_xp_needed * stage)))
+  {
+    stage++;
+    if (stage < STAGES_PER_LEVEL)
+      stage_awards++;
+  }
+
+  if (resulting_stage)
+    *resulting_stage = stage;
+
+  return stage_awards;
+}
+
+static void add_legacy_points_for_level_class(struct char_data *ch, int class_id, int points)
+{
+  int perk_class_1;
+  int perk_class_2;
+
+  if (!ch || points <= 0)
+    return;
+
+  if (class_id < 0 || class_id >= NUM_CLASSES)
+    return;
+
+  perk_class_1 = class_to_perk_class(class_id, 1);
+  perk_class_2 = class_to_perk_class(class_id, 2);
+
+  while (points >= 2)
+  {
+    if (perk_class_1 >= 0 && perk_class_1 < NUM_CLASSES)
+      ch->player_specials->saved.perk_points[perk_class_1]++;
+    if (perk_class_2 >= 0 && perk_class_2 < NUM_CLASSES)
+      ch->player_specials->saved.perk_points[perk_class_2]++;
+    points -= 2;
+  }
+
+  if (points == 1)
+  {
+    if (perk_class_1 >= 0 && perk_class_1 < NUM_CLASSES)
+      ch->player_specials->saved.perk_points[perk_class_1]++;
+    else
+      ch->player_specials->saved.perk_points[class_id]++;
+  }
+}
+
+bool reconcile_legacy_perk_progress(struct char_data *ch, int *points_granted)
+{
+  int i;
+  int expected_total = 0;
+  int current_total = 0;
+  int points_missing = 0;
+  int likely_start_class;
+  int simulated_stage = 0;
+  int stage_points_expected = 0;
+  int level_points_expected = 0;
+  int legacy_level_points_by_class[NUM_CLASSES];
+  int stage_points_to_grant = 0;
+
+  if (points_granted)
+    *points_granted = 0;
+
+  if (!CONFIG_PERK_SYSTEM || !ch || IS_NPC(ch))
+    return FALSE;
+
+  if (ch->player_specials->saved.perk_legacy_migrated)
+    return FALSE;
+
+  for (i = 0; i < NUM_CLASSES; i++)
+    legacy_level_points_by_class[i] = 0;
+
+  likely_start_class = pick_likely_starting_class(ch);
+
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    int level_events = CLASS_LEVEL(ch, i);
+    if (i == likely_start_class && level_events > 0)
+      level_events--;
+
+    if (level_events > 0)
+    {
+      legacy_level_points_by_class[i] = level_events * 6;
+      level_points_expected += legacy_level_points_by_class[i];
+    }
+  }
+
+  stage_points_expected = calculate_stage_awards_from_current_xp(ch, &simulated_stage) * 2;
+  expected_total = level_points_expected + stage_points_expected;
+
+  current_total = get_total_perk_points(ch) + get_total_spent_perk_points(ch);
+  points_missing = expected_total - current_total;
+
+  if (points_missing > 0)
+  {
+    int grant_class = GET_CLASS(ch);
+
+    stage_points_to_grant = points_missing - MIN(points_missing, level_points_expected);
+
+    for (i = 0; i < NUM_CLASSES; i++)
+    {
+      if (legacy_level_points_by_class[i] > 0)
+        add_legacy_points_for_level_class(ch, i, legacy_level_points_by_class[i]);
+    }
+
+    if (grant_class < 0 || grant_class >= NUM_CLASSES)
+      grant_class = likely_start_class;
+    if (grant_class < 0 || grant_class >= NUM_CLASSES)
+      grant_class = CLASS_WARRIOR;
+
+    if (stage_points_to_grant > 0)
+      add_legacy_points_for_level_class(ch, grant_class, stage_points_to_grant);
+
+    if (points_granted)
+      *points_granted = points_missing;
+  }
+
+  ch->player_specials->saved.stage_info.current_stage = simulated_stage;
+  ch->player_specials->saved.perk_legacy_migrated = TRUE;
+  update_stage_data(ch);
+
+  return TRUE;
+}
+
 /**
  * Award perk point(s) to the character for advancing a stage.
  * Points are awarded to the class that is being leveled.

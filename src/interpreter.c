@@ -1733,9 +1733,12 @@ void command_interpreter(struct char_data *ch, char *argument)
 /* Routines to handle aliasing. */
 static struct alias_data *find_alias(struct alias_data *alias_list, char *str)
 {
+  if (!str || !*str)
+    return NULL;
+
   while (alias_list != NULL)
   {
-    if (*str == *alias_list->alias) /* hey, every little bit counts :-) */
+    if (alias_list->alias && *alias_list->alias && *str == *alias_list->alias) /* hey, every little bit counts :-) */
       if (!strcmp(str, alias_list->alias))
         return (alias_list);
 
@@ -2384,6 +2387,9 @@ int enter_player_game(struct descriptor_data *d)
   int load_result = -1;
   room_vnum load_room = NOWHERE;
   int i = 0;
+  int needs_save = FALSE;
+  int perk_points_granted = 0;
+  long int minimum_exp = 0;
   char char_title[MAX_TITLE_LENGTH];
 
   reset_char(d->character);
@@ -2471,6 +2477,27 @@ int enter_player_game(struct descriptor_data *d)
       init_class(d->character, i, CLASS_LEVEL(d->character, i));
   }
 
+  minimum_exp = get_minimum_experience_floor(d->character);
+  if (GET_EXP(d->character) < minimum_exp)
+  {
+    GET_EXP(d->character) = minimum_exp;
+    needs_save = TRUE;
+    send_to_char(d->character,
+                 "\tYYour experience was raised to the configured minimum floor (%ld).\tn\r\n",
+                 minimum_exp);
+  }
+
+  if (reconcile_legacy_perk_progress(d->character, &perk_points_granted))
+  {
+    needs_save = TRUE;
+    if (perk_points_granted > 0)
+    {
+      send_to_char(d->character,
+                   "\tGLegacy perk progression synced. You received %d owed perk point%s.\tn\r\n",
+                   perk_points_granted, perk_points_granted == 1 ? "" : "s");
+    }
+  }
+
 #if defined(CAMPAIGN_FR)
   if (!race_list[GET_REAL_RACE(d->character)].is_pc)
     GET_REAL_RACE(d->character) = RACE_HUMAN;
@@ -2482,18 +2509,29 @@ int enter_player_game(struct descriptor_data *d)
 #endif
 
   // We want to make sure their title follows the 'new' format.
-  // It must contain the character's name
-  if (GET_TITLE(d->character) == NULL)
+  // It must contain the character's name when available.
   {
-    set_title(d->character, strdup(GET_NAME(d->character)));
-  }
-  else
-  {
-    if (!strstr(GET_TITLE(d->character), GET_NAME(d->character)))
+    const char *ch_name = GET_NAME(d->character);
+
+    if (GET_TITLE(d->character) == NULL)
     {
-      snprintf(char_title, sizeof(char_title), "%s %s", GET_NAME(d->character),
-               GET_TITLE(d->character));
-      GET_TITLE(d->character) = strdup(char_title);
+      if (ch_name && *ch_name)
+      {
+        snprintf(char_title, sizeof(char_title), "%s", ch_name);
+        set_title(d->character, char_title);
+      }
+      else
+      {
+        set_title(d->character, NULL);
+      }
+    }
+    else if (ch_name && *ch_name)
+    {
+      if (!strstr(GET_TITLE(d->character), ch_name))
+      {
+        snprintf(char_title, sizeof(char_title), "%s %s", ch_name, GET_TITLE(d->character));
+        set_title(d->character, char_title);
+      }
     }
   }
   if (GET_IMM_TITLE(d->character) == NULL && GET_LEVEL(d->character) >= LVL_IMMORT)
@@ -2506,6 +2544,9 @@ int enter_player_game(struct descriptor_data *d)
 
   /* initialize the characters condensed combat data struct */
   init_condensed_combat_data(d->character);
+
+  if (needs_save)
+    save_char(d->character, 0);
 
   /* all done! */
   return load_result;

@@ -1412,6 +1412,8 @@ int load_char(const char *name, struct char_data *ch)
           ch->player_specials->saved.stage_info.current_stage = atoi(line);
         else if (!strcmp(tag, "PSXp"))
           ch->player_specials->saved.stage_info.stage_exp = atoi(line);
+        else if (!strcmp(tag, "PMig"))
+          ch->player_specials->saved.perk_legacy_migrated = (atoi(line) != 0);
         else if (!strcmp(tag, "PTog"))
           load_perk_toggles(fl, ch);
         else if (!strcmp(tag, "PKil"))
@@ -3333,6 +3335,7 @@ void save_char(struct char_data *ch, int mode)
   /* Save stage progression */
   BUFFER_WRITE("PStg: %d\n", ch->player_specials->saved.stage_info.current_stage);
   BUFFER_WRITE("PSXp: %d\n", ch->player_specials->saved.stage_info.stage_exp);
+  BUFFER_WRITE("PMig: %d\n", ch->player_specials->saved.perk_legacy_migrated ? 1 : 0);
 
   /* Save perk toggles as hex string (32 bytes = 256 bits = 64 hex chars) */
   BUFFER_WRITE("PTog: ");
@@ -5386,24 +5389,35 @@ static void write_aliases_ascii(FILE *file, struct char_data *ch)
     return;
 
   for (temp = GET_ALIASES(ch); temp; temp = temp->next)
-    count++;
+  {
+    if (temp->alias && *temp->alias && temp->replacement)
+      count++;
+  }
+
+  if (count == 0)
+    return;
 
   fprintf(file, "Alis: %d\n", count);
 
   for (temp = GET_ALIASES(ch); temp; temp = temp->next)
+  {
+    if (!temp->alias || !*temp->alias || !temp->replacement)
+      continue;
+
     fprintf(file,
             " %s\n" /* Alias: prepend a space in order to avoid issues with aliases beginning
                            * with * (get_line treats lines beginning with * as comments and ignores them */
             "%s\n"  /* Replacement: always prepended with a space in memory anyway */
             "%d\n", /* Type */
             temp->alias, temp->replacement, temp->type);
+  }
 }
 
 static void read_aliases_ascii(FILE *file, struct char_data *ch, int count)
 {
   int i;
 
-  if (count == 0)
+  if (count <= 0)
   {
     GET_ALIASES(ch) = NULL;
     return; /* No aliases in the list. */
@@ -5414,18 +5428,35 @@ static void read_aliases_ascii(FILE *file, struct char_data *ch, int count)
    * to avoid the possibility of a * at the start of the line */
   for (i = 0; i < count; i++)
   {
-    char abuf[MAX_INPUT_LENGTH + 1], rbuf[MAX_INPUT_LENGTH + 1], tbuf[MAX_INPUT_LENGTH] = {'\0'};
+    char abuf[MAX_INPUT_LENGTH + 1] = {'\0'};
+    char rbuf[MAX_INPUT_LENGTH + 1] = {'\0'};
+    char tbuf[MAX_INPUT_LENGTH] = {'\0'};
 
-    /* Read the aliased command. */
-    get_line(file, abuf);
+    /* Read the aliased command. Abort cleanly if the alias block is truncated. */
+    if (!get_line(file, abuf))
+    {
+      log("SYSERR: Truncated alias data while reading alias %d/%d for %s.", i + 1, count,
+          GET_NAME(ch) ? GET_NAME(ch) : "<unnamed>");
+      break;
+    }
 
     /* Read the replacement. This needs to have a space prepended before placing in
      * the in-memory struct. The space may be there already, but we can't be certain! */
     rbuf[0] = ' ';
-    get_line(file, rbuf + 1);
+    if (!get_line(file, rbuf + 1))
+    {
+      log("SYSERR: Truncated alias replacement while reading alias %d/%d for %s.", i + 1,
+          count, GET_NAME(ch) ? GET_NAME(ch) : "<unnamed>");
+      break;
+    }
 
     /* read the type */
-    get_line(file, tbuf);
+    if (!get_line(file, tbuf))
+    {
+      log("SYSERR: Truncated alias type while reading alias %d/%d for %s.", i + 1, count,
+          GET_NAME(ch) ? GET_NAME(ch) : "<unnamed>");
+      break;
+    }
 
     if (abuf[0] && rbuf[1] && *tbuf)
     {

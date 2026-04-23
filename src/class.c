@@ -2926,7 +2926,10 @@ void init_start_char(struct char_data *ch)
   GET_EXP(ch) = 1;
 
   /* reset title */
-  set_title(ch, strdup(GET_NAME(ch)));
+  if (GET_NAME(ch) && *GET_NAME(ch))
+    set_title(ch, GET_NAME(ch));
+  else
+    set_title(ch, NULL);
   set_imm_title(ch, "Staff");
 
 
@@ -3101,6 +3104,7 @@ void init_start_char(struct char_data *ch)
 void do_start(struct char_data *ch)
 {
   init_start_char(ch);
+  ch->player_specials->saved.perk_legacy_migrated = TRUE;
 
   // from level 0 -> level 1
   /* our function for leveling up, takes in class that is being advanced */
