@@ -46,6 +46,8 @@ static void define_wizard_controller_perks(void);
 static void define_wizard_versatile_caster_perks(void);
 void define_artificer_perks(void);
 
+#define PERK_RESPEC_GOLD_PER_LEVEL 1000
+
 /* Global perk database - all defined perks */
 struct perk_data perk_list[NUM_PERKS];
 
@@ -18270,6 +18272,14 @@ int count_char_perks(struct char_data *ch)
   return count;
 }
 
+static int get_perk_respec_cost(struct char_data *ch)
+{
+  if (!ch)
+    return 0;
+
+  return MAX(PERK_RESPEC_GOLD_PER_LEVEL, GET_LEVEL(ch) * PERK_RESPEC_GOLD_PER_LEVEL);
+}
+
 /*****************************************************************************
  * PERK EFFECTS SYSTEM (Step 6)
  * These functions apply perk bonuses to character statistics.
@@ -22338,6 +22348,7 @@ ACMD(do_perk)
 {
   char arg1[MAX_INPUT_LENGTH], arg2[MAX_INPUT_LENGTH];
   int class_id, perk_id;
+  int perk_respec_cost = 0;
   struct perk_data *perk;
   struct char_perk_data *char_perk;
   char error_msg[256];
@@ -22594,6 +22605,49 @@ ACMD(do_perk)
     return;
   }
 
+  if (!strcmp(arg1, "respec") || !strcmp(arg1, "reset"))
+  {
+    int purchased_perks = count_char_perks(ch);
+
+    if (purchased_perks <= 0)
+    {
+      send_to_char(ch, "You have no purchased perks to reset.\r\n");
+      return;
+    }
+
+    perk_respec_cost = get_perk_respec_cost(ch);
+
+    if (str_cmp(arg2, "confirm"))
+    {
+      send_to_char(ch,
+                   "Resetting your perk choices will refund all spent perk points and cost \tY%d\tn gold.\r\n",
+                   perk_respec_cost);
+      send_to_char(ch, "Type '\tcperk respec confirm\tn' to proceed.\r\n");
+      return;
+    }
+
+    if (GET_GOLD(ch) < perk_respec_cost)
+    {
+      send_to_char(ch, "You need \tY%d\tn gold to reset your perks, but only have \tY%d\tn.\r\n",
+                   perk_respec_cost, GET_GOLD(ch));
+      return;
+    }
+
+    GET_GOLD(ch) -= perk_respec_cost;
+
+    for (class_id = 0; class_id < NUM_CLASSES; class_id++)
+      remove_class_perks(ch, class_id);
+
+    memset(ch->player_specials->saved.perk_toggles, 0, 32);
+    affect_total(ch);
+    save_char(ch, 0);
+
+    send_to_char(ch, "\tGYour perk choices have been reset for \tY%d\tG gold.\tn\r\n",
+                 perk_respec_cost);
+    send_to_char(ch, "You may now spend your refunded perk points again.\r\n");
+    return;
+  }
+
   /* Try to parse as a class name */
   class_id = parse_class_long(arg1);
 
@@ -22606,6 +22660,7 @@ ACMD(do_perk)
     send_to_char(ch, "  perk <class>       - Show perks for a specific class\r\n");
     send_to_char(ch, "  perk info <id>     - Show details for a perk\r\n");
     send_to_char(ch, "  perk buy <id>      - Purchase a perk\r\n");
+    send_to_char(ch, "  perk respec        - Reset all purchased perks for a gold cost\r\n");
     send_to_char(ch, "  perk toggle [name] - Toggle a perk on/off (or list toggleable perks)\r\n");
     return;
   }
@@ -22683,6 +22738,8 @@ bool remove_char_perk(struct char_data *ch, int perk_id, int class_id)
         add_perk_points(ch, class_id, points_to_refund);
       }
 
+      set_perk_toggle(ch, perk_id, FALSE);
+
       /* Free memory */
       free(perk);
 
@@ -22729,6 +22786,8 @@ void remove_class_perks(struct char_data *ch, int class_id)
       {
         total_refunded += perk_def->cost * perk->current_rank;
       }
+
+      set_perk_toggle(ch, perk->perk_id, FALSE);
 
       /* Free memory */
       free(perk);
