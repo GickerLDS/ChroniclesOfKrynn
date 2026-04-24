@@ -77,9 +77,9 @@ const char *perk_category_names[] = {
   "Nature's Warrior",               /* 21 - PERK_CATEGORY_NATURES_WARRIOR */
   "Season's Herald",                /* 22 - PERK_CATEGORY_SEASONS_HERALD */
   "Nature's Protector",             /* 23 - PERK_CATEGORY_NATURES_PROTECTOR */
-  "Berserker",                      /* 24 - PERK_CATEGORY_BERSERKER */
-  "Totem Warrior",                  /* 25 - PERK_CATEGORY_TOTEM_WARRIOR */
-  "Primal Champion",                /* 26 - PERK_CATEGORY_PRIMAL_CHAMPION */
+  "Ravager",                        /* 24 - PERK_CATEGORY_BERSERKER */
+  "Occult Slayer",                  /* 25 - PERK_CATEGORY_TOTEM_WARRIOR */
+  "Primal Warrior",                 /* 26 - PERK_CATEGORY_PRIMAL_CHAMPION */
   "Knight of the Chalice",          /* 27 - PERK_CATEGORY_KNIGHT_OF_THE_CHALICE */
   "Sacred Defender",                /* 28 - PERK_CATEGORY_SACRED_DEFENDER */
   "Divine Champion",                /* 29 - PERK_CATEGORY_DIVINE_CHAMPION */
@@ -15407,12 +15407,709 @@ void define_barbarian_perks(void)
 {
   struct perk_data *perk;
 
+  /* Ravager Tree - Tier 1 */
+  perk = &perk_list[PERK_BERSERKER_POWER_ATTACK_MASTERY_1];
+  perk->id = PERK_BERSERKER_POWER_ATTACK_MASTERY_1;
+  perk->name = strdup("Power Attack Mastery I");
+  perk->description = strdup("Increase power attack damage bonus by +1 per rank.");
+  perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
+  perk->cost = 1;
+  perk->max_rank = 5;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Adds +1 power attack damage per rank; doubled with two-handed weapons.");
+
+  perk = &perk_list[PERK_BERSERKER_RAGE_DAMAGE_1];
+  perk->id = PERK_BERSERKER_RAGE_DAMAGE_1;
+  perk->name = strdup("Rage Damage I");
+  perk->description = strdup("Deal additional damage while raging.");
+  perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Adds +2 damage per rank while rage is active.");
+
+  perk = &perk_list[PERK_BERSERKER_IMPROVED_CRITICAL_1];
+  perk->id = PERK_BERSERKER_IMPROVED_CRITICAL_1;
+  perk->name = strdup("Improved Critical I");
+  perk->description = strdup("Increase critical threat range with melee weapons.");
+  perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
+  perk->cost = 1;
+  perk->max_rank = 3;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_CRITICAL_CHANCE;
+  perk->effect_value = 1;
+  perk->effect_modifier = 0;
+  perk->special_description = strdup("Improves melee critical threat range by 1 per rank.");
+
+  perk = &perk_list[PERK_BERSERKER_CLEAVING_STRIKES];
+  perk->id = PERK_BERSERKER_CLEAVING_STRIKES;
+  perk->name = strdup("Cleaving Strikes");
+  perk->description = strdup("Improves cleave follow-up attacks against multiple opponents.");
+  perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
+  perk->cost = 1;
+  perk->max_rank = 1;
+  perk->prerequisite_perk = -1;
+  perk->prerequisite_rank = 0;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
+  perk->effect_value = 2;
+  perk->effect_modifier = 0;
+  perk->special_description =
+      strdup("Reduces cleave attack penalty by 2 and enables great-cleave style follow-up attacks.");
+
+    /* Ravager Tree - Tier 2 */
+    perk = &perk_list[PERK_BERSERKER_POWER_ATTACK_MASTERY_2];
+    perk->id = PERK_BERSERKER_POWER_ATTACK_MASTERY_2;
+    perk->name = strdup("Power Attack Mastery II");
+    perk->description = strdup("Further increase power attack damage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 2;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = PERK_BERSERKER_POWER_ATTACK_MASTERY_1;
+    perk->prerequisite_rank = 5;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Adds +2 power attack damage per rank; doubled with two-handed weapons.");
+
+    perk = &perk_list[PERK_BERSERKER_RAGE_DAMAGE_2];
+    perk->id = PERK_BERSERKER_RAGE_DAMAGE_2;
+    perk->name = strdup("Rage Damage II");
+    perk->description = strdup("Further increase damage while raging.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_RAGE_DAMAGE_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 3;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds +3 damage per rank while rage is active.");
+
+    perk = &perk_list[PERK_BERSERKER_BLOOD_FRENZY];
+    perk->id = PERK_BERSERKER_BLOOD_FRENZY;
+    perk->name = strdup("Blood Frenzy");
+    perk->description = strdup("Critical hits can trigger a temporary haste-like frenzy.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 2;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_IMPROVED_CRITICAL_1;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Intended to grant stacking attack speed on critical hits; helper exists but full effect tracking is not wired yet.");
+
+    perk = &perk_list[PERK_BERSERKER_DEVASTATING_CRITICAL];
+    perk->id = PERK_BERSERKER_DEVASTATING_CRITICAL;
+    perk->name = strdup("Devastating Critical");
+    perk->description = strdup("Critical hits deal additional damage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 2;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = PERK_BERSERKER_IMPROVED_CRITICAL_1;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds +1d6 critical hit damage per rank.");
+
+    /* Ravager Tree - Tier 3 */
+    perk = &perk_list[PERK_BERSERKER_POWER_ATTACK_MASTERY_3];
+    perk->id = PERK_BERSERKER_POWER_ATTACK_MASTERY_3;
+    perk->name = strdup("Power Attack Mastery III");
+    perk->description = strdup("Maximum power attack enhancement.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_POWER_ATTACK_MASTERY_2;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Adds +2 power attack damage per rank; doubled with two-handed weapons.");
+
+    perk = &perk_list[PERK_BERSERKER_OVERWHELMING_FORCE];
+    perk->id = PERK_BERSERKER_OVERWHELMING_FORCE;
+    perk->name = strdup("Overwhelming Force");
+    perk->description = strdup("Power attacks can stagger opponents.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_POWER_ATTACK_MASTERY_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 15;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Power attacks have a 15% chance to stagger for 2 rounds.");
+
+    perk = &perk_list[PERK_BERSERKER_CRIMSON_RAGE];
+    perk->id = PERK_BERSERKER_CRIMSON_RAGE;
+    perk->name = strdup("Crimson Rage");
+    perk->description = strdup("Rage damage scales with missing health.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_RAGE_DAMAGE_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("While raging, gain +1 damage per 10% missing HP, up to +9.");
+
+    perk = &perk_list[PERK_BERSERKER_CARNAGE];
+    perk->id = PERK_BERSERKER_CARNAGE;
+    perk->name = strdup("Carnage");
+    perk->description = strdup("Critical hits splash damage to nearby enemies.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_DEVASTATING_CRITICAL;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 25;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Critical hits deal 25% splash weapon damage to other enemies.");
+
+    /* Ravager Tree - Tier 4 */
+    perk = &perk_list[PERK_BERSERKER_FRENZIED_BERSERKER];
+    perk->id = PERK_BERSERKER_FRENZIED_BERSERKER;
+    perk->name = strdup("Frenzied Berserker");
+    perk->description = strdup("Enter a state of ultimate fury once per rage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_POWER_ATTACK_MASTERY_3;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Intended to grant a short burst of to-hit, damage, and critical multiplier; command support is still pending.");
+
+    perk = &perk_list[PERK_BERSERKER_RELENTLESS_ASSAULT];
+    perk->id = PERK_BERSERKER_RELENTLESS_ASSAULT;
+    perk->name = strdup("Relentless Assault");
+    perk->description = strdup("Blood Frenzy empowers power attacks to shred armor.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_BLOOD_FRENZY;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Intended to apply stacking AC reduction during Blood Frenzy; full combat effect is not wired yet.");
+
+    perk = &perk_list[PERK_BERSERKER_DEATH_FROM_ABOVE];
+    perk->id = PERK_BERSERKER_DEATH_FROM_ABOVE;
+    perk->name = strdup("Death from Above");
+    perk->description = strdup("Gain a leap attack opener.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_BERSERKER;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_OVERWHELMING_FORCE;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description =
+      strdup("Intended to unlock a leap opener attack; command support is still pending.");
+
+    /* Occult Slayer Tree - Tier 1 */
+    perk = &perk_list[PERK_BERSERKER_THICK_SKIN_1];
+    perk->id = PERK_BERSERKER_THICK_SKIN_1;
+    perk->name = strdup("Thick Skin I");
+    perk->description = strdup("Increase your natural armor bonus.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds +1 natural armor per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_DAMAGE_REDUCTION_1];
+    perk->id = PERK_BERSERKER_DAMAGE_REDUCTION_1;
+    perk->name = strdup("Damage Reduction I");
+    perk->description = strdup("Reduce incoming physical damage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_DAMAGE_REDUCTION;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds 1/- damage reduction per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_ELEMENTAL_RESISTANCE_1];
+    perk->id = PERK_BERSERKER_ELEMENTAL_RESISTANCE_1;
+    perk->name = strdup("Elemental Resistance I");
+    perk->description = strdup("Resist fire, cold, electric, and acid damage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds 5% elemental resistance per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_HARDY];
+    perk->id = PERK_BERSERKER_HARDY;
+    perk->name = strdup("Hardy");
+    perk->description = strdup("Gain access to a hardy self-buff.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 1;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Unlocks the hardy command for a temporary Constitution and Fortitude boost.");
+
+    /* Occult Slayer Tree - Tier 2 */
+    perk = &perk_list[PERK_BERSERKER_THICK_SKIN_2];
+    perk->id = PERK_BERSERKER_THICK_SKIN_2;
+    perk->name = strdup("Thick Skin II");
+    perk->description = strdup("Further increase your natural armor bonus.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 2;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = PERK_BERSERKER_THICK_SKIN_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds an additional +1 natural armor per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_DAMAGE_REDUCTION_2];
+    perk->id = PERK_BERSERKER_DAMAGE_REDUCTION_2;
+    perk->name = strdup("Damage Reduction II");
+    perk->description = strdup("Further reduce incoming physical damage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_DAMAGE_REDUCTION_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_DAMAGE_REDUCTION;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds an additional 1/- damage reduction per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_ELEMENTAL_RESISTANCE_2];
+    perk->id = PERK_BERSERKER_ELEMENTAL_RESISTANCE_2;
+    perk->name = strdup("Elemental Resistance II");
+    perk->description = strdup("Further increase elemental resistance.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_ELEMENTAL_RESISTANCE_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds an additional 5% elemental resistance per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_SAVAGE_DEFIANCE];
+    perk->id = PERK_BERSERKER_SAVAGE_DEFIANCE;
+    perk->name = strdup("Savage Defiance");
+    perk->description = strdup("Take less damage while raging.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 2;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = PERK_BERSERKER_DAMAGE_REDUCTION_1;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("While raging, gain +2 damage reduction per rank.");
+
+    /* Occult Slayer Tree - Tier 3 */
+    perk = &perk_list[PERK_BERSERKER_DAMAGE_REDUCTION_3];
+    perk->id = PERK_BERSERKER_DAMAGE_REDUCTION_3;
+    perk->name = strdup("Damage Reduction III");
+    perk->description = strdup("Maximum damage reduction.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 3;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_DAMAGE_REDUCTION_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_DAMAGE_REDUCTION;
+    perk->effect_value = 1;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds a final 1/- damage reduction per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_DEATHLESS_FRENZY];
+    perk->id = PERK_BERSERKER_DEATHLESS_FRENZY;
+    perk->name = strdup("Deathless Frenzy");
+    perk->description = strdup("Rage beyond death.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_SAVAGE_DEFIANCE;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("While raging, dropping to 0 HP can trigger a last-second recovery effect.");
+
+    perk = &perk_list[PERK_BERSERKER_SPELL_RESISTANCE];
+    perk->id = PERK_BERSERKER_SPELL_RESISTANCE;
+    perk->name = strdup("Spell Resistance");
+    perk->description = strdup("Resist hostile magic.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 3;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = PERK_BERSERKER_ELEMENTAL_RESISTANCE_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Intended to grant spell resistance equal to 10 plus 5 per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_PAIN_TOLERANCE];
+    perk->id = PERK_BERSERKER_PAIN_TOLERANCE;
+    perk->name = strdup("Pain Tolerance");
+    perk->description = strdup("Shrug off debilitating effects.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_HARDY;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 4;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Grants strong save bonuses versus poison, disease, and mind-affecting effects.");
+
+    /* Occult Slayer Tree - Tier 4 */
+    perk = &perk_list[PERK_BERSERKER_UNSTOPPABLE];
+    perk->id = PERK_BERSERKER_UNSTOPPABLE;
+    perk->name = strdup("Unstoppable");
+    perk->description = strdup("Become nearly invulnerable while raging.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_DAMAGE_REDUCTION_3;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("While raging, gain an additional 5/- damage reduction.");
+
+    perk = &perk_list[PERK_BERSERKER_INDOMITABLE_WILL];
+    perk->id = PERK_BERSERKER_INDOMITABLE_WILL;
+    perk->name = strdup("Indomitable Will");
+    perk->description = strdup("Mental fortitude breaks enchantments.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_PAIN_TOLERANCE;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Provides a once-per-rage mental save safeguard plus stronger follow-up resistance.");
+
+    perk = &perk_list[PERK_BERSERKER_RAGING_DEFENDER];
+    perk->id = PERK_BERSERKER_RAGING_DEFENDER;
+    perk->name = strdup("Raging Defender");
+    perk->description = strdup("Your damage reduction becomes more effective.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_TOTEM_WARRIOR;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_DEATHLESS_FRENZY;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Enhances damage reduction against critical hits and sneak attacks.");
+
+    /* Primal Warrior Tree - Tier 1 */
+    perk = &perk_list[PERK_BERSERKER_FLEET_OF_FOOT_1];
+    perk->id = PERK_BERSERKER_FLEET_OF_FOOT_1;
+    perk->name = strdup("Fleet of Foot I");
+    perk->description = strdup("Increase movement speed while not wearing heavy armor.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds 10% movement speed per rank while not wearing heavy armor.");
+
+    perk = &perk_list[PERK_BERSERKER_INTIMIDATING_PRESENCE_1];
+    perk->id = PERK_BERSERKER_INTIMIDATING_PRESENCE_1;
+    perk->name = strdup("Intimidating Presence I");
+    perk->description = strdup("Improve your intimidate checks.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds +2 Intimidate per rank.");
+
+    perk = &perk_list[PERK_BERSERKER_MIGHTY_LEAP];
+    perk->id = PERK_BERSERKER_MIGHTY_LEAP;
+    perk->name = strdup("Mighty Leap");
+    perk->description = strdup("Jump farther and avoid falling damage.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 1;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Improves climbing and halves falling damage.");
+
+    perk = &perk_list[PERK_BERSERKER_THICK_HEADED];
+    perk->id = PERK_BERSERKER_THICK_HEADED;
+    perk->name = strdup("Thick Headed");
+    perk->description = strdup("Resist stun and knockdown effects.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 1;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 2;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds +2 Fortitude resistance versus stun and knockdown per rank.");
+
+    /* Primal Warrior Tree - Tier 2 */
+    perk = &perk_list[PERK_BERSERKER_FLEET_OF_FOOT_2];
+    perk->id = PERK_BERSERKER_FLEET_OF_FOOT_2;
+    perk->name = strdup("Fleet of Foot II");
+    perk->description = strdup("Further increase movement speed while not wearing heavy armor.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_FLEET_OF_FOOT_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 10;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds another 10% movement speed per rank while not wearing heavy armor.");
+
+    perk = &perk_list[PERK_BERSERKER_INTIMIDATING_PRESENCE_2];
+    perk->id = PERK_BERSERKER_INTIMIDATING_PRESENCE_2;
+    perk->name = strdup("Intimidating Presence II");
+    perk->description = strdup("Terrify enemies that engage you.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 2;
+    perk->max_rank = 2;
+    perk->prerequisite_perk = PERK_BERSERKER_INTIMIDATING_PRESENCE_1;
+    perk->prerequisite_rank = 3;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Adds more Intimidate and can shake enemies when they start fighting you.");
+
+    perk = &perk_list[PERK_BERSERKER_SPRINT];
+    perk->id = PERK_BERSERKER_SPRINT;
+    perk->name = strdup("Sprint");
+    perk->description = strdup("Gain a short burst of speed.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 2;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_FLEET_OF_FOOT_1;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Unlocks the sprint command for a temporary movement burst.");
+
+    perk = &perk_list[PERK_BERSERKER_CRIPPLING_BLOW];
+    perk->id = PERK_BERSERKER_CRIPPLING_BLOW;
+    perk->name = strdup("Crippling Blow");
+    perk->description = strdup("Critical hits can slow enemies.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 2;
+    perk->max_rank = 3;
+    perk->prerequisite_perk = -1;
+    perk->prerequisite_rank = 0;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 5;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Critical hits have a 5% chance per rank to slow the target.");
+
+    /* Primal Warrior Tree - Tier 3 */
+    perk = &perk_list[PERK_BERSERKER_RECKLESS_ABANDON];
+    perk->id = PERK_BERSERKER_RECKLESS_ABANDON;
+    perk->name = strdup("Reckless Abandon");
+    perk->description = strdup("Trade defense for overwhelming offense.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_FLEET_OF_FOOT_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Unlocks a raging offense stance with higher hit and damage at the cost of AC.");
+
+    perk = &perk_list[PERK_BERSERKER_BLINDING_RAGE];
+    perk->id = PERK_BERSERKER_BLINDING_RAGE;
+    perk->name = strdup("Blinding Rage");
+    perk->description = strdup("Your rage can blind enemies.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_INTIMIDATING_PRESENCE_2;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Entering rage can blind enemies currently fighting you.");
+
+    perk = &perk_list[PERK_BERSERKER_STUNNING_BLOW];
+    perk->id = PERK_BERSERKER_STUNNING_BLOW;
+    perk->name = strdup("Stunning Blow");
+    perk->description = strdup("Your next raging strike can stun.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_CRIPPLING_BLOW;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Starting a rage empowers your next attack to attempt a stun.");
+
+    perk = &perk_list[PERK_BERSERKER_UNCANNY_DODGE_MASTERY];
+    perk->id = PERK_BERSERKER_UNCANNY_DODGE_MASTERY;
+    perk->name = strdup("Uncanny Dodge Mastery");
+    perk->description = strdup("Enhanced defensive awareness.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 3;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_THICK_HEADED;
+    perk->prerequisite_rank = 2;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Grants extra perception and dodge AC.");
+
+    /* Primal Warrior Tree - Tier 4 */
+    perk = &perk_list[PERK_BERSERKER_SAVAGE_CHARGE];
+    perk->id = PERK_BERSERKER_SAVAGE_CHARGE;
+    perk->name = strdup("Savage Charge");
+    perk->description = strdup("Turn charges into devastating openers.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_RECKLESS_ABANDON;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Charge attacks deal heavier damage and can knock down targets while raging.");
+
+    perk = &perk_list[PERK_BERSERKER_WAR_CRY];
+    perk->id = PERK_BERSERKER_WAR_CRY;
+    perk->name = strdup("War Cry");
+    perk->description = strdup("Rally allies and demoralize foes.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_BLINDING_RAGE;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Unlocks a war cry command that buffs allies and weakens enemies.");
+
+    perk = &perk_list[PERK_BERSERKER_EARTHSHAKER];
+    perk->id = PERK_BERSERKER_EARTHSHAKER;
+    perk->name = strdup("Earthshaker");
+    perk->description = strdup("Slam the ground to affect an area around you.");
+    perk->associated_class = CLASS_BERSERKER;
+    perk->perk_category = PERK_CATEGORY_PRIMAL_CHAMPION;
+    perk->cost = 4;
+    perk->max_rank = 1;
+    perk->prerequisite_perk = PERK_BERSERKER_STUNNING_BLOW;
+    perk->prerequisite_rank = 1;
+    perk->effect_type = PERK_EFFECT_SPECIAL;
+    perk->effect_value = 0;
+    perk->effect_modifier = 0;
+    perk->special_description = strdup("Unlocks an earthshaker attack that damages and knocks down nearby foes.");
+
   /* Rage Enhancement */
   perk = &perk_list[PERK_BARBARIAN_RAGE_ENHANCEMENT];
   perk->id = PERK_BARBARIAN_RAGE_ENHANCEMENT;
   perk->name = strdup("Rage Enhancement");
   perk->description = strdup("+1 to Strength and Constitution while raging per rank");
   perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
   perk->cost = 1;
   perk->max_rank = 5;
   perk->prerequisite_perk = -1;
@@ -15428,6 +16125,7 @@ void define_barbarian_perks(void)
   perk->name = strdup("Extended Rage I");
   perk->description = strdup("Rage lasts +2 rounds longer");
   perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
   perk->cost = 1;
   perk->max_rank = 1;
   perk->prerequisite_perk = -1;
@@ -15443,6 +16141,7 @@ void define_barbarian_perks(void)
   perk->name = strdup("Toughness");
   perk->description = strdup("+5 HP per rank");
   perk->associated_class = CLASS_BERSERKER;
+  perk->perk_category = PERK_CATEGORY_BERSERKER;
   perk->cost = 1;
   perk->max_rank = 5;
   perk->prerequisite_perk = -1;
@@ -15530,7 +16229,7 @@ void define_monk_perks(void)
   perk = &perk_list[PERK_MONK_MEDITATION_FOCUS_I];
   perk->id = PERK_MONK_MEDITATION_FOCUS_I;
   perk->name = strdup("Meditation Focus I");
-  perk->description = strdup("+1 GP regen per rank and 1 extra ki point per rank");
+  perk->description = strdup("+1 HP regen per rank and 1 extra stunning fist use per rank");
   perk->associated_class = CLASS_MONK;
   perk->perk_category = PERK_CATEGORY_IRON_BODY;
   perk->cost = 1;
@@ -17147,11 +17846,11 @@ const char *get_perk_category_name(int perk_category)
   case PERK_CATEGORY_NATURES_PROTECTOR:
     return "Nature's Protector";
   case PERK_CATEGORY_BERSERKER:
-    return "Berserker";
+    return "Ravager";
   case PERK_CATEGORY_TOTEM_WARRIOR:
-    return "Totem Warrior";
+    return "Occult Slayer";
   case PERK_CATEGORY_PRIMAL_CHAMPION:
-    return "Primal Champion";
+    return "Primal Warrior";
   case PERK_CATEGORY_KNIGHT_OF_THE_CHALICE:
     return "Knight of the Chalice";
   case PERK_CATEGORY_SACRED_DEFENDER:
@@ -18430,6 +19129,10 @@ int get_perk_save_bonus(struct char_data *ch, int save_type)
   /* Also add universal save bonuses (effect_modifier = -1) */
   bonus += get_perk_bonus(ch, PERK_EFFECT_SAVE, -1);
 
+  /* Primal Warrior Thick Headed applies to Fortitude saves. */
+  if (save_type == SAVING_FORT)
+    bonus += get_berserker_thick_headed_bonus(ch);
+
   bonus += get_artificer_grand_artifice_save_bonus(ch);
 
   return bonus;
@@ -18518,6 +19221,21 @@ int get_perk_skill_bonus(struct char_data *ch, int skill_num)
   if (skill_num == ABILITY_ACROBATICS)
   {
     bonus += get_perk_acrobatics_bonus(ch);
+  }
+
+  if (skill_num == ABILITY_INTIMIDATE)
+  {
+    bonus += get_berserker_intimidating_presence_bonus(ch);
+  }
+
+  if (skill_num == ABILITY_CLIMB)
+  {
+    bonus += get_berserker_mighty_leap_bonus(ch);
+  }
+
+  if (skill_num == ABILITY_PERCEPTION)
+  {
+    bonus += get_berserker_uncanny_dodge_perception_bonus(ch);
   }
 
   /* Warlock Beguiling Influence applies to Deception (Bluff) and Persuasion (Diplomacy) */
@@ -24336,123 +25054,167 @@ bool has_berserker_death_from_above(struct char_data *ch)
 }
 int get_berserker_thick_skin_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_THICK_SKIN_1, CLASS_BERSERKER) +
+         get_perk_rank(ch, PERK_BERSERKER_THICK_SKIN_2, CLASS_BERSERKER);
 }
 int get_berserker_damage_reduction(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_DAMAGE_REDUCTION_1, CLASS_BERSERKER) +
+         get_perk_rank(ch, PERK_BERSERKER_DAMAGE_REDUCTION_2, CLASS_BERSERKER);
 }
 int get_berserker_elemental_resistance(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return (get_perk_rank(ch, PERK_BERSERKER_ELEMENTAL_RESISTANCE_1, CLASS_BERSERKER) * 5) +
+         (get_perk_rank(ch, PERK_BERSERKER_ELEMENTAL_RESISTANCE_2, CLASS_BERSERKER) * 5);
 }
 bool has_berserker_hardy(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_HARDY);
 }
 int get_berserker_savage_defiance_dr(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch) || !affected_by_spell(ch, SKILL_RAGE))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_SAVAGE_DEFIANCE, CLASS_BERSERKER) * 2;
 }
 int get_berserker_damage_reduction_3(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_DAMAGE_REDUCTION_3, CLASS_BERSERKER);
 }
 int get_berserker_spell_resistance(struct char_data *ch)
 {
-  return 0;
+  int rank = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  rank = get_perk_rank(ch, PERK_BERSERKER_SPELL_RESISTANCE, CLASS_BERSERKER);
+  return rank > 0 ? 10 + (rank * 5) : 0;
 }
 bool has_berserker_pain_tolerance(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_PAIN_TOLERANCE);
 }
 bool has_berserker_deathless_frenzy(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_DEATHLESS_FRENZY);
 }
 int get_berserker_unstoppable_dr(struct char_data *ch)
 {
-  return 0;
+  return ch && !IS_NPC(ch) && affected_by_spell(ch, SKILL_RAGE) &&
+                 has_perk(ch, PERK_BERSERKER_UNSTOPPABLE)
+             ? 5
+             : 0;
 }
 bool has_berserker_indomitable_will(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_INDOMITABLE_WILL);
 }
 bool has_berserker_raging_defender(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_RAGING_DEFENDER);
 }
 int get_berserker_fleet_of_foot_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch) || compute_gear_armor_type(ch) == ARMOR_TYPE_HEAVY)
+    return 0;
+
+  return (get_perk_rank(ch, PERK_BERSERKER_FLEET_OF_FOOT_1, CLASS_BERSERKER) * 10) +
+         (get_perk_rank(ch, PERK_BERSERKER_FLEET_OF_FOOT_2, CLASS_BERSERKER) * 10);
 }
 int get_berserker_intimidating_presence_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return (get_perk_rank(ch, PERK_BERSERKER_INTIMIDATING_PRESENCE_1, CLASS_BERSERKER) * 2) +
+         (get_perk_rank(ch, PERK_BERSERKER_INTIMIDATING_PRESENCE_2, CLASS_BERSERKER) * 2);
 }
 int get_berserker_intimidating_presence_morale_penalty(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_INTIMIDATING_PRESENCE_1, CLASS_BERSERKER) / 2;
 }
 bool has_berserker_mighty_leap(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_MIGHTY_LEAP);
 }
 int get_berserker_mighty_leap_bonus(struct char_data *ch)
 {
-  return 0;
+  return has_berserker_mighty_leap(ch) ? 10 : 0;
 }
 int get_berserker_thick_headed_bonus(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_THICK_HEADED, CLASS_BERSERKER) * 2;
 }
 bool has_berserker_sprint(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_SPRINT);
 }
 bool has_berserker_intimidating_presence_2(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_INTIMIDATING_PRESENCE_2);
 }
 int get_berserker_crippling_blow_chance(struct char_data *ch)
 {
-  return 0;
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return get_perk_rank(ch, PERK_BERSERKER_CRIPPLING_BLOW, CLASS_BERSERKER) * 5;
 }
 bool has_berserker_reckless_abandon(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_RECKLESS_ABANDON);
 }
 bool has_berserker_blinding_rage(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_BLINDING_RAGE);
 }
 bool has_berserker_stunning_blow(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_STUNNING_BLOW);
 }
 bool has_berserker_uncanny_dodge_mastery(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_UNCANNY_DODGE_MASTERY);
 }
 int get_berserker_uncanny_dodge_perception_bonus(struct char_data *ch)
 {
-  return 0;
+  return has_berserker_uncanny_dodge_mastery(ch) ? 5 : 0;
 }
 int get_berserker_uncanny_dodge_ac_bonus(struct char_data *ch)
 {
-  return 0;
+  return has_berserker_uncanny_dodge_mastery(ch) ? 3 : 0;
 }
 bool has_berserker_savage_charge(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_SAVAGE_CHARGE);
 }
 bool has_berserker_war_cry(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_WAR_CRY);
 }
 bool has_berserker_earthshaker(struct char_data *ch)
 {
-  return FALSE;
+  return ch && !IS_NPC(ch) && has_perk(ch, PERK_BERSERKER_EARTHSHAKER);
 }
 
 /* =============================================================== */
