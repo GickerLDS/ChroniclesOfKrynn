@@ -322,7 +322,7 @@ void assign_psionic_powers(void)
   "Example: manifest 2 'mind thrust' ogre\r\n"                                                     \
   "This will manifest the mind thrust against the first target named ogre and with the power "     \
   "augmented with 2 power points.\r\n"                                                             \
-  "You may also type manifest energytype (fire|cold|lightning|acid|sonic) to set your energy "     \
+       "You may also type manifest energytype (fire|cold|electric|acid|sonic|force) to set your energy " \
   "type for energy based powers.\r\n"
 
 ACMD(do_manifest)
@@ -353,10 +353,11 @@ ACMD(do_manifest)
         GET_PSIONIC_ENERGY_TYPE(ch) = DAM_COLD;
         send_to_char(ch, "You've set your psionic energy type to cold.\r\n");
       }
-      else if (is_abbrev(pass_arg, "lightning"))
+                     else if (is_abbrev(pass_arg, "lightning") || is_abbrev(pass_arg, "electric") ||
+                                                  is_abbrev(pass_arg, "electricity"))
       {
         GET_PSIONIC_ENERGY_TYPE(ch) = DAM_ELECTRIC;
-        send_to_char(ch, "You've set your psionic energy type to lightning.\r\n");
+                            send_to_char(ch, "You've set your psionic energy type to electric.\r\n");
       }
       else if (is_abbrev(pass_arg, "acid"))
       {
@@ -368,6 +369,11 @@ ACMD(do_manifest)
         GET_PSIONIC_ENERGY_TYPE(ch) = DAM_SOUND;
         send_to_char(ch, "You've set your psionic energy type to sonic.\r\n");
       }
+                     else if (is_abbrev(pass_arg, "force"))
+                     {
+                            GET_PSIONIC_ENERGY_TYPE(ch) = DAM_FORCE;
+                            send_to_char(ch, "You've set your psionic energy type to force.\r\n");
+                     }
       else
       {
         send_to_char(ch, MANIFEST_NO_ARG);

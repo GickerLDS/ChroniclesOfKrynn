@@ -18695,7 +18695,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
     if (error_msg)
       snprintf(error_msg, error_len,
                "You must have at least one level in %s to purchase this perk.",
-               class_list[class_id].name);
+               class_names[class_id]);
     return FALSE;
   }
 
@@ -18901,6 +18901,13 @@ bool purchase_perk(struct char_data *ch, int perk_id, int class_id)
     /* Add new perk */
     add_char_perk(ch, perk_id, class_id);
     send_to_char(ch, "\tGYou have learned: %s (Rank 1/%d)!\tn\r\n", perk->name, perk->max_rank);
+  }
+
+  if (perk->id == PERK_PSIONICIST_ENERGY_SPECIALIZATION)
+  {
+    send_to_char(ch,
+                 "Set your Energy Specialization with \tcmanifest energytype "
+                 "<fire|cold|electric|acid|sonic|force>\tn.\r\n");
   }
 
   /* Save character */
@@ -22513,6 +22520,19 @@ void display_perk_details(struct char_data *ch, struct perk_data *perk,
     if (prereq)
       send_to_char(ch, "Prerequisite: \tR%s\tn (Rank %d)\r\n", prereq->name,
                    perk->prerequisite_rank);
+  }
+
+  if (perk->id == PERK_PSIONICIST_ENERGY_SPECIALIZATION)
+  {
+    const char *energy_type =
+        (GET_PSIONIC_ENERGY_TYPE(ch) >= 0 && GET_PSIONIC_ENERGY_TYPE(ch) < NUM_DAM_TYPES)
+            ? damtypes[GET_PSIONIC_ENERGY_TYPE(ch)]
+            : "Unknown";
+
+    send_to_char(ch, "Current Energy Type: \tC%s\tn\r\n", energy_type);
+    send_to_char(ch,
+                 "Use: \tcmanifest energytype <fire|cold|electric|acid|sonic|force>\tn to "
+                 "change it.\r\n");
   }
 
   send_to_char(ch, "\r\nDescription:\r\n%s\r\n", perk->description);
