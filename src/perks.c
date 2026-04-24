@@ -9904,18 +9904,18 @@ void define_rogue_perks(void)
   perk = &perk_list[PERK_ROGUE_SKILL_MASTERY_1];
   perk->id = PERK_ROGUE_SKILL_MASTERY_1;
   perk->name = strdup("Skill Mastery I");
-  perk->description = strdup("+2 to all rogue skills per rank");
+  perk->description = strdup("+2 to stealth, sleight of hand, perception, and disable device");
   perk->associated_class = CLASS_ROGUE;
   perk->perk_category = PERK_CATEGORY_MASTER_THIEF;
   perk->cost = 1;
-  perk->max_rank = 5;
+  perk->max_rank = 1;
   perk->prerequisite_perk = -1;
   perk->prerequisite_rank = 0;
   perk->effect_type = PERK_EFFECT_SKILL;
-  perk->effect_value = 2; /* +2 per rank */
+  perk->effect_value = 2; /* +2 */
   perk->effect_modifier = 0;
-  perk->special_description = strdup("Grants +2 to stealth, sleight of hand, perception, disable "
-                                     "device, and pick locks per rank.");
+  perk->special_description = strdup(
+      "Grants +2 to stealth, sleight of hand, perception, disable device, and pick locks.");
 
   /* Trapfinding Expert I */
   perk = &perk_list[PERK_ROGUE_TRAPFINDING_EXPERT_1];
@@ -9974,18 +9974,19 @@ void define_rogue_perks(void)
   perk = &perk_list[PERK_ROGUE_SKILL_MASTERY_2];
   perk->id = PERK_ROGUE_SKILL_MASTERY_2;
   perk->name = strdup("Skill Mastery II");
-  perk->description = strdup("Additional +3 to all rogue skills per rank");
+  perk->description =
+      strdup("Additional +2 to stealth, sleight of hand, perception, and disable device");
   perk->associated_class = CLASS_ROGUE;
   perk->perk_category = PERK_CATEGORY_MASTER_THIEF;
   perk->cost = 2;
-  perk->max_rank = 3;
+    perk->max_rank = 1;
   perk->prerequisite_perk = PERK_ROGUE_SKILL_MASTERY_1;
-  perk->prerequisite_rank = 5; /* Must have max rank (5) of Skill Mastery I */
+    perk->prerequisite_rank = 1; /* Must have Skill Mastery I */
   perk->effect_type = PERK_EFFECT_SKILL;
-  perk->effect_value = 3; /* +3 per rank */
+    perk->effect_value = 2; /* +2 */
   perk->effect_modifier = 0;
   perk->special_description = strdup(
-      "Requires Skill Mastery I at max rank. Grants additional +3 to all rogue skills per rank.");
+      "Requires Skill Mastery I. Grants an additional +2 to all rogue skills.");
 
   /* Trapfinding Expert II */
   perk = &perk_list[PERK_ROGUE_TRAPFINDING_EXPERT_2];
@@ -10098,18 +10099,19 @@ void define_rogue_perks(void)
   perk = &perk_list[PERK_ROGUE_SKILL_MASTERY_3];
   perk->id = PERK_ROGUE_SKILL_MASTERY_3;
   perk->name = strdup("Skill Mastery III");
-  perk->description = strdup("Additional +4 to all rogue skills per rank");
+  perk->description =
+      strdup("Additional +2 to stealth, sleight of hand, perception, and disable device");
   perk->associated_class = CLASS_ROGUE;
   perk->perk_category = PERK_CATEGORY_MASTER_THIEF;
   perk->cost = 3;
-  perk->max_rank = 2;
+    perk->max_rank = 1;
   perk->prerequisite_perk = PERK_ROGUE_SKILL_MASTERY_2;
-  perk->prerequisite_rank = 3; /* Must have max rank (3) of Skill Mastery II */
+    perk->prerequisite_rank = 1; /* Must have Skill Mastery II */
   perk->effect_type = PERK_EFFECT_SKILL;
-  perk->effect_value = 4; /* +4 per rank */
+    perk->effect_value = 2; /* +2 */
   perk->effect_modifier = 0;
   perk->special_description = strdup(
-      "Requires Skill Mastery II at max rank. Grants additional +4 to all rogue skills per rank.");
+      "Requires Skill Mastery II. Grants an additional +2 to all rogue skills.");
 
   /* Trapfinding Expert III */
   perk = &perk_list[PERK_ROGUE_TRAPFINDING_EXPERT_3];
@@ -10155,12 +10157,12 @@ void define_rogue_perks(void)
   perk->cost = 3;
   perk->max_rank = 1;
   perk->prerequisite_perk = PERK_ROGUE_SKILL_MASTERY_2;
-  perk->prerequisite_rank = 2; /* Must have at least 2 ranks of Skill Mastery II */
+    perk->prerequisite_rank = 1; /* Must have Skill Mastery II */
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 5;    /* +5 to stealth */
   perk->effect_modifier = 1; /* Can hide while observed */
   perk->special_description =
-      strdup("Requires Skill Mastery II (at least 2 ranks). Grants +5 bonus to stealth and allows "
+      strdup("Requires Skill Mastery II. Grants +5 bonus to stealth and allows "
              "you to attempt to hide even while being observed.");
 
   /* Trap Sense II */
@@ -10186,19 +10188,19 @@ void define_rogue_perks(void)
   perk = &perk_list[PERK_ROGUE_MASTER_THIEF_CAPSTONE];
   perk->id = PERK_ROGUE_MASTER_THIEF_CAPSTONE;
   perk->name = strdup("Master Thief");
-  perk->description = strdup("+10 to all rogue skills, take 10 on any rogue skill check");
+  perk->description = strdup("+2 to all rogue skills, take 10 on any rogue skill check");
   perk->associated_class = CLASS_ROGUE;
   perk->perk_category = PERK_CATEGORY_MASTER_THIEF;
   perk->cost = 4;
   perk->max_rank = 1;
   perk->prerequisite_perk = PERK_ROGUE_SKILL_MASTERY_3;
-  perk->prerequisite_rank = 2; /* Must have max rank (2) of Skill Mastery III */
+  perk->prerequisite_rank = 1; /* Must have Skill Mastery III */
   perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 10;   /* +10 to all rogue skills */
+  perk->effect_value = 2;    /* +2 to all rogue skills */
   perk->effect_modifier = 1; /* Can take 10 on rogue skills */
   perk->special_description =
-      strdup("Requires Skill Mastery III at max rank. The ultimate expression of rogue mastery. "
-             "Grants +10 to all rogue skills and allows you to 'take 10' on any rogue skill check, "
+      strdup("Requires Skill Mastery III. The ultimate expression of rogue mastery. "
+             "Grants +2 to all rogue skills and allows you to 'take 10' on any rogue skill check, "
              "even in combat or under pressure.");
 
   /* Legendary Reflexes */
@@ -20205,18 +20207,18 @@ int get_perk_skill_mastery_bonus(struct char_data *ch)
   if (!ch || IS_NPC(ch))
     return 0;
 
-  /* Skill Mastery I: +2 per rank, max 5 ranks */
-  bonus += 2 * get_total_perk_ranks(ch, PERK_ROGUE_SKILL_MASTERY_1);
+  /* Skill Mastery I: +2 */
+  bonus += has_perk(ch, PERK_ROGUE_SKILL_MASTERY_1) ? 2 : 0;
 
-  /* Skill Mastery II: +3 per rank, max 3 ranks */
-  bonus += 3 * get_total_perk_ranks(ch, PERK_ROGUE_SKILL_MASTERY_2);
+  /* Skill Mastery II: +2 */
+  bonus += has_perk(ch, PERK_ROGUE_SKILL_MASTERY_2) ? 2 : 0;
 
-  /* Skill Mastery III: +4 per rank, max 2 ranks */
-  bonus += 4 * get_total_perk_ranks(ch, PERK_ROGUE_SKILL_MASTERY_3);
+  /* Skill Mastery III: +2 */
+  bonus += has_perk(ch, PERK_ROGUE_SKILL_MASTERY_3) ? 2 : 0;
 
-  /* Master Thief Capstone: +10 */
+  /* Master Thief Capstone: +2 */
   if (has_perk(ch, PERK_ROGUE_MASTER_THIEF_CAPSTONE))
-    bonus += 10;
+    bonus += 2;
 
   return bonus;
 }

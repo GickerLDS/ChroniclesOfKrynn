@@ -124,15 +124,15 @@ Rogues are masters of stealth, skill, and precision strikes. They excel at findi
 
 ---
 
-## Tree 2: Master Thief (42 points total)
+## Tree 2: Master Thief (31 points total)
 *Focus on skills, trap manipulation, and cunning*
 
 ### Tier 1 Perks (1 point each)
 
 18. **Skill Mastery I**
-    - Cost: 1 point per rank
-    - Max Rank: 5
-    - Effect: +2 to all rogue skills per rank
+    - Cost: 1 point
+    - Max Rank: 1
+    - Effect: +2 to all rogue skills
     - Prerequisite: None
 
 19. **Trapfinding Expert I**
@@ -156,9 +156,9 @@ Rogues are masters of stealth, skill, and precision strikes. They excel at findi
 ### Tier 2 Perks (2 points each)
 
 22. **Skill Mastery II**
-    - Cost: 2 points per rank
-    - Max Rank: 3
-    - Effect: Additional +3 to all rogue skills per rank
+    - Cost: 2 points
+    - Max Rank: 1
+    - Effect: Additional +2 to all rogue skills
     - Prerequisite: Skill Mastery I (max)
 
 23. **Trapfinding Expert II**
@@ -200,9 +200,9 @@ Rogues are masters of stealth, skill, and precision strikes. They excel at findi
 ### Tier 3 Perks (3-4 points each)
 
 29. **Skill Mastery III**
-    - Cost: 3 points per rank
-    - Max Rank: 2
-    - Effect: Additional +4 to all rogue skills per rank
+    - Cost: 3 points
+    - Max Rank: 1
+    - Effect: Additional +2 to all rogue skills
     - Prerequisite: Skill Mastery II (max)
 
 30. **Trapfinding Expert III**
@@ -234,7 +234,7 @@ Rogues are masters of stealth, skill, and precision strikes. They excel at findi
 34. **Legendary Skill**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: All rogue skills +10, can take 20 on any skill check
+    - Effect: All rogue skills +2, can take 10 on any rogue skill check
     - Prerequisite: Skill Mastery III (max), Fast Hands III
 
 35. **Trap Master**
@@ -465,7 +465,7 @@ Some perks work especially well together across trees:
 - **Sense Motive**: Reading people
 
 ### Skill Bonus Totals:
-- Skill Mastery I-III (max): +27 to all rogue skills
+- Skill Mastery I-III (max): +6 to all rogue skills
 - Fast Hands I-III (max): +21 to sleight of hand and locks
 - Trapfinding Expert I-III (max): +20 to find/disable traps
 - Stealth Mastery I-III (max): +35 to stealth
