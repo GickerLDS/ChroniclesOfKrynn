@@ -302,7 +302,7 @@ Rogues are masters of stealth, skill, and precision strikes. They excel at findi
     - Effect: Can attempt to hide even while being observed
     - Prerequisite: Stealth Mastery I (at least 3 ranks)
 
-44. **Shadow Step**
+44. **Shade Step**
     - Cost: 2 points
     - Max Rank: 1
     - Effect: Can move through shadows to teleport short distances (10 ft)
@@ -495,7 +495,7 @@ Some perks require special code:
 - **Trap Scavenger**: Generate items from disabled traps
 - **Set Trap**: Create trap objects
 - **Hide in Plain Sight**: Stealth while observed
-- **Shadow Step**: Short-range teleportation
+- **Shade Step**: Short-range teleportation
 - **Uncanny Dodge**: Cannot be flat-footed, no flanking
 - **Vanish**: Temporary invisibility
 - **Shadow Master**: Auto-hide after attacks
@@ -572,7 +572,7 @@ Some perks require special code:
 
 ### Scout Build Tactics:
 1. Maintain stealth constantly
-2. Use Shadow Step for positioning
+2. Use Shade Step for positioning
 3. Vanish when detected
 4. Strike and retreat with Fleet of Foot
 5. Use Uncanny Dodge for defense

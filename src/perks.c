@@ -10359,10 +10359,10 @@ void define_rogue_perks(void)
       strdup("Requires Stealth Mastery I (at least 3 ranks). You can attempt to hide even while "
              "being observed, though this is more difficult than normal.");
 
-  /* Shadow Step (Teleport) */
+  /* Shade Step (Teleport) */
   perk = &perk_list[PERK_ROGUE_SHADOW_STEP_TELEPORT];
   perk->id = PERK_ROGUE_SHADOW_STEP_TELEPORT;
-  perk->name = strdup("Shadow Step");
+  perk->name = strdup("Shade Step");
   perk->description = strdup("Can move through shadows to teleport short distances (10 ft)");
   perk->associated_class = CLASS_ROGUE;
   perk->perk_category = PERK_CATEGORY_SHADOW_SCOUT;
@@ -20487,10 +20487,10 @@ bool has_hide_in_plain_sight(struct char_data *ch)
 }
 
 /**
- * Check if character has Shadow Step teleport ability.
+ * Check if character has Shade Step teleport ability.
  *
  * @param ch The character
- * @return TRUE if character has Shadow Step teleport
+ * @return TRUE if character has Shade Step teleport
  */
 bool has_shadow_step_teleport(struct char_data *ch)
 {
@@ -20501,7 +20501,7 @@ bool has_shadow_step_teleport(struct char_data *ch)
 }
 
 /**
- * Get Shadow Step teleport range.
+ * Get Shade Step teleport range.
  *
  * @param ch The character
  * @return Teleport range in feet (10)
