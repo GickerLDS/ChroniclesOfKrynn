@@ -5892,6 +5892,32 @@ void mag_assign_spells(void)
   spello(BLACKGUARD_CRUELTY_AFFECTS, "blackguard cruelty", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
          MAG_AFFECTS, "A blackguard cruelty effect has expired.", 0, 0, NOSCHOOL, FALSE);
 
+    spello(AFFECT_BLACKGUARD_SHAKEN, "blackguard shaken", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+      MAG_AFFECTS, "You steady your nerves and are no longer shaken.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_FEAR, "blackguard fear", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+      MAG_AFFECTS, "Your overwhelming terror subsides.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_COWER, "blackguard cower", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+      MAG_AFFECTS, "You stop cowering in terror.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_CRUEL_MOMENTUM, "cruel momentum", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+      FALSE, MAG_AFFECTS, "Your cruel momentum fades.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_PROFANE_WEAPON_BOND, "profane weapon bond", 0, 0, 0, POS_FIGHTING,
+      TAR_IGNORE, FALSE, MAG_AFFECTS, "The profane bond empowering your weapon fades.", 0, 0,
+      NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_BLEEDING, "profane bleeding", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+      MAG_AFFECTS, "The profane bleeding finally stops.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_UNHOLY_BLITZ, "unholy blitz", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+      FALSE, MAG_AFFECTS, "Your unholy blitz slows to an end.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_AVATAR_OF_PROFANITY, "avatar of profanity", 0, 0, 0, POS_FIGHTING,
+      TAR_IGNORE, FALSE, MAG_AFFECTS, "Your avatar of profanity fades.", 0, 0, NOSCHOOL,
+      FALSE);
+    spello(AFFECT_BLACKGUARD_CATACLYSMIC_SMITE, "cataclysmic smite", 0, 0, 0, POS_FIGHTING,
+      TAR_IGNORE, TRUE, MAG_AFFECTS, "The cataclysmic smite's lingering force fades.", 0, 0,
+      NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_SHADE_STEP, "shade step", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
+      MAG_AFFECTS, "You step fully back from the shadows.", 0, 0, NOSCHOOL, FALSE);
+    spello(AFFECT_BLACKGUARD_REPRISAL, "blackguard reprisal", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+      FALSE, MAG_AFFECTS, "Your blackguard reprisal fades.", 0, 0, NOSCHOOL, FALSE);
+
   spello(PALADIN_MERCY_INJURED_FAST_HEALING, "paladin mercy fast healing", 0, 0, 0, POS_FIGHTING,
          TAR_IGNORE, FALSE, MAG_AREAS, NULL, 0, 0, NOSCHOOL, FALSE);
 
