@@ -233,10 +233,10 @@ Alchemists in Pathfinder are scientific experimenters who mix mutagens, craft al
 - **Effect Type:** Spell bottling
 - **Prerequisites:** None
 
-#### Infusion I
+#### Safeguarding Infusion I
 - **Max Ranks:** 3
-- **Description:** Your extract saving throw DCs and +1 higher per rank.
-- **Effect Type:** Focused specialization
+- **Description:** Beneficial extracts grant the imbiber +1 to Fortitude, Reflex, and Will per rank for 5 rounds.
+- **Effect Type:** Defensive extract ward
 - **Prerequisites:** None
 
 #### Swift Extraction
@@ -261,11 +261,11 @@ Alchemists in Pathfinder are scientific experimenters who mix mutagens, craft al
 - **Effect Type:** Crafting scaling
 - **Prerequisites:** Alchemical Extract I (2 ranks)
 
-#### Infusion II
+#### Safeguarding Infusion II
 - **Max Ranks:** 2
-- **Description:** Extract dcs another +1 higher per rank.
-- **Effect Type:** Advanced specialization
-- **Prerequisites:** Infusion I (2 ranks)
+- **Description:** Further improves Safeguarding Infusion by +1 to all saves per rank.
+- **Effect Type:** Advanced defensive extract ward
+- **Prerequisites:** Safeguarding Infusion I (2 ranks)
 
 #### Concentrated Essence
 - **Max Ranks:** 1
@@ -287,7 +287,7 @@ Alchemists in Pathfinder are scientific experimenters who mix mutagens, craft al
 - **Max Ranks:** 1
 - **Description:** All extracts will heal the user (level/2) (min 1) hp when used.
 - **Effect Type:** Advanced spell bottling
-- **Prerequisites:** Alchemical Extract II (1 rank), Infusion II (1 rank)
+- **Prerequisites:** Alchemical Extract II (1 rank), Safeguarding Infusion II (1 rank)
 
 #### Alchemical Compatibility
 - **Max Ranks:** 1
@@ -299,7 +299,7 @@ Alchemists in Pathfinder are scientific experimenters who mix mutagens, craft al
 - **Max Ranks:** 1
 - **Description:** Extracts have a 10% chance to give a +1 INT bonus to the user. This effect is cumulative and lasts 2 minutes. Each time it applies, the int bonus goes up by one and the duration resets to 2 minutes. This will repeat to a maximum of 10 times.
 - **Effect Type:** Unique effect unlocking
-- **Prerequisites:** Greater Extraction, Infusion II (any)
+- **Prerequisites:** Greater Extraction, Safeguarding Infusion II (any)
 
 #### Master Alchemist
 - **Max Ranks:** 1

@@ -12914,18 +12914,19 @@ void define_alchemist_perks(void)
   /* Infusion I */
   perk = &perk_list[PERK_ALCHEMIST_INFUSION_I];
   perk->id = PERK_ALCHEMIST_INFUSION_I;
-  perk->name = strdup("Infusion I");
-  perk->description = strdup("Your extract saving throw DCs are +1 higher per rank.");
+  perk->name = strdup("Safeguarding Infusion I");
+  perk->description = strdup("Beneficial extracts grant +1 to all saves per rank for a short time.");
   perk->associated_class = CLASS_ALCHEMIST;
   perk->perk_category = PERK_CATEGORY_EXTRACT_MASTER;
   perk->cost = 1;
   perk->max_rank = 3;
   perk->prerequisite_perk = PERK_UNDEFINED;
   perk->prerequisite_rank = 0;
-  perk->effect_type = PERK_EFFECT_SPELL_DC;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 1; /* +1 per rank */
   perk->effect_modifier = 0;
-  perk->special_description = strdup("Focused specialization: +1 per rank to extract save DCs.");
+  perk->special_description = strdup(
+      "Your extracts ward the drinker, granting +1 to Fortitude, Reflex, and Will per rank for 5 rounds.");
 
   /* Swift Extraction */
   perk = &perk_list[PERK_ALCHEMIST_SWIFT_EXTRACTION];
@@ -12983,18 +12984,19 @@ void define_alchemist_perks(void)
   /* Infusion II */
   perk = &perk_list[PERK_ALCHEMIST_INFUSION_II];
   perk->id = PERK_ALCHEMIST_INFUSION_II;
-  perk->name = strdup("Infusion II");
-  perk->description = strdup("Your extract saving throw DCs gain another +1 per rank.");
+  perk->name = strdup("Safeguarding Infusion II");
+  perk->description = strdup("Your extract ward gains another +1 to all saves per rank.");
   perk->associated_class = CLASS_ALCHEMIST;
   perk->perk_category = PERK_CATEGORY_EXTRACT_MASTER;
   perk->cost = 2;
   perk->max_rank = 2;
   perk->prerequisite_perk = PERK_ALCHEMIST_INFUSION_I;
   perk->prerequisite_rank = 2;
-  perk->effect_type = PERK_EFFECT_SPELL_DC;
+  perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 1; /* +1 per rank */
   perk->effect_modifier = 0;
-  perk->special_description = strdup("Advanced infusion: additional +1 DC per rank.");
+  perk->special_description = strdup(
+      "Improves Safeguarding Infusion by another +1 to all saves per rank for the same duration.");
 
   /* Concentrated Essence */
   perk = &perk_list[PERK_ALCHEMIST_CONCENTRATED_ESSENCE];
@@ -14342,14 +14344,14 @@ int get_alchemist_infusion_ii_rank(struct char_data *ch)
   return get_perk_rank(ch, PERK_ALCHEMIST_INFUSION_II, CLASS_ALCHEMIST);
 }
 
-int get_alchemist_infusion_dc_bonus(struct char_data *ch)
+int get_alchemist_infusion_save_bonus(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
     return 0;
   int total = get_alchemist_infusion_i_rank(ch) + get_alchemist_infusion_ii_rank(ch);
   if (total <= 0)
     return 0;
-  return total; /* +1 per rank across both tiers */
+  return total; /* +1 to all saves per rank across both tiers */
 }
 
 bool has_alchemist_swift_extraction(struct char_data *ch)

@@ -1995,6 +1995,47 @@ void finishCasting(struct char_data *ch)
       }
     }
 
+    /* Safeguarding Infusion: extracts grant a short all-saves ward to the imbiber */
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_ALCHEMIST && CASTING_TCH(ch) &&
+        !SINFO.violent)
+    {
+      int infusion_bonus = get_alchemist_infusion_save_bonus(ch);
+
+      if (infusion_bonus > 0)
+      {
+        struct affected_type af;
+
+        while (affected_by_spell(CASTING_TCH(ch), AFFECT_ALCHEMIST_INFUSION_WARD))
+          affect_from_char(CASTING_TCH(ch), AFFECT_ALCHEMIST_INFUSION_WARD);
+
+        new_affect(&af);
+        af.spell = AFFECT_ALCHEMIST_INFUSION_WARD;
+        af.duration = 5 * PULSE_VIOLENCE;
+        af.modifier = infusion_bonus;
+        af.bonus_type = BONUS_TYPE_ALCHEMICAL;
+
+        af.location = APPLY_SAVING_FORT;
+        affect_to_char(CASTING_TCH(ch), &af);
+        af.location = APPLY_SAVING_REFL;
+        affect_to_char(CASTING_TCH(ch), &af);
+        af.location = APPLY_SAVING_WILL;
+        affect_to_char(CASTING_TCH(ch), &af);
+
+        if (CASTING_TCH(ch) == ch)
+          send_to_char(ch, "\tC[Your extract leaves a safeguarding ward around you! +%d to saves]\tn\r\n",
+                       infusion_bonus);
+        else
+        {
+          send_to_char(ch,
+                       "\tC[Your extract wards %s with safeguarding infusion! +%d to saves]\tn\r\n",
+                       GET_NAME(CASTING_TCH(ch)), infusion_bonus);
+          send_to_char(CASTING_TCH(ch),
+                       "\tC[The infused extract leaves a safeguarding ward around you! +%d to saves]\tn\r\n",
+                       infusion_bonus);
+        }
+      }
+    }
+
     /* Discovery Extraction: 10% chance for stacking INT buff */
     if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_ALCHEMIST &&
         has_alchemist_discovery_extraction(ch) && rand_number(1, 100) <= 10)
@@ -6146,6 +6187,9 @@ void mag_assign_spells(void)
   
   spello(AFFECT_POOL_OF_ACID, "pool of acid", 0, 0, 0,
          POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS, NULL, 5, 9, TRANSMUTATION, FALSE);
+    spello(AFFECT_ALCHEMIST_INFUSION_WARD, "infusion ward", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+      FALSE, MAG_AFFECTS, "The ward from your infused extract fades.", 1, 1, TRANSMUTATION,
+      FALSE);
 
   /*
 spello(SPELL_IDENTIFY, "!UNUSED!", 0, 0, 0, 0,

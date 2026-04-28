@@ -464,7 +464,7 @@ bool is_volatile_catalyst_on(struct char_data *ch);
 int get_alchemist_extract_i_rank(struct char_data *ch);
 int get_alchemist_extract_not_consumed_chance(struct char_data *ch);
 int get_alchemist_infusion_i_rank(struct char_data *ch);
-int get_alchemist_infusion_dc_bonus(struct char_data *ch);
+int get_alchemist_infusion_save_bonus(struct char_data *ch);
 bool has_alchemist_swift_extraction(struct char_data *ch);
 bool has_alchemist_resonant_extract(struct char_data *ch);
 
