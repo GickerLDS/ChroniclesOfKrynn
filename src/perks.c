@@ -13964,6 +13964,15 @@ void define_artificer_perks(void)
 }
 
 /* Alchemist Mutagenist helper implementations */
+static bool has_alchemist_mutagen_formula_active(struct char_data *ch)
+{
+  if (!ch)
+    return FALSE;
+
+  return affected_by_spell(ch, SKILL_MUTAGEN) || affected_by_spell(ch, SKILL_COGNATOGEN) ||
+         affected_by_spell(ch, SKILL_INSPIRING_COGNATOGEN);
+}
+
 int get_alchemist_mutagen_i_rank(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
@@ -13975,7 +13984,7 @@ int get_alchemist_hardy_constitution_hp_bonus(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
     return 0;
-  if (!affected_by_spell(ch, SKILL_MUTAGEN))
+  if (!has_alchemist_mutagen_formula_active(ch))
     return 0;
   int ranks = get_perk_rank(ch, PERK_ALCHEMIST_HARDY_CONSTITUTION_I, CLASS_ALCHEMIST);
   if (ranks <= 0)
@@ -13987,14 +13996,15 @@ bool has_alchemist_alchemical_reflexes(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
     return FALSE;
-  return has_perk(ch, PERK_ALCHEMIST_ALCHEMICAL_REFLEXES) && affected_by_spell(ch, SKILL_MUTAGEN);
+  return has_perk(ch, PERK_ALCHEMIST_ALCHEMICAL_REFLEXES) &&
+         has_alchemist_mutagen_formula_active(ch);
 }
 
 bool has_alchemist_natural_armor(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
     return FALSE;
-  return has_perk(ch, PERK_ALCHEMIST_NATURAL_ARMOR) && affected_by_spell(ch, SKILL_MUTAGEN);
+  return has_perk(ch, PERK_ALCHEMIST_NATURAL_ARMOR) && has_alchemist_mutagen_formula_active(ch);
 }
 
 bool has_alchemist_improved_mutagen(struct char_data *ch)
@@ -14058,7 +14068,8 @@ bool has_alchemist_cellular_adaptation(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
     return FALSE;
-  return has_perk(ch, PERK_ALCHEMIST_CELLULAR_ADAPTATION) && affected_by_spell(ch, SKILL_MUTAGEN);
+  return has_perk(ch, PERK_ALCHEMIST_CELLULAR_ADAPTATION) &&
+         has_alchemist_mutagen_formula_active(ch);
 }
 
 /* Mutagenist Tier IV helpers (file scope) */
@@ -14079,7 +14090,7 @@ bool can_use_chimeric_transmutation(struct char_data *ch)
   /* Must have perk and be under mutagen */
   if (!has_perk(ch, PERK_ALCHEMIST_CHIMERIC_TRANSMUTATION))
     return FALSE;
-  if (!affected_by_spell(ch, SKILL_MUTAGEN))
+  if (!has_alchemist_mutagen_formula_active(ch))
     return FALSE;
 
   /* Reset flag if 60s have passed since last combat end */

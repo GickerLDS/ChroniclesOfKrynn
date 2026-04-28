@@ -15007,9 +15007,10 @@ ACMD(do_chimericbreath)
     return;
   }
 
-  if (!affected_by_spell(ch, SKILL_MUTAGEN))
+  if (!affected_by_spell(ch, SKILL_MUTAGEN) && !affected_by_spell(ch, SKILL_COGNATOGEN) &&
+      !affected_by_spell(ch, SKILL_INSPIRING_COGNATOGEN))
   {
-    send_to_char(ch, "You must be under the effects of a mutagen to do that.\r\n");
+    send_to_char(ch, "You must be under the effects of a mutagen or cognatogen to do that.\r\n");
     return;
   }
 

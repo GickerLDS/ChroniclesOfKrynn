@@ -2481,6 +2481,35 @@ void perform_mutagen(struct char_data *ch, char *arg2, bool alchemical_bonus)
     attach_mud_event(new_mud_event(eUNIVERSAL_MUTAGEN_COOLDOWN, ch, NULL), 30 * 60 RL_SEC);
   }
 
+  /* Tier III: Universal Mutagen override */
+  if (is_alchemist_universal_mutagen_ready(ch))
+  {
+    int best = 0;
+    best = MAX(best, af.modifier);
+    best = MAX(best, af3.modifier);
+    best = MAX(best, af4.modifier);
+    /* cap duration to ~5 minutes (about 50 combat rounds) */
+    int five_min_rounds = (5 * 60 RL_SEC) / PULSE_VIOLENCE;
+    duration = MIN(duration, five_min_rounds);
+    /* clear penalty */
+    af2.modifier = 0;
+
+    /* mark base mods to be suppressed; we'll add universal later */
+    af.modifier = 0;
+    af3.modifier = 0;
+    af4.modifier = 0;
+
+    /* store best in af6.modifier temporarily for later universal application */
+    af6.location = APPLY_NONE;
+    af6.modifier = best;
+
+    /* turn off the toggle now */
+    set_perk_toggle(ch, PERK_ALCHEMIST_UNIVERSAL_MUTAGEN, FALSE);
+
+    /* start 30-minute universal mutagen lockout */
+    attach_mud_event(new_mud_event(eUNIVERSAL_MUTAGEN_COOLDOWN, ch, NULL), 30 * 60 RL_SEC);
+  }
+
 
   if (GET_GRAND_DISCOVERY(ch) == GR_ALC_DISC_TRUE_MUTAGEN)
   {
@@ -2505,17 +2534,6 @@ void perform_mutagen(struct char_data *ch, char *arg2, bool alchemical_bonus)
   {
     af5.modifier = 2;
   }
-
-  /* we switched it so you get full alchemical bonus after level 10 */
-  /*
-  if (alchemical_bonus)
-  {
-    af.modifier /= 2;
-    af3.modifier /= 2;
-    af4.modifier /= 2;
-    af5.modifier /= 2;
-  }
-  */
 
   /* Unstable Mutagen: boost base effects by +50% */
   if (is_alchemist_unstable_mutagen_on(ch))
@@ -3345,17 +3363,195 @@ void perform_cognatogen(struct char_data *ch, char *arg2, bool alchemical_bonus)
     af5.duration = duration;
     affect_to_char(ch, &af5);
   }
-  if (af6.location != APPLY_NONE)
+  if (af6.location != APPLY_NONE || af6.modifier > 0)
   {
-    af6.spell = SKILL_COGNATOGEN;
-    af6.duration = duration;
-    affect_to_char(ch, &af6);
+    /* Universal mutagen stored value: apply to all ability scores */
+    if (af6.location == APPLY_NONE && af6.modifier > 0)
+    {
+      struct affected_type uaf;
+      new_affect(&uaf);
+      uaf.spell = SKILL_COGNATOGEN;
+      uaf.duration = duration;
+      uaf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      uaf.modifier = af6.modifier;
+
+      uaf.location = APPLY_STR;
+      affect_to_char(ch, &uaf);
+      uaf.location = APPLY_DEX;
+      affect_to_char(ch, &uaf);
+      uaf.location = APPLY_CON;
+      affect_to_char(ch, &uaf);
+      uaf.location = APPLY_INT;
+      affect_to_char(ch, &uaf);
+      uaf.location = APPLY_WIS;
+      affect_to_char(ch, &uaf);
+      uaf.location = APPLY_CHA;
+      affect_to_char(ch, &uaf);
+    }
+    else
+    {
+      af6.spell = SKILL_COGNATOGEN;
+      af6.duration = duration;
+      affect_to_char(ch, &af6);
+    }
   }
   if (af7.location != APPLY_NONE)
   {
     af7.spell = SKILL_COGNATOGEN;
     af7.duration = duration;
     affect_to_char(ch, &af7);
+  }
+
+  /* Mutagenist perk effects also apply to cognatogens. */
+  {
+    int extra = get_alchemist_mutagen_i_rank(ch);
+    if (extra > 0)
+    {
+      struct affected_type paf;
+      new_affect(&paf);
+      paf.spell = SKILL_COGNATOGEN;
+      paf.duration = duration;
+      paf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      paf.location = APPLY_STR;
+      paf.modifier = extra;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_DEX;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_CON;
+      affect_to_char(ch, &paf);
+    }
+  }
+
+  if (has_alchemist_alchemical_reflexes(ch))
+  {
+    struct affected_type raf;
+    new_affect(&raf);
+    raf.spell = SKILL_COGNATOGEN;
+    raf.duration = duration;
+    raf.location = APPLY_AC_NEW;
+    raf.modifier = 1;
+    raf.bonus_type = BONUS_TYPE_DODGE;
+    affect_to_char(ch, &raf);
+
+    raf.location = APPLY_SAVING_REFL;
+    raf.modifier = 1;
+    raf.bonus_type = BONUS_TYPE_UNDEFINED;
+    affect_to_char(ch, &raf);
+  }
+
+  if (has_alchemist_natural_armor(ch))
+  {
+    struct affected_type naf;
+    new_affect(&naf);
+    naf.spell = SKILL_COGNATOGEN;
+    naf.duration = duration;
+    naf.location = APPLY_AC_NEW;
+    naf.modifier = 2;
+    naf.bonus_type = BONUS_TYPE_NATURALARMOR;
+    affect_to_char(ch, &naf);
+  }
+
+  if (has_alchemist_improved_mutagen(ch))
+  {
+    struct affected_type iaf;
+    new_affect(&iaf);
+    iaf.spell = SKILL_COGNATOGEN;
+    iaf.duration = duration;
+    iaf.bonus_type = BONUS_TYPE_UNIVERSAL;
+    iaf.modifier = 4;
+    iaf.location = af.location;
+    affect_to_char(ch, &iaf);
+  }
+
+  {
+    int mb = get_alchemist_mutagenic_mastery_bonus(ch);
+    if (mb > 0)
+    {
+      struct affected_type maf;
+      new_affect(&maf);
+      maf.spell = SKILL_COGNATOGEN;
+      maf.duration = duration;
+      maf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      maf.modifier = mb;
+      maf.location = APPLY_STR;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_DEX;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_CON;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_INT;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_WIS;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_CHA;
+      affect_to_char(ch, &maf);
+    }
+  }
+
+  {
+    int extra2 = get_alchemist_mutagen_ii_rank(ch);
+    if (extra2 > 0)
+    {
+      struct affected_type paf;
+      new_affect(&paf);
+      paf.spell = SKILL_COGNATOGEN;
+      paf.duration = duration;
+      paf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      paf.location = APPLY_STR;
+      paf.modifier = extra2;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_DEX;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_CON;
+      affect_to_char(ch, &paf);
+    }
+  }
+
+  if (has_alchemist_infused_with_vigor(ch))
+  {
+    int heal = dice(1, 6) + GET_LEVEL(ch);
+    GET_HIT(ch) = MIN(GET_MAX_HIT(ch), GET_HIT(ch) + heal);
+
+    struct affected_type vaf;
+    new_affect(&vaf);
+    vaf.spell = SKILL_COGNATOGEN;
+    vaf.duration = 10 * PULSE_VIOLENCE;
+    vaf.location = APPLY_FAST_HEALING;
+    vaf.modifier = 1;
+    vaf.bonus_type = BONUS_TYPE_UNDEFINED;
+    affect_to_char(ch, &vaf);
+  }
+
+  if (has_alchemist_cellular_adaptation(ch))
+  {
+    struct affected_type daf;
+    new_affect(&daf);
+    daf.spell = SKILL_COGNATOGEN;
+    daf.duration = duration;
+    daf.location = APPLY_DR;
+    daf.modifier = 5;
+    daf.bonus_type = BONUS_TYPE_UNDEFINED;
+    affect_to_char(ch, &daf);
+
+    struct damage_reduction_type *new_dr;
+    CREATE(new_dr, struct damage_reduction_type, 1);
+    new_dr->duration = duration;
+    new_dr->bypass_cat[0] = DR_BYPASS_CAT_NONE;
+    new_dr->bypass_val[0] = 0;
+    new_dr->bypass_cat[1] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[1] = 0;
+    new_dr->bypass_cat[2] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[2] = 0;
+    new_dr->amount = 5;
+    new_dr->max_damage = -1;
+    new_dr->spell = SKILL_COGNATOGEN;
+    new_dr->feat = FEAT_UNDEFINED;
+    new_dr->next = GET_DR(ch);
+    GET_DR(ch) = new_dr;
   }
 
   act("$n swallows a vial of murky looking substance and grows more mentally powerful before your "
@@ -3400,6 +3596,8 @@ void perform_inspiring_cognatogen(struct char_data *ch, bool alchemical_bonus)
 
   /* duration */
   duration = 100 * CLASS_LEVEL(ch, CLASS_ALCHEMIST);
+  if (has_alchemist_persistence_mutagen(ch))
+    duration *= 2;
 
   af.location = APPLY_AC_NEW;
   af.bonus_type = BONUS_TYPE_DODGE;
@@ -3440,6 +3638,13 @@ void perform_inspiring_cognatogen(struct char_data *ch, bool alchemical_bonus)
     af6.modifier /= 2;
   }
 
+  if (is_alchemist_unstable_mutagen_on(ch))
+  {
+    af.modifier = (int)(af.modifier * 1.5);
+    af2.modifier = (int)(af2.modifier * 1.5);
+    af5.modifier = (int)(af5.modifier * 1.5);
+  }
+
   if (af.modifier != 0)
   {
     af.spell = SKILL_INSPIRING_COGNATOGEN;
@@ -3469,6 +3674,145 @@ void perform_inspiring_cognatogen(struct char_data *ch, bool alchemical_bonus)
     af5.spell = SKILL_INSPIRING_COGNATOGEN;
     af5.duration = duration;
     affect_to_char(ch, &af5);
+  }
+
+  {
+    int extra = get_alchemist_mutagen_i_rank(ch);
+    if (extra > 0)
+    {
+      struct affected_type paf;
+      new_affect(&paf);
+      paf.spell = SKILL_INSPIRING_COGNATOGEN;
+      paf.duration = duration;
+      paf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      paf.location = APPLY_STR;
+      paf.modifier = extra;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_DEX;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_CON;
+      affect_to_char(ch, &paf);
+    }
+  }
+
+  if (has_alchemist_alchemical_reflexes(ch))
+  {
+    struct affected_type raf;
+    new_affect(&raf);
+    raf.spell = SKILL_INSPIRING_COGNATOGEN;
+    raf.duration = duration;
+    raf.location = APPLY_AC_NEW;
+    raf.modifier = 1;
+    raf.bonus_type = BONUS_TYPE_DODGE;
+    affect_to_char(ch, &raf);
+
+    raf.location = APPLY_SAVING_REFL;
+    raf.modifier = 1;
+    raf.bonus_type = BONUS_TYPE_UNDEFINED;
+    affect_to_char(ch, &raf);
+  }
+
+  if (has_alchemist_natural_armor(ch))
+  {
+    struct affected_type naf;
+    new_affect(&naf);
+    naf.spell = SKILL_INSPIRING_COGNATOGEN;
+    naf.duration = duration;
+    naf.location = APPLY_AC_NEW;
+    naf.modifier = 2;
+    naf.bonus_type = BONUS_TYPE_NATURALARMOR;
+    affect_to_char(ch, &naf);
+  }
+
+  {
+    int mb = get_alchemist_mutagenic_mastery_bonus(ch);
+    if (mb > 0)
+    {
+      struct affected_type maf;
+      new_affect(&maf);
+      maf.spell = SKILL_INSPIRING_COGNATOGEN;
+      maf.duration = duration;
+      maf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      maf.modifier = mb;
+      maf.location = APPLY_STR;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_DEX;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_CON;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_INT;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_WIS;
+      affect_to_char(ch, &maf);
+      maf.location = APPLY_CHA;
+      affect_to_char(ch, &maf);
+    }
+  }
+
+  {
+    int extra2 = get_alchemist_mutagen_ii_rank(ch);
+    if (extra2 > 0)
+    {
+      struct affected_type paf;
+      new_affect(&paf);
+      paf.spell = SKILL_INSPIRING_COGNATOGEN;
+      paf.duration = duration;
+      paf.bonus_type = BONUS_TYPE_UNIVERSAL;
+      paf.location = APPLY_STR;
+      paf.modifier = extra2;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_DEX;
+      affect_to_char(ch, &paf);
+
+      paf.location = APPLY_CON;
+      affect_to_char(ch, &paf);
+    }
+  }
+
+  if (has_alchemist_infused_with_vigor(ch))
+  {
+    int heal = dice(1, 6) + GET_LEVEL(ch);
+    GET_HIT(ch) = MIN(GET_MAX_HIT(ch), GET_HIT(ch) + heal);
+
+    struct affected_type vaf;
+    new_affect(&vaf);
+    vaf.spell = SKILL_INSPIRING_COGNATOGEN;
+    vaf.duration = 10 * PULSE_VIOLENCE;
+    vaf.location = APPLY_FAST_HEALING;
+    vaf.modifier = 1;
+    vaf.bonus_type = BONUS_TYPE_UNDEFINED;
+    affect_to_char(ch, &vaf);
+  }
+
+  if (has_alchemist_cellular_adaptation(ch))
+  {
+    struct affected_type daf;
+    new_affect(&daf);
+    daf.spell = SKILL_INSPIRING_COGNATOGEN;
+    daf.duration = duration;
+    daf.location = APPLY_DR;
+    daf.modifier = 5;
+    daf.bonus_type = BONUS_TYPE_UNDEFINED;
+    affect_to_char(ch, &daf);
+
+    struct damage_reduction_type *new_dr;
+    CREATE(new_dr, struct damage_reduction_type, 1);
+    new_dr->duration = duration;
+    new_dr->bypass_cat[0] = DR_BYPASS_CAT_NONE;
+    new_dr->bypass_val[0] = 0;
+    new_dr->bypass_cat[1] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[1] = 0;
+    new_dr->bypass_cat[2] = DR_BYPASS_CAT_UNUSED;
+    new_dr->bypass_val[2] = 0;
+    new_dr->amount = 5;
+    new_dr->max_damage = -1;
+    new_dr->spell = SKILL_INSPIRING_COGNATOGEN;
+    new_dr->feat = FEAT_UNDEFINED;
+    new_dr->next = GET_DR(ch);
+    GET_DR(ch) = new_dr;
   }
 
   act("$n swallows a vial of murky looking substance and grows more inspired before your eyes.",
