@@ -5496,8 +5496,22 @@ int perform_intimidate(struct char_data *ch, struct char_data *vict)
       base_duration += (2 * PASSES_PER_SEC);
     attach_mud_event(new_mud_event(eINTIMIDATED, vict, NULL), base_duration);
     success = 1;
-    /* Blackguard Tier 2: Terror Tactics/Nightmarish Visage splash */
-    if (!IS_NPC(ch) && (has_blackguard_terror_tactics(ch) || has_blackguard_nightmarish_visage(ch)))
+    if (!IS_NPC(ch) && has_blackguard_nightmarish_visage(ch) && !AFF_FLAGGED(vict, AFF_SHAKEN) &&
+        !AFF_FLAGGED(vict, AFF_FEAR) && !AFF2_FLAGGED(vict, AFF2_COWERING))
+    {
+      struct affected_type af;
+
+      new_affect(&af);
+      af.spell = AFFECT_BLACKGUARD_SHAKEN;
+      af.duration = 4;
+      SET_BIT_AR(af.bitvector, AFF_SHAKEN);
+      affect_join(vict, &af, FALSE, FALSE, FALSE, FALSE);
+      act("$N recoils from the nightmare written across your face!", FALSE, ch, 0, vict,
+          TO_CHAR);
+      act("$n's nightmare visage leaves you shaken!", FALSE, ch, 0, vict, TO_VICT);
+    }
+    /* Blackguard Tier 2: Terror Tactics splash */
+    if (!IS_NPC(ch) && has_blackguard_terror_tactics(ch))
     {
       int margin = attempt - resist;
       int splashes = 0;
@@ -5512,9 +5526,7 @@ int perform_intimidate(struct char_data *ch, struct char_data *vict)
           continue;
         if (char_has_mud_event(tch, eINTIMIDATED))
           continue;
-        /* splash condition: higher margin for Terror Tactics; lower for Nightmarish Visage */
-        if ((has_blackguard_terror_tactics(ch) && margin >= 10) ||
-            (has_blackguard_nightmarish_visage(ch) && margin >= 6))
+        if (margin >= 10)
         {
           act("$n's terrifying presence unsettles $N!", FALSE, ch, 0, tch, TO_NOTVICT);
           attach_mud_event(new_mud_event(eINTIMIDATED, tch, NULL), (6 * PASSES_PER_SEC));

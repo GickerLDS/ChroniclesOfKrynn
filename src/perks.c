@@ -284,7 +284,7 @@ void define_blackguard_perks(void)
   perk = &perk_list[PERK_BLACKGUARD_TERROR_TACTICS];
   perk->id = PERK_BLACKGUARD_TERROR_TACTICS;
   perk->name = strdup("Terror Tactics");
-  perk->description = strdup("Strong intimidate splashes to nearby foes on high roll.");
+  perk->description = strdup("Strong intimidate splashes to nearby foes on a decisive success.");
   perk->associated_class = CLASS_BLACKGUARD;
   perk->perk_category = PERK_CATEGORY_TYRANNY_AND_FEAR;
   perk->cost = 2;
@@ -315,7 +315,7 @@ void define_blackguard_perks(void)
   perk = &perk_list[PERK_BLACKGUARD_NIGHTMARISH_VISAGE];
   perk->id = PERK_BLACKGUARD_NIGHTMARISH_VISAGE;
   perk->name = strdup("Nightmarish Visage");
-  perk->description = strdup("Intimidate becomes more menacing; can affect multiple foes.");
+  perk->description = strdup("Successful intimidate leaves the target shaken for a short time.");
   perk->associated_class = CLASS_BLACKGUARD;
   perk->perk_category = PERK_CATEGORY_TYRANNY_AND_FEAR;
   perk->cost = 2;
@@ -324,7 +324,8 @@ void define_blackguard_perks(void)
   perk->prerequisite_rank = 1;
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 1;
-  perk->special_description = strdup("AoE intimidate capabilities; improved visuals.");
+  perk->special_description =
+      strdup("On a successful intimidate, the primary target is also shaken for 4 rounds.");
 
   /* Tier 3: Paralyzing Dread */
   perk = &perk_list[PERK_BLACKGUARD_PARALYZING_DREAD];
