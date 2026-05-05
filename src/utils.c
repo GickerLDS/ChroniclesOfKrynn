@@ -241,6 +241,9 @@ int compute_arcane_level(struct char_data *ch)
 {
   int arcane_level = 0;
 
+  if (!ch)
+    return 0;
+
   if (IS_NPC(ch)) /* npc is simple for now */
     return (GET_LEVEL(ch));
 

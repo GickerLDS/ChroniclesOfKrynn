@@ -24,15 +24,129 @@
 #include "wilderness.h"
 #include "movement_tracks.h" /* includes trail data structures */
 #include "spec_procs.h"
+#include "traps.h"
 
 /* local functions */
 static void redit_setup_new(struct descriptor_data *d);
 static void redit_disp_extradesc_menu(struct descriptor_data *d);
 static void redit_disp_exit_menu(struct descriptor_data *d);
+static void redit_disp_exit_trap_menu(struct descriptor_data *d);
+static void redit_disp_exit_trap_type_menu(struct descriptor_data *d);
+static void redit_disp_exit_trap_severity_menu(struct descriptor_data *d);
 static void redit_disp_exit_flag_menu(struct descriptor_data *d);
 static void redit_disp_flag_menu(struct descriptor_data *d);
 static void redit_disp_sector_menu(struct descriptor_data *d);
 static void redit_disp_menu(struct descriptor_data *d);
+
+static const char *redit_trigger_name(int trigger_type)
+{
+  switch (trigger_type)
+  {
+  case TRAP_TRIGGER_LEAVE_ROOM:
+    return "Movement (leave room)";
+  case TRAP_TRIGGER_OPEN_DOOR:
+    return "Open door";
+  case TRAP_TRIGGER_UNLOCK_DOOR:
+    return "Unlock door";
+  default:
+    return "Unknown";
+  }
+}
+
+static void redit_disp_exit_trap_type_menu(struct descriptor_data *d)
+{
+  int i;
+
+  write_to_output(d, "Select trap type:\r\n");
+  for (i = 0; i < NUM_TRAP_TYPES; i++)
+    write_to_output(d, "%2d) %s\r\n", i, get_trap_type_name(i));
+
+  write_to_output(d, "Enter trap type (0-%d): ", NUM_TRAP_TYPES - 1);
+}
+
+static void redit_disp_exit_trap_severity_menu(struct descriptor_data *d)
+{
+  int i;
+
+  write_to_output(d, "Select severity:\r\n");
+  for (i = 0; i < NUM_TRAP_SEVERITIES; i++)
+    write_to_output(d, "%2d) %s\r\n", i, get_trap_severity_name(i));
+
+  write_to_output(d, "Enter severity (0-%d): ", NUM_TRAP_SEVERITIES - 1);
+}
+
+static struct trap_data *redit_find_exit_trap(struct room_data *room, int direction)
+{
+  struct trap_data *trap;
+
+  if (!room)
+    return NULL;
+
+  for (trap = room->traps; trap; trap = trap->next)
+  {
+    if (trap->trigger_direction != direction)
+      continue;
+
+    if (trap->trigger_type == TRAP_TRIGGER_LEAVE_ROOM || trap->trigger_type == TRAP_TRIGGER_OPEN_DOOR ||
+        trap->trigger_type == TRAP_TRIGGER_UNLOCK_DOOR)
+      return trap;
+  }
+
+  return NULL;
+}
+
+static void redit_remove_exit_trap(struct room_data *room, int direction)
+{
+  struct trap_data *trap, *next, *prev = NULL;
+
+  if (!room)
+    return;
+
+  for (trap = room->traps; trap; trap = next)
+  {
+    next = trap->next;
+
+    if (trap->trigger_direction == direction &&
+        (trap->trigger_type == TRAP_TRIGGER_LEAVE_ROOM || trap->trigger_type == TRAP_TRIGGER_OPEN_DOOR ||
+         trap->trigger_type == TRAP_TRIGGER_UNLOCK_DOOR))
+    {
+      if (prev)
+        prev->next = next;
+      else
+        room->traps = next;
+
+      free_trap(trap);
+      continue;
+    }
+
+    prev = trap;
+  }
+
+  if (!room->traps)
+    REMOVE_BIT_AR(room->room_flags, ROOM_HASTRAP);
+}
+
+static struct trap_data *redit_create_exit_trap(struct room_data *room, int direction, int trap_type,
+                                                int severity, int trigger_type)
+{
+  struct trap_data *trap;
+
+  if (!room)
+    return NULL;
+
+  redit_remove_exit_trap(room, direction);
+
+  trap = create_trap(trap_type, severity, trigger_type);
+  if (!trap)
+    return NULL;
+
+  trap->trigger_direction = direction;
+  trap->next = room->traps;
+  room->traps = trap;
+  SET_BIT_AR(room->room_flags, ROOM_HASTRAP);
+
+  return trap;
+}
 
 /* Utils and exported functions. */
 ACMD(do_oasis_redit)
@@ -440,6 +554,8 @@ static void redit_disp_extradesc_menu(struct descriptor_data *d)
 static void redit_disp_exit_menu(struct descriptor_data *d)
 {
   char door_buf[24];
+  char trap_buf[MAX_STRING_LENGTH] = {'\0'};
+  struct trap_data *exit_trap = redit_find_exit_trap(OLC_ROOM(d), OLC_VAL(d));
   /* if exit doesn't exist, alloc/create it */
   if (OLC_EXIT(d) == NULL)
   {
@@ -464,6 +580,16 @@ static void redit_disp_exit_menu(struct descriptor_data *d)
 
   get_char_colors(d->character);
   clear_screen(d);
+  if (exit_trap)
+  {
+    snprintf(trap_buf, sizeof(trap_buf), "%s (%s)", get_trap_type_name(exit_trap->trap_type),
+             redit_trigger_name(exit_trap->trigger_type));
+  }
+  else
+  {
+    snprintf(trap_buf, sizeof(trap_buf), "<NONE>");
+  }
+
   write_to_output(
       d,
       "%s1%s) Exit to     : %s%d\r\n"
@@ -472,14 +598,52 @@ static void redit_disp_exit_menu(struct descriptor_data *d)
       "%s4%s) Key         : %s%d\r\n"
       "%s5%s) Door flags  : %s%s\r\n"
       "%s6%s) Purge exit.\r\n"
+      "%s7%s) Exit trap   : %s%s\r\n"
       "Enter choice, 0 to quit : ",
 
       grn, nrm, cyn, OLC_EXIT(d)->to_room != NOWHERE ? world[OLC_EXIT(d)->to_room].number : -1, grn,
       nrm, yel, OLC_EXIT(d)->general_description ? OLC_EXIT(d)->general_description : "<NONE>", grn,
       nrm, yel, OLC_EXIT(d)->keyword ? OLC_EXIT(d)->keyword : "<NONE>", grn, nrm, cyn,
-      OLC_EXIT(d)->key != NOTHING ? OLC_EXIT(d)->key : -1, grn, nrm, cyn, door_buf, grn, nrm);
+      OLC_EXIT(d)->key != NOTHING ? OLC_EXIT(d)->key : -1, grn, nrm, cyn, door_buf, grn, nrm, grn,
+      nrm, cyn, trap_buf);
 
   OLC_MODE(d) = REDIT_EXIT_MENU;
+}
+
+static void redit_disp_exit_trap_menu(struct descriptor_data *d)
+{
+  struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+
+  clear_screen(d);
+  if (!trap)
+  {
+    write_to_output(d,
+                    "Exit Trap Menu (%s)\r\n"
+                    "No trap configured for this exit.\r\n\r\n"
+                    "1) Create default trap\r\n"
+                    "0) Back\r\n"
+                    "Enter choice: ",
+                    dirs[OLC_ITEM_TYPE(d)]);
+    OLC_MODE(d) = REDIT_EXIT_TRAP_MENU;
+    return;
+  }
+
+  write_to_output(d,
+                  "Exit Trap Menu (%s)\r\n"
+                  "1) Remove trap          : Yes\r\n"
+                  "2) Trigger type         : %s\r\n"
+                  "3) Trap type            : %s (%d)\r\n"
+                  "4) Severity             : %s (%d)\r\n"
+                  "5) Detect DC            : %d\r\n"
+                  "6) Disarm DC            : %d\r\n"
+                  "7) Save DC              : %d\r\n"
+                  "0) Back\r\n"
+                  "Enter choice: ",
+                  dirs[OLC_ITEM_TYPE(d)], redit_trigger_name(trap->trigger_type), get_trap_type_name(trap->trap_type),
+                  trap->trap_type, get_trap_severity_name(trap->severity), trap->severity, trap->detect_dc,
+                  trap->disarm_dc, trap->save_dc);
+
+  OLC_MODE(d) = REDIT_EXIT_TRAP_MENU;
 }
 
 /* For exit flags. */
@@ -681,7 +845,7 @@ void redit_parse(struct descriptor_data *d, char *arg)
     switch (*arg)
     {
     case 'y':
-    case 'Y':
+      OLC_ITEM_TYPE(d) = OLC_VAL(d);
       redit_save_internally(d);
       mudlog(CMP, MAX(LVL_BUILDER, GET_INVIS_LEV(d->character)), TRUE, "OLC: %s edits room %d.",
              GET_NAME(d->character), OLC_NUM(d));
@@ -980,7 +1144,12 @@ void redit_parse(struct descriptor_data *d, char *arg)
       if (OLC_EXIT(d))
         free(OLC_EXIT(d));
       OLC_EXIT(d) = NULL;
+      redit_remove_exit_trap(OLC_ROOM(d), OLC_VAL(d));
       break;
+    case '7':
+      OLC_ITEM_TYPE(d) = OLC_VAL(d);
+      redit_disp_exit_trap_menu(d);
+      return;
     default:
       write_to_output(d, "Try again : ");
       return;
@@ -997,6 +1166,243 @@ void redit_parse(struct descriptor_data *d, char *arg)
     OLC_EXIT(d)->to_room = number;
     redit_disp_exit_menu(d);
     return;
+
+  case REDIT_EXIT_TRAP_MENU:
+  {
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+
+    switch (*arg)
+    {
+    case '0':
+      redit_disp_exit_menu(d);
+      return;
+    case '1':
+      if (!trap)
+      {
+        trap = redit_create_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d), TRAP_TYPE_SPIKE,
+                                      TRAP_SEVERITY_AVERAGE, TRAP_TRIGGER_LEAVE_ROOM);
+        if (!trap)
+        {
+          write_to_output(d, "Unable to create trap.\r\n");
+          redit_disp_exit_menu(d);
+          return;
+        }
+      }
+      else
+      {
+        redit_remove_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+      }
+      OLC_VAL(d) = 1;
+      redit_disp_exit_trap_menu(d);
+      return;
+    case '2':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        redit_disp_exit_trap_menu(d);
+        return;
+      }
+      write_to_output(d,
+                      "Select trigger type:\r\n"
+                      "1) Movement (leave room)\r\n"
+                      "2) Open door\r\n"
+                      "3) Unlock door\r\n"
+                      "Enter choice: ");
+      OLC_MODE(d) = REDIT_EXIT_TRAP_TRIGGER;
+      return;
+    case '3':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        redit_disp_exit_trap_menu(d);
+        return;
+      }
+      redit_disp_exit_trap_type_menu(d);
+      OLC_MODE(d) = REDIT_EXIT_TRAP_TYPE;
+      return;
+    case '4':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        redit_disp_exit_trap_menu(d);
+        return;
+      }
+      redit_disp_exit_trap_severity_menu(d);
+      OLC_MODE(d) = REDIT_EXIT_TRAP_SEVERITY;
+      return;
+    case '5':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        redit_disp_exit_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter detect DC: ");
+      OLC_MODE(d) = REDIT_EXIT_TRAP_DETECT_DC;
+      return;
+    case '6':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        redit_disp_exit_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter disarm DC: ");
+      OLC_MODE(d) = REDIT_EXIT_TRAP_DISARM_DC;
+      return;
+    case '7':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        redit_disp_exit_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter save DC: ");
+      OLC_MODE(d) = REDIT_EXIT_TRAP_SAVE_DC;
+      return;
+    default:
+      write_to_output(d, "Invalid choice.\r\n");
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+  }
+
+  case REDIT_EXIT_TRAP_TRIGGER:
+  {
+    int trigger_choice = atoi(arg);
+    int trigger_type;
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+    int trap_type;
+    int severity;
+
+    if (!trap)
+    {
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+
+    trap_type = trap->trap_type;
+    severity = trap->severity;
+
+    if (trigger_choice == 1)
+      trigger_type = TRAP_TRIGGER_LEAVE_ROOM;
+    else if (trigger_choice == 2)
+      trigger_type = TRAP_TRIGGER_OPEN_DOOR;
+    else if (trigger_choice == 3)
+      trigger_type = TRAP_TRIGGER_UNLOCK_DOOR;
+    else
+    {
+      write_to_output(d, "Invalid trigger type.\r\n");
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+
+    trap = redit_create_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d), trap_type, severity, trigger_type);
+    if (!trap)
+      write_to_output(d, "Unable to update trap.\r\n");
+    else
+      OLC_VAL(d) = 1;
+    redit_disp_exit_trap_menu(d);
+    return;
+  }
+
+  case REDIT_EXIT_TRAP_TYPE:
+  {
+    int trap_type = atoi(arg);
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+    int severity;
+    int trigger_type;
+
+    if (!trap)
+    {
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+
+    if (trap_type < 0 || trap_type >= NUM_TRAP_TYPES)
+    {
+      write_to_output(d, "Trap type must be between 0 and %d.\r\n", NUM_TRAP_TYPES - 1);
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+
+    severity = trap->severity;
+    trigger_type = trap->trigger_type;
+    trap = redit_create_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d), trap_type, severity, trigger_type);
+    if (!trap)
+      write_to_output(d, "Unable to update trap.\r\n");
+    else
+      OLC_VAL(d) = 1;
+    redit_disp_exit_trap_menu(d);
+    return;
+  }
+
+  case REDIT_EXIT_TRAP_SEVERITY:
+  {
+    int severity = atoi(arg);
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+    int trap_type;
+    int trigger_type;
+
+    if (!trap)
+    {
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+
+    if (severity < 0 || severity >= NUM_TRAP_SEVERITIES)
+    {
+      write_to_output(d, "Severity must be between 0 and %d.\r\n", NUM_TRAP_SEVERITIES - 1);
+      redit_disp_exit_trap_menu(d);
+      return;
+    }
+
+    trap_type = trap->trap_type;
+    trigger_type = trap->trigger_type;
+    trap = redit_create_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d), trap_type, severity, trigger_type);
+    if (!trap)
+      write_to_output(d, "Unable to update trap.\r\n");
+    else
+      OLC_VAL(d) = 1;
+    redit_disp_exit_trap_menu(d);
+    return;
+  }
+
+  case REDIT_EXIT_TRAP_DETECT_DC:
+  {
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+    if (trap)
+    {
+      trap->detect_dc = MAX(1, atoi(arg));
+      OLC_VAL(d) = 1;
+    }
+    redit_disp_exit_trap_menu(d);
+    return;
+  }
+
+  case REDIT_EXIT_TRAP_DISARM_DC:
+  {
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+    if (trap)
+    {
+      trap->disarm_dc = MAX(1, atoi(arg));
+      OLC_VAL(d) = 1;
+    }
+    redit_disp_exit_trap_menu(d);
+    return;
+  }
+
+  case REDIT_EXIT_TRAP_SAVE_DC:
+  {
+    struct trap_data *trap = redit_find_exit_trap(OLC_ROOM(d), OLC_ITEM_TYPE(d));
+    if (trap)
+    {
+      trap->save_dc = MAX(1, atoi(arg));
+      OLC_VAL(d) = 1;
+    }
+    redit_disp_exit_trap_menu(d);
+    return;
+  }
 
   case REDIT_EXIT_DESCRIPTION:
     /* We should NEVER get here, hopefully. */

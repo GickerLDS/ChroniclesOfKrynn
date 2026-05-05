@@ -456,6 +456,12 @@ int savingthrow(struct char_data *ch, struct char_data *vict, int type, int modi
   return savingthrow_full(ch, vict, type, modifier, casttype, level, school, 0);
 }
 
+int savingthrow_flatdc(struct char_data *ch, struct char_data *vict, int type, int modifier, int dc,
+                       int casttype, int school, int spellnum)
+{
+  return savingthrow_full(ch, vict, type, modifier, casttype, dc - 10, school, spellnum);
+}
+
 /* Returns true if the spell/power applies a negative modifier to a core ability score. */
 static bool spell_has_ability_penalty(int spellnum)
 {
@@ -594,7 +600,7 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     }
   }
 
-  if (ARCANE_LEVEL(ch) > 0)
+  if (ch && ARCANE_LEVEL(ch) > 0)
   {
     if (IS_GOOD(ch))
       savethrow += weather_info.moons.solinari_st;
@@ -673,11 +679,14 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     break;
   case CAST_DEVICE:
     challenge += level;
-    challenge += GET_INT_BONUS(ch);
-    if (ch && spell_info[spellnum].violent)
-      challenge += get_artificer_combat_calibration_rank(ch);
-    if (ch && !spell_info[spellnum].violent)
-      challenge += get_artificer_infusion_theory_bonus(ch);
+    if (ch)
+    {
+      challenge += GET_INT_BONUS(ch);
+      if (spell_info[spellnum].violent)
+        challenge += get_artificer_combat_calibration_rank(ch);
+      if (!spell_info[spellnum].violent)
+        challenge += get_artificer_infusion_theory_bonus(ch);
+    }
     break;
   case CAST_SPELL:
   default:
@@ -708,7 +717,7 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     break;
   }
 
-  if (casttype == CAST_WEAPON_SPELL && CLASS_LEVEL(ch, CLASS_SPELLSWORD) > 0)
+  if (ch && casttype == CAST_WEAPON_SPELL && CLASS_LEVEL(ch, CLASS_SPELLSWORD) > 0)
   {
     challenge += HAS_REAL_FEAT(ch, FEAT_IMPROVED_CHANNELLING);
     challenge += HAS_REAL_FEAT(ch, FEAT_ADVANCED_CHANNELLING);
@@ -944,7 +953,8 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
     savethrow += 4;
 
   // vampire bonuses / penalties for feeding
-  challenge += vampire_last_feeding_adjustment(ch);
+  if (ch)
+    challenge += vampire_last_feeding_adjustment(ch);
 
   // vampire bonuses / penalties for feeding
   savethrow += vampire_last_feeding_adjustment(vict);
@@ -1005,7 +1015,7 @@ int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int
 
   if (type == SAVING_WILL && affected_by_spell(vict, PSIONIC_PSYCHIC_BODYGUARD))
   {
-    for (af = ch->affected; af; af = af->next)
+    for (af = vict->affected; af; af = af->next)
     {
       if (af->spell == PSIONIC_PSYCHIC_BODYGUARD && af->location == APPLY_SPECIAL)
       {

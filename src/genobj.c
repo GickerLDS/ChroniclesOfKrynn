@@ -22,6 +22,7 @@
 #include "craft.h"
 #include "spells.h"
 #include "spec_procs.h"
+#include "traps.h"
 
 /* local functions */
 static int update_all_objects(struct obj_data *obj);
@@ -406,6 +407,19 @@ int save_objects(zone_rnum zone_num)
                   obj->wpn_spells[counter2].spellnum, obj->wpn_spells[counter2].level,
                   obj->wpn_spells[counter2].percent, obj->wpn_spells[counter2].inCombat);
 
+      if (obj->trap && !IS_SET(obj->trap->flags, TRAP_FLAG_AUTO_GENERATED))
+      {
+        fprintf(fp,
+                "Y\n"
+                "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %ld %d %d\n",
+                obj->trap->trap_type, obj->trap->severity, obj->trap->trigger_type,
+                obj->trap->detect_dc, obj->trap->disarm_dc, obj->trap->save_dc,
+                obj->trap->save_type, obj->trap->damage_type, obj->trap->damage_dice_num,
+                obj->trap->damage_dice_size, obj->trap->special_effect,
+                obj->trap->special_duration, obj->trap->area_radius, obj->trap->max_targets,
+                obj->trap->flags, obj->trap->trigger_vnum, obj->trap->trigger_direction);
+      }
+
       /* Z: SpecProc name (persist object spec proc) */
       {
         const char *spname = NULL;
@@ -533,8 +547,17 @@ int copy_object_preserve(struct obj_data *to, struct obj_data *from)
 
 int copy_object_main(struct obj_data *to, struct obj_data *from, int free_object)
 {
+  struct trap_data *source_trap = from->trap;
+
+  if (to->trap)
+  {
+    free_trap(to->trap);
+    to->trap = NULL;
+  }
+
   *to = *from;
   copy_object_strings(to, from);
+  to->trap = source_trap ? copy_trap(source_trap) : NULL;
   return TRUE;
 }
 

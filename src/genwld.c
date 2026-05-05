@@ -21,6 +21,31 @@
 #include "wilderness.h"
 #include "oasis.h"
 #include "spec_procs.h"
+#include "traps.h"
+
+static struct trap_data *copy_trap_list(struct trap_data *source)
+{
+  struct trap_data *head = NULL;
+  struct trap_data *tail = NULL;
+  struct trap_data *node;
+  struct trap_data *new_node;
+
+  for (node = source; node; node = node->next)
+  {
+    new_node = copy_trap(node);
+    if (!new_node)
+      continue;
+
+    new_node->next = NULL;
+    if (!head)
+      head = new_node;
+    else
+      tail->next = new_node;
+    tail = new_node;
+  }
+
+  return head;
+}
 
 /* This function will copy the strings so be sure you free your own copies of
  * the description, title, and such. */
@@ -444,6 +469,26 @@ int save_rooms(zone_rnum rzone)
         }
       }
 
+      if (room->traps)
+      {
+        struct trap_data *trap;
+
+        for (trap = room->traps; trap; trap = trap->next)
+        {
+          if (IS_SET(trap->flags, TRAP_FLAG_AUTO_GENERATED))
+            continue;
+
+          fprintf(sf,
+                  "Y\n"
+                  "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %ld %d %d\n",
+                  trap->trap_type, trap->severity, trap->trigger_type, trap->detect_dc,
+                  trap->disarm_dc, trap->save_dc, trap->save_type, trap->damage_type,
+                  trap->damage_dice_num, trap->damage_dice_size, trap->special_effect,
+                  trap->special_duration, trap->area_radius, trap->max_targets, trap->flags,
+                  trap->trigger_vnum, trap->trigger_direction);
+        }
+      }
+
       if (room->ex_description)
       {
         struct extra_descr_data *xdesc;
@@ -584,11 +629,15 @@ int copy_room(struct room_data *to, struct room_data *from)
   /* Trail data is runtime data - don't copy it, start fresh */
   to->trail_tracks = NULL;
 
+  /* Deep-copy trap list so prototypes/OLC copies do not share pointers. */
+  to->traps = copy_trap_list(from->traps);
+
   /* Don't put people and objects in two locations. Should this be done here? */
   from->people = NULL;
   from->contents = NULL;
   from->events = NULL;
   from->trail_tracks = NULL;
+  from->traps = NULL;
 
   return TRUE;
 }
@@ -632,6 +681,8 @@ int copy_room_strings(struct room_data *dest, struct room_data *source)
 int free_room_strings(struct room_data *room)
 {
   int i;
+  struct trap_data *trap;
+  struct trap_data *next;
 
   /* Free descriptions. */
   if (room->name)
@@ -656,6 +707,15 @@ int free_room_strings(struct room_data *room)
       room->dir_option[i] = NULL;
     }
   }
+
+  trap = room->traps;
+  while (trap)
+  {
+    next = trap->next;
+    free_trap(trap);
+    trap = next;
+  }
+  room->traps = NULL;
 
   return TRUE;
 }

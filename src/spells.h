@@ -1858,6 +1858,8 @@ bool is_wall_spell(int spellnum);
 int compute_mag_saves(struct char_data *vict, int type, int modifier);
 int savingthrow(struct char_data *ch, struct char_data *vict, int type, int modifier, int casttype,
                 int level, int school);
+int savingthrow_flatdc(struct char_data *ch, struct char_data *vict, int type, int modifier, int dc,
+                       int casttype, int school, int spellnum);
 int savingthrow_full(struct char_data *ch, struct char_data *vict, int type, int modifier,
                      int casttype, int level, int school, int spellnum);
 void affect_update(void);

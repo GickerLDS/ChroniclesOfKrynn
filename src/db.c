@@ -68,6 +68,7 @@
 #include "domains_schools.h"
 #include "talents.h"
 #include "grapple.h"
+#include "traps.h"
 #include "race.h"
 #include "vessels.h"
 #include "spell_prep.h"
@@ -2087,6 +2088,7 @@ void parse_room(FILE *fl, int virtual_nr, const char *filename)
   world[room_nr].func = NULL;
   world[room_nr].contents = NULL;
   world[room_nr].people = NULL;
+  world[room_nr].traps = NULL;
   world[room_nr].light = 0; /* Zero light sources */
   world[room_nr].globe = 0; /* Zero darkness sources */
 
@@ -2153,6 +2155,75 @@ void parse_room(FILE *fl, int virtual_nr, const char *filename)
       new_descr->next = world[room_nr].ex_description;
       world[room_nr].ex_description = new_descr;
       break;
+    case 'Y':
+    {
+      int trap_type = TRAP_TYPE_SPIKE;
+      int severity = TRAP_SEVERITY_MINOR;
+      int trigger_type = TRAP_TRIGGER_LEAVE_ROOM;
+      int detect_dc = 0, disarm_dc = 0, save_dc = 0, save_type = 0, damage_type = 0;
+      int dice_num = 0, dice_size = 0, special_effect = 0, special_duration = 0;
+      int area_radius = 0, max_targets = 0, trigger_vnum = 0, trigger_direction = 0;
+      long flags_val = 0;
+      int parsed;
+      struct trap_data *trap;
+
+      if (!get_line(fl, line))
+      {
+        log("SYSERR: Format error in 'Y' room trap field for room #%d: file ended unexpectedly",
+            virtual_nr);
+        exit(1);
+      }
+
+      parsed = sscanf(line, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %ld %d %d", &trap_type,
+                      &severity, &trigger_type, &detect_dc, &disarm_dc, &save_dc, &save_type,
+                      &damage_type, &dice_num, &dice_size, &special_effect, &special_duration,
+                      &area_radius, &max_targets, &flags_val, &trigger_vnum, &trigger_direction);
+
+      if (parsed < 3)
+      {
+        log("SYSERR: Format error in 'Y' room trap field for room #%d. Offending line: '%s'",
+            virtual_nr, line);
+        exit(1);
+      }
+
+      trap = create_trap(trap_type, severity, trigger_type);
+      if (!trap)
+        break;
+
+      if (parsed >= 4)
+        trap->detect_dc = detect_dc;
+      if (parsed >= 5)
+        trap->disarm_dc = disarm_dc;
+      if (parsed >= 6)
+        trap->save_dc = save_dc;
+      if (parsed >= 7)
+        trap->save_type = save_type;
+      if (parsed >= 8)
+        trap->damage_type = damage_type;
+      if (parsed >= 9)
+        trap->damage_dice_num = dice_num;
+      if (parsed >= 10)
+        trap->damage_dice_size = dice_size;
+      if (parsed >= 11)
+        trap->special_effect = special_effect;
+      if (parsed >= 12)
+        trap->special_duration = special_duration;
+      if (parsed >= 13)
+        trap->area_radius = area_radius;
+      if (parsed >= 14)
+        trap->max_targets = max_targets;
+      if (parsed >= 15)
+        trap->flags = flags_val;
+      if (parsed >= 16)
+        trap->trigger_vnum = trigger_vnum;
+      if (parsed >= 17)
+        trap->trigger_direction = trigger_direction;
+
+      trap->next = world[room_nr].traps;
+      world[room_nr].traps = trap;
+      SET_BIT_AR(world[room_nr].room_flags, ROOM_HASTRAP);
+      break;
+    }
     case 'S': /* end of room */
       /* DG triggers -- script is defined after the end of the room */
       letter = fread_letter(fl);
@@ -3746,6 +3817,7 @@ const char *parse_object(FILE *obj_f, int nr)
     GET_OBJ_LEVEL(obj_proto + i) = 30;
 
   obj_proto[i].sitting_here = NULL;
+  obj_proto[i].trap = NULL;
 
   /* check to make sure that weight of containers exceeds curr. quantity */
   if (GET_OBJ_TYPE(obj_proto + i) == ITEM_DRINKCON || GET_OBJ_TYPE(obj_proto + i) == ITEM_FOUNTAIN)
@@ -4038,6 +4110,74 @@ const char *parse_object(FILE *obj_f, int nr)
       }
       obj_index[i].func = find_spec_func_by_name(line);
       break;
+    case 'Y':
+    {
+      int trap_type = TRAP_TYPE_SPIKE;
+      int severity = TRAP_SEVERITY_MINOR;
+      int trigger_type = TRAP_TRIGGER_OPEN_CONTAINER;
+      int detect_dc = 0, disarm_dc = 0, save_dc = 0, save_type = 0, damage_type = 0;
+      int dice_num = 0, dice_size = 0, special_effect = 0, special_duration = 0;
+      int area_radius = 0, max_targets = 0, trigger_vnum = 0, trigger_direction = 0;
+      long flags_val = 0;
+      int parsed;
+      struct trap_data *trap;
+
+      if (!get_line(obj_f, line))
+      {
+        log("SYSERR: Format error in 'Y' object trap field for %s: file ended unexpectedly", buf2);
+        exit(1);
+      }
+
+      parsed = sscanf(line, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %ld %d %d", &trap_type,
+                      &severity, &trigger_type, &detect_dc, &disarm_dc, &save_dc, &save_type,
+                      &damage_type, &dice_num, &dice_size, &special_effect, &special_duration,
+                      &area_radius, &max_targets, &flags_val, &trigger_vnum, &trigger_direction);
+
+      if (parsed < 3)
+      {
+        log("SYSERR: Format error in 'Y' object trap field for %s. Offending line: '%s'", buf2,
+            line);
+        exit(1);
+      }
+
+      trap = create_trap(trap_type, severity, trigger_type);
+      if (!trap)
+        break;
+
+      if (parsed >= 4)
+        trap->detect_dc = detect_dc;
+      if (parsed >= 5)
+        trap->disarm_dc = disarm_dc;
+      if (parsed >= 6)
+        trap->save_dc = save_dc;
+      if (parsed >= 7)
+        trap->save_type = save_type;
+      if (parsed >= 8)
+        trap->damage_type = damage_type;
+      if (parsed >= 9)
+        trap->damage_dice_num = dice_num;
+      if (parsed >= 10)
+        trap->damage_dice_size = dice_size;
+      if (parsed >= 11)
+        trap->special_effect = special_effect;
+      if (parsed >= 12)
+        trap->special_duration = special_duration;
+      if (parsed >= 13)
+        trap->area_radius = area_radius;
+      if (parsed >= 14)
+        trap->max_targets = max_targets;
+      if (parsed >= 15)
+        trap->flags = flags_val;
+      if (parsed >= 16)
+        trap->trigger_vnum = trigger_vnum;
+      if (parsed >= 17)
+        trap->trigger_direction = trigger_direction;
+
+      if (obj_proto[i].trap)
+        free_trap(obj_proto[i].trap);
+      obj_proto[i].trap = trap;
+      break;
+    }
     case '$':
     case '#':
       top_of_objt = i;
@@ -6605,6 +6745,12 @@ void free_obj(struct obj_data *obj)
   {
     free(obj->sbinfo);
     obj->sbinfo = NULL;
+  }
+
+  if (obj->trap)
+  {
+    free_trap(obj->trap);
+    obj->trap = NULL;
   }
 
   /* find_obj helper */

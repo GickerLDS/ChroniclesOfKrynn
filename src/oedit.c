@@ -35,6 +35,7 @@
 #include "feats.h"
 #include "handler.h"
 #include "spec_procs.h"
+#include "traps.h"
 
 /* local functions */
 static void oedit_disp_size_menu(struct descriptor_data *d);
@@ -76,6 +77,22 @@ static void oedit_save_to_disk(int zone_num);
 static void oedit_disp_spellbook_menu(struct descriptor_data *d);
 static void oedit_disp_weapon_special_abilities_menu(struct descriptor_data *d);
 static void oedit_disp_assign_weapon_specab_menu(struct descriptor_data *d);
+static void oedit_disp_trap_menu(struct descriptor_data *d);
+
+static const char *oedit_trigger_name(int trigger_type)
+{
+  switch (trigger_type)
+  {
+  case TRAP_TRIGGER_OPEN_CONTAINER:
+    return "Open object/container";
+  case TRAP_TRIGGER_UNLOCK_CONTAINER:
+    return "Unlock object/container";
+  case TRAP_TRIGGER_GET_OBJECT:
+    return "Get object";
+  default:
+    return "Unknown";
+  }
+}
 
 /* handy macro */
 #define S_PRODUCT(s, i) ((s)->producing[(i)])
@@ -1871,6 +1888,40 @@ struct obj_special_ability *get_specab_by_position(struct obj_data *obj, int pos
   return specab;
 }
 
+static void oedit_disp_trap_menu(struct descriptor_data *d)
+{
+  struct trap_data *trap = OLC_OBJ(d)->trap;
+
+  clear_screen(d);
+  if (!trap)
+  {
+    write_to_output(d,
+                    "Object Trap Menu\r\n"
+                    "No trap attached to this object.\r\n\r\n"
+                    "1) Create default trap\r\n"
+                    "0) Back\r\n"
+                    "Enter choice : ");
+    OLC_MODE(d) = OEDIT_TRAP_MENU;
+    return;
+  }
+
+  write_to_output(d,
+                  "Object Trap Menu\r\n"
+                  "1) Remove trap          : Yes\r\n"
+                  "2) Trigger type         : %s\r\n"
+                  "3) Trap type            : %s (%d)\r\n"
+                  "4) Severity             : %s (%d)\r\n"
+                  "5) Detect DC            : %d\r\n"
+                  "6) Disarm DC            : %d\r\n"
+                  "7) Save DC              : %d\r\n"
+                  "0) Back\r\n"
+                  "Enter choice : ",
+                  oedit_trigger_name(trap->trigger_type), get_trap_type_name(trap->trap_type),
+                  trap->trap_type, get_trap_severity_name(trap->severity), trap->severity,
+                  trap->detect_dc, trap->disarm_dc, trap->save_dc);
+  OLC_MODE(d) = OEDIT_TRAP_MENU;
+}
+
 /* Display main menu. */
 static void oedit_disp_menu(struct descriptor_data *d)
 {
@@ -1878,6 +1929,7 @@ static void oedit_disp_menu(struct descriptor_data *d)
   char buf2[MAX_STRING_LENGTH] = {'\0'};
   char buf3[MAX_STRING_LENGTH] = {'\0'};
   char buf4[MAX_STRING_LENGTH] = {'\0'};
+  char buf5[MAX_STRING_LENGTH] = {'\0'};
   struct obj_data *obj = OLC_OBJ(d);
   // int i = 0;
   size_t len = 0;
@@ -2018,8 +2070,7 @@ static void oedit_disp_menu(struct descriptor_data *d)
       "%sZ%s) SpecProc               : %s%s\r\n"
       "%sW%s) Copy object\r\n"
       "%sX%s) Delete object\r\n"
-      "%sQ%s) Quit\r\n"
-      "Enter choice : ",
+      "%sQ%s) Quit\r\n",
 
       grn, nrm, cyn, buf1, grn, nrm, cyn, material_name[GET_OBJ_MATERIAL(obj)], grn, nrm, cyn,
       GET_OBJ_WEIGHT(obj), grn, nrm, cyn, size_names[GET_OBJ_SIZE(obj)], grn, nrm, cyn,
@@ -2051,6 +2102,19 @@ static void oedit_disp_menu(struct descriptor_data *d)
       grn, nrm,                                                                /* delete object */
       grn, nrm                                                                 /* quite */
   );
+
+  if (obj->trap)
+  {
+    snprintf(buf5, sizeof(buf5), "%s (%s)", get_trap_name(obj->trap),
+             oedit_trigger_name(obj->trap->trigger_type));
+  }
+  else
+  {
+    snprintf(buf5, sizeof(buf5), "Not Set");
+  }
+
+  write_to_output(d, "%sY%s) Trap Setup             : %s%s\r\nEnter choice : ", grn, nrm, cyn,
+                  buf5);
   OLC_MODE(d) = OEDIT_MAIN_MENU;
 }
 
@@ -2393,6 +2457,10 @@ void oedit_parse(struct descriptor_data *d, char *arg)
       write_to_output(d, "Enter restring identifier : ");
       OLC_MODE(d) = OEDIT_RESTRING_ID;
       break;
+    case 'y':
+    case 'Y':
+      oedit_disp_trap_menu(d);
+      return;
     default:
       oedit_disp_menu(d);
       break;
@@ -2435,6 +2503,238 @@ void oedit_parse(struct descriptor_data *d, char *arg)
       free(OLC_OBJ(d)->restring_identifier);
     OLC_OBJ(d)->restring_identifier = str_udup(arg);
     break;
+
+  case OEDIT_TRAP_MENU:
+  {
+    struct trap_data *trap = OLC_OBJ(d)->trap;
+    switch (*arg)
+    {
+    case '0':
+      oedit_disp_menu(d);
+      return;
+    case '1':
+      if (!trap)
+      {
+        trap = create_trap(TRAP_TYPE_SPIKE, TRAP_SEVERITY_AVERAGE, TRAP_TRIGGER_OPEN_CONTAINER);
+        if (!trap)
+        {
+          write_to_output(d, "Unable to create trap.\r\n");
+          oedit_disp_menu(d);
+          return;
+        }
+        attach_trap_to_object(trap, OLC_OBJ(d));
+      }
+      else
+      {
+        remove_trap_from_object(OLC_OBJ(d));
+      }
+      OLC_VAL(d) = 1;
+      oedit_disp_trap_menu(d);
+      return;
+    case '2':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        oedit_disp_trap_menu(d);
+        return;
+      }
+      write_to_output(d,
+                      "Select trigger type:\r\n"
+                      "1) Open object/container\r\n"
+                      "2) Unlock object/container\r\n"
+                      "3) Get object\r\n"
+                      "Enter choice : ");
+      OLC_MODE(d) = OEDIT_TRAP_TRIGGER;
+      return;
+    case '3':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        oedit_disp_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter trap type (0-%d): ", NUM_TRAP_TYPES - 1);
+      OLC_MODE(d) = OEDIT_TRAP_TYPE;
+      return;
+    case '4':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        oedit_disp_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter severity (0-%d): ", NUM_TRAP_SEVERITIES - 1);
+      OLC_MODE(d) = OEDIT_TRAP_SEVERITY;
+      return;
+    case '5':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        oedit_disp_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter detect DC: ");
+      OLC_MODE(d) = OEDIT_TRAP_DETECT_DC;
+      return;
+    case '6':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        oedit_disp_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter disarm DC: ");
+      OLC_MODE(d) = OEDIT_TRAP_DISARM_DC;
+      return;
+    case '7':
+      if (!trap)
+      {
+        write_to_output(d, "Create a trap first.\r\n");
+        oedit_disp_trap_menu(d);
+        return;
+      }
+      write_to_output(d, "Enter save DC: ");
+      OLC_MODE(d) = OEDIT_TRAP_SAVE_DC;
+      return;
+    default:
+      write_to_output(d, "Invalid choice.\r\n");
+      oedit_disp_trap_menu(d);
+      return;
+    }
+  }
+
+  case OEDIT_TRAP_TRIGGER:
+  {
+    int trigger_choice = atoi(arg);
+    int trigger_type;
+
+    if (!OLC_OBJ(d)->trap)
+    {
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    if (trigger_choice == 1)
+      trigger_type = TRAP_TRIGGER_OPEN_CONTAINER;
+    else if (trigger_choice == 2)
+      trigger_type = TRAP_TRIGGER_UNLOCK_CONTAINER;
+    else if (trigger_choice == 3)
+      trigger_type = TRAP_TRIGGER_GET_OBJECT;
+    else
+    {
+      write_to_output(d, "Invalid trigger type.\r\n");
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    OLC_OBJ(d)->trap->trigger_type = trigger_type;
+    OLC_VAL(d) = 1;
+    oedit_disp_trap_menu(d);
+    return;
+  }
+
+  case OEDIT_TRAP_TYPE:
+  {
+    int trap_type = atoi(arg);
+    struct trap_data *old_trap;
+    struct trap_data *new_trap;
+
+    if (!OLC_OBJ(d)->trap)
+    {
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    if (trap_type < 0 || trap_type >= NUM_TRAP_TYPES)
+    {
+      write_to_output(d, "Trap type must be between 0 and %d.\r\n", NUM_TRAP_TYPES - 1);
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    old_trap = OLC_OBJ(d)->trap;
+    new_trap = create_trap(trap_type, old_trap->severity, old_trap->trigger_type);
+    if (!new_trap)
+    {
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    new_trap->detect_dc = old_trap->detect_dc;
+    new_trap->disarm_dc = old_trap->disarm_dc;
+    new_trap->save_dc = old_trap->save_dc;
+    new_trap->flags = old_trap->flags;
+    new_trap->trigger_vnum = old_trap->trigger_vnum;
+    new_trap->trigger_direction = old_trap->trigger_direction;
+
+    remove_trap_from_object(OLC_OBJ(d));
+    OLC_OBJ(d)->trap = new_trap;
+    OLC_VAL(d) = 1;
+    oedit_disp_trap_menu(d);
+    return;
+  }
+
+  case OEDIT_TRAP_SEVERITY:
+  {
+    int severity = atoi(arg);
+    struct trap_data *old_trap;
+    struct trap_data *new_trap;
+
+    if (!OLC_OBJ(d)->trap)
+    {
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    if (severity < 0 || severity >= NUM_TRAP_SEVERITIES)
+    {
+      write_to_output(d, "Severity must be between 0 and %d.\r\n", NUM_TRAP_SEVERITIES - 1);
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    old_trap = OLC_OBJ(d)->trap;
+    new_trap = create_trap(old_trap->trap_type, severity, old_trap->trigger_type);
+    if (!new_trap)
+    {
+      oedit_disp_trap_menu(d);
+      return;
+    }
+
+    new_trap->detect_dc = old_trap->detect_dc;
+    new_trap->disarm_dc = old_trap->disarm_dc;
+    new_trap->save_dc = old_trap->save_dc;
+    new_trap->flags = old_trap->flags;
+    new_trap->trigger_vnum = old_trap->trigger_vnum;
+    new_trap->trigger_direction = old_trap->trigger_direction;
+
+    remove_trap_from_object(OLC_OBJ(d));
+    OLC_OBJ(d)->trap = new_trap;
+    OLC_VAL(d) = 1;
+    oedit_disp_trap_menu(d);
+    return;
+  }
+
+  case OEDIT_TRAP_DETECT_DC:
+    if (OLC_OBJ(d)->trap)
+      OLC_OBJ(d)->trap->detect_dc = MAX(1, atoi(arg));
+    OLC_VAL(d) = 1;
+    oedit_disp_trap_menu(d);
+    return;
+
+  case OEDIT_TRAP_DISARM_DC:
+    if (OLC_OBJ(d)->trap)
+      OLC_OBJ(d)->trap->disarm_dc = MAX(1, atoi(arg));
+    OLC_VAL(d) = 1;
+    oedit_disp_trap_menu(d);
+    return;
+
+  case OEDIT_TRAP_SAVE_DC:
+    if (OLC_OBJ(d)->trap)
+      OLC_OBJ(d)->trap->save_dc = MAX(1, atoi(arg));
+    OLC_VAL(d) = 1;
+    oedit_disp_trap_menu(d);
+    return;
 
   case OEDIT_TYPE:
     number = atoi(arg);

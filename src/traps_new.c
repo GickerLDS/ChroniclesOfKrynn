@@ -869,9 +869,8 @@ void apply_trap_damage(struct char_data *ch, struct trap_data *trap)
     // Add trap sense bonus to save
     save_dc -= get_trap_sense_bonus(ch);
 
-    // Use savingthrow with NULL caster for environmental trap effects
-    int effective_level = MAX(1, save_dc - 10);
-    saved = !savingthrow(NULL, ch, save_type_idx, 0, CAST_INNATE, effective_level, NOSCHOOL);
+    // Use flat DC save with NULL caster for environmental trap effects
+    saved = !savingthrow_flatdc(NULL, ch, save_type_idx, 0, save_dc, CAST_INNATE, NOSCHOOL, 0);
 
     // Successful save usually halves damage (or negates special effect)
     if (saved && trap->special_effect == TRAP_SPECIAL_NONE)
@@ -969,9 +968,8 @@ void apply_trap_special_effect(struct char_data *ch, struct trap_data *trap)
     break;
   }
 
-  // Use savingthrow with NULL caster for environmental trap effects
-  int effective_level = MAX(1, save_dc - 10);
-  saved = !savingthrow(NULL, ch, save_type_idx, 0, CAST_INNATE, effective_level, NOSCHOOL);
+  // Use flat DC save with NULL caster for environmental trap effects
+  saved = !savingthrow_flatdc(NULL, ch, save_type_idx, 0, save_dc, CAST_INNATE, NOSCHOOL, 0);
 
   if (saved && trap->special_effect != TRAP_SPECIAL_SUMMON_CREATURE)
   {
@@ -1265,6 +1263,7 @@ void recover_trap_components(struct char_data *ch, struct trap_data *trap)
 int search_for_traps(struct char_data *ch)
 {
   struct trap_data *trap;
+  struct obj_data *obj;
   int exp;
   /* int found = FALSE; */ /* COMMENTED OUT: unused, return value indicates success */
 
@@ -1293,6 +1292,33 @@ int search_for_traps(struct char_data *ch)
                  gain_exp(ch, exp, GAIN_EXP_MODE_TRAP));
 
     return TRUE;
+  }
+
+  /* If no room trap was found, search for trapped objects in the room. */
+  for (obj = world[IN_ROOM(ch)].contents; obj; obj = obj->next_content)
+  {
+    if (!obj->trap)
+      continue;
+
+    trap = obj->trap;
+
+    if (IS_SET(trap->flags, TRAP_FLAG_DETECTED) || IS_SET(trap->flags, TRAP_FLAG_DISARMED))
+      continue;
+
+    if (detect_trap(ch, trap))
+    {
+      act("You detect a \tRtrap\tn on $p!", FALSE, ch, obj, 0, TO_CHAR);
+      act("$n detects a \tRtrap\tn on $p!", FALSE, ch, obj, 0, TO_ROOM);
+
+      if (trap->trap_type >= 0 && trap->trap_type < NUM_TRAP_TYPES)
+        send_to_char(ch, "%s\r\n", trap_type_table[trap->trap_type].detect_msg);
+
+      exp = trap->detect_dc * 100;
+      send_to_char(ch, "You receive %d experience points.\r\n",
+                   gain_exp(ch, exp, GAIN_EXP_MODE_TRAP));
+
+      return TRUE;
+    }
   }
 
   return FALSE;
@@ -1356,6 +1382,8 @@ void perform_autosearch(struct char_data *ch)
 ACMD(do_disabletrap)
 {
   struct trap_data *trap = NULL;
+  struct obj_data *trap_obj = NULL;
+  struct obj_data *obj;
   int exp, result;
 
   if (!GET_ABILITY(ch, ABILITY_DISABLE_DEVICE))
@@ -1373,12 +1401,36 @@ ACMD(do_disabletrap)
 
   if (!trap)
   {
-    send_to_char(ch, "There are no detected traps here to disable.\r\n");
-    return;
+    for (obj = world[IN_ROOM(ch)].contents; obj; obj = obj->next_content)
+    {
+      if (!obj->trap)
+        continue;
+
+      if (IS_SET(obj->trap->flags, TRAP_FLAG_DETECTED) && !IS_SET(obj->trap->flags, TRAP_FLAG_DISARMED))
+      {
+        trap = obj->trap;
+        trap_obj = obj;
+        break;
+      }
+    }
+
+    if (!trap)
+    {
+      send_to_char(ch, "There are no detected traps here to disable.\r\n");
+      return;
+    }
   }
 
-  act("$n carefully attempts to disable the trap...", FALSE, ch, 0, 0, TO_ROOM);
-  send_to_char(ch, "You carefully attempt to disable the trap...\r\n");
+  if (trap_obj)
+  {
+    act("$n carefully attempts to disable a trap on $p...", FALSE, ch, trap_obj, 0, TO_ROOM);
+    act("You carefully attempt to disable a trap on $p...", FALSE, ch, trap_obj, 0, TO_CHAR);
+  }
+  else
+  {
+    act("$n carefully attempts to disable the trap...", FALSE, ch, 0, 0, TO_ROOM);
+    send_to_char(ch, "You carefully attempt to disable the trap...\r\n");
+  }
 
   if (disarm_trap(ch, trap))
   {
@@ -1397,8 +1449,15 @@ ACMD(do_disabletrap)
     // Remove auto-generated traps after disarming
     if (IS_SET(trap->flags, TRAP_FLAG_AUTO_GENERATED))
     {
-      remove_trap_from_room(trap, IN_ROOM(ch));
-      free_trap(trap);
+      if (trap_obj)
+      {
+        remove_trap_from_object(trap_obj);
+      }
+      else
+      {
+        remove_trap_from_room(trap, IN_ROOM(ch));
+        free_trap(trap);
+      }
     }
   }
   else

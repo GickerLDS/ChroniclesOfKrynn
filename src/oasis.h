@@ -296,6 +296,13 @@ i added this trying to debug issues with qedit-copy -zusuk
 #define OEDIT_SPEC_PROC 64
 #define OEDIT_RESTRING_ID 74
 #define OEDIT_PERM2 75
+#define OEDIT_TRAP_MENU 76
+#define OEDIT_TRAP_TRIGGER 77
+#define OEDIT_TRAP_TYPE 78
+#define OEDIT_TRAP_SEVERITY 79
+#define OEDIT_TRAP_DETECT_DC 80
+#define OEDIT_TRAP_DISARM_DC 81
+#define OEDIT_TRAP_SAVE_DC 82
 
 /* Submodes of REDIT connectedness. */
 #define REDIT_MAIN_MENU 1
@@ -319,6 +326,13 @@ i added this trying to debug issues with qedit-copy -zusuk
 #define REDIT_X_COORD 19
 #define REDIT_Y_COORD 20
 #define REDIT_SPEC_PROC 21
+#define REDIT_EXIT_TRAP_MENU 22
+#define REDIT_EXIT_TRAP_TRIGGER 23
+#define REDIT_EXIT_TRAP_TYPE 24
+#define REDIT_EXIT_TRAP_SEVERITY 25
+#define REDIT_EXIT_TRAP_DETECT_DC 26
+#define REDIT_EXIT_TRAP_DISARM_DC 27
+#define REDIT_EXIT_TRAP_SAVE_DC 28
 
 /* Submodes of ZEDIT connectedness. */
 #define ZEDIT_MAIN_MENU 0
