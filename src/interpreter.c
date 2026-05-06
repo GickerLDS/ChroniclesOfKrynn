@@ -701,6 +701,8 @@ cpp_extern const struct command_info cmd_info[] = {
     {"motes", "motes", POS_SLEEPING, do_motes, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"motd", "motd", POS_DEAD, do_gen_ps, 0, SCMD_MOTD, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"msgedit", "msgedit", POS_DEAD, do_msgedit, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"msdplist", "msdplist", POS_DEAD, do_msdplist, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"msdpvalue", "msdpvalue", POS_DEAD, do_msdpvalue, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"mute", "mute", POS_DEAD, do_wizutil, LVL_STAFF, SCMD_MUTE, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"myperks", "myp", POS_RECLINING, do_myperks, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"mount", "mount", POS_FIGHTING, do_mount, 0, 0, FALSE, ACTION_MOVE, {0, 6}, NULL},

@@ -125,7 +125,7 @@ static variable_name_t VariableNameTable[eMSDP_MAX + 1] = {
     /* Character */
     {eMSDP_AFFECTS, "AFFECTS", STRING_READ_ONLY},
     {eMSDP_INVENTORY, "INVENTORY", STRING_READ_ONLY},
-    {eMSDP_ALIGNMENT, "ALIGNMENT", NUMBER_READ_ONLY},
+    {eMSDP_ALIGNMENT, "ALIGNMENT", STRING_READ_ONLY},
     {eMSDP_EXPERIENCE, "EXPERIENCE", NUMBER_READ_ONLY},
     {eMSDP_EXPERIENCE_MAX, "EXPERIENCE_MAX", NUMBER_READ_ONLY},
     {eMSDP_EXPERIENCE_TNL, "EXPERIENCE_TNL", NUMBER_READ_ONLY},
@@ -181,6 +181,7 @@ static variable_name_t VariableNameTable[eMSDP_MAX + 1] = {
     {eMSDP_WORLD_TIME, "WORLD_TIME", NUMBER_READ_ONLY},
     {eMSDP_SECTORS, "SECTORS", STRING_READ_ONLY},
     {eMSDP_MINIMAP, "MINIMAP", STRING_READ_ONLY},
+    {eMSDP_AUTOMAP, "AUTOMAP", STRING_READ_ONLY},
 
     /* Configurable variables */
     {eMSDP_CLIENT_ID, "CLIENT_ID", STRING_WRITE_ONCE(1, 40)},
@@ -245,6 +246,9 @@ static bool_t MatchString(const char *apFirst, const char *apSecond);
 static bool_t PrefixString(const char *apPart, const char *apWhole);
 static bool_t IsNumber(const char *apString);
 static char *AllocString(const char *apString);
+static int FindMSDPVariableByName(const char *name, int *match_count);
+static void FormatMSDPStringForDisplay(const char *source, char *output, size_t output_size);
+static void ShowMSDPValue(struct char_data *ch, struct char_data *target, int var);
 
 /******************************************************************************
  ANSI colour codes.
@@ -1421,6 +1425,105 @@ void MSDPSend(descriptor_t *apDescriptor, variable_t aMSDP)
     if (MSDPBuffer[0] != '\0')
       Write(apDescriptor, MSDPBuffer);
   }
+}
+
+ACMD(do_msdpvalue)
+{
+  char arg1[MAX_INPUT_LENGTH] = {'\0'};
+  char arg2[MAX_INPUT_LENGTH] = {'\0'};
+  int match_count = 0;
+  int var;
+  struct char_data *target = ch;
+
+  two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+
+  if (!*arg1)
+  {
+    send_to_char(ch, "Usage: msdpvalue <variable> [target]\r\n");
+    return;
+  }
+
+  var = FindMSDPVariableByName(arg1, &match_count);
+  if (var == eMSDP_NONE && *arg2)
+  {
+    target = get_char_vis(ch, arg1, NULL, FIND_CHAR_WORLD);
+    if (!target)
+    {
+      send_to_char(ch, "No visible player named '%s' was found.\r\n", arg1);
+      return;
+    }
+
+    var = FindMSDPVariableByName(arg2, &match_count);
+  }
+  else if (*arg2)
+  {
+    target = get_char_vis(ch, arg2, NULL, FIND_CHAR_WORLD);
+    if (!target)
+    {
+      send_to_char(ch, "No visible player named '%s' was found.\r\n", arg2);
+      return;
+    }
+  }
+
+  if (!target->desc || !target->desc->pProtocol)
+  {
+    send_to_char(ch, "No MSDP protocol data is available for %s.\r\n",
+                 target == ch ? "your descriptor" : GET_NAME(target));
+    return;
+  }
+
+  if (var == eMSDP_NONE)
+  {
+    send_to_char(ch, "Unknown MSDP variable '%s'.\r\n", *arg2 ? arg2 : arg1);
+    return;
+  }
+
+  if (match_count > 1)
+  {
+    send_to_char(ch, "MSDP variable '%s' is ambiguous. Use the full variable name.\r\n",
+                 *arg2 ? arg2 : arg1);
+    return;
+  }
+
+  ShowMSDPValue(ch, target, var);
+}
+
+ACMD(do_msdplist)
+{
+  char filter[MAX_INPUT_LENGTH] = {'\0'};
+  char buf[MAX_STRING_LENGTH] = {'\0'};
+  int i;
+  int len = 0;
+  int found = 0;
+
+  one_argument(argument, filter, sizeof(filter));
+
+  len += snprintf(buf + len, sizeof(buf) - len, "MSDP variables");
+  if (*filter)
+    len += snprintf(buf + len, sizeof(buf) - len, " matching '%s'", filter);
+  len += snprintf(buf + len, sizeof(buf) - len, ":\r\n");
+
+  for (i = eMSDP_NONE + 1; i < eMSDP_MAX; ++i)
+  {
+    if (*filter && !PrefixString(filter, VariableNameTable[i].pName) &&
+        !MatchString(filter, VariableNameTable[i].pName))
+      continue;
+
+    len += snprintf(buf + len, sizeof(buf) - len, "%-20s %s\r\n", VariableNameTable[i].pName,
+                    VariableNameTable[i].bString ? "string" : "number");
+    ++found;
+
+    if (len >= (int)sizeof(buf) - 64)
+      break;
+  }
+
+  if (!found)
+  {
+    send_to_char(ch, "No MSDP variables matched '%s'.\r\n", filter);
+    return;
+  }
+
+  page_string(ch->desc, buf, 1);
 }
 
 void MSDPSendPair(descriptor_t *apDescriptor, const char *apVariable, const char *apValue)
@@ -3136,6 +3239,131 @@ static void ExecuteMSDPPair(descriptor_t *apDescriptor, const char *apVariable, 
         }
       }
     }
+  }
+}
+
+static int FindMSDPVariableByName(const char *name, int *match_count)
+{
+  int i;
+  int prefix_match = eMSDP_NONE;
+  int prefix_count = 0;
+
+  if (match_count)
+    *match_count = 0;
+
+  if (!name || !*name)
+    return eMSDP_NONE;
+
+  for (i = eMSDP_NONE + 1; i < eMSDP_MAX; ++i)
+  {
+    if (MatchString(name, VariableNameTable[i].pName))
+    {
+      if (match_count)
+        *match_count = 1;
+      return i;
+    }
+  }
+
+  for (i = eMSDP_NONE + 1; i < eMSDP_MAX; ++i)
+  {
+    if (PrefixString(name, VariableNameTable[i].pName))
+    {
+      prefix_match = i;
+      ++prefix_count;
+    }
+  }
+
+  if (match_count)
+    *match_count = prefix_count;
+
+  if (prefix_count == 1)
+    return prefix_match;
+
+  return eMSDP_NONE;
+}
+
+static void FormatMSDPStringForDisplay(const char *source, char *output, size_t output_size)
+{
+  size_t len = 0;
+  const unsigned char *ptr = (const unsigned char *)source;
+
+  if (!output || output_size == 0)
+    return;
+
+  output[0] = '\0';
+  if (!source)
+    return;
+
+  while (*ptr && len + 1 < output_size)
+  {
+    const char *replacement = NULL;
+    char hexbuf[5] = {'\0'};
+
+    switch (*ptr)
+    {
+    case MSDP_VAR:
+      replacement = "<VAR>";
+      break;
+    case MSDP_VAL:
+      replacement = "<VAL>";
+      break;
+    case MSDP_TABLE_OPEN:
+      replacement = "<TABLE_OPEN>";
+      break;
+    case MSDP_TABLE_CLOSE:
+      replacement = "<TABLE_CLOSE>";
+      break;
+    case MSDP_ARRAY_OPEN:
+      replacement = "<ARRAY_OPEN>";
+      break;
+    case MSDP_ARRAY_CLOSE:
+      replacement = "<ARRAY_CLOSE>";
+      break;
+    default:
+      break;
+    }
+
+    if (replacement)
+    {
+      len += snprintf(output + len, output_size - len, "%s", replacement);
+    }
+    else if (*ptr == '\r' || *ptr == '\n' || *ptr == '\t' || isprint(*ptr))
+    {
+      output[len++] = (char)*ptr;
+      output[len] = '\0';
+    }
+    else
+    {
+      snprintf(hexbuf, sizeof(hexbuf), "\\x%02X", *ptr);
+      len += snprintf(output + len, output_size - len, "%s", hexbuf);
+    }
+
+    if (len >= output_size)
+    {
+      output[output_size - 1] = '\0';
+      return;
+    }
+
+    ++ptr;
+  }
+}
+
+static void ShowMSDPValue(struct char_data *ch, struct char_data *target, int var)
+{
+  char rendered[MAX_STRING_LENGTH] = {'\0'};
+  const char *viewer = (target == ch) ? "self" : GET_NAME(target);
+
+  if (VariableNameTable[var].bString)
+  {
+    FormatMSDPStringForDisplay(target->desc->pProtocol->pVariables[var]->pValueString, rendered,
+                               sizeof(rendered));
+    send_to_char(ch, "MSDP %s for %s [string]:\r\n%s\r\n", VariableNameTable[var].pName,
+                 viewer, *rendered ? rendered : "<empty>");
+  }
+  else
+  {
+    send_to_char(ch, "MSDP %s for %s [number]: %d\r\n", VariableNameTable[var].pName, viewer,
+                 target->desc->pProtocol->pVariables[var]->ValueInt);
   }
 }
 

@@ -473,7 +473,7 @@ typedef enum
   /* Character statistics and progression */
   eMSDP_AFFECTS,         /**< Active spell effects and conditions (array) */
   eMSDP_INVENTORY,       /**< Character inventory items (array) */
-  eMSDP_ALIGNMENT,       /**< Character alignment (-1000 to 1000) */
+  eMSDP_ALIGNMENT,       /**< Character alignment text (Lawful Good, Neutral Evil, etc.) */
   eMSDP_EXPERIENCE,      /**< Current experience points */
   eMSDP_EXPERIENCE_MAX,  /**< Experience points at current level */
   eMSDP_EXPERIENCE_TNL,  /**< Experience points to next level */
@@ -529,6 +529,7 @@ typedef enum
   eMSDP_WORLD_TIME, /**< Game world time */
   eMSDP_SECTORS,    /**< Room sector/terrain information */
   eMSDP_MINIMAP,    /**< ASCII minimap representation */
+  eMSDP_AUTOMAP,    /**< ASCII automap data for the current room */
 
   /* Client configuration and capabilities */
   eMSDP_CLIENT_ID,      /**< Client software name (configurable) */
@@ -1418,8 +1419,8 @@ void MSDPSendList(descriptor_t *apDescriptor, const char *apVariable, const char
  *   // Boolean values (0 or 1)
  *   MSDPSetNumber(ch->desc, eMSDP_STANDARD_ACTION, has_standard_action ? 1 : 0);
  *
- *   // Enum values
- *   MSDPSetNumber(ch->desc, eMSDP_ALIGNMENT, GET_ALIGNMENT(ch));
+ *   // Text labels
+ *   MSDPSetString(ch->desc, eMSDP_ALIGNMENT, get_align_by_num(GET_ALIGNMENT(ch)));
  * @endcode
  *
  * @note Works with any integer-compatible type (bool, char, enum, short)

@@ -78,6 +78,8 @@ ACMD_DECL(do_ai);
 /* Database administration commands */
 ACMD_DECL(do_database);
 ACMD_DECL(do_db_init_system);
+ACMD_DECL(do_msdplist);
+ACMD_DECL(do_msdpvalue);
 
 /* ACMDs available through interpreter.c */
 ACMD_DECL(do_alias);

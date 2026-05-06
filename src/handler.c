@@ -1697,7 +1697,11 @@ void char_to_room(struct char_data *ch, room_rnum room)
     // Send new MSDP data.
     update_msdp_room(ch);
     if (ch->desc)
+    {
       MSDPFlush(ch->desc, eMSDP_ROOM);
+      MSDPFlush(ch->desc, eMSDP_AUTOMAP);
+      MSDPFlush(ch->desc, eMSDP_MINIMAP);
+    }
 
     /* Master Tracker: refresh proximity alert when entering a room */
     update_master_tracker_alert(ch);
