@@ -510,6 +510,8 @@ typedef enum
   eMSDP_SWIFT_ACTION,    /**< Swift action available (boolean) */
   eMSDP_GROUP,           /**< Group members data (array) */
   eMSDP_POSITION,        /**< Current position (standing/sitting/etc) */
+  eMSDP_TITLE,           /**< Character title */
+  eMSDP_QUEST_INFO,      /**< Active quest info as JSON string */
 
   /* Real-time combat information */
   eMSDP_OPPONENT_HEALTH,     /**< Current opponent's hit points */

@@ -4247,6 +4247,237 @@ static void update_msdp_automap(struct descriptor_data *d, struct char_data *ch)
   }
 }
 
+static void msdp_json_escape(const char *src, char *dst, size_t dst_size)
+{
+  size_t out = 0;
+
+  if (!dst || dst_size == 0)
+    return;
+
+  dst[0] = '\0';
+
+  if (!src)
+    return;
+
+  while (*src && out + 1 < dst_size)
+  {
+    const char *replacement = NULL;
+    char ch = *src;
+
+    switch (ch)
+    {
+    case '\\':
+      replacement = "\\\\";
+      break;
+    case '"':
+      replacement = "\\\"";
+      break;
+    case '\n':
+      replacement = "\\n";
+      break;
+    case '\r':
+      replacement = "\\r";
+      break;
+    case '\t':
+      replacement = "\\t";
+      break;
+    default:
+      break;
+    }
+
+    if (replacement)
+    {
+      size_t repl_len = strlen(replacement);
+      if (out + repl_len >= dst_size)
+        break;
+      memcpy(dst + out, replacement, repl_len);
+      out += repl_len;
+    }
+    else
+    {
+      unsigned char uch = (unsigned char)ch;
+      if (uch < 32)
+        ch = '?';
+      dst[out++] = ch;
+    }
+
+    src++;
+  }
+
+  dst[out] = '\0';
+}
+
+static void append_msdp_quest_target(char *targets_json, size_t targets_size, int *first_target,
+                                     int target_id, const char *target_name)
+{
+  char escaped_name[MAX_STRING_LENGTH] = {'\0'};
+  char entry[MAX_STRING_LENGTH] = {'\0'};
+
+  if (!targets_json || !first_target)
+    return;
+
+  msdp_json_escape(target_name ? target_name : "Unknown", escaped_name, sizeof(escaped_name));
+  snprintf(entry, sizeof(entry), "%s{\"id\":%d,\"name\":\"%s\"}",
+           *first_target ? "" : ",", target_id, escaped_name);
+  strlcat(targets_json, entry, targets_size);
+  *first_target = 0;
+}
+
+static void update_msdp_quest_info(struct descriptor_data *d, struct char_data *ch)
+{
+  int index;
+  int first_quest = 1;
+  char quest_info[MAX_VARIABLE_LENGTH + 1] = {'\0'};
+
+  if (!d || !ch)
+    return;
+
+  strlcat(quest_info, "[", sizeof(quest_info));
+
+  for (index = 0; index < MAX_CURRENT_QUESTS; index++)
+  {
+    qst_rnum rnum;
+    int required;
+    int remaining;
+    int completed;
+    int time_remaining;
+    char quest_name_escaped[MAX_STRING_LENGTH] = {'\0'};
+    char quest_type_escaped[MAX_STRING_LENGTH] = {'\0'};
+    char targets_json[MAX_STRING_LENGTH] = {'\0'};
+    char quest_entry[MAX_STRING_LENGTH] = {'\0'};
+    int first_target = 1;
+    const char *type_name = "Unknown";
+
+    if (GET_QUEST(ch, index) == NOTHING)
+      continue;
+
+    rnum = real_quest(GET_QUEST(ch, index));
+    if (rnum == NOTHING)
+      continue;
+
+    required = QST_QUANTITY(rnum);
+    if (required < 1)
+      required = 1;
+
+    remaining = GET_QUEST_COUNTER(ch, index);
+    if (remaining < 0)
+      remaining = 0;
+    if (remaining > required)
+      remaining = required;
+
+    completed = required - remaining;
+    time_remaining = GET_QUEST_TIME(ch, index);
+
+    if (QST_TYPE(rnum) >= 0 && QST_TYPE(rnum) < NUM_AQ_TYPES)
+      type_name = quest_types[QST_TYPE(rnum)];
+
+    msdp_json_escape(QST_NAME(rnum) ? QST_NAME(rnum) : "Unknown", quest_name_escaped,
+                     sizeof(quest_name_escaped));
+    msdp_json_escape(type_name, quest_type_escaped, sizeof(quest_type_escaped));
+
+    strlcat(targets_json, "[", sizeof(targets_json));
+    switch (QST_TYPE(rnum))
+    {
+    case AQ_OBJ_FIND:
+    case AQ_OBJ_RETURN:
+    {
+      obj_rnum target_obj = real_object(QST_TARGET(rnum));
+      const char *target_name = (target_obj != NOTHING)
+                                    ? obj_proto[target_obj].short_description
+                                    : "Unknown Object";
+      append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target,
+                               QST_TARGET(rnum), target_name);
+      break;
+    }
+    case AQ_ROOM_FIND:
+    case AQ_ROOM_CLEAR:
+    {
+      room_rnum target_room = real_room(QST_TARGET(rnum));
+      const char *target_name =
+          (target_room != NOWHERE) ? world[target_room].name : "Unknown Room";
+      append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target,
+                               QST_TARGET(rnum), target_name);
+      break;
+    }
+    case AQ_MOB_FIND:
+    case AQ_MOB_KILL:
+    case AQ_MOB_SAVE:
+    case AQ_DIALOGUE:
+    {
+      mob_rnum target_mob = real_mobile(QST_TARGET(rnum));
+      const char *target_name = (target_mob != NOBODY)
+                                    ? mob_proto[target_mob].player.short_descr
+                                    : "Unknown Mob";
+      append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target,
+                               QST_TARGET(rnum), target_name);
+      break;
+    }
+    case AQ_MOB_MULTI_KILL:
+    {
+      if (QST_KLIST(rnum) && *QST_KLIST(rnum))
+      {
+        char kill_list_copy[MAX_STRING_LENGTH] = {'\0'};
+        char *mob_vnum_str;
+
+        snprintf(kill_list_copy, sizeof(kill_list_copy), "%s", QST_KLIST(rnum));
+        mob_vnum_str = strtok(kill_list_copy, ",");
+        while (mob_vnum_str)
+        {
+          mob_vnum mvnum = atoi(mob_vnum_str);
+          mob_rnum target_mob = real_mobile(mvnum);
+          const char *target_name = (target_mob != NOBODY)
+                                        ? mob_proto[target_mob].player.short_descr
+                                        : "Unknown Mob";
+          append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target, mvnum,
+                                   target_name);
+          mob_vnum_str = strtok(NULL, ",");
+        }
+      }
+      break;
+    }
+    case AQ_WILD_FIND:
+    {
+      char coord_target[64] = {'\0'};
+      snprintf(coord_target, sizeof(coord_target), "X:%d Y:%d", QST_COORD_X(rnum),
+               QST_COORD_Y(rnum));
+      append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target,
+                               QST_TARGET(rnum), coord_target);
+      break;
+    }
+    case AQ_GIVE_GOLD:
+    {
+      char gold_target[64] = {'\0'};
+      snprintf(gold_target, sizeof(gold_target), "%d gold", QST_TARGET(rnum));
+      append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target,
+                               QST_TARGET(rnum), gold_target);
+      break;
+    }
+    default:
+    {
+      char numeric_target[64] = {'\0'};
+      snprintf(numeric_target, sizeof(numeric_target), "Target %d", QST_TARGET(rnum));
+      append_msdp_quest_target(targets_json, sizeof(targets_json), &first_target,
+                               QST_TARGET(rnum), numeric_target);
+      break;
+    }
+    }
+
+    strlcat(targets_json, "]", sizeof(targets_json));
+
+    snprintf(quest_entry, sizeof(quest_entry),
+             "%s{\"slot\":%d,\"vnum\":%d,\"name\":\"%s\",\"type\":\"%s\","
+             "\"progress\":{\"remaining\":%d,\"required\":%d,\"completed\":%d},"
+             "\"time_remaining\":%d,\"targets\":%s}",
+             first_quest ? "" : ",", index, QST_NUM(rnum), quest_name_escaped, quest_type_escaped,
+             remaining, required, completed, time_remaining, targets_json);
+    strlcat(quest_info, quest_entry, sizeof(quest_info));
+    first_quest = 0;
+  }
+
+  strlcat(quest_info, "]", sizeof(quest_info));
+  MSDPSetString(d, eMSDP_QUEST_INFO, quest_info);
+}
+
 /* KaVir's plugin*/
 void update_msdp_room(struct char_data *ch)
 {
@@ -4400,6 +4631,7 @@ static void msdp_update(void)
       ++PlayerCount;
 
       MSDPSetString(d, eMSDP_CHARACTER_NAME, GET_NAME(ch));
+      MSDPSetString(d, eMSDP_TITLE, GET_TITLE(ch) ? GET_TITLE(ch) : "");
       MSDPSetString(d, eMSDP_ALIGNMENT, get_align_by_num(GET_ALIGNMENT(ch)));
       MSDPSetNumber(d, eMSDP_EXPERIENCE, GET_EXP(ch));
       MSDPSetNumber(d, eMSDP_EXPERIENCE_TNL, level_exp(ch, GET_LEVEL(ch) + 1) - GET_EXP(ch));
@@ -4432,6 +4664,9 @@ static void msdp_update(void)
 
       /* Inventory */
       update_msdp_inventory(ch);
+
+      /* Quests */
+      update_msdp_quest_info(d, ch);
 
       /* Room */
       update_msdp_room(ch);
