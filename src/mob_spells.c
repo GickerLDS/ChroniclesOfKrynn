@@ -957,7 +957,8 @@ void npc_offensive_spells(struct char_data *ch)
     loop_counter++;
     if (loop_counter >= (MAX_LOOPS / 2))
       break;
-  } while (level < spell_info[spellnum].min_level[GET_CLASS(ch)] ||
+  } while (!MOB_KNOWS_SPELL(ch, spellnum) ||
+           level < spell_info[spellnum].min_level[GET_CLASS(ch)] ||
            affected_by_spell(tch, spellnum));
 
   if (loop_counter < (MAX_LOOPS / 2) && spellnum != -1)
@@ -1105,7 +1106,7 @@ void wizard_cast_prebuff(struct char_data *ch)
       if (loop_counter >= (MAX_LOOPS / 2))
         break;
 
-    } while (level < SINFO.min_level[char_class] ||
+    } while (!MOB_KNOWS_SPELL(ch, spellnum) || level < SINFO.min_level[char_class] ||
              affected_by_spell(ch, spellnum) || /* Don't recast if already affected */
              !has_sufficient_slots_for_buff(ch, spellnum)); /* Don't buff if low on slots */
 
@@ -1127,7 +1128,8 @@ void wizard_cast_prebuff(struct char_data *ch)
     if (loop_counter >= (MAX_LOOPS / 2))
       break;
 
-  } while (level < SINFO.min_level[char_class] || !wizard_is_long_duration_buff(spellnum) ||
+  } while (!MOB_KNOWS_SPELL(ch, spellnum) || level < SINFO.min_level[char_class] ||
+           !wizard_is_long_duration_buff(spellnum) ||
            affected_by_spell(ch, spellnum) ||
            !has_sufficient_slots_for_buff(ch, spellnum) || /* Don't buff if low on slots */
            (spellnum == SPELL_KEEN_EDGE &&
@@ -1202,7 +1204,7 @@ void wizard_combat_ai(struct char_data *ch)
       loop_counter++;
       if (loop_counter >= (MAX_LOOPS / 2))
         break;
-    } while (level < SINFO.min_level[char_class]);
+    } while (!MOB_KNOWS_SPELL(ch, spellnum) || level < SINFO.min_level[char_class]);
 
     if (loop_counter < (MAX_LOOPS / 2) && spellnum != -1)
     {
@@ -1221,7 +1223,8 @@ void wizard_combat_ai(struct char_data *ch)
     if (loop_counter >= (MAX_LOOPS / 2))
       break;
 
-  } while (level < SINFO.min_level[char_class] || affected_by_spell(tch, spellnum) ||
+  } while (!MOB_KNOWS_SPELL(ch, spellnum) || level < SINFO.min_level[char_class] ||
+           affected_by_spell(tch, spellnum) ||
            (wizard_get_spell_category(spellnum) != spell_category && spell_category != 0));
 
   if (loop_counter < (MAX_LOOPS / 2) && spellnum != -1)

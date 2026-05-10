@@ -22677,14 +22677,133 @@ static int compare_perks_by_name(const void *a, const void *b)
   return strcasecmp(perk_a->name, perk_b->name);
 }
 
+enum perk_list_mode
+{
+  PERK_LIST_DEFAULT = 0,
+  PERK_LIST_KNOWN,
+  PERK_LIST_AVAILABLE,
+  PERK_LIST_ALL
+};
+
+static bool meets_prerequisites_not_purchased(struct char_data *ch, int perk_id, int class_id);
+
+static bool parse_perk_list_mode(const char *arg, int *list_mode)
+{
+  if (!arg || !*arg || !list_mode)
+    return FALSE;
+
+  if (is_abbrev(arg, "known"))
+    *list_mode = PERK_LIST_KNOWN;
+  else if (is_abbrev(arg, "available"))
+    *list_mode = PERK_LIST_AVAILABLE;
+  else if (is_abbrev(arg, "all"))
+    *list_mode = PERK_LIST_ALL;
+  else
+    return FALSE;
+
+  return TRUE;
+}
+
+static const char *get_perk_list_mode_description(int list_mode)
+{
+  switch (list_mode)
+  {
+  case PERK_LIST_KNOWN:
+    return "Known perks only";
+  case PERK_LIST_AVAILABLE:
+    return "Purchasable perks only";
+  case PERK_LIST_ALL:
+    return "All perks";
+  case PERK_LIST_DEFAULT:
+  default:
+    return "Known and purchasable perks";
+  }
+}
+
+static const char *get_empty_perk_list_message(int list_mode)
+{
+  switch (list_mode)
+  {
+  case PERK_LIST_KNOWN:
+    return "You do not know any perks for this class yet.";
+  case PERK_LIST_AVAILABLE:
+    return "You do not currently have any purchasable perks for this class.";
+  case PERK_LIST_ALL:
+    return "No perks available for this class.";
+  case PERK_LIST_DEFAULT:
+  default:
+    return "You do not currently know or qualify to purchase any perks for this class.";
+  }
+}
+
+static bool perk_matches_list_mode(struct char_data *ch, int perk_id, int class_id, int list_mode)
+{
+  int current_rank = get_perk_rank(ch, perk_id, class_id);
+  bool can_purchase = meets_prerequisites_not_purchased(ch, perk_id, class_id);
+
+  switch (list_mode)
+  {
+  case PERK_LIST_KNOWN:
+    return current_rank > 0;
+  case PERK_LIST_AVAILABLE:
+    return can_purchase;
+  case PERK_LIST_ALL:
+    return TRUE;
+  case PERK_LIST_DEFAULT:
+  default:
+    return current_rank > 0 || can_purchase;
+  }
+}
+
+static bool parse_perk_list_tokens(const char *arg1, const char *arg2, int *class_id,
+                                   int *list_mode)
+{
+  int parsed_class;
+  bool found_class = FALSE;
+  bool found_mode = FALSE;
+  const char *tokens[2] = {arg1, arg2};
+  int i;
+
+  if (!class_id || !list_mode)
+    return FALSE;
+
+  *class_id = CLASS_UNDEFINED;
+  *list_mode = PERK_LIST_DEFAULT;
+
+  for (i = 0; i < 2; i++)
+  {
+    if (!tokens[i] || !*tokens[i])
+      continue;
+
+    if (!found_mode && parse_perk_list_mode(tokens[i], list_mode))
+    {
+      found_mode = TRUE;
+      continue;
+    }
+
+    parsed_class = parse_class_long(tokens[i]);
+    if (!found_class && parsed_class != CLASS_UNDEFINED)
+    {
+      *class_id = parsed_class;
+      found_class = TRUE;
+      continue;
+    }
+
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 /**
- * Check if character meets prerequisites for a perk (but hasn't purchased it).
- * This is used to highlight perks that are available to purchase.
+ * Check if character can currently purchase another rank of a perk.
+ * This includes unowned perks whose prerequisites are met and owned perks
+ * that have more ranks available.
  *
  * @param ch The character
  * @param perk_id The perk to check
  * @param class_id The class
- * @return TRUE if prerequisites are met but perk not yet purchased
+ * @return TRUE if the perk can currently be purchased
  */
 static bool meets_prerequisites_not_purchased(struct char_data *ch, int perk_id, int class_id)
 {
@@ -22707,7 +22826,7 @@ static bool meets_prerequisites_not_purchased(struct char_data *ch, int perk_id,
  * @param ch The character viewing perks
  * @param class_id The class to show perks for
  */
-void list_perks_for_class(struct char_data *ch, int class_id)
+void list_perks_for_class(struct char_data *ch, int class_id, int list_mode)
 {
   int perk_ids[NUM_PERKS];
   int count, i, j;
@@ -22716,6 +22835,7 @@ void list_perks_for_class(struct char_data *ch, int class_id)
   int category;
   int category_perks[NUM_PERKS];
   int category_count;
+  int displayed_count = 0;
   char cat_out[100];
 
   count = get_class_perks(class_id, perk_ids, NUM_PERKS);
@@ -22728,6 +22848,7 @@ void list_perks_for_class(struct char_data *ch, int class_id)
 
   send_to_char(ch, "\tc%s Perks\tn\r\n", class_names[class_id]);
   send_to_char(ch, "Available Perk Points: \tY%d\tn\r\n\r\n", get_perk_points(ch, class_id));
+  send_to_char(ch, "Showing: \tW%s\tn\r\n\r\n", get_perk_list_mode_description(list_mode));
 
   /* Two column header */
   send_to_char(ch, "\tW%-4s  %-32s %s/%s  %-4s %-32s %s/%s\tn\r\n", "ID", "Name", "Rnk", "Max",
@@ -22744,7 +22865,8 @@ void list_perks_for_class(struct char_data *ch, int class_id)
     for (i = 0; i < count; i++)
     {
       perk = get_perk_by_id(perk_ids[i]);
-      if (perk && perk->perk_category == category)
+      if (perk && perk->perk_category == category &&
+          perk_matches_list_mode(ch, perk_ids[i], class_id, list_mode))
       {
         category_perks[category_count++] = perk_ids[i];
       }
@@ -22832,14 +22954,23 @@ void list_perks_for_class(struct char_data *ch, int class_id)
       {
         send_to_char(ch, "%s\r\n", left_col);
       }
+
+      displayed_count++;
+      if (j + 1 < category_count)
+        displayed_count++;
     }
 
     /* Add spacing between categories */
     send_to_char(ch, "\r\n");
   }
 
+  if (displayed_count == 0)
+    send_to_char(ch, "%s\r\n\r\n", get_empty_perk_list_message(list_mode));
+
   send_to_char(ch, "Use '\tcperk info <id>\tn' to see details about a perk.\r\n");
   send_to_char(ch, "Use '\tcperk buy <id>\tn' to purchase a perk.\r\n");
+  send_to_char(ch, "Use '\tcperk <class> [known|available|all]\tn' to filter a class's perks.\r\n");
+  send_to_char(ch, "Use '\tcperk list [known|available|all] [class]\tn' for filtered list views.\r\n");
 }
 
 /**
@@ -23100,12 +23231,13 @@ ACMD(do_book)
  */
 ACMD(do_perk)
 {
-  char arg1[MAX_INPUT_LENGTH], arg2[MAX_INPUT_LENGTH];
+  char arg1[MAX_INPUT_LENGTH], arg2[MAX_INPUT_LENGTH], arg3[MAX_INPUT_LENGTH], arg4[MAX_INPUT_LENGTH];
   int class_id, perk_id;
   int perk_respec_cost = 0;
   struct perk_data *perk;
   struct char_perk_data *char_perk;
   char error_msg[256];
+  int list_mode = PERK_LIST_DEFAULT;
 
   /* Check if perk system is enabled */
   if (!CONFIG_PERK_SYSTEM)
@@ -23120,7 +23252,14 @@ ACMD(do_perk)
     return;
   }
 
-  two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+  *arg1 = '\0';
+  *arg2 = '\0';
+  *arg3 = '\0';
+  *arg4 = '\0';
+  argument = one_argument(argument, arg1, sizeof(arg1));
+  argument = one_argument(argument, arg2, sizeof(arg2));
+  argument = one_argument(argument, arg3, sizeof(arg3));
+  one_argument(argument, arg4, sizeof(arg4));
 
   /* No arguments - show perks for primary class */
   if (!*arg1)
@@ -23145,22 +23284,65 @@ ACMD(do_perk)
       return;
     }
 
-    list_perks_for_class(ch, found_class);
+    list_perks_for_class(ch, found_class, PERK_LIST_DEFAULT);
 
     /* If multiple classes, suggest using perk list */
     if (total_classes > 1)
     {
       send_to_char(ch, "\r\n\tcYou have levels in multiple classes.\tn\r\n");
       send_to_char(ch, "Use '\tcperk list\tn' to see all your classes and perk points.\r\n");
-      send_to_char(ch, "Use '\tcperk <class>\tn' to view perks for a specific class.\r\n");
+      send_to_char(ch, "Use '\tcperk <class> [known|available|all]\tn' to filter a class's perks.\r\n");
     }
 
     return;
   }
 
-  /* perk list - show all available classes */
-  if (!strcmp(arg1, "list"))
+  /* perk list - show all available classes or a filtered perk list */
+  if (is_abbrev(arg1, "list"))
   {
+    if (*arg4 || !parse_perk_list_tokens(arg2, arg3, &class_id, &list_mode))
+    {
+      send_to_char(ch, "Usage:\r\n");
+      send_to_char(ch, "  perk list                      - Show all your classes\r\n");
+      send_to_char(ch, "  perk list [known|available|all] [class]\r\n");
+      send_to_char(ch, "  perk list [class] [known|available|all]\r\n");
+      return;
+    }
+
+    if (*arg2)
+    {
+      if (class_id == CLASS_UNDEFINED)
+      {
+        int found_class = -1;
+
+        for (class_id = 0; class_id < NUM_CLASSES; class_id++)
+        {
+          if (CLASS_LEVEL(ch, class_id) > 0)
+          {
+            found_class = class_id;
+            break;
+          }
+        }
+
+        if (found_class == -1)
+        {
+          send_to_char(ch, "You don't have any class levels yet.\r\n");
+          return;
+        }
+
+        class_id = found_class;
+      }
+
+      if (CLASS_LEVEL(ch, class_id) == 0)
+      {
+        send_to_char(ch, "You don't have any levels in %s.\r\n", class_names[class_id]);
+        return;
+      }
+
+      list_perks_for_class(ch, class_id, list_mode);
+      return;
+    }
+
     send_to_char(ch, "\tcAvailable Perk Classes\tn\r\n\r\n");
     send_to_char(ch, "Your classes and available perk points:\r\n");
 
@@ -23174,7 +23356,7 @@ ACMD(do_perk)
       }
     }
 
-    send_to_char(ch, "\r\nUse '\tcperk <class>\tn' to view perks for a specific class.\r\n");
+    send_to_char(ch, "\r\nUse '\tcperk <class> [known|available|all]\tn' to view filtered perks for a class.\r\n");
     return;
   }
 
@@ -23409,9 +23591,11 @@ ACMD(do_perk)
   {
     send_to_char(ch, "Unknown class or command.\r\n");
     send_to_char(ch, "Usage:\r\n");
-    send_to_char(ch, "  perk               - Show perks for your current class\r\n");
-    send_to_char(ch, "  perk list          - Show all your classes\r\n");
-    send_to_char(ch, "  perk <class>       - Show perks for a specific class\r\n");
+    send_to_char(ch, "  perk                              - Show known and purchasable perks\r\n");
+    send_to_char(ch, "  perk list                         - Show all your classes\r\n");
+    send_to_char(ch, "  perk list [known|available|all] [class]\r\n");
+    send_to_char(ch, "  perk <class> [known|available|all]\r\n");
+    send_to_char(ch, "  perk <class> list [known|available|all]\r\n");
     send_to_char(ch, "  perk info <id>     - Show details for a perk\r\n");
     send_to_char(ch, "  perk buy <id>      - Purchase a perk\r\n");
     send_to_char(ch, "  perk respec        - Reset all purchased perks for a gold cost\r\n");
@@ -23426,7 +23610,38 @@ ACMD(do_perk)
     return;
   }
 
-  list_perks_for_class(ch, class_id);
+  if (*arg4)
+  {
+    send_to_char(ch, "Usage: perk <class> [known|available|all]\r\n");
+    send_to_char(ch, "   or: perk <class> list [known|available|all]\r\n");
+    return;
+  }
+
+  if (*arg2)
+  {
+    if (is_abbrev(arg2, "list"))
+    {
+      if (*arg4 || !parse_perk_list_tokens(arg3, "", &perk_id, &list_mode))
+      {
+        send_to_char(ch, "Usage: perk <class> list [known|available|all]\r\n");
+        return;
+      }
+
+      if (perk_id != CLASS_UNDEFINED)
+      {
+        send_to_char(ch, "Usage: perk <class> list [known|available|all]\r\n");
+        return;
+      }
+    }
+    else if (!parse_perk_list_mode(arg2, &list_mode) || *arg3)
+    {
+      send_to_char(ch, "Usage: perk <class> [known|available|all]\r\n");
+      send_to_char(ch, "   or: perk <class> list [known|available|all]\r\n");
+      return;
+    }
+  }
+
+  list_perks_for_class(ch, class_id, list_mode);
 }
 
 /**
