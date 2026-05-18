@@ -1405,12 +1405,16 @@ void heartbeat(int heart_pulse)
     moving_rooms_update();
   }
 
-  if (!(heart_pulse % PASSES_PER_SEC))
-  { /* EVERY second */
+  if (!(heart_pulse % MAX(1, (PASSES_PER_SEC / 2))))
+  { /* EVERY half-second */
     PERF_PROF_ENTER(pr_msdp_update_, "msdp_update");
     msdp_update();
-    next_tick--;
     PERF_PROF_EXIT(pr_msdp_update_);
+  }
+
+  if (!(heart_pulse % PASSES_PER_SEC))
+  { /* EVERY second */
+    next_tick--;
     travel_tickdown();
     self_buffing();
     craft_update();
@@ -4227,6 +4231,7 @@ static void handle_webster_file(void)
 static void update_msdp_automap(struct descriptor_data *d, struct char_data *ch)
 {
   char mapbuf[MAX_STRING_LENGTH] = {'\0'};
+  char plain_mapbuf[MAX_STRING_LENGTH] = {'\0'};
 
   if (!d || !ch)
     return;
@@ -4237,9 +4242,10 @@ static void update_msdp_automap(struct descriptor_data *d, struct char_data *ch)
     const char *automap_data = get_map_string(ch, IN_ROOM(ch));
 
     snprintf(mapbuf, sizeof(mapbuf), "%s", automap_data ? automap_data : "");
-    strip_colors(mapbuf);
     MSDPSetString(d, eMSDP_MINIMAP, mapbuf);
-    MSDPSetString(d, eMSDP_AUTOMAP, mapbuf);
+    snprintf(plain_mapbuf, sizeof(plain_mapbuf), "%s", mapbuf);
+    strip_colors(plain_mapbuf);
+    MSDPSetString(d, eMSDP_AUTOMAP, plain_mapbuf);
   }
   else
   {
