@@ -51,7 +51,7 @@ static const int flags_door[] = {NEED_CLOSED | NEED_UNLOCKED, NEED_OPEN, NEED_CL
 
 /* Static (internal) function prototypes - will be made non-static after transition */
 static int find_door(struct char_data *ch, const char *type, char *dir, const char *cmdname);
-static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int scmd);
+static bool do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int scmd);
 
 /* Find door function - locates a door by keyword and/or direction */
 static int find_door(struct char_data *ch, const char *type, char *dir, const char *cmdname)
@@ -317,18 +317,19 @@ void extract_key(struct char_data *ch, obj_vnum key)
     }
 }
 
-static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int scmd)
+static bool do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int scmd)
 {
   char buf[MAX_STRING_LENGTH] = {'\0'};
   size_t len;
   room_rnum other_room = NOWHERE;
   struct room_direction_data *back = NULL;
+  bool command_success = true;
 
   if (!door_mtrigger(ch, scmd, door))
-    return;
+    return false;
 
   if (!door_wtrigger(ch, scmd, door))
-    return;
+    return false;
 
   len = snprintf(buf, sizeof(buf), "$n %ss ", cmd_door[scmd]);
   if (!obj && ((other_room = EXIT(ch, door)->to_room) != NOWHERE))
@@ -342,12 +343,12 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
     if (obj)
     {
       if (check_trap(ch, TRAP_TRIGGER_OPEN_CONTAINER, ch->in_room, obj, 0))
-        return;
+        return false;
     }
     else
     {
       if (check_trap(ch, TRAP_TRIGGER_OPEN_DOOR, ch->in_room, 0, door))
-        return;
+        return false;
     }
     OPEN_DOOR(IN_ROOM(ch), obj, door);
     if (back)
@@ -359,12 +360,12 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
     if (obj)
     {
       if (check_trap(ch, TRAP_TRIGGER_OPEN_CONTAINER, ch->in_room, obj, 0))
-        return;
+        return false;
     }
     else
     {
       if (check_trap(ch, TRAP_TRIGGER_OPEN_DOOR, ch->in_room, 0, door))
-        return;
+        return false;
     }
     CLOSE_DOOR(IN_ROOM(ch), obj, door);
     if (back)
@@ -383,12 +384,12 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
     if (obj)
     {
       if (check_trap(ch, TRAP_TRIGGER_UNLOCK_CONTAINER, ch->in_room, obj, 0))
-        return;
+        return false;
     }
     else
     {
       if (check_trap(ch, TRAP_TRIGGER_UNLOCK_DOOR, ch->in_room, 0, door))
-        return;
+        return false;
     }
     UNLOCK_DOOR(IN_ROOM(ch), obj, door);
     if (back)
@@ -402,19 +403,19 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
       if (GET_OBJ_TYPE(obj) != ITEM_CONTAINER)
       {
         send_to_char(ch, "That item cannot be picked.\r\n");
-        return;
+        return false;
       }
       if (check_trap(ch, TRAP_TRIGGER_UNLOCK_CONTAINER, ch->in_room, obj, 0))
-        return;
+        return false;
       if (DOOR_IS_PICKPROOF(ch, obj, door))
       {
         send_to_char(ch, "That item cannot be picked.\r\n");
-        return;
+        return false;
       }
       if (GET_ABILITY(ch, ABILITY_DISABLE_DEVICE) <= 0)
       {
         send_to_char(ch, "You do not know how to pick locks.\r\n");
-        return;
+        return false;
       }
       if (skill_check(ch, ABILITY_DISABLE_DEVICE, 15))
       {
@@ -427,6 +428,7 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
         send_to_char(ch, "You fail to pick the lock.\r\n");
         len = strlcpy(buf, "$n fails picks the lock on ", sizeof(buf));
         send_to_char(ch, "Your next action will be delayed up to 6 seconds.\r\n");
+        command_success = false;
       }
     }
     else
@@ -438,7 +440,7 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
       {
         send_to_char(ch, "Your next action will be delayed up to 6 seconds.\r\n");
         WAIT_STATE(ch, PULSE_VIOLENCE * 1);
-        return;
+        return false;
       }
       TOGGLE_LOCK(IN_ROOM(ch), obj, door);
       if (back)
@@ -447,6 +449,9 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
       len = strlcpy(buf, "$n skillfully picks the lock on ", sizeof(buf));
     }
     break;
+
+  default:
+    return false;
   }
 
   /* Notify the room. */
@@ -466,6 +471,8 @@ static void do_doorcmd(struct char_data *ch, struct obj_data *obj, int door, int
 
   /* Door actions are a move action. */
   USE_MOVE_ACTION(ch);
+
+  return command_success;
 }
 
 int ok_pick(struct char_data *ch, obj_vnum keynum, int pickproof, int scmd, int door)
@@ -638,11 +645,15 @@ ACMD(do_gen_door)
              ((!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_AUTOKEY))) && (has_key(ch, keynum)))
     {
       send_to_char(ch, "It is locked, but you have the key.\r\n");
-      do_doorcmd(ch, obj, door, SCMD_UNLOCK);
-      send_to_char(ch, "*Click*\r\n");
-      do_doorcmd(ch, obj, door, subcmd);
-      ch->char_specials.autodoor_message = true;
-      extract_key(ch, keynum);
+      if (do_doorcmd(ch, obj, door, SCMD_UNLOCK))
+      {
+        send_to_char(ch, "*Click*\r\n");
+        if (do_doorcmd(ch, obj, door, subcmd))
+        {
+          ch->char_specials.autodoor_message = true;
+          extract_key(ch, keynum);
+        }
+      }
     }
     else if (!(DOOR_IS_UNLOCKED(ch, obj, door)) && IS_SET(flags_door[subcmd], NEED_UNLOCKED) &&
              ((!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_AUTOKEY))) && (!has_key(ch, keynum)))
@@ -663,9 +674,11 @@ ACMD(do_gen_door)
       send_to_char(ch, "You don't seem to have the proper key.\r\n");
     else if (ok_pick(ch, keynum, DOOR_IS_PICKPROOF(ch, obj, door), subcmd, door))
     {
-      do_doorcmd(ch, obj, door, subcmd);
-      ch->char_specials.autodoor_message = true;
-      extract_key(ch, keynum);
+      if (do_doorcmd(ch, obj, door, subcmd))
+      {
+        ch->char_specials.autodoor_message = true;
+        extract_key(ch, keynum);
+      }
       return;
     }
   }

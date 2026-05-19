@@ -198,6 +198,7 @@ static RETSIGTYPE websterlink(int sig);
 static void handle_webster_file();
 
 static void msdp_update(void); /* KaVir plugin*/
+static void update_msdp_quest_info(struct descriptor_data *d, struct char_data *ch);
 void update_msdp_affects(struct char_data *ch);
 void update_damage_and_effects_over_time(void);
 void update_player_last_on(void);
@@ -4593,6 +4594,190 @@ static void update_msdp_graphic_map(struct descriptor_data *d, struct char_data 
   free(buffer.data);
 }
 
+static bool should_force_room_change_msdp_variable(variable_t variable)
+{
+  switch (variable)
+  {
+  case eMSDP_ROOM:
+  case eMSDP_AREA_NAME:
+  case eMSDP_ROOM_EXITS:
+  case eMSDP_ROOM_NAME:
+  case eMSDP_ROOM_VNUM:
+  case eMSDP_MINIMAP:
+  case eMSDP_AUTOMAP:
+  case eMSDP_GRAPHIC_MAP:
+    return true;
+  default:
+    return false;
+  }
+}
+
+static void send_room_change_msdp_variables(struct descriptor_data *d)
+{
+  int variable;
+
+  if (!d || !d->pProtocol || !d->pProtocol->pVariables)
+    return;
+
+  for (variable = eMSDP_NONE + 1; variable < eMSDP_MAX; variable++)
+  {
+    if (!d->pProtocol->pVariables[variable])
+      continue;
+
+    if (!d->pProtocol->pVariables[variable]->bReport &&
+        !should_force_room_change_msdp_variable((variable_t)variable))
+      continue;
+
+    MSDPSend(d, (variable_t)variable);
+    d->pProtocol->pVariables[variable]->bDirty = false;
+  }
+}
+
+static void update_msdp_descriptor(struct descriptor_data *d, struct char_data *ch)
+{
+  const char MsdpVar = (char)MSDP_VAR;
+  const char MsdpVal = (char)MSDP_VAL;
+  extern const char *dirs[];
+  extern const char *sector_types[];
+  struct char_data *pOpponent;
+  struct char_data *tank = NULL;
+  char buf[MAX_STRING_LENGTH] = {'\0'};
+  char sectors[MAX_STRING_LENGTH] = {'\0'};
+  char sector_buf[80];
+  char room_exits[MAX_STRING_LENGTH] = {'\0'};
+  int door;
+  int sector;
+
+  if (!d || !ch || IS_NPC(ch) || d->connected != CON_PLAYING || !d->pProtocol ||
+      !d->pProtocol->pVariables || (!d->pProtocol->bMSDP && !d->pProtocol->bGMCP))
+    return;
+
+  pOpponent = FIGHTING(ch);
+  if (pOpponent)
+    tank = FIGHTING(pOpponent);
+
+  MSDPSetString(d, eMSDP_CHARACTER_NAME, GET_NAME(ch));
+  MSDPSetString(d, eMSDP_TITLE, GET_TITLE(ch) ? GET_TITLE(ch) : "");
+  MSDPSetString(d, eMSDP_ALIGNMENT, get_align_by_num(GET_ALIGNMENT(ch)));
+  MSDPSetNumber(d, eMSDP_EXPERIENCE, GET_EXP(ch));
+  MSDPSetNumber(d, eMSDP_EXPERIENCE_TNL, level_exp(ch, GET_LEVEL(ch) + 1) - GET_EXP(ch));
+  MSDPSetNumber(d, eMSDP_EXPERIENCE_MAX,
+                level_exp(ch, GET_LEVEL(ch) + 1) - level_exp(ch, GET_LEVEL(ch)));
+
+  MSDPSetNumber(d, eMSDP_HEALTH, GET_HIT(ch));
+  MSDPSetNumber(d, eMSDP_HEALTH_MAX, GET_MAX_HIT(ch));
+  MSDPSetNumber(d, eMSDP_LEVEL, GET_LEVEL(ch));
+
+  MSDPSetNumber(d, eMSDP_STR, GET_STR(ch));
+  MSDPSetNumber(d, eMSDP_INT, GET_INT(ch));
+  MSDPSetNumber(d, eMSDP_WIS, GET_WIS(ch));
+  MSDPSetNumber(d, eMSDP_DEX, GET_DEX(ch));
+  MSDPSetNumber(d, eMSDP_CON, GET_CON(ch));
+  MSDPSetNumber(d, eMSDP_CHA, GET_CHA(ch));
+
+  snprintf(buf, sizeof(buf), "%s", position_types[GET_POS(ch)]);
+  strip_colors(buf);
+  MSDPSetString(d, eMSDP_POSITION, buf);
+
+  update_msdp_affects(ch);
+  update_msdp_actions(ch);
+  update_msdp_group(ch);
+  update_msdp_inventory(ch);
+  update_msdp_quest_info(d, ch);
+
+  update_msdp_room(ch);
+  update_msdp_automap(d, ch);
+  update_msdp_graphic_map(d, ch);
+
+  MSDPSetNumber(d, eMSDP_ATTACK_BONUS, compute_attack_bonus(ch, ch, ATTACK_TYPE_PRIMARY));
+
+  snprintf(buf, sizeof(buf), "%s", race_list[GET_RACE(ch)].type);
+  strip_colors(buf);
+  MSDPSetString(d, eMSDP_RACE, buf);
+
+  snprintf(buf, sizeof(buf), "%s", CLSLIST_NAME(ch->player.chclass));
+  strip_colors(buf);
+  MSDPSetString(d, eMSDP_CLASS, buf);
+
+  if (IN_ROOM(ch) != NOWHERE && VALID_ROOM_RNUM(IN_ROOM(ch)))
+  {
+    room_exits[0] = '\0';
+    for (door = 0; door < DIR_COUNT; door++)
+    {
+      char buf3[MAX_STRING_LENGTH] = {'\0'};
+
+      if (!EXIT(ch, door) || EXIT(ch, door)->to_room == NOWHERE)
+        continue;
+
+      snprintf(buf3, sizeof(buf3), "%c%s%c%d%c", MsdpVar, dirs[door], MsdpVal,
+               GET_ROOM_VNUM(EXIT(ch, door)->to_room), '\0');
+      strlcat(room_exits, buf3, sizeof(room_exits));
+    }
+
+    for (sector = 0; sector < NUM_ROOM_SECTORS; sector++)
+    {
+      sector_buf[0] = '\0';
+      snprintf(sector_buf, sizeof(sector_buf), "%c%s%c%d", MsdpVar, sector_types[sector],
+               MsdpVal, sector);
+      strlcat(sectors, sector_buf, sizeof(sectors));
+    }
+
+    MSDPSetTable(d, eMSDP_SECTORS, sectors);
+    MSDPSetString(d, eMSDP_AREA_NAME, zone_table[GET_ROOM_ZONE(IN_ROOM(ch))].name);
+    MSDPSetString(d, eMSDP_ROOM_NAME, world[IN_ROOM(ch)].name);
+    MSDPSetTable(d, eMSDP_ROOM_EXITS, room_exits);
+    MSDPSetNumber(d, eMSDP_ROOM_VNUM, GET_ROOM_VNUM(IN_ROOM(ch)));
+  }
+
+  MSDPSetNumber(d, eMSDP_PSP, GET_PSP(ch));
+  MSDPSetNumber(d, eMSDP_PSP_MAX, GET_MAX_PSP(ch));
+  MSDPSetNumber(d, eMSDP_WIMPY, GET_WIMP_LEV(ch));
+  MSDPSetNumber(d, eMSDP_MONEY, GET_GOLD(ch));
+  MSDPSetNumber(d, eMSDP_MOVEMENT, GET_MOVE(ch));
+  MSDPSetNumber(d, eMSDP_MOVEMENT_MAX, GET_MAX_MOVE(ch));
+  MSDPSetNumber(d, eMSDP_AC, compute_armor_class(NULL, ch, FALSE, MODE_ARMOR_CLASS_NORMAL));
+
+  if (pOpponent != NULL)
+  {
+    char opponent_buf[255];
+    int hit_points = (GET_HIT(pOpponent) * 100) / GET_MAX_HIT(pOpponent);
+    MSDPSetNumber(d, eMSDP_OPPONENT_HEALTH, hit_points);
+    MSDPSetNumber(d, eMSDP_OPPONENT_HEALTH_MAX, 100);
+    MSDPSetNumber(d, eMSDP_OPPONENT_LEVEL, GET_LEVEL(pOpponent));
+    snprintf(opponent_buf, sizeof(opponent_buf), "%s", PERS(pOpponent, ch));
+    strip_colors(opponent_buf);
+    MSDPSetString(d, eMSDP_OPPONENT_NAME, opponent_buf);
+
+    if (tank != NULL && tank != ch)
+    {
+      snprintf(opponent_buf, sizeof(opponent_buf), "%s", PERS(tank, ch));
+      strip_colors(opponent_buf);
+      MSDPSetString(d, eMSDP_TANK_NAME, opponent_buf);
+      MSDPSetNumber(d, eMSDP_TANK_HEALTH, (GET_HIT(tank) * 100) / GET_MAX_HIT(tank));
+      MSDPSetNumber(d, eMSDP_TANK_HEALTH_MAX, 100);
+    }
+  }
+  else
+  {
+    MSDPSetNumber(d, eMSDP_OPPONENT_HEALTH, 0);
+    MSDPSetNumber(d, eMSDP_OPPONENT_LEVEL, 0);
+    MSDPSetString(d, eMSDP_OPPONENT_NAME, "");
+    MSDPSetString(d, eMSDP_TANK_NAME, "");
+    MSDPSetNumber(d, eMSDP_TANK_HEALTH, 0);
+    MSDPSetNumber(d, eMSDP_TANK_HEALTH_MAX, 0);
+  }
+
+  send_room_change_msdp_variables(d);
+}
+
+void update_msdp_all(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || !ch->desc || ch->desc->character != ch)
+    return;
+
+  update_msdp_descriptor(ch->desc, ch);
+}
+
 static void msdp_json_escape(const char *src, char *dst, size_t dst_size)
 {
   size_t out = 0;
@@ -4845,9 +5030,7 @@ void update_msdp_room(struct char_data *ch)
   if (ch && ch->desc)
   {
     /* Location information */
-    /*  Only update room stuff if they've changed room */
-    if (IN_ROOM(ch) != NOWHERE && VALID_ROOM_RNUM(IN_ROOM(ch)) &&
-        GET_ROOM_VNUM(IN_ROOM(ch)) != ch->desc->pProtocol->pVariables[eMSDP_ROOM_VNUM]->ValueInt)
+    if (IN_ROOM(ch) != NOWHERE && VALID_ROOM_RNUM(IN_ROOM(ch)))
     {
       room_rnum room = IN_ROOM(ch);
       zone_rnum zone = GET_ROOM_ZONE(room);

@@ -1694,15 +1694,9 @@ void char_to_room(struct char_data *ch, room_rnum room)
       send_to_char(ch, "Suddenly your realize you are falling!\r\n");
       act("$n has just realized $e has no visible means of support!", FALSE, ch, 0, 0, TO_ROOM);
     }
-    // Send new MSDP data.
-    update_msdp_room(ch);
-    if (ch->desc)
-    {
-      MSDPFlush(ch->desc, eMSDP_ROOM);
-      MSDPFlush(ch->desc, eMSDP_AUTOMAP);
-      MSDPFlush(ch->desc, eMSDP_MINIMAP);
-      MSDPFlush(ch->desc, eMSDP_GRAPHIC_MAP);
-    }
+    /* Keep this after IN_ROOM(ch) is updated so MSDP reflects the new room. */
+    if (!IS_NPC(ch))
+      update_msdp_all(ch);
 
     /* Master Tracker: refresh proximity alert when entering a room */
     update_master_tracker_alert(ch);

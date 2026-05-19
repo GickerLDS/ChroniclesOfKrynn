@@ -1052,7 +1052,7 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
       snprintf(open_cmd, sizeof(open_cmd), " %s", dirs[dir]);
       // send_to_char(ch, "CMD: %s\r\n", open_cmd);
       do_gen_door(ch, open_cmd, 0, SCMD_OPEN);
-      if (ch->char_specials.autodoor_message)
+      if (ch->char_specials.autodoor_message && !EXIT_FLAGGED(EXIT(ch, dir), EX_CLOSED))
       {
         snprintf(open_cmd, sizeof(open_cmd), "You open the %s to the %s.", EXIT(ch, dir)->keyword,
                  dirs[dir]);
@@ -1061,6 +1061,7 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
         /* Retry movement after opening the door, preserving walkto status */
         return perform_move_full(ch, dir, need_specials_check, false);
       }
+      ch->char_specials.autodoor_message = false;
     }
     else
     {
@@ -1081,7 +1082,7 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
       /* Try to unlock and open the door */
       do_gen_door(ch, open_cmd, 0, SCMD_UNLOCK);
       do_gen_door(ch, open_cmd, 0, SCMD_OPEN);
-      if (ch->char_specials.autodoor_message)
+      if (ch->char_specials.autodoor_message && !EXIT_FLAGGED(EXIT(ch, dir), EX_CLOSED))
       {
         snprintf(open_cmd, sizeof(open_cmd), "You unlock and open the %s to the %s.", 
                  EXIT(ch, dir)->keyword, dirs[dir]);
@@ -1090,6 +1091,7 @@ int perform_move_full(struct char_data *ch, int dir, int need_specials_check, bo
         /* Retry movement after unlocking/opening the door, preserving walkto status */
         return perform_move_full(ch, dir, need_specials_check, false);
       }
+      ch->char_specials.autodoor_message = false;
     }
     else
     {

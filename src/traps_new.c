@@ -736,6 +736,7 @@ bool disarm_trap(struct char_data *ch, struct trap_data *trap)
 bool check_trap_trigger(struct char_data *ch, int trigger_type, room_rnum room,
                         struct obj_data *obj, int direction)
 {
+
   struct trap_data *trap;
 
   if (!ch || IS_NPC(ch))
