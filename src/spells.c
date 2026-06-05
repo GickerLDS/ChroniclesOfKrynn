@@ -2259,7 +2259,7 @@ ASPELL(spell_alter_self)
 
   GET_DISGUISE_RACE(ch) = target_race;
 
-  memset(&af, 0, sizeof(af));
+  new_affect(&af);
   af.spell = SPELL_ALTER_SELF;
   af.duration = duration;
   af.location = APPLY_SKILL;
@@ -2269,7 +2269,7 @@ ASPELL(spell_alter_self)
   SET_BIT_AR(af.bitvector, AFF_MIND_BLANK);
   affect_to_char(ch, &af);
 
-  memset(&af, 0, sizeof(af));
+  new_affect(&af);
   af.spell = SPELL_ALTER_SELF;
   af.duration = duration;
   af.location = (race_list[target_race].size <= SIZE_SMALL) ? APPLY_DEX : APPLY_STR;
@@ -2279,7 +2279,7 @@ ASPELL(spell_alter_self)
 
   if (race_grants_vision_feat(target_race, FEAT_INFRAVISION))
   {
-    memset(&af, 0, sizeof(af));
+    new_affect(&af);
     af.spell = SPELL_ALTER_SELF;
     af.duration = duration;
     af.location = APPLY_NONE;
@@ -2290,7 +2290,7 @@ ASPELL(spell_alter_self)
 
   if (race_grants_vision_feat(target_race, FEAT_ULTRAVISION))
   {
-    memset(&af, 0, sizeof(af));
+    new_affect(&af);
     af.spell = SPELL_ALTER_SELF;
     af.duration = duration;
     af.location = APPLY_NONE;

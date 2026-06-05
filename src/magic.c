@@ -3937,7 +3937,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
           if (!savingthrow(ch, tch_aoe, SAVING_FORT, 0, casttype, level, NOSCHOOL))
           {
             struct affected_type af;
-            memset(&af, 0, sizeof(af));
+            new_affect(&af);
             af.spell = PSIONIC_CRYSTAL_SHARD;
             af.duration = 10;
             af.modifier = 1;
@@ -3960,7 +3960,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       if (!savingthrow(ch, victim, SAVING_FORT, 0, casttype, level, NOSCHOOL))
       {
         struct affected_type af;
-        memset(&af, 0, sizeof(af));
+        new_affect(&af);
         af.spell = PSIONIC_CRYSTAL_SHARD;
         af.duration = 10;
         af.modifier = 1;
@@ -3982,7 +3982,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       if (!savingthrow(ch, victim, SAVING_REFL, 0, casttype, level, NOSCHOOL))
       {
         struct affected_type af;
-        memset(&af, 0, sizeof(af));
+        new_affect(&af);
         af.spell = PSIONIC_SWARM_OF_CRYSTALS;
         af.duration = 10;
         af.modifier = -2;
@@ -13246,7 +13246,7 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
         }
         /* Apply AFF_MAGIC_ATTACKS so summon's attacks bypass non-magic DR */
         struct affected_type af;
-        memset(&af, 0, sizeof(af));
+        new_affect(&af);
         af.spell = PSIONIC_ECTOPLASMIC_SHAMBLER;
         af.duration = -1; /* Permanent until death */
         af.location = APPLY_NONE;

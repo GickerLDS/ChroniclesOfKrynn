@@ -4287,6 +4287,7 @@ ACMD(do_poisontouch)
     else
     {
       struct affected_type af;
+      new_affect(&af);
 
       af.spell = SPELL_POISON;
       SET_BIT_AR(af.bitvector, AFF_POISON);

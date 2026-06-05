@@ -1054,6 +1054,9 @@ ARMOR_SPECIAL_ABILITY(armor_specab_blinding)
   struct affected_type af[2];
   int i = 0;
 
+  new_affect(&af[0]);
+  new_affect(&af[1]);
+
   switch (actmtd)
   {
   case ACTMTD_COMMAND_WORD: /* User UTTERs the command word. */

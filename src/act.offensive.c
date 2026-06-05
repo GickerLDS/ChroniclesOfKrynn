@@ -16323,14 +16323,21 @@ void SET_NATURES_WRATH_COOLDOWN(struct char_data *ch, int seconds)
   ch->natures_wrath_cooldown = seconds;
 }
 
+static void reset_natures_wrath_affect(struct affected_type *af, int spell, int modifier)
+{
+  memset(af, 0, sizeof(*af));
+  new_affect(af);
+  af->spell = spell;
+  af->duration = 10; /* 10 rounds */
+  af->modifier = modifier;
+}
+
 void apply_natures_wrath_buff(struct char_data *ch)
 {
   /* Nature's Wrath: +4 to all stats, +2d8 damage, fast healing 5 for 10 rounds */
   struct affected_type af;
-  memset(&af, 0, sizeof(af));
-  af.spell = PERK_RANGER_NATURES_WRATH;
-  af.duration = 10; /* 10 rounds */
-  af.modifier = 4;
+
+  reset_natures_wrath_affect(&af, PERK_RANGER_NATURES_WRATH, 4);
   af.location = APPLY_STR;
   affect_to_char(ch, &af);
   af.location = APPLY_DEX;
@@ -16345,20 +16352,21 @@ void apply_natures_wrath_buff(struct char_data *ch)
   affect_to_char(ch, &af);
 
   /* Fast healing 5: handled in regen logic, set a flag/affect */
+  reset_natures_wrath_affect(&af, PERK_RANGER_NATURES_WRATH, 5);
   af.location = APPLY_FAST_HEALING;
-  af.modifier = 5;
   affect_to_char(ch, &af);
 
   /* Damage bonus: +2d8 on all attacks (custom damage affect, handled in combat logic) */
-  af.spell = SKILL_APPLY_NATURES_WRATH_DAMAGE;
+  reset_natures_wrath_affect(&af, SKILL_APPLY_NATURES_WRATH_DAMAGE, 2);
   af.location = APPLY_SPECIAL;
-  af.modifier = 2; /* 2d8 flag, actual roll handled elsewhere */
   affect_to_char(ch, &af);
 
   /* Apply to companion if present */
   if (has_active_companion(ch))
   {
     struct char_data *pet = get_animal_companion_mob(ch);
+
+    reset_natures_wrath_affect(&af, PERK_RANGER_NATURES_WRATH, 4);
     af.location = APPLY_STR;
     affect_to_char(pet, &af);
     af.location = APPLY_DEX;
@@ -16371,8 +16379,12 @@ void apply_natures_wrath_buff(struct char_data *ch)
     affect_to_char(pet, &af);
     af.location = APPLY_CHA;
     affect_to_char(pet, &af);
+
+    reset_natures_wrath_affect(&af, SKILL_APPLY_NATURES_WRATH_DAMAGE, 2);
     af.location = APPLY_SPECIAL;
     affect_to_char(pet, &af);
+
+    reset_natures_wrath_affect(&af, PERK_RANGER_NATURES_WRATH, 5);
     af.location = APPLY_FAST_HEALING;
     affect_to_char(pet, &af);
   }

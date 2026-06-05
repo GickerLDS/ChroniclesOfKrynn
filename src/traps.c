@@ -226,6 +226,8 @@ EVENTFUNC(event_trap_triggered)
   int casttype = CAST_TRAP;
   int level = (LVL_STAFF - 1);
 
+  new_affect(&af);
+
   pMudEvent = (struct mud_event_data *)event_obj;
 
   if (!pMudEvent)

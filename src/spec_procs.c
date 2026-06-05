@@ -4812,6 +4812,7 @@ SPECIAL(shar_heart)
     return FALSE;
 
   struct affected_type af;
+  new_affect(&af);
   int dam = 0;
 
   struct char_data *vict = FIGHTING(ch);
@@ -4891,6 +4892,7 @@ SPECIAL(dog)
 {
   int random = 0;
   struct affected_type af;
+  new_affect(&af);
   struct char_data *pet = (struct char_data *)me;
 
   if (!argument)
@@ -10800,6 +10802,7 @@ SPECIAL(menzo_chokers)
 {
   struct affected_type *af2;
   struct affected_type af;
+  new_affect(&af);
 
   if (!ch)
     return FALSE;
