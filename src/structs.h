@@ -8131,6 +8131,15 @@ struct autowiz_data
   int min_wizlist_lev; /**< Minimun level to show on wizlist.  */
 };
 
+#define NUM_MOB_STAT_LEVEL_RANGES 7
+#define MOB_STAT_LEVEL_1_5       0
+#define MOB_STAT_LEVEL_6_10      1
+#define MOB_STAT_LEVEL_11_15     2
+#define MOB_STAT_LEVEL_16_20     3
+#define MOB_STAT_LEVEL_21_25     4
+#define MOB_STAT_LEVEL_26_30     5
+#define MOB_STAT_LEVEL_30_PLUS   6
+
 struct mob_stat_category
 {
   int hit_points;
@@ -8142,12 +8151,17 @@ struct mob_stat_category
   int gold;
 };
 
-struct mob_stats_config_data
+struct mob_stat_level_range
 {
   struct mob_stat_category warriors;
   struct mob_stat_category arcane_casters;
   struct mob_stat_category divine_casters;
   struct mob_stat_category rogues;
+};
+
+struct mob_stats_config_data
+{
+  struct mob_stat_level_range level_ranges[NUM_MOB_STAT_LEVEL_RANGES];
 };
 
 struct player_config_data

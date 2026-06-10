@@ -18942,10 +18942,10 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Check tier level gate */
   perk_tier = get_perk_tier_by_id(perk_id);
   min_level = get_perk_tier_min_level(perk_tier);
-  if (CLASS_LEVEL(ch, class_id) < min_level)
+  if (GET_LEVEL(ch) < min_level)
   {
     if (error_msg)
-      snprintf(error_msg, error_len, "You must be level %d in %s to purchase tier %d perks.", min_level, class_names[class_id], perk_tier);
+      snprintf(error_msg, error_len, "You must be level %d to purchase tier %d perks.", min_level, perk_tier);
     return FALSE;
   }
 

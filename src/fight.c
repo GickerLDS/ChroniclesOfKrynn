@@ -2867,8 +2867,11 @@ static void group_gain(struct char_data *ch, struct char_data *victim)
     tot_gain = MIN(CONFIG_MAX_EXP_LOSS * 2 / 3, tot_gain);
 
   /* base: split the xp between the individuals in the party */
+  // Divides based on number of players in the party. 
+  // 1 = 100%, 2 = 90%, 3 = 80%, 4 = 70%, 5 = 60%, 6+ = 50% of normal exp gain. 
+  // Charmies don't count against this.
   if (tot_members >= 1)
-    base = MAX(1, tot_gain / tot_members);
+    base = tot_gain * (100 - MIN(50, (tot_members - 1) * 10)) / 100;
   else
     base = 0;
 
@@ -12652,6 +12655,9 @@ int can_sneak_attack(struct char_data *ch, struct char_data *victim)
 
   if (!ch || !victim) /*dumdum*/
     return FALSE;
+
+  if (get_monk_deadly_precision_dice(ch) > 0)
+    return TRUE;
 
   /* base level here! */
   if (!HAS_FEAT(ch, FEAT_SNEAK_ATTACK))

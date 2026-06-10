@@ -4753,7 +4753,7 @@ struct char_data *read_mobile(mob_vnum nr, int type) /* and mob_rnum */
   if (MOB_FLAGGED(mob, MOB_MOUNTABLE))
     GET_REAL_MAX_MOVE(mob) = 2000 + (GET_LEVEL(mob) * 200);
 
-  /* Apply mob stat modifiers based on class category */
+  /* Apply configured mob stat modifiers after normal load/autoroll stats are finalized. */
   apply_mob_stat_modifiers(mob);
 
   /* Initialize spell slots for mobs using spell slot system */
@@ -7572,6 +7572,132 @@ static int check_object_level(struct obj_data *obj, int val)
   return (error);
 }
 
+static const char *mob_stat_level_range_tags[NUM_MOB_STAT_LEVEL_RANGES] = {
+    "1_5", "6_10", "11_15", "16_20", "21_25", "26_30", "30_plus"};
+
+static const char *mob_stat_category_tags[NUM_MOB_STAT_CATEGORIES] = {
+    "warriors", "rogues", "arcane", "divine"};
+
+static const int mob_stat_category_values[NUM_MOB_STAT_CATEGORIES] = {
+    MOB_STAT_CATEGORY_WARRIOR, MOB_STAT_CATEGORY_ROGUE, MOB_STAT_CATEGORY_ARCANE,
+    MOB_STAT_CATEGORY_DIVINE};
+
+static void init_mob_stat_category(struct mob_stat_category *stats)
+{
+  if (!stats)
+    return;
+
+  stats->hit_points = 100;
+  stats->armor_class = 100;
+  stats->attack_bonus = 100;
+  stats->damage_bonus = 100;
+  stats->saving_throws = 100;
+  stats->ability_scores = 100;
+  stats->gold = 100;
+}
+
+static struct mob_stat_category *db_get_mob_stat_category(struct mob_stats_config_data *mob_stats,
+                                                          int level_range, int category)
+{
+  struct mob_stat_level_range *range;
+
+  if (!mob_stats || level_range < 0 || level_range >= NUM_MOB_STAT_LEVEL_RANGES)
+    return NULL;
+
+  range = &mob_stats->level_ranges[level_range];
+
+  switch (category)
+  {
+  case MOB_STAT_CATEGORY_WARRIOR:
+    return &range->warriors;
+  case MOB_STAT_CATEGORY_ARCANE:
+    return &range->arcane_casters;
+  case MOB_STAT_CATEGORY_DIVINE:
+    return &range->divine_casters;
+  case MOB_STAT_CATEGORY_ROGUE:
+    return &range->rogues;
+  default:
+    return NULL;
+  }
+}
+
+static void init_mob_stats_config(struct mob_stats_config_data *mob_stats)
+{
+  int range, category;
+
+  for (range = 0; range < NUM_MOB_STAT_LEVEL_RANGES; range++)
+    for (category = 0; category < NUM_MOB_STAT_CATEGORIES; category++)
+      init_mob_stat_category(db_get_mob_stat_category(
+          mob_stats, range, mob_stat_category_values[category]));
+}
+
+static int set_mob_stat_field(struct mob_stat_category *stats, const char *field, int value)
+{
+  if (!stats || !field)
+    return FALSE;
+
+  if (!str_cmp(field, "hp"))
+    stats->hit_points = value;
+  else if (!str_cmp(field, "ac"))
+    stats->armor_class = value;
+  else if (!str_cmp(field, "ab"))
+    stats->attack_bonus = value;
+  else if (!str_cmp(field, "db"))
+    stats->damage_bonus = value;
+  else if (!str_cmp(field, "st"))
+    stats->saving_throws = value;
+  else if (!str_cmp(field, "as"))
+    stats->ability_scores = value;
+  else if (!str_cmp(field, "gold"))
+    stats->gold = value;
+  else
+    return FALSE;
+
+  return TRUE;
+}
+
+static int load_mob_stat_config_tag(const char *tag, int value)
+{
+  char expected[MAX_INPUT_LENGTH];
+  size_t prefix_len;
+  int range, category;
+
+  for (range = 0; range < NUM_MOB_STAT_LEVEL_RANGES; range++)
+    for (category = 0; category < NUM_MOB_STAT_CATEGORIES; category++)
+    {
+      snprintf(expected, sizeof(expected), "mob_%s_%s_", mob_stat_level_range_tags[range],
+               mob_stat_category_tags[category]);
+      prefix_len = strlen(expected);
+
+      if (!strn_cmp(tag, expected, prefix_len))
+        return set_mob_stat_field(
+            db_get_mob_stat_category(&config_info.mob_stats, range,
+                                     mob_stat_category_values[category]),
+            tag + prefix_len, value);
+    }
+
+  for (category = 0; category < NUM_MOB_STAT_CATEGORIES; category++)
+  {
+    snprintf(expected, sizeof(expected), "mob_%s_", mob_stat_category_tags[category]);
+    prefix_len = strlen(expected);
+
+    if (!strn_cmp(tag, expected, prefix_len))
+    {
+      int handled = FALSE;
+
+      for (range = 0; range < NUM_MOB_STAT_LEVEL_RANGES; range++)
+        handled |= set_mob_stat_field(
+            db_get_mob_stat_category(&config_info.mob_stats, range,
+                                     mob_stat_category_values[category]),
+            tag + prefix_len, value);
+
+      return handled;
+    }
+  }
+
+  return FALSE;
+}
+
 static int check_bitvector_names(bitvector_t bits, size_t namecount, const char *whatami,
                                  const char *whatbits)
 {
@@ -7691,38 +7817,8 @@ static void load_default_config(void)
   CONFIG_HAPPY_HOUR_HARVESTING_MOTES_CHANCE = happy_hour_harvesting_motes_chance_bonus;
   CONFIG_HAPPY_HOUR_HARVESTING_MOTES_OBTAINED = happy_hour_harvesting_motes_obtained_bonus;
 
-  /* Mob Stats - Initialize to 100% (normal) */
-  CONFIG_MOB_WARRIORS_HP = 100;
-  CONFIG_MOB_WARRIORS_AC = 100;
-  CONFIG_MOB_WARRIORS_AB = 100;
-  CONFIG_MOB_WARRIORS_DB = 100;
-  CONFIG_MOB_WARRIORS_ST = 100;
-  CONFIG_MOB_WARRIORS_AS = 100;
-  CONFIG_MOB_WARRIORS_GOLD = 100;
-
-  CONFIG_MOB_ARCANE_HP = 100;
-  CONFIG_MOB_ARCANE_AC = 100;
-  CONFIG_MOB_ARCANE_AB = 100;
-  CONFIG_MOB_ARCANE_DB = 100;
-  CONFIG_MOB_ARCANE_ST = 100;
-  CONFIG_MOB_ARCANE_AS = 100;
-  CONFIG_MOB_ARCANE_GOLD = 100;
-
-  CONFIG_MOB_DIVINE_HP = 100;
-  CONFIG_MOB_DIVINE_AC = 100;
-  CONFIG_MOB_DIVINE_AB = 100;
-  CONFIG_MOB_DIVINE_DB = 100;
-  CONFIG_MOB_DIVINE_ST = 100;
-  CONFIG_MOB_DIVINE_AS = 100;
-  CONFIG_MOB_DIVINE_GOLD = 100;
-
-  CONFIG_MOB_ROGUES_HP = 100;
-  CONFIG_MOB_ROGUES_AC = 100;
-  CONFIG_MOB_ROGUES_AB = 100;
-  CONFIG_MOB_ROGUES_DB = 100;
-  CONFIG_MOB_ROGUES_ST = 100;
-  CONFIG_MOB_ROGUES_AS = 100;
-  CONFIG_MOB_ROGUES_GOLD = 100;
+  /* Mob Stats - Initialize to 100% (normal) for each level range/category. */
+  init_mob_stats_config(&config_info.mob_stats);
 
   /* Player config defaults. */
   CONFIG_MINIMUM_EXP = minimum_experience;
@@ -7977,62 +8073,10 @@ void load_config(void)
         CONFIG_MEDIT_ADVANCED = num;
       else if (!str_cmp(tag, "min_pop_to_claim"))
         CONFIG_MIN_POP_TO_CLAIM = fl_num;
-      else if (!str_cmp(tag, "mob_warriors_hp"))
-        CONFIG_MOB_WARRIORS_HP = num;
-      else if (!str_cmp(tag, "mob_warriors_ac"))
-        CONFIG_MOB_WARRIORS_AC = num;
-      else if (!str_cmp(tag, "mob_warriors_ab"))
-        CONFIG_MOB_WARRIORS_AB = num;
-      else if (!str_cmp(tag, "mob_warriors_db"))
-        CONFIG_MOB_WARRIORS_DB = num;
-      else if (!str_cmp(tag, "mob_warriors_st"))
-        CONFIG_MOB_WARRIORS_ST = num;
-      else if (!str_cmp(tag, "mob_warriors_as"))
-        CONFIG_MOB_WARRIORS_AS = num;
-      else if (!str_cmp(tag, "mob_warriors_gold"))
-        CONFIG_MOB_WARRIORS_GOLD = num;
-      else if (!str_cmp(tag, "mob_arcane_hp"))
-        CONFIG_MOB_ARCANE_HP = num;
-      else if (!str_cmp(tag, "mob_arcane_ac"))
-        CONFIG_MOB_ARCANE_AC = num;
-      else if (!str_cmp(tag, "mob_arcane_ab"))
-        CONFIG_MOB_ARCANE_AB = num;
-      else if (!str_cmp(tag, "mob_arcane_db"))
-        CONFIG_MOB_ARCANE_DB = num;
-      else if (!str_cmp(tag, "mob_arcane_st"))
-        CONFIG_MOB_ARCANE_ST = num;
-      else if (!str_cmp(tag, "mob_arcane_as"))
-        CONFIG_MOB_ARCANE_AS = num;
-      else if (!str_cmp(tag, "mob_arcane_gold"))
-        CONFIG_MOB_ARCANE_GOLD = num;
-      else if (!str_cmp(tag, "mob_divine_hp"))
-        CONFIG_MOB_DIVINE_HP = num;
-      else if (!str_cmp(tag, "mob_divine_ac"))
-        CONFIG_MOB_DIVINE_AC = num;
-      else if (!str_cmp(tag, "mob_divine_ab"))
-        CONFIG_MOB_DIVINE_AB = num;
-      else if (!str_cmp(tag, "mob_divine_db"))
-        CONFIG_MOB_DIVINE_DB = num;
-      else if (!str_cmp(tag, "mob_divine_st"))
-        CONFIG_MOB_DIVINE_ST = num;
-      else if (!str_cmp(tag, "mob_divine_as"))
-        CONFIG_MOB_DIVINE_AS = num;
-      else if (!str_cmp(tag, "mob_divine_gold"))
-        CONFIG_MOB_DIVINE_GOLD = num;
-      else if (!str_cmp(tag, "mob_rogues_hp"))
-        CONFIG_MOB_ROGUES_HP = num;
-      else if (!str_cmp(tag, "mob_rogues_ac"))
-        CONFIG_MOB_ROGUES_AC = num;
-      else if (!str_cmp(tag, "mob_rogues_ab"))
-        CONFIG_MOB_ROGUES_AB = num;
-      else if (!str_cmp(tag, "mob_rogues_db"))
-        CONFIG_MOB_ROGUES_DB = num;
-      else if (!str_cmp(tag, "mob_rogues_st"))
-        CONFIG_MOB_ROGUES_ST = num;
-      else if (!str_cmp(tag, "mob_rogues_as"))
-        CONFIG_MOB_ROGUES_AS = num;
-      else if (!str_cmp(tag, "mob_rogues_gold"))
-        CONFIG_MOB_ROGUES_GOLD = num;
+      else if (load_mob_stat_config_tag(tag, num))
+      {
+        /* Handled mob stat level/category config. */
+      }
       else if (!str_cmp(tag, "melee_exp_option"))
         CONFIG_MELEE_EXP_OPTION = num;
       break;
