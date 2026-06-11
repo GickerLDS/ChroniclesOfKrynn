@@ -7854,7 +7854,18 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
     /* Improved Smite perk - add bonus dice damage */
     if (!IS_NPC(ch))
     {
+      int cleric_smite_dice = get_cleric_smite_evil_dice(ch);
       int improved_smite_dice = get_paladin_improved_smite_dice(ch);
+
+      if (cleric_smite_dice > 0 && IS_EVIL(vict))
+      {
+        int cleric_smite_dam = dice(cleric_smite_dice, 6);
+        dambonus += cleric_smite_dam;
+        if (display_mode)
+          send_to_char(ch, "Cleric Smite Evil: \tR%dd6 (%d)\tn\r\n", cleric_smite_dice,
+                       cleric_smite_dam);
+      }
+
       if (improved_smite_dice > 0 && smite_evil_target_type(vict))
       {
         int bonus_dam = dice(improved_smite_dice, 6);

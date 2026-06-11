@@ -114,7 +114,7 @@
 
 /* PLAYER SPELLS -- Numbered from 1 to MAX_SPELLS */
 #define SPELL_ARMOR 1 // done
-#define SPELL_SHIELD_OF_FAITH SPELL_ARMOR
+#define SPELL_SHIELD_OF_FAITH 323
 #define SPELL_TELEPORT 2      // done (no longer stock)
 #define SPELL_BLESS 3         // done
 #define SPELL_BLINDNESS 4     // done
@@ -161,7 +161,7 @@
 #define SPELL_ANIMATE_DEAD 45   // done
 #define SPELL_DISPEL_GOOD 46    // done
 #define SPELL_GROUP_ARMOR 47    // done
-#define SPELL_GROUP_SHIELD_OF_FAITH SPELL_GROUP_ARMOR
+#define SPELL_GROUP_SHIELD_OF_FAITH 324
 #define SPELL_GROUP_HEAL 48            // done
 #define SPELL_GROUP_RECALL 49          // done
 #define SPELL_INFRAVISION 50           // done
@@ -448,7 +448,7 @@
 #define SPELL_MINOR_CREATE 321
 #define SPELL_DISPEL_INVIS 322
 
-/** OPEN SPELL NUMBERS 323 to 381
+/** OPEN SPELL NUMBERS 325 to 381
  * UPDATE THIS COMMENT AS YOU ADD SPELLS
  * INSIDE THIS BRACKET OF OPEN SPELL NUMS
  * */
