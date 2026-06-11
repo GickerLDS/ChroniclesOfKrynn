@@ -5371,6 +5371,8 @@ int get_feat_value(struct char_data *ch, int featnum)
       }
     }
     featval += HAS_REAL_FEAT(ch, featnum);
+    if (featnum == FEAT_SMITE_EVIL && get_cleric_smite_evil_uses(ch) > 0)
+      featval++;
     if ((mob = get_mob_follower(ch, MOB_EIDOLON)))
     {
       if (HAS_EVOLUTION(mob, EVOLUTION_RIDER_BOND) && featnum == FEAT_MOUNTED_COMBAT)
@@ -5417,6 +5419,7 @@ int find_armor_type(int specType)
 int get_daily_uses(struct char_data *ch, int featnum)
 {
   int daily_uses = 0;
+  int cleric_smite_uses = 0;
 
   switch (featnum)
   {
@@ -5581,13 +5584,19 @@ int get_daily_uses(struct char_data *ch, int featnum)
     daily_uses += 1 + HAS_FEAT(ch, featnum);
     break;
   case FEAT_SMITE_EVIL:
+    daily_uses += HAS_FEAT(ch, featnum);
+    if (!IS_NPC(ch))
+    {
+      cleric_smite_uses = get_cleric_smite_evil_uses(ch);
+      if (cleric_smite_uses > 0)
+        daily_uses += cleric_smite_uses - 1;
+      /* Knight of the Chalice perks */
+      daily_uses += get_perk_rank(ch, PERK_PALADIN_EXTRA_SMITE_1, CLASS_PALADIN);
+      daily_uses += get_perk_rank(ch, PERK_PALADIN_EXTRA_SMITE_2, CLASS_PALADIN);
+    }
+    break;
   case FEAT_SMITE_GOOD:
     daily_uses += HAS_FEAT(ch, featnum);
-    daily_uses += has_perk(ch, PERK_CLERIC_SMITE_EVIL_1);
-    daily_uses += has_perk(ch, PERK_CLERIC_SMITE_EVIL_2);
-    /* Knight of the Chalice perks */
-    daily_uses += get_perk_rank(ch, PERK_PALADIN_EXTRA_SMITE_1, CLASS_PALADIN);
-    daily_uses += get_perk_rank(ch, PERK_PALADIN_EXTRA_SMITE_2, CLASS_PALADIN);
     break;
   case FEAT_RAGE:             /*fallthrough*/
   case FEAT_SACRED_FLAMES:    /*fallthrough*/
