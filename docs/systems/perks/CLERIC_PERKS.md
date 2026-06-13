@@ -156,7 +156,8 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
 22. **Smite Evil I**
     - Cost: 1 point
     - Max Rank: 1
-    - Effect: Once per combat, deal +2d6 damage to evil enemies
+    - Effect: Use `smiteevil` while fighting to deal +2d6 damage to evil enemies
+    - Command: `smiteevil` (no space)
     - Prerequisite: None
 
 ### Tier 2 Perks (2 points each)
@@ -182,7 +183,8 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
 26. **Smite Evil II**
     - Cost: 2 points
     - Max Rank: 1
-    - Effect: Smite damage increases to +4d6, usable 2/combat
+    - Effect: `smiteevil` damage increases to +4d6, usable 2 times
+    - Command: `smiteevil` (no space, while fighting)
     - Prerequisite: Smite Evil I
 
 27. **Divine Power**
@@ -226,7 +228,8 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
 33. **Smite Evil III**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: Smite damage increases to +6d6, usable 3/combat
+    - Effect: `smiteevil` damage increases to +6d6, usable 3 times
+    - Command: `smiteevil` (no space, while fighting)
     - Prerequisite: Smite Evil II
 
 34. **Channel Energy: Greater Harm**
@@ -252,7 +255,8 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
 37. **Divine Wrath**
     - Cost: 5 points
     - Max Rank: 1
-    - Effect: Smite deals +10d6 damage, channel harm 6d6, holy damage +10
+    - Effect: `smiteevil` deals +10d6 damage, channel harm 6d6, holy damage +10
+    - Command: `smiteevil` (no space, while fighting)
     - Prerequisite: Smite Evil III, Holy Weapon III
 
 **Tree 2 Total: 44 points possible**

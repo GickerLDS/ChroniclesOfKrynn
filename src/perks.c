@@ -9179,7 +9179,7 @@ void define_cleric_perks(void)
   perk = &perk_list[PERK_CLERIC_SMITE_EVIL_1];
   perk->id = PERK_CLERIC_SMITE_EVIL_1;
   perk->name = strdup("Smite Evil I");
-  perk->description = strdup("Once per combat: +2d6 damage to evil enemies");
+  perk->description = strdup("Use smiteevil while fighting: +2d6 damage to evil enemies");
   perk->associated_class = CLASS_CLERIC;
   perk->perk_category = PERK_CATEGORY_BATTLE_CLERIC;
   perk->cost = 1;
@@ -9189,8 +9189,10 @@ void define_cleric_perks(void)
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 2;    /* 2d6 damage */
   perk->effect_modifier = 1; /* Once per combat */
-  perk->special_description = strdup("Once per combat, you can channel divine fury to deal +2d6 "
-                                     "holy damage against an evil-aligned enemy.");
+  perk->special_description =
+      strdup("Use the smiteevil command while fighting to channel divine fury through your next "
+             "attack. The command has no space: smiteevil. Your smite deals +2d6 holy damage "
+             "against an evil-aligned enemy.");
 
   /*** BATTLE CLERIC TREE - TIER 2 PERKS (2 points each) ***/
 
@@ -9252,7 +9254,7 @@ void define_cleric_perks(void)
   perk = &perk_list[PERK_CLERIC_SMITE_EVIL_2];
   perk->id = PERK_CLERIC_SMITE_EVIL_2;
   perk->name = strdup("Smite Evil II");
-  perk->description = strdup("+4d6 damage to evil, usable 2/combat");
+  perk->description = strdup("smiteevil while fighting: +4d6 damage to evil, 2 uses");
   perk->associated_class = CLASS_CLERIC;
   perk->perk_category = PERK_CATEGORY_BATTLE_CLERIC;
   perk->cost = 2;
@@ -9262,8 +9264,9 @@ void define_cleric_perks(void)
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 4;    /* 4d6 damage */
   perk->effect_modifier = 2; /* Twice per combat */
-  perk->special_description = strdup("Requires Smite Evil I. Smite damage increases to +4d6 holy "
-                                     "damage and can be used twice per combat.");
+  perk->special_description =
+      strdup("Requires Smite Evil I. Use the smiteevil command while fighting; the command has no "
+             "space. Smite damage increases to +4d6 holy damage and can be used twice.");
 
   /* Divine Power */
   perk = &perk_list[PERK_CLERIC_DIVINE_POWER];
@@ -9379,7 +9382,7 @@ void define_cleric_perks(void)
   perk = &perk_list[PERK_CLERIC_SMITE_EVIL_3];
   perk->id = PERK_CLERIC_SMITE_EVIL_3;
   perk->name = strdup("Smite Evil III");
-  perk->description = strdup("Smite deals +6d6 damage, usable 3/combat");
+  perk->description = strdup("smiteevil while fighting: +6d6 damage to evil, 3 uses");
   perk->associated_class = CLASS_CLERIC;
   perk->perk_category = PERK_CATEGORY_BATTLE_CLERIC;
   perk->cost = 3;
@@ -9390,8 +9393,9 @@ void define_cleric_perks(void)
   perk->effect_value = 6;    /* 6d6 damage */
   perk->effect_modifier = 3; /* 3 uses per combat */
   perk->special_description =
-      strdup("Requires Smite Evil II. Your smite becomes even more powerful, dealing 6d6 holy "
-             "damage and usable 3 times per combat.");
+      strdup("Requires Smite Evil II. Use the smiteevil command while fighting; the command has no "
+             "space. Your smite becomes even more powerful, dealing 6d6 holy damage and usable 3 "
+             "times.");
 
   /* Channel Energy: Greater Harm */
   perk = &perk_list[PERK_CLERIC_CHANNEL_ENERGY_GREATER_HARM];
@@ -9453,7 +9457,7 @@ void define_cleric_perks(void)
   perk = &perk_list[PERK_CLERIC_DIVINE_WRATH];
   perk->id = PERK_CLERIC_DIVINE_WRATH;
   perk->name = strdup("Divine Wrath");
-  perk->description = strdup("Smite +10d6, channel harm 6d6, holy damage +10");
+  perk->description = strdup("smiteevil +10d6, channel harm 6d6, holy damage +10");
   perk->associated_class = CLASS_CLERIC;
   perk->perk_category = PERK_CATEGORY_BATTLE_CLERIC;
   perk->cost = 5;
@@ -9465,8 +9469,9 @@ void define_cleric_perks(void)
   perk->effect_modifier = 0;
   perk->special_description =
       strdup("Requires Smite Evil III and Holy Weapon III. Divine wrath flows through your "
-             "attacks. Smite Evil deals +10d6 damage, Channel Harm deals 6d6, and all holy damage "
-             "from Holy Weapon is increased by +10.");
+             "attacks. Use smiteevil while fighting; the command has no space. Smite Evil deals "
+             "+10d6 damage, Channel Harm deals 6d6, and all holy damage from Holy Weapon is "
+             "increased by +10.");
 
   /*** DOMAIN MASTER TREE - TIER 1 PERKS (1 point each) ***/
 
