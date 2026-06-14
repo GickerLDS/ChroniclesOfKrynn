@@ -3197,6 +3197,7 @@ static int perform_subst(struct descriptor_data *t, char *orig, char *subst)
 void close_socket(struct descriptor_data *d)
 {
   struct descriptor_data *temp;
+  int keep_desc_for_save = FALSE;
 
   REMOVE_FROM_LIST(d, descriptor_list, next);
   CLOSE_SOCKET(d->descriptor);
@@ -3217,8 +3218,14 @@ void close_socket(struct descriptor_data *d)
     //    if (GET_HOST(d->character))
     //      free(GET_HOST(d->character));
 
-    /* If we're switched, this resets the mobile taken. */
-    d->character->desc = NULL;
+    /* save_char() persists protocol preferences from ch->desc; keep it through linkdead saves. */
+    if (!IS_NPC(d->character) && (IS_PLAYING(d) || STATE(d) == CON_DISCONNECT))
+      keep_desc_for_save = TRUE;
+    else
+    {
+      /* If we're switched, this resets the mobile taken. */
+      d->character->desc = NULL;
+    }
 
     /* Plug memory leak, from Eric Green. */
     if (!IS_NPC(d->character) && PLR_FLAGGED(d->character, PLR_MAILING) && d->str)
@@ -3259,6 +3266,9 @@ void close_socket(struct descriptor_data *d)
              GET_NAME(d->character) ? GET_NAME(d->character) : "<null>");
       free_char(d->character);
     }
+
+    if (keep_desc_for_save && d->character)
+      d->character->desc = NULL;
   }
   else
     mudlog(CMP, LVL_IMMORT, TRUE, "Losing descriptor without char.");
