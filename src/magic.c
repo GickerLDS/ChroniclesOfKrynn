@@ -10569,6 +10569,18 @@ void mag_affects_full(int level, struct char_data *ch, struct char_data *victim,
 
   if (can_spell_be_extended(spellnum))
   {
+    if (!IS_NPC(ch) && CASTING_CLASS(ch) == CLASS_CLERIC && is_domain_spell_of_ch(ch, spellnum))
+    {
+      int domain_duration_bonus = get_cleric_extended_domain_bonus(ch);
+
+      if (domain_duration_bonus > 0)
+      {
+        for (i = 0; i < MAX_SPELL_AFFECTS; i++)
+          if (af[i].duration > 0)
+            af[i].duration += domain_duration_bonus;
+      }
+    }
+
     if (IS_SET(metamagic, METAMAGIC_EXTEND))
     {
       for (i = 0; i < MAX_SPELL_AFFECTS; i++)

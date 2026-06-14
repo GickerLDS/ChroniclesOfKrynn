@@ -9581,7 +9581,7 @@ void define_cleric_perks(void)
   perk = &perk_list[PERK_CLERIC_SPELL_POINT_RESERVE_2];
   perk->id = PERK_CLERIC_SPELL_POINT_RESERVE_2;
   perk->name = strdup("Bonus Domain Spell II");
-  perk->description = strdup("Prepare +1 additional spell of any level per rank");
+  perk->description = strdup("Prepare +1 additional domain spell per rank");
   perk->associated_class = CLASS_CLERIC;
   perk->perk_category = PERK_CATEGORY_DOMAIN_MASTER;
   perk->cost = 2;
@@ -9589,11 +9589,11 @@ void define_cleric_perks(void)
   perk->prerequisite_perk = PERK_CLERIC_SPELL_POINT_RESERVE_1;
   perk->prerequisite_rank = 5; /* Must max Bonus Domain Spell I */
   perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 1; /* +1 spell of any level per rank */
+  perk->effect_value = 1; /* +1 domain spell per rank */
   perk->effect_modifier = 0;
   perk->special_description = strdup(
-      "Requires Bonus Domain Spell I (max). Allows you to prepare one additional spell of any "
-      "level per rank. Can be taken 3 times for +8 total spell slots with Bonus Domain Spell I.");
+      "Requires Bonus Domain Spell I (max). Allows you to prepare one additional domain spell per "
+      "rank. Can be taken 3 times for +8 total domain spell slots with Bonus Domain Spell I.");
 
   /* Turn Undead Enhancement II */
   perk = &perk_list[PERK_CLERIC_TURN_UNDEAD_ENHANCEMENT_2];
@@ -9717,11 +9717,11 @@ void define_cleric_perks(void)
   perk->prerequisite_perk = PERK_CLERIC_SPELL_POINT_RESERVE_2;
   perk->prerequisite_rank = 3; /* Must max Bonus Domain Spell II */
   perk->effect_type = PERK_EFFECT_SPECIAL;
-  perk->effect_value = 1; /* +1 spell slot per rank */
+  perk->effect_value = 1; /* +1 domain spell slot per rank */
   perk->effect_modifier = 0;
   perk->special_description =
-      strdup("Requires Bonus Domain Spell II (max). Grants +1 bonus domain spell slot of any level "
-             "per rank. Can be taken 2 times. Regenerates 1 slot per 5 minutes.");
+      strdup("Requires Bonus Domain Spell II (max). Grants +1 bonus domain spell slot per rank. "
+             "Can be taken 2 times.");
 
   /* Divine Metamagic II */
   perk = &perk_list[PERK_CLERIC_DIVINE_METAMAGIC_2];
@@ -22301,25 +22301,6 @@ int get_cleric_bonus_domain_spells(struct char_data *ch)
 }
 
 /**
- * Get bonus spell slots (any level) from Domain Master perks.
- *
- * @param ch The character
- * @return Total bonus spell slots of any level
- */
-int get_cleric_bonus_spell_slots(struct char_data *ch)
-{
-  int bonus = 0;
-
-  if (!ch || IS_NPC(ch))
-    return 0;
-
-  /* Bonus Domain Spell II: +1 per rank, max 3 ranks */
-  bonus += get_total_perk_ranks(ch, PERK_CLERIC_SPELL_POINT_RESERVE_2);
-
-  return bonus;
-}
-
-/**
  * Get turn undead enhancement DC bonus from Domain Master perks.
  *
  * @param ch The character
@@ -24886,6 +24867,10 @@ bool can_use_metamagic_reduction(struct char_data *ch)
 void use_metamagic_reduction(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
+    return;
+
+  if (!has_perk(ch, PERK_WIZARD_METAMAGIC_MASTER_I) &&
+      !has_perk(ch, PERK_WIZARD_METAMAGIC_MASTER_II) && !has_perk(ch, PERK_WIZARD_ARCHMAGES_POWER))
     return;
 
   if (ch->player_specials->saved.metamagic_reduction_uses <= 0)

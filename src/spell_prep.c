@@ -1644,6 +1644,72 @@ int count_total_slots(struct char_data *ch, int class, int circle)
   return total_slots;
 }
 
+static int count_circle_domain_preparations(struct char_data *ch, int class, int circle)
+{
+  int this_circle = 0, counter = 0;
+  struct prep_collection_spell_data *current = SPELL_COLLECTION(ch, class);
+
+  for (; current; current = current->next)
+  {
+    if (current->domain <= DOMAIN_UNDEFINED)
+      continue;
+
+    this_circle =
+        compute_spells_circle(ch, class, current->spell, current->metamagic, current->domain);
+    if (this_circle == circle)
+      counter++;
+  }
+
+  current = SPELL_PREP_QUEUE(ch, class);
+  for (; current; current = current->next)
+  {
+    if (current->domain <= DOMAIN_UNDEFINED)
+      continue;
+
+    this_circle =
+        compute_spells_circle(ch, class, current->spell, current->metamagic, current->domain);
+    if (this_circle == circle)
+      counter++;
+  }
+
+  return counter;
+}
+
+static int count_cleric_bonus_domain_slots_used(struct char_data *ch)
+{
+  int circle = 0, highest_circle = 0, bonus_used = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  highest_circle = get_class_highest_circle(ch, CLASS_CLERIC);
+  for (circle = 1; circle <= highest_circle; circle++)
+  {
+    int normal_slots = compute_slots_by_circle(ch, CLASS_CLERIC, circle);
+    int total_slots = count_total_slots(ch, CLASS_CLERIC, circle);
+    int domain_slots = count_circle_domain_preparations(ch, CLASS_CLERIC, circle);
+
+    if (total_slots > normal_slots)
+      bonus_used += MIN(domain_slots, total_slots - normal_slots);
+  }
+
+  return bonus_used;
+}
+
+static bool can_use_cleric_bonus_domain_slot(struct char_data *ch)
+{
+  int bonus_slots = 0;
+
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  bonus_slots = get_cleric_bonus_domain_spells(ch);
+  if (bonus_slots <= 0)
+    return FALSE;
+
+  return count_cleric_bonus_domain_slots_used(ch) < bonus_slots;
+}
+
 /**
  * sustain_melody_recover_one_slot - Instantly recover one spontaneous slot
  * @ch: Character to recover a slot for (PC only)
@@ -2032,9 +2098,9 @@ static int calculate_metamagic_modifier(struct char_data *ch, int char_class, in
   if (ch && !IS_NPC(ch) && metamagic_mod > 0)
   {
     int wizard_reduction = get_metamagic_circle_reduction(ch);
-    if (wizard_reduction > 0)
+    if (wizard_reduction < 0)
     {
-      metamagic_mod = MAX(0, metamagic_mod - wizard_reduction);
+      metamagic_mod = MAX(0, metamagic_mod + wizard_reduction);
     }
   }
 
@@ -5135,7 +5201,7 @@ ACMDU(do_consign_to_oblivion)
 ACMDU(do_gen_preparation)
 {
   int class = CLASS_UNDEFINED, circle_for_spell = 0, num_slots_by_circle = 0;
-  int spellnum = 0, metamagic = 0, domain_1st = 0, domain_2nd = 0;
+  int spellnum = 0, metamagic = 0, domain_1st = 0, domain_2nd = 0, is_domain = 0;
   char *spell_arg = NULL, *metamagic_arg = NULL;
 
   switch (subcmd)
@@ -5400,6 +5466,7 @@ ACMDU(do_gen_preparation)
   circle_for_spell = /* checks domain spells */
       MIN(compute_spells_circle(ch, class, spellnum, metamagic, domain_1st),
           compute_spells_circle(ch, class, spellnum, metamagic, domain_2nd));
+  is_domain = is_domain_spell_of_ch(ch, spellnum);
 
   /* Validate circle is within bounds */
   if (circle_for_spell < 1 || circle_for_spell > TOP_CIRCLE)
@@ -5426,8 +5493,11 @@ ACMDU(do_gen_preparation)
   /* count_total_slots is a count of how many are used by circle */
   if ((num_slots_by_circle - count_total_slots(ch, class, circle_for_spell)) <= 0)
   {
-    send_to_char(ch, "You can't retain more spells of that circle!\r\n");
-    return;
+    if (class != CLASS_CLERIC || !is_domain || !can_use_cleric_bonus_domain_slot(ch))
+    {
+      send_to_char(ch, "You can't retain more spells of that circle!\r\n");
+      return;
+    }
   }
 
   /* wizards spellbook reqs */
@@ -5446,10 +5516,8 @@ ACMDU(do_gen_preparation)
                (IS_SET(metamagic, METAMAGIC_SILENT) ? "silent " : ""),
                (IS_SET(metamagic, METAMAGIC_STILL) ? "still " : ""), spell_info[spellnum].name);
 
-  prep_queue_add(
-      ch, class, spellnum, metamagic,
-      compute_spells_prep_time(ch, class, circle_for_spell, is_domain_spell_of_ch(ch, spellnum)),
-      is_domain_spell_of_ch(ch, spellnum));
+  prep_queue_add(ch, class, spellnum, metamagic,
+                 compute_spells_prep_time(ch, class, circle_for_spell, is_domain), is_domain);
 
   begin_preparing(ch, class);
 }

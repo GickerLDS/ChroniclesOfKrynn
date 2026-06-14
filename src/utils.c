@@ -5420,6 +5420,7 @@ int get_daily_uses(struct char_data *ch, int featnum)
 {
   int daily_uses = 0;
   int cleric_smite_uses = 0;
+  int domain_mastery_bonus = 0;
 
   switch (featnum)
   {
@@ -5558,6 +5559,14 @@ int get_daily_uses(struct char_data *ch, int featnum)
   case FEAT_COPYCAT:     /*fallthrough*/
   case FEAT_DESTRUCTIVE_AURA:
     daily_uses = GET_WIS_BONUS(ch);
+    if (!IS_NPC(ch))
+    {
+      domain_mastery_bonus = get_cleric_domain_mastery_bonus(ch);
+      if (domain_mastery_bonus < 0)
+        daily_uses *= 2;
+      else
+        daily_uses += domain_mastery_bonus;
+    }
     break;
   case FEAT_AURA_OF_PROTECTION: /*fallthrough*/
   case FEAT_BLESSED_TOUCH:      /*fallthrough*/
@@ -5572,6 +5581,14 @@ int get_daily_uses(struct char_data *ch, int featnum)
   case FEAT_EVIL_TOUCH:         /*fallthrough*/
   case FEAT_LIGHTNING_ARC:
     daily_uses = 3 + GET_WIS_BONUS(ch);
+    if (!IS_NPC(ch))
+    {
+      domain_mastery_bonus = get_cleric_domain_mastery_bonus(ch);
+      if (domain_mastery_bonus < 0)
+        daily_uses *= 2;
+      else
+        daily_uses += domain_mastery_bonus;
+    }
     break;
   case FEAT_SEEKER_ARROW:
   case FEAT_IMBUE_ARROW:
