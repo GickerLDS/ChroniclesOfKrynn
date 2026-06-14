@@ -839,7 +839,6 @@ bool is_divine_spellcasting_class(int class_num);
 int get_cleric_domain_focus_bonus(struct char_data *ch);
 int get_cleric_divine_spell_power_bonus(struct char_data *ch);
 int get_cleric_bonus_domain_spells(struct char_data *ch);
-int get_cleric_bonus_spell_slots(struct char_data *ch);
 int get_cleric_turn_undead_enhancement_bonus(struct char_data *ch);
 int get_cleric_extended_domain_bonus(struct char_data *ch);
 int get_cleric_divine_metamagic_reduction(struct char_data *ch);
