@@ -7547,7 +7547,7 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
   }
 
   /* monk glove enhancement bonus */
-  if (MONK_TYPE(ch) && is_bare_handed(ch) && monk_gear_ok(ch) && GET_EQ(ch, WEAR_HANDS) &&
+  if (MONK_TYPE(ch) && is_bare_handed(ch) && GET_EQ(ch, WEAR_HANDS) &&
       GET_OBJ_VAL(GET_EQ(ch, WEAR_HANDS), 0))
   {
     if (display_mode)
@@ -8092,7 +8092,7 @@ void compute_barehand_dam_dice(struct char_data *ch, int *diceOne, int *diceTwo)
   }
   else
   {
-    if (monkLevel && monk_gear_ok(ch))
+    if (monkLevel)
     { // monk?
       if (monkLevel < 3)
       {
@@ -10922,7 +10922,7 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
                    "Natural Attack Enhancement Mod (Overrides Other Enhancement Mod)");
   }
   /* monk glove */
-  if (MONK_TYPE(ch) && is_bare_handed(ch) && monk_gear_ok(ch) && GET_EQ(ch, WEAR_HANDS) &&
+  if (MONK_TYPE(ch) && is_bare_handed(ch) && GET_EQ(ch, WEAR_HANDS) &&
       GET_OBJ_VAL(GET_EQ(ch, WEAR_HANDS), 0))
   {
     bonuses[BONUS_TYPE_ENHANCEMENT] = GET_OBJ_VAL(GET_EQ(ch, WEAR_HANDS), 0);
@@ -15465,7 +15465,7 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   bonus_mainhand_attacks = MIN((NUM_ATTACKS_BAB(ch) - 1) / 5, ATTACK_CAP);
 
   /* monk flurry of blows */
-  if (MONK_TYPE(ch) && monk_gear_ok(ch) && AFF_FLAGGED(ch, AFF_FLURRY_OF_BLOWS))
+  if (MONK_TYPE(ch) && monk_flurry_gear_ok(ch) && AFF_FLAGGED(ch, AFF_FLURRY_OF_BLOWS))
   {
     bonus_mainhand_attacks++;
     attacks_at_max_bab++;

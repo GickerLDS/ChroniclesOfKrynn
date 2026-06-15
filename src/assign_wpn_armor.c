@@ -1741,11 +1741,33 @@ bool is_bare_handed(struct char_data *ch)
   return TRUE;
 }
 
-/* our simple little function to make sure our monk
-   is following his martial-arts requirements for gear */
+/* RAW monk armor restriction: armor, shield, or medium/heavy load disables
+ * AC bonus, fast movement, and flurry of blows. */
 bool monk_gear_ok(struct char_data *ch)
 {
+  if (!ch)
+    return FALSE;
+
+  if (GET_EQ(ch, WEAR_SHIELD))
+    return FALSE;
+
+  if (compute_gear_armor_type(ch) != ARMOR_TYPE_NONE)
+    return FALSE;
+
+  if (IS_CARRYING_W(ch) > (CAN_CARRY_W(ch) / 3))
+    return FALSE;
+
+  return TRUE;
+}
+
+/* Weapon/hand restrictions for flurry, separate from armor so armor does not
+ * suppress unrelated monk abilities. */
+bool monk_flurry_gear_ok(struct char_data *ch)
+{
   struct obj_data *obj = NULL;
+
+  if (!monk_gear_ok(ch))
+    return FALSE;
 
   /* hands have to be free, or wielding monk family weapon */
   if (GET_EQ(ch, WEAR_HOLD_1))
@@ -1767,10 +1789,6 @@ bool monk_gear_ok(struct char_data *ch)
 
   obj = GET_EQ(ch, WEAR_WIELD_2H);
   if (obj && (weapon_list[GET_WEAPON_TYPE(obj)].weaponFamily != WEAPON_FAMILY_MONK))
-    return FALSE;
-
-  /* now check to make sure he isn't wearing invalid armor */
-  if (compute_gear_armor_type(ch) != ARMOR_TYPE_NONE)
     return FALSE;
 
   /* monk gear is ok */

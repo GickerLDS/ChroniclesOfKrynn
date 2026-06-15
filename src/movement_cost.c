@@ -82,15 +82,15 @@ int get_speed(struct char_data *ch, sbyte to_display)
   if (monk_gear_ok(ch))
   {
     speed += MIN(60, CLASS_LEVEL(ch, CLASS_MONK) / 3 * 10);
-
-    /* Add Shadow Step bonus for monks */
-    if (!IS_NPC(ch))
-      speed += get_monk_shadow_step_bonus(ch);
   }
   else if (HAS_FEAT(ch, FEAT_FAST_MOVEMENT))
     if (compute_gear_armor_type(ch) <= ARMOR_TYPE_MEDIUM ||
         affected_by_spell(ch, SPELL_EFFORTLESS_ARMOR))
       speed += 10;
+
+  /* Shadow Step is a perk bonus, not the monk fast movement class feature. */
+  if (!IS_NPC(ch))
+    speed += get_monk_shadow_step_bonus(ch);
 
   if (affected_by_spell(ch, SPELL_GREASE))
     speed -= 10;
