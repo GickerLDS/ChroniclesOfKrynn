@@ -44,6 +44,10 @@ Alchemists in Pathfinder are scientific experimenters who mix mutagens, craft al
 - **Effect Type:** Defensive transformation
 - **Prerequisites:** None
 
+#### Related Discovery: Feral Mutagen
+- **Description:** While your mutagen is active, gain two primary claw attacks, one primary bite attack, and +2 competence bonus to Intimidate.
+- **Mechanics:** Feral Mutagen claws deal 1d6 damage for Medium alchemists and 1d4 for Small alchemists; the bite deals 1d8 for Medium alchemists and 1d6 for Small alchemists. These are primary attacks and add full Strength bonus because the mutagen grants multiple natural attacks.
+
 ---
 
 ### TIER II – Cost: 2 points each

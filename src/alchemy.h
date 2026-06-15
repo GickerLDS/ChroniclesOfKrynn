@@ -47,6 +47,7 @@
 #define ALC_DISC_TANGLEFOOT_BOMBS 41
 #define ALC_DISC_VESTIGIAL_ARM 42
 #define ALC_DISC_WINGS 43
+#define ALC_DISC_FERAL_MUTAGEN 44
 
 // The value below is now recorded in structs.h
 //#define NUM_ALC_DISCOVERIES				44
@@ -124,6 +125,7 @@ void perform_elemental_mutagen(struct char_data *ch, char *arg2, bool alchemical
 void perform_cognatogen(struct char_data *ch, char *arg2, bool alchemical_bonus);
 void perform_inspiring_cognatogen(struct char_data *ch, bool alchemical_bonus);
 void clear_mutagen(struct char_data *ch);
+bool has_feral_mutagen_active(struct char_data *ch);
 void add_sticky_bomb_effect(struct char_data *ch, struct char_data *vict, int bomb_type);
 bool display_discovery_info(struct char_data *ch, char *discoveryname);
 bool display_grand_discovery_info(struct char_data *ch, char *discoveryname);

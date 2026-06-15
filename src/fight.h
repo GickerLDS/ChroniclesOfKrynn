@@ -68,6 +68,12 @@ int compute_cmb(struct char_data *ch, int combat_maneuver_type);
 int compute_cmd(struct char_data *vict, int combat_maneuver_type);
 int damage(struct char_data *ch, struct char_data *victim, int dam, int attacktype, int dam_type,
            int dualwield);
+int natural_attack_damage_roll(struct char_data *ch, int attack_type);
+int natural_attack_damage_type(int attack_type);
+int natural_attack_w_type(int attack_type);
+int natural_attack_strength_bonus(struct char_data *ch, int total_natural_attacks, bool secondary);
+int perform_natural_attack(struct char_data *ch, int mode, int phase, int attack_type,
+                           int total_natural_attacks, bool secondary);
 void death_cry(struct char_data *ch);
 void die(struct char_data *ch, struct char_data *killer);
 void free_messages(void);

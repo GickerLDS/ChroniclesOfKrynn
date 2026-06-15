@@ -3082,11 +3082,12 @@
 #define FEAT_STONE_GOLEM_IMMUNITY 1261
 
 #define FEAT_SUMMON_SOLAR 1262
+#define FEAT_FERAL_COMBAT_TRAINING 1263
 
 /** reserved above feat# + 1**/
-#define FEAT_LAST_FEAT 1263
+#define FEAT_LAST_FEAT 1264
 /** FEAT_LAST_FEAT + 1 ***/
-#define NUM_FEATS 1264
+#define NUM_FEATS 1265
 /** absolute cap **/
 #define MAX_FEATS 1500
 /*****/
@@ -4571,7 +4572,7 @@
 /* alchemist */
 #define NUM_DISCOVERIES_KNOWN 20
 #define MAX_BOMBS_ALLOWED 50
-#define NUM_ALC_DISCOVERIES 44
+#define NUM_ALC_DISCOVERIES 45
 #define NUM_GR_ALC_DISCOVERIES 5
 
 // Paladin Mercies
@@ -4667,8 +4668,9 @@
 #define CFEAT_EPIC_WEAPON_SPECIALIZATION 17
 #define CFEAT_OVERWHELMING_CRITICAL 18
 #define CFEAT_DEVASTATING_CRITICAL 19
+#define CFEAT_FERAL_COMBAT_TRAINING 20
 /**/
-#define NUM_CFEATS 20
+#define NUM_CFEATS 21
 /**/
 
 /* Spell feats that apply to a specific school of spells */
@@ -5373,8 +5375,10 @@
 #define WEAPON_FAMILY_DOUBLE 6
 #define WEAPON_FAMILY_AXE 7
 #define WEAPON_FAMILY_PICK WEAPON_FAMILY_AXE
+#define WEAPON_FAMILY_NATURAL_BITE 8
+#define WEAPON_FAMILY_NATURAL_CLAW 9
 
-#define NUM_WEAPON_FAMILIES 8
+#define NUM_WEAPON_FAMILIES 10
 
 /* Armor types */
 #define ARMOR_TYPE_NONE 0

@@ -1784,8 +1784,9 @@ const char *equipment_types[] = {"Used as light", // 0
 CHECK_TABLE_SIZE(equipment_types, NUM_WEARS + 1);
 
 /* weapon family */
-const char *weapon_family[] = {"Monk",    "Light-Blade",   "Hammer", "Ranged", "Heavy-Blade",
-                               "Polearm", "Double-Weapon", "Axe",    "\n"};
+const char *weapon_family[] = {"Monk",    "Light-Blade", "Hammer",       "Ranged",
+                               "Heavy-Blade", "Polearm", "Double-Weapon", "Axe",
+                               "Natural-Bite", "Natural-Claw", "\n"};
 CHECK_TABLE_SIZE(weapon_family, NUM_WEAPON_FAMILIES + 1);
 
 /* weapon flags */

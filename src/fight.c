@@ -118,6 +118,278 @@ struct attack_hit_type attack_damage_type_text[NUM_ATTACK_DAMAGE_TYPE_TEXT] = {
 
 };
 
+static int natural_attack_roll_by_size(int attack_type, int size)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    switch (size)
+    {
+    case SIZE_FINE:
+      return 1;
+    case SIZE_DIMINUTIVE:
+      return dice(1, 2);
+    case SIZE_TINY:
+      return dice(1, 3);
+    case SIZE_SMALL:
+      return dice(1, 4);
+    case SIZE_LARGE:
+      return dice(1, 8);
+    case SIZE_HUGE:
+      return dice(2, 6);
+    case SIZE_GARGANTUAN:
+      return dice(2, 8);
+    case SIZE_COLOSSAL:
+      return dice(4, 6);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 6);
+    }
+
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    switch (size)
+    {
+    case SIZE_FINE:
+      return 0;
+    case SIZE_DIMINUTIVE:
+      return 1;
+    case SIZE_TINY:
+      return dice(1, 2);
+    case SIZE_SMALL:
+      return dice(1, 3);
+    case SIZE_LARGE:
+      return dice(1, 6);
+    case SIZE_HUGE:
+      return dice(1, 8);
+    case SIZE_GARGANTUAN:
+      return dice(2, 6);
+    case SIZE_COLOSSAL:
+      return dice(2, 8);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 4);
+    }
+
+  case ATTACK_TYPE_PRIMARY_EVO_GORE:
+    switch (size)
+    {
+    case SIZE_FINE:
+      return 1;
+    case SIZE_DIMINUTIVE:
+      return dice(1, 2);
+    case SIZE_TINY:
+      return dice(1, 3);
+    case SIZE_SMALL:
+      return dice(1, 4);
+    case SIZE_LARGE:
+      return dice(1, 8);
+    case SIZE_HUGE:
+      return dice(2, 6);
+    case SIZE_GARGANTUAN:
+      return dice(2, 8);
+    case SIZE_COLOSSAL:
+      return dice(4, 6);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 6);
+    }
+  }
+
+  return 0;
+}
+
+int natural_attack_damage_roll(struct char_data *ch, int attack_type)
+{
+  if (!ch)
+    return 0;
+
+  return natural_attack_roll_by_size(attack_type, GET_SIZE(ch));
+}
+
+int natural_attack_w_type(int attack_type)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    return TYPE_BITE;
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    return TYPE_CLAW;
+  case ATTACK_TYPE_PRIMARY_EVO_GORE:
+    return TYPE_GORE;
+  }
+
+  return TYPE_HIT;
+}
+
+int natural_attack_damage_type(int attack_type)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    return DAM_SLICE;
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+  case ATTACK_TYPE_PRIMARY_EVO_GORE:
+    return DAM_PUNCTURE;
+  }
+
+  return DAM_BLUDGEON;
+}
+
+int natural_attack_strength_bonus(struct char_data *ch, int total_natural_attacks, bool secondary)
+{
+  int str_bonus = 0;
+
+  if (!ch)
+    return 0;
+
+  str_bonus = GET_STR_BONUS(ch);
+  if (secondary)
+    return str_bonus / 2;
+
+  if (total_natural_attacks <= 1)
+    return str_bonus * 3 / 2;
+
+  return str_bonus;
+}
+
+static bool has_feral_combat_training_for_attack(struct char_data *ch, int attack_type)
+{
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    return HAS_COMBAT_FEAT(ch, CFEAT_FERAL_COMBAT_TRAINING, WEAPON_FAMILY_NATURAL_BITE);
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    return HAS_COMBAT_FEAT(ch, CFEAT_FERAL_COMBAT_TRAINING, WEAPON_FAMILY_NATURAL_CLAW);
+  }
+
+  return FALSE;
+}
+
+int perform_natural_attack(struct char_data *ch, int mode, int phase, int attack_type,
+                           int total_natural_attacks, bool secondary)
+{
+  struct char_data *vict = NULL;
+  int attack_mod = secondary ? -5 : 0;
+  int dam = 0;
+  int dam_type = natural_attack_damage_type(attack_type);
+  int w_type = natural_attack_w_type(attack_type);
+
+  if (!ch)
+    return 0;
+
+  if (mode == 0)
+  {
+    if (!valid_fight_cond(ch, FALSE))
+      return 0;
+    if (phase != 0 && phase != 1)
+      return 0;
+
+    vict = FIGHTING(ch);
+    if (attack_roll(ch, vict, attack_type, FALSE, 1) + attack_mod > 0)
+    {
+      dam = natural_attack_damage_roll(ch, attack_type);
+      dam += natural_attack_strength_bonus(ch, total_natural_attacks, secondary);
+      if (damage(ch, vict, dam, w_type, dam_type, attack_type) < 0)
+        return -1;
+      damage_shield_check(ch, vict, attack_type, TRUE, dam_type);
+      return dam;
+    }
+
+    damage(ch, vict, 0, w_type, dam_type, attack_type);
+    return 0;
+  }
+
+  if (mode == 2)
+  {
+    send_to_char(ch, "%s, Attack Bonus:  %d; Damage Dice: varies by size; STR bonus: %s\r\n",
+                 attack_types[attack_type], compute_attack_bonus(ch, ch, attack_type) + attack_mod,
+                 secondary ? "1/2" : (total_natural_attacks <= 1 ? "1-1/2" : "full"));
+  }
+
+  return 0;
+}
+
+static int feral_mutagen_damage_roll(struct char_data *ch, int attack_type)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    /* Feral Mutagen claws are one size step stronger than generic claws. */
+    return natural_attack_roll_by_size(ATTACK_TYPE_PRIMARY_EVO_BITE, GET_SIZE(ch));
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    switch (GET_SIZE(ch))
+    {
+    case SIZE_FINE:
+      return dice(1, 2);
+    case SIZE_DIMINUTIVE:
+      return dice(1, 3);
+    case SIZE_TINY:
+      return dice(1, 4);
+    case SIZE_SMALL:
+      return dice(1, 6);
+    case SIZE_LARGE:
+      return dice(2, 6);
+    case SIZE_HUGE:
+      return dice(2, 8);
+    case SIZE_GARGANTUAN:
+      return dice(4, 6);
+    case SIZE_COLOSSAL:
+      return dice(4, 8);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 8);
+    }
+  }
+
+  return natural_attack_damage_roll(ch, attack_type);
+}
+
+static int perform_feral_mutagen_attack(struct char_data *ch, int mode, int phase, int attack_type,
+                                        int total_natural_attacks)
+{
+  struct char_data *vict = NULL;
+  int dam = 0;
+  int dam_type = natural_attack_damage_type(attack_type);
+  int w_type = natural_attack_w_type(attack_type);
+
+  if (!ch)
+    return 0;
+
+  if (mode == 0)
+  {
+    if (!valid_fight_cond(ch, FALSE))
+      return 0;
+    if (phase != 0 && phase != 1)
+      return 0;
+
+    vict = FIGHTING(ch);
+    if (attack_roll(ch, vict, attack_type, FALSE, 1) > 0)
+    {
+      dam = feral_mutagen_damage_roll(ch, attack_type);
+      dam += natural_attack_strength_bonus(ch, total_natural_attacks, FALSE);
+      if (damage(ch, vict, dam, w_type, dam_type, attack_type) < 0)
+        return -1;
+      damage_shield_check(ch, vict, attack_type, TRUE, dam_type);
+      return dam;
+    }
+
+    damage(ch, vict, 0, w_type, dam_type, attack_type);
+    return 0;
+  }
+
+  if (mode == 2)
+  {
+    send_to_char(ch, "%s (Feral Mutagen), Attack Bonus:  %d; Damage Dice: varies by size; STR "
+                     "bonus: full\r\n",
+                 attack_types[attack_type], compute_attack_bonus(ch, ch, attack_type));
+  }
+
+  return 0;
+}
+
 /* local (file scope only) variables */
 static struct char_data *next_combat_list = NULL;
 
@@ -15991,6 +16263,27 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
       }
     }
     GET_CONSECUTIVE_HITS(ch) = 0;
+  }
+  if (has_feral_mutagen_active(ch))
+  {
+    numAttacks += 3;
+    perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 3);
+    perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 3);
+    perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_BITE, 3);
+
+    if (MONK_TYPE(ch) && monk_gear_ok(ch) && AFF_FLAGGED(ch, AFF_FLURRY_OF_BLOWS))
+    {
+      if (has_feral_combat_training_for_attack(ch, ATTACK_TYPE_PRIMARY_EVO_CLAWS))
+      {
+        numAttacks++;
+        perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 4);
+      }
+      if (has_feral_combat_training_for_attack(ch, ATTACK_TYPE_PRIMARY_EVO_BITE))
+      {
+        numAttacks++;
+        perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_BITE, 4);
+      }
+    }
   }
   if (HAS_EVOLUTION(ch, EVOLUTION_CLAWS))
   {

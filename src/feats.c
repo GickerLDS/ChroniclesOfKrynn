@@ -1318,6 +1318,13 @@ void assign_feats(void)
         "+1 to hit rolls for selected weapon", "+1 to hit rolls for selected weapon");
   feat_prereq_bab(FEAT_WEAPON_FOCUS, 1);
   feat_prereq_weapon_proficiency(FEAT_WEAPON_FOCUS);
+  feato(FEAT_FERAL_COMBAT_TRAINING, "feral combat training", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
+        "Use selected natural weapon with unarmed combat feats.",
+        "Choose one natural weapon. While using the selected natural weapon, you can apply effects "
+        "of feats that require Improved Unarmed Strike. Monks can use the selected natural weapon "
+        "with flurry of blows.");
+  feat_prereq_feat(FEAT_FERAL_COMBAT_TRAINING, FEAT_UNARMED_STRIKE, 1);
+  feat_prereq_cfeat(FEAT_FERAL_COMBAT_TRAINING, FEAT_WEAPON_FOCUS);
   feato(FEAT_GREATER_WEAPON_FOCUS, "greater weapon focus", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
         "+1 to hit rolls with weapon", "+1 to hit rolls with weapon");
   feat_prereq_cfeat(FEAT_GREATER_WEAPON_FOCUS, FEAT_WEAPON_FOCUS);
@@ -6054,6 +6061,7 @@ void assign_feats(void)
   combatfeat(FEAT_IMPROVED_CRITICAL);
   combatfeat(FEAT_WEAPON_FINESSE);
   combatfeat(FEAT_WEAPON_FOCUS);
+  combatfeat(FEAT_FERAL_COMBAT_TRAINING);
   combatfeat(FEAT_WEAPON_SPECIALIZATION);
   combatfeat(FEAT_GREATER_WEAPON_FOCUS);
   combatfeat(FEAT_GREATER_WEAPON_SPECIALIZATION);
@@ -9625,6 +9633,8 @@ int feat_to_cfeat(int feat)
     //    return CFEAT_WEAPON_FINESSE;
   case FEAT_WEAPON_FOCUS:
     return CFEAT_WEAPON_FOCUS;
+  case FEAT_FERAL_COMBAT_TRAINING:
+    return CFEAT_FERAL_COMBAT_TRAINING;
   case FEAT_WEAPON_SPECIALIZATION:
     return CFEAT_WEAPON_SPECIALIZATION;
   case FEAT_GREATER_WEAPON_FOCUS:

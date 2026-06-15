@@ -76,7 +76,8 @@ const char *alchemical_discovery_names[NUM_ALC_DISCOVERIES] = {"normal bomb",
                                                                "sunlight bomb",
                                                                "tanglefoot bomb",
                                                                "vestigial arm",
-                                                               "wings"};
+                                                               "wings",
+                                                               "feral mutagen"};
 
 const char *alchemical_discovery_descriptions[NUM_ALC_DISCOVERIES] = {
     "Deals 1d6/rank fire damage.",
@@ -143,7 +144,8 @@ const char *alchemical_discovery_descriptions[NUM_ALC_DISCOVERIES] = {
     "staggered on failed save.",
     "Chance to entangle those caught in effect.",
     "Grows a third arm from torso which acts as an additional hand for most purposes.",
-    "Alchemist grows wings that will allow him to fly as per the fly spell (fly/land)."};
+    "Alchemist grows wings that will allow him to fly as per the fly spell (fly/land).",
+    "Mutagens grant two claw attacks, a bite attack, and +2 competence to Intimidate."};
 
 const char *grand_alchemical_discovery_names[NUM_GR_ALC_DISCOVERIES] = {
     "none", "awakened intellect", "fast healing", "poison touch", "true mutagen"};
@@ -229,7 +231,8 @@ const char *discovery_requisites[NUM_ALC_DISCOVERIES] = {
     "alchemist level 10, blinding bomb",                // sunlight bomb
     "none",                                             // tanglefoot bomb
     "alchemist level 9",                                // vestigial arm
-    "alchemist level 6"                                 // wings
+    "alchemist level 6",                                 // wings
+    "none"                                              // feral mutagen
 };
 
 const char *bomb_requisites[NUM_BOMB_TYPES] = {
@@ -2323,6 +2326,14 @@ void clear_mutagen(struct char_data *ch)
   act("$n mutagenic enhancement has faded.", FALSE, ch, NULL, NULL, TO_ROOM);
 }
 
+bool has_feral_mutagen_active(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  return KNOWS_DISCOVERY(ch, ALC_DISC_FERAL_MUTAGEN) && affected_by_spell(ch, SKILL_MUTAGEN);
+}
+
 ACMDCHECK(can_swallow)
 {
   /* dummy check */
@@ -2347,7 +2358,7 @@ void perform_mutagen(struct char_data *ch, char *arg2, bool alchemical_bonus)
         "You must wait some time before you can prepare another mutagen or cognatogen.\r\n");
   }
 
-  struct affected_type af, af2, af3, af4, af5, af6, af7;
+  struct affected_type af, af2, af3, af4, af5, af6, af7, feral_af;
   int duration = 0;
 
   new_affect(&af);
@@ -2357,6 +2368,7 @@ void perform_mutagen(struct char_data *ch, char *arg2, bool alchemical_bonus)
   new_affect(&af5);
   new_affect(&af6);
   new_affect(&af7);
+  new_affect(&feral_af);
 
   if (alchemical_bonus)
     af.bonus_type = af2.bonus_type = af3.bonus_type = af4.bonus_type = af5.bonus_type =
@@ -2613,6 +2625,17 @@ void perform_mutagen(struct char_data *ch, char *arg2, bool alchemical_bonus)
     af7.spell = SKILL_MUTAGEN;
     af7.duration = duration;
     affect_to_char(ch, &af7);
+  }
+
+  if (KNOWS_DISCOVERY(ch, ALC_DISC_FERAL_MUTAGEN))
+  {
+    feral_af.spell = SKILL_MUTAGEN;
+    feral_af.duration = duration;
+    feral_af.location = APPLY_SKILL;
+    feral_af.specific = ABILITY_INTIMIDATE;
+    feral_af.modifier = 2;
+    feral_af.bonus_type = BONUS_TYPE_COMPETENCE;
+    affect_to_char(ch, &feral_af);
   }
 
   /* Tier 1 Mutagenist Perk Effects */

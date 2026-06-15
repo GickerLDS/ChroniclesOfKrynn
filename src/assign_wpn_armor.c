@@ -23,6 +23,7 @@
 #include "handler.h"
 #include "spells.h"
 #include "perks.h"
+#include "alchemy.h"
 
 /* global */
 struct armor_table armor_list[NUM_SPEC_ARMOR_TYPES];
@@ -37,6 +38,12 @@ int is_proficient_with_weapon(struct char_data *ch, int weapon)
 
   if (HAS_FEAT(ch, FEAT_WEAPON_PROFICIENCY_KENDER) && weapon == WEAPON_TYPE_HOOPAK)
     return TRUE;
+
+  if (weapon == WEAPON_FAMILY_NATURAL_BITE)
+    return has_bite_attack(ch) || (!IS_NPC(ch) && KNOWS_DISCOVERY(ch, ALC_DISC_FERAL_MUTAGEN));
+
+  if (weapon == WEAPON_FAMILY_NATURAL_CLAW)
+    return !IS_NPC(ch) && KNOWS_DISCOVERY(ch, ALC_DISC_FERAL_MUTAGEN);
 
   if (HAS_REAL_FEAT(ch, FEAT_PALE_MASTER_WEAPONS) && weapon == WEAPON_TYPE_SCYTHE)
     return TRUE;
