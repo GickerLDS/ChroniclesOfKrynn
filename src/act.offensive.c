@@ -6088,8 +6088,38 @@ ACMD(do_minotaur_gore)
   USE_SWIFT_ACTION(ch);
 }
 
+static int roll_bite_damage_dice_by_size(struct char_data *ch)
+{
+  switch (GET_SIZE(ch))
+  {
+  case SIZE_FINE:
+    return 1;
+  case SIZE_DIMINUTIVE:
+    return dice(1, 2);
+  case SIZE_TINY:
+    return dice(1, 3);
+  case SIZE_SMALL:
+    return dice(1, 4);
+  case SIZE_LARGE:
+    return dice(1, 8);
+  case SIZE_HUGE:
+    return dice(2, 6);
+  case SIZE_GARGANTUAN:
+    return dice(2, 8);
+  case SIZE_COLOSSAL:
+    return dice(4, 6);
+  case SIZE_MEDIUM:
+  default:
+    return dice(1, 6);
+  }
+}
+
 ACMD(do_bite_attack)
 {
+  struct char_data *vict = NULL;
+  int str_bonus = 0;
+  int bite_damage = 0;
+
   if (!has_bite_attack(ch))
   {
     send_to_char(ch, "You do not have a bite attack.\r\n");
@@ -6107,18 +6137,20 @@ ACMD(do_bite_attack)
     return;
   }
 
-  struct char_data *vict = FIGHTING(ch);
+  vict = FIGHTING(ch);
 
   act("You snap at $N with your vicious jaws.", true, ch, 0, vict, TO_CHAR);
   act("$n snaps at $N with $s vicious jaws.", TRUE, ch, 0, vict, TO_VICT);
   act("$n snaps at You with $s vicious jaws.", TRUE, ch, 0, vict, TO_NOTVICT);
 
-  if (combat_maneuver_check(ch, vict, COMBAT_MANEUVER_TYPE_BITE, 0) > 0)
+  if (attack_roll(ch, vict, ATTACK_TYPE_PRIMARY_EVO_BITE, FALSE, 1) > 0)
   {
-    damage(ch, vict, dice(1, 4) + GET_STR_BONUS(ch), SKILL_BITE, DAM_PUNCTURE, FALSE);
+    str_bonus = GET_STR_BONUS(ch);
+    bite_damage = roll_bite_damage_dice_by_size(ch) + (str_bonus * 3 / 2);
+    damage(ch, vict, bite_damage, SKILL_BITE, DAM_PUNCTURE, FALSE);
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_PUNCTURE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_PRIMARY_EVO_BITE, TRUE, DAM_PUNCTURE);
   }
   else
     damage(ch, vict, 0, SKILL_BITE, DAM_PUNCTURE, FALSE);
