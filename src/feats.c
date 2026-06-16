@@ -22,6 +22,8 @@
 #include "assign_wpn_armor.h"
 #include "domains_schools.h"
 #include "spell_prep.h"
+#include "alchemy.h"
+#include "evolutions.h"
 
 /* Local Functions */
 /* Prerequisite definition procedures */
@@ -1325,6 +1327,10 @@ void assign_feats(void)
         "with flurry of blows.");
   feat_prereq_feat(FEAT_FERAL_COMBAT_TRAINING, FEAT_UNARMED_STRIKE, 1);
   feat_prereq_cfeat(FEAT_FERAL_COMBAT_TRAINING, FEAT_WEAPON_FOCUS);
+  feato(FEAT_MULTIATTACK, "multiattack", TRUE, TRUE, FALSE, FEAT_TYPE_COMBAT,
+        "Secondary natural attacks take only a -2 penalty.",
+        "Your secondary natural attacks are more accurate. Their attack penalty is reduced from -5 "
+        "to -2.");
   feato(FEAT_GREATER_WEAPON_FOCUS, "greater weapon focus", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
         "+1 to hit rolls with weapon", "+1 to hit rolls with weapon");
   feat_prereq_cfeat(FEAT_GREATER_WEAPON_FOCUS, FEAT_WEAPON_FOCUS);
@@ -6431,6 +6437,43 @@ int critical_feat_total(struct char_data *ch)
   return total;
 }
 
+static int count_available_natural_attacks(struct char_data *ch)
+{
+  int attacks = 0;
+
+  if (!ch)
+    return 0;
+
+  if (has_bite_attack(ch))
+    attacks++;
+
+  if (!IS_NPC(ch) && KNOWS_DISCOVERY(ch, ALC_DISC_FERAL_MUTAGEN))
+    attacks += 3;
+
+  if (HAS_EVOLUTION(ch, EVOLUTION_BITE))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_CLAWS))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_HOOVES))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_PINCERS))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_STING))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_TAIL_SLAP))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_TENTACLE))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_WING_BUFFET))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_GORE))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_RAKE))
+    attacks += 2;
+
+  return attacks;
+}
+
 /* The follwing function is used to check if the character satisfies the various prerequisite(s) (if any)
    of a feat in order to learn it. */
 int feat_is_available(struct char_data *ch, int featnum, int iarg, char *sarg)
@@ -6838,6 +6881,9 @@ int feat_is_available(struct char_data *ch, int featnum, int iarg, char *sarg)
         return FALSE;
       return TRUE;
       return false;
+
+    case FEAT_MULTIATTACK:
+      return count_available_natural_attacks(ch) >= 3;
 
     case FEAT_LAST_FEAT:
       return FALSE;

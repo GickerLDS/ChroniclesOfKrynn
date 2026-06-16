@@ -272,13 +272,16 @@ int perform_natural_attack(struct char_data *ch, int mode, int phase, int attack
                            int total_natural_attacks, bool secondary)
 {
   struct char_data *vict = NULL;
-  int attack_mod = secondary ? -5 : 0;
+  int attack_mod = 0;
   int dam = 0;
   int dam_type = natural_attack_damage_type(attack_type);
   int w_type = natural_attack_w_type(attack_type);
 
   if (!ch)
     return 0;
+
+  if (secondary)
+    attack_mod = HAS_FEAT(ch, FEAT_MULTIATTACK) ? -2 : -5;
 
   if (mode == 0)
   {

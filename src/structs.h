@@ -3083,11 +3083,12 @@
 
 #define FEAT_SUMMON_SOLAR 1262
 #define FEAT_FERAL_COMBAT_TRAINING 1263
+#define FEAT_MULTIATTACK 1264
 
 /** reserved above feat# + 1**/
-#define FEAT_LAST_FEAT 1264
+#define FEAT_LAST_FEAT 1265
 /** FEAT_LAST_FEAT + 1 ***/
-#define NUM_FEATS 1265
+#define NUM_FEATS 1266
 /** absolute cap **/
 #define MAX_FEATS 1500
 /*****/
