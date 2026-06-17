@@ -44,7 +44,7 @@ struct attack_hit_type
 void init_condensed_combat_data(struct char_data *ch);
 int valid_fight_cond(struct char_data *ch, bool strict);
 int apply_damage_reduction(struct char_data *ch, struct char_data *victim, struct obj_data *wielded,
-                           int dam, bool display);
+                           int dam, bool display, int attack_type);
 bool is_flanked(struct char_data *attacker, struct char_data *ch);
 bool has_dex_bonus_to_ac(struct char_data *attacker, struct char_data *ch);
 int damage_shield_check(struct char_data *ch, struct char_data *victim, int attack_type, int dam,

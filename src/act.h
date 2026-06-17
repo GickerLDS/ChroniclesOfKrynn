@@ -1205,6 +1205,8 @@ ACMDCHECK(can_efreetimagic);
 ACMD_DECL(do_efreetimagic);
 ACMDCHECK(can_dragonmagic);
 ACMD_DECL(do_dragonmagic);
+ACMDCHECK(can_dragonform);
+ACMD_DECL(do_dragonform);
 ACMD_DECL(do_resetpassword);
 ACMD_DECL(do_holyweapon);
 ACMD_DECL(do_award);

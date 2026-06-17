@@ -5624,16 +5624,30 @@ void assign_feats(void)
         "can cast haste 3x per day", "can cast haste 3x per day");
 
   /* dragon disciple */
+  feato(FEAT_BLOOD_OF_DRAGONS, "blood of dragons", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
+        "your dragon disciple levels stack with sorcerer levels for draconic bloodline powers",
+        "A dragon disciple adds his class level to his sorcerer levels when determining the "
+        "powers gained from his draconic bloodline (breath weapon uses, claws, natural armor and "
+        "similar bloodline benefits).");
+  feato(FEAT_DRAGON_DISCIPLE_DRAGON_FORM, "dragon form", TRUE, FALSE, TRUE, FEAT_TYPE_CLASS_ABILITY,
+        "you can assume the form of a dragon of your bloodline type",
+        "At 7th level a dragon disciple can assume the form of a dragon (as form of the dragon I) "
+        "once per day; at 10th level this functions as form of the dragon II and can be used twice "
+        "per day. The assumed dragon must match the disciple's bloodline type.");
   feato(FEAT_DRAGON_APOTHEOSIS, "dragon apotheosis", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_ELEMENTAL_IMMUNITY, "elemental immunity", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_BREATH_WEAPON, "breath weapon", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
-        "ask staff", "ask staff");
+        "grants the draconic bloodline breath weapon (see the breathe command)",
+        "Grants the draconic bloodline breath weapon even if your bloodline level does not yet "
+        "provide it. Use the breathe command to unleash it.");
   feato(FEAT_CHARISMA_BOOST, "charisma boost", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_CLAWS_AND_BITE, "claws and bite", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
-        "ask staff", "ask staff");
+        "grants a primary bite natural attack alongside draconic claws",
+        "Whenever you use your bloodline to grow claws you also gain a primary bite natural "
+        "attack. The bite deals additional energy damage of your bloodline type at higher level.");
   feato(FEAT_CONSTITUTION_BOOST, "constitution boost", FALSE, FALSE, FALSE,
         FEAT_TYPE_INNATE_ABILITY, "ask staff", "ask staff");
   feato(FEAT_INTELLIGENCE_BOOST, "intelligence boost", FALSE, FALSE, FALSE,
@@ -5641,12 +5655,16 @@ void assign_feats(void)
   feato(FEAT_SLEEP_PARALYSIS_IMMUNITY, "sleep & paralysis immunity", TRUE, FALSE, FALSE,
         FEAT_TYPE_INNATE_ABILITY, "cannot be put to sleep or paralyzed.",
         "cannot be put to sleep or paralyzed");
-  feato(FEAT_STRENGTH_BOOST, "strength boost", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
-        "ask staff", "ask staff");
+  feato(FEAT_STRENGTH_BOOST, "strength boost", FALSE, FALSE, TRUE, FEAT_TYPE_INNATE_ABILITY,
+        "increases your strength by +2 per rank",
+        "Your draconic heritage swells your muscles, granting a permanent +2 increase to your "
+        "Strength score for each rank of this feat.");
   feato(FEAT_TRAMPLE, "trample", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY, "ask staff",
         "ask staff");
-  feato(FEAT_NATURAL_ARMOR_INCREASE, "natural armor increase", FALSE, FALSE, FALSE,
-        FEAT_TYPE_GENERAL, "ask staff", "ask staff");
+  feato(FEAT_NATURAL_ARMOR_INCREASE, "natural armor increase", FALSE, FALSE, TRUE,
+        FEAT_TYPE_CLASS_ABILITY, "increases your natural armor bonus by +1 per rank",
+        "As your skin thickens with draconic scales, your natural armor bonus to AC increases by "
+        "+1 for each rank of this feat. These bonuses stack with other natural armor.");
   feato(FEAT_BLINDSENSE, "blindsense", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "draconic bloodline, sorcerer level 20",
         "Allows full vision even when there is no light or the character is blinded.");
@@ -6208,6 +6226,7 @@ void assign_feats(void)
   dailyfeat(FEAT_PIXIE_DUST, ePIXIEDUST);
   dailyfeat(FEAT_EFREETI_MAGIC, eEFREETIMAGIC);
   dailyfeat(FEAT_DRAGON_MAGIC, eDRAGONMAGIC);
+  dailyfeat(FEAT_DRAGON_DISCIPLE_DRAGON_FORM, eDRAGON_DISCIPLE_FORM);
   dailyfeat(FEAT_CHANNEL_SPELL, eCHANNELSPELL);
   dailyfeat(FEAT_PSIONIC_FOCUS, ePSIONICFOCUS);
   dailyfeat(FEAT_DOUBLE_MANIFEST, eDOUBLEMANIFEST);

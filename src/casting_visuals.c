@@ -672,8 +672,8 @@ static const char *class_casting_styles[NUM_CLASSES] = {
     /* CLASS_ARTIFICER (35) - magical crafting and infusion */
     "\tc$n \tYinfuses arcane energy into prepared components\tc,\tn",
 
-    /* CLASS_PLACEHOLDER_1 (36) */
-    NULL,
+    /* CLASS_DRAGON_DISCIPLE (36) - draconic bloodline arcane */
+    "\tc$n \tRchannels the raw power of dragon blood\tc as ancient magic awakens,\tn",
 
     /* CLASS_PLACEHOLDER_2 (37) */
     NULL};

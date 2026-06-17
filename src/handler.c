@@ -658,6 +658,14 @@ void compute_char_cap(struct char_data *ch, int mode)
         hit_cap += class_level / 3;
         dam_cap += class_level / 3;
         break;
+      case CLASS_DRAGON_DISCIPLE:
+        str_cap += class_level / 4 + 1;
+        con_cap += class_level / 4 + 1;
+        int_cap += class_level / 4 + 1;
+        cha_cap += class_level / 4 + 1;
+        hit_cap += class_level / 3;
+        dam_cap += class_level / 3;
+        break;
       case CLASS_DRUID:
       case CLASS_SHIFTER:
         str_cap += class_level / 4 + 1;
