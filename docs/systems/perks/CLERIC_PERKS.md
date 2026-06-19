@@ -280,10 +280,10 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
     - Effect: +1 to divine spell damage per rank
     - Prerequisite: None
 
-40. **Spell Point Reserve I**
+40. **Bonus Domain Spell I**
     - Cost: 1 point per rank
     - Max Rank: 5
-    - Effect: +10 spell points per rank
+    - Effect: Prepare +1 additional domain spell per rank
     - Prerequisite: None
 
 41. **Turn Undead Enhancement I**
@@ -306,11 +306,11 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
     - Effect: Additional +2 divine spell damage per rank
     - Prerequisite: Divine Spell Power I (max)
 
-44. **Spell Point Reserve II**
+44. **Bonus Domain Spell II**
     - Cost: 2 points per rank
     - Max Rank: 3
-    - Effect: Additional +15 spell points per rank
-    - Prerequisite: Spell Point Reserve I (max)
+    - Effect: Prepare +1 additional domain spell per rank
+    - Prerequisite: Bonus Domain Spell I (max)
 
 45. **Turn Undead Enhancement II**
     - Cost: 2 points per rank
@@ -328,7 +328,7 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
     - Cost: 2 points
     - Max Rank: 1
     - Effect: Can use metamagic on divine spells for -1 spell point cost
-    - Prerequisite: Spell Point Reserve I (at least 3 ranks)
+    - Prerequisite: Bonus Domain Spell I (at least 3 ranks)
 
 48. **Destroy Undead**
     - Cost: 2 points
@@ -350,11 +350,11 @@ Clerics are divine spellcasters who channel the power of their deity to heal all
     - Effect: Additional +3 divine spell damage per rank
     - Prerequisite: Divine Spell Power II (max)
 
-51. **Spell Point Reserve III**
+51. **Bonus Domain Spell III**
     - Cost: 3 points per rank
     - Max Rank: 2
-    - Effect: Additional +20 spell points per rank
-    - Prerequisite: Spell Point Reserve II (max)
+    - Effect: Prepare +1 additional domain spell per rank
+    - Prerequisite: Bonus Domain Spell II (max)
 
 52. **Divine Metamagic II**
     - Cost: 3 points
