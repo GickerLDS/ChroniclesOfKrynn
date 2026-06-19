@@ -2574,6 +2574,11 @@ void autoroll_mob(struct char_data *mob, bool realmode, bool summoned)
     (mob)->aff_abils.str += bonus;
     GET_INT(mob) += bonus;
     break;
+  case CLASS_DRAGON_DISCIPLE:
+    (mob)->aff_abils.str += bonus;
+    (mob)->aff_abils.con += bonus;
+    GET_INT(mob) += bonus;
+    break;
   case CLASS_PALADIN:
     (mob)->aff_abils.str += bonus;
     GET_CHA(mob) += bonus;

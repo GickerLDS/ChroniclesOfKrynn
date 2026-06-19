@@ -118,6 +118,297 @@ struct attack_hit_type attack_damage_type_text[NUM_ATTACK_DAMAGE_TYPE_TEXT] = {
 
 };
 
+static int natural_attack_roll_by_size(int attack_type, int size)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    switch (size)
+    {
+    case SIZE_FINE:
+      return 1;
+    case SIZE_DIMINUTIVE:
+      return dice(1, 2);
+    case SIZE_TINY:
+      return dice(1, 3);
+    case SIZE_SMALL:
+      return dice(1, 4);
+    case SIZE_LARGE:
+      return dice(1, 8);
+    case SIZE_HUGE:
+      return dice(2, 6);
+    case SIZE_GARGANTUAN:
+      return dice(2, 8);
+    case SIZE_COLOSSAL:
+      return dice(4, 6);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 6);
+    }
+
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    switch (size)
+    {
+    case SIZE_FINE:
+      return 0;
+    case SIZE_DIMINUTIVE:
+      return 1;
+    case SIZE_TINY:
+      return dice(1, 2);
+    case SIZE_SMALL:
+      return dice(1, 3);
+    case SIZE_LARGE:
+      return dice(1, 6);
+    case SIZE_HUGE:
+      return dice(1, 8);
+    case SIZE_GARGANTUAN:
+      return dice(2, 6);
+    case SIZE_COLOSSAL:
+      return dice(2, 8);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 4);
+    }
+
+  case ATTACK_TYPE_PRIMARY_EVO_GORE:
+    switch (size)
+    {
+    case SIZE_FINE:
+      return 1;
+    case SIZE_DIMINUTIVE:
+      return dice(1, 2);
+    case SIZE_TINY:
+      return dice(1, 3);
+    case SIZE_SMALL:
+      return dice(1, 4);
+    case SIZE_LARGE:
+      return dice(1, 8);
+    case SIZE_HUGE:
+      return dice(2, 6);
+    case SIZE_GARGANTUAN:
+      return dice(2, 8);
+    case SIZE_COLOSSAL:
+      return dice(4, 6);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 6);
+    }
+  }
+
+  return 0;
+}
+
+int natural_attack_damage_roll(struct char_data *ch, int attack_type)
+{
+  int draconic_level;
+
+  if (!ch)
+    return 0;
+
+  if (attack_type == ATTACK_TYPE_PRIMARY_EVO_CLAWS && HAS_FEAT(ch, FEAT_CLAWS_AND_BITE))
+  {
+    draconic_level = get_effective_draconic_bloodline_level(ch);
+    return dice(1, draconic_level >= 7 ? 6 : 4);
+  }
+
+  return natural_attack_roll_by_size(attack_type, GET_SIZE(ch));
+}
+
+int natural_attack_w_type(int attack_type)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    return TYPE_BITE;
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    return TYPE_CLAW;
+  case ATTACK_TYPE_PRIMARY_EVO_GORE:
+    return TYPE_GORE;
+  }
+
+  return TYPE_HIT;
+}
+
+int natural_attack_damage_type(int attack_type)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    return DAM_SLICE;
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+  case ATTACK_TYPE_PRIMARY_EVO_GORE:
+    return DAM_PUNCTURE;
+  }
+
+  return DAM_BLUDGEON;
+}
+
+int natural_attack_strength_bonus(struct char_data *ch, int total_natural_attacks, bool secondary)
+{
+  int str_bonus = 0;
+
+  if (!ch)
+    return 0;
+
+  str_bonus = GET_STR_BONUS(ch);
+  if (secondary)
+    return str_bonus / 2;
+
+  if (total_natural_attacks <= 1)
+    return str_bonus * 3 / 2;
+
+  return str_bonus;
+}
+
+static bool has_feral_combat_training_for_attack(struct char_data *ch, int attack_type)
+{
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    return HAS_COMBAT_FEAT(ch, CFEAT_FERAL_COMBAT_TRAINING, WEAPON_FAMILY_NATURAL_BITE);
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    return HAS_COMBAT_FEAT(ch, CFEAT_FERAL_COMBAT_TRAINING, WEAPON_FAMILY_NATURAL_CLAW);
+  }
+
+  return FALSE;
+}
+
+int perform_natural_attack(struct char_data *ch, int mode, int phase, int attack_type,
+                           int total_natural_attacks, bool secondary)
+{
+  struct char_data *vict = NULL;
+  int attack_mod = 0;
+  int dam = 0;
+  int elemental_dam = 0;
+  int dam_type = natural_attack_damage_type(attack_type);
+  int w_type = natural_attack_w_type(attack_type);
+
+  if (!ch)
+    return 0;
+
+  if (secondary)
+    attack_mod = HAS_FEAT(ch, FEAT_MULTIATTACK) ? -2 : -5;
+
+  if (mode == 0)
+  {
+    if (!valid_fight_cond(ch, FALSE))
+      return 0;
+    if (phase != 0 && phase != 1)
+      return 0;
+
+    vict = FIGHTING(ch);
+    if (attack_roll(ch, vict, attack_type, FALSE, 1) + attack_mod > 0)
+    {
+      dam = natural_attack_damage_roll(ch, attack_type);
+      dam += natural_attack_strength_bonus(ch, total_natural_attacks, secondary);
+      if (attack_type == ATTACK_TYPE_PRIMARY_EVO_CLAWS && vict &&
+          affected_by_spell(ch, SKILL_DRHRT_CLAWS) &&
+          get_effective_draconic_bloodline_level(ch) >= 11)
+      {
+        elemental_dam = add_draconic_claws_elemental_damage(ch, vict);
+        dam += elemental_dam;
+      }
+      if (damage(ch, vict, dam, w_type, dam_type, attack_type) < 0)
+        return -1;
+      damage_shield_check(ch, vict, attack_type, TRUE, dam_type);
+      return dam;
+    }
+
+    damage(ch, vict, 0, w_type, dam_type, attack_type);
+    return 0;
+  }
+
+  if (mode == 2)
+  {
+    send_to_char(ch, "%s, Attack Bonus:  %d; Damage Dice: varies by size; STR bonus: %s\r\n",
+                 attack_types[attack_type], compute_attack_bonus(ch, ch, attack_type) + attack_mod,
+                 secondary ? "1/2" : (total_natural_attacks <= 1 ? "1-1/2" : "full"));
+  }
+
+  return 0;
+}
+
+static int feral_mutagen_damage_roll(struct char_data *ch, int attack_type)
+{
+  switch (attack_type)
+  {
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
+    /* Feral Mutagen claws are one size step stronger than generic claws. */
+    return natural_attack_roll_by_size(ATTACK_TYPE_PRIMARY_EVO_BITE, GET_SIZE(ch));
+  case ATTACK_TYPE_PRIMARY_EVO_BITE:
+    switch (GET_SIZE(ch))
+    {
+    case SIZE_FINE:
+      return dice(1, 2);
+    case SIZE_DIMINUTIVE:
+      return dice(1, 3);
+    case SIZE_TINY:
+      return dice(1, 4);
+    case SIZE_SMALL:
+      return dice(1, 6);
+    case SIZE_LARGE:
+      return dice(2, 6);
+    case SIZE_HUGE:
+      return dice(2, 8);
+    case SIZE_GARGANTUAN:
+      return dice(4, 6);
+    case SIZE_COLOSSAL:
+      return dice(4, 8);
+    case SIZE_MEDIUM:
+    default:
+      return dice(1, 8);
+    }
+  }
+
+  return natural_attack_damage_roll(ch, attack_type);
+}
+
+static int perform_feral_mutagen_attack(struct char_data *ch, int mode, int phase, int attack_type,
+                                        int total_natural_attacks)
+{
+  struct char_data *vict = NULL;
+  int dam = 0;
+  int dam_type = natural_attack_damage_type(attack_type);
+  int w_type = natural_attack_w_type(attack_type);
+
+  if (!ch)
+    return 0;
+
+  if (mode == 0)
+  {
+    if (!valid_fight_cond(ch, FALSE))
+      return 0;
+    if (phase != 0 && phase != 1)
+      return 0;
+
+    vict = FIGHTING(ch);
+    if (attack_roll(ch, vict, attack_type, FALSE, 1) > 0)
+    {
+      dam = feral_mutagen_damage_roll(ch, attack_type);
+      dam += natural_attack_strength_bonus(ch, total_natural_attacks, FALSE);
+      if (damage(ch, vict, dam, w_type, dam_type, attack_type) < 0)
+        return -1;
+      damage_shield_check(ch, vict, attack_type, TRUE, dam_type);
+      return dam;
+    }
+
+    damage(ch, vict, 0, w_type, dam_type, attack_type);
+    return 0;
+  }
+
+  if (mode == 2)
+  {
+    send_to_char(ch, "%s (Feral Mutagen), Attack Bonus:  %d; Damage Dice: varies by size; STR "
+                     "bonus: full\r\n",
+                 attack_types[attack_type], compute_attack_bonus(ch, ch, attack_type));
+  }
+
+  return 0;
+}
+
 /* local (file scope only) variables */
 static struct char_data *next_combat_list = NULL;
 
@@ -783,11 +1074,18 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
   {
     bonuses[BONUS_TYPE_NATURALARMOR] += 1;
   }
+  /* dragon disciple natural armor increase (+1 per rank, gained at levels 1/4/7) */
+  if (HAS_FEAT(ch, FEAT_NATURAL_ARMOR_INCREASE))
+  {
+    bonuses[BONUS_TYPE_NATURALARMOR] += HAS_FEAT(ch, FEAT_NATURAL_ARMOR_INCREASE);
+  }
   if (!IS_NPC(ch) && HAS_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES))
   {
+    /* Blood of Dragons: dragon disciple levels stack with sorcerer levels for
+       draconic bloodline powers. */
+    int draconic_level = get_effective_draconic_bloodline_level(ch);
     bonuses[BONUS_TYPE_NATURALARMOR] +=
-        (CLASS_LEVEL(ch, CLASS_SORCERER) >= 15 ? 4
-                                               : (CLASS_LEVEL(ch, CLASS_SORCERER) >= 9 ? 2 : 1));
+        (draconic_level >= 15 ? 4 : (draconic_level >= 9 ? 2 : 1));
   }
   // vampires
   if (HAS_FEAT(ch, FEAT_VAMPIRE_NATURAL_ARMOR) && CAN_USE_VAMPIRE_ABILITY(ch))
@@ -3012,7 +3310,7 @@ static void dam_message(int dam, struct char_data *ch, struct char_data *victim,
   if (dam && pct <= 0)
     pct = 1;
 
-  if (affected_by_spell(ch, SKILL_DRHRT_CLAWS))
+  if (affected_by_spell(ch, SKILL_DRHRT_CLAWS) && w_type != TYPE_BITE)
     w_type = TYPE_CLAW;
 
   static struct dam_weapon_type
@@ -3882,7 +4180,8 @@ int compute_damtype_reduction(struct char_data *ch, int dam_type, struct char_da
   if (HAS_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES) &&
       draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)] == dam_type)
   {
-    damtype_reduction += CLASS_LEVEL(ch, CLASS_SORCERER) >= 9 ? 10 : 5;
+    int draconic_level = get_effective_draconic_bloodline_level(ch);
+    damtype_reduction += draconic_level >= 9 ? 10 : 5;
   }
 
   if (HAS_FEAT(ch, FEAT_DRAGONBORN_RESISTANCE) &&
@@ -4987,7 +5286,7 @@ bool ok_damage_handling(int attacktype)
    anything that goes through here will affect ALL damage, whether
    skill or spell, etc */
 int damage_handling(struct char_data *ch, struct char_data *victim, int dam, int attacktype,
-                    int dam_type)
+                    int dam_type, int attack_type)
 {
   bool is_spell = FALSE;
   struct obj_data *weapon = NULL;
@@ -5235,7 +5534,7 @@ int damage_handling(struct char_data *ch, struct char_data *victim, int dam, int
       /* once Damage Reduction is ready to launch, this should be removed */
       dam = handle_warding(ch, victim, dam);
       /* Apply Damage Reduction */
-      dam = apply_damage_reduction(ch, victim, NULL, dam, FALSE);
+      dam = apply_damage_reduction(ch, victim, NULL, dam, FALSE, attack_type);
     }
 
     if (dam <= 0 && (ch != victim))
@@ -6024,7 +6323,7 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
 
   /* modify damage: concealment, trelux leap, mirror image, energey absorb
        damage-type reduction, old-skool damage reduction, inertial barrier */
-  dam = damage_handling(ch, victim, dam, w_type, dam_type); // modify damage
+  dam = damage_handling(ch, victim, dam, w_type, dam_type, offhand); // modify damage
   if (dam == -1) // make sure message handling has been done!
     return 0;
 
@@ -7343,7 +7642,7 @@ int compute_damage_bonus(struct char_data *ch, struct char_data *vict, struct ob
 
   // Sorcerer Draconic Bloodline Claw Attacks
   if (ch && vict && affected_by_spell(ch, SKILL_DRHRT_CLAWS) &&
-      CLASS_LEVEL(ch, CLASS_SORCERER) >= 11)
+      get_effective_draconic_bloodline_level(ch) >= 11)
   {
     if (display_mode)
       send_to_char(ch, "Draconic claw elemental damage bonus: \tR%d\tn\r\n",
@@ -8649,10 +8948,11 @@ int compute_dam_dice(struct char_data *ch, struct char_data *victim, struct obj_
     diceOne = 2;
     diceTwo = 6;
   }
-  else if (affected_by_spell(ch, SKILL_DRHRT_CLAWS))
+  else if (affected_by_spell(ch, SKILL_DRHRT_CLAWS) && attack_type != ATTACK_TYPE_PRIMARY_EVO_BITE)
   {
+    int draconic_level = get_effective_draconic_bloodline_level(ch);
     diceOne = 1;
-    diceTwo = (CLASS_LEVEL(ch, CLASS_SORCERER) >= 7) ? 6 : 4;
+    diceTwo = (draconic_level >= 7) ? 6 : 4;
   }
   else if (!is_ranged && wielded && GET_OBJ_TYPE(wielded) == ITEM_WEAPON)
   {
@@ -9820,14 +10120,10 @@ int handle_warding(struct char_data *ch, struct char_data *victim, int dam)
 
 /* for weapon bypassing damage resistance handling */
 bool weapon_bypasses_dr(struct obj_data *weapon, struct damage_reduction_type *dr,
-                        struct char_data *ch)
+                        struct char_data *ch, int attack_type)
 {
   bool passed = FALSE;
   int i = 0;
-
-  /* TODO Change this to handle unarmed attacks! */
-  if (weapon == NULL)
-    return FALSE;
 
   for (i = 0; i < MAX_DR_BYPASS; i++)
   {
@@ -9838,9 +10134,12 @@ bool weapon_bypasses_dr(struct obj_data *weapon, struct damage_reduction_type *d
       case DR_BYPASS_CAT_NONE:
         break;
       case DR_BYPASS_CAT_MAGIC:
-        if (IS_SET_AR(GET_OBJ_EXTRA(weapon), ITEM_MAGIC))
+        if (weapon && IS_SET_AR(GET_OBJ_EXTRA(weapon), ITEM_MAGIC))
           passed = TRUE;
-        if (affected_by_spell(ch, SKILL_DRHRT_CLAWS) && CLASS_LEVEL(ch, CLASS_SORCERER) >= 7)
+        if ((attack_type == ATTACK_TYPE_PRIMARY_EVO_CLAWS ||
+             attack_type == ATTACK_TYPE_PRIMARY_EVO_BITE) &&
+            affected_by_spell(ch, SKILL_DRHRT_CLAWS) &&
+            get_effective_draconic_bloodline_level(ch) >= 7)
           passed = TRUE;
         if (HAS_EVOLUTION(ch, EVOLUTION_MAGIC_ATTACKS))
           passed = TRUE;
@@ -9849,7 +10148,7 @@ bool weapon_bypasses_dr(struct obj_data *weapon, struct damage_reduction_type *d
           passed = TRUE;
         break;
       case DR_BYPASS_CAT_MATERIAL:
-        if (GET_OBJ_MATERIAL(weapon) == dr->bypass_val[i])
+        if (weapon && GET_OBJ_MATERIAL(weapon) == dr->bypass_val[i])
           passed = TRUE;
         if (dr->bypass_val[i] == MATERIAL_ADAMANTINE &&
             has_perk(ch, PERK_MONK_IMPROVED_UNARMED_STRIKE_III))
@@ -9903,13 +10202,13 @@ bool weapon_bypasses_dr(struct obj_data *weapon, struct damage_reduction_type *d
         }
         break;
       case DR_BYPASS_CAT_DAMTYPE:
-          if ((dr->bypass_val[i] == DR_DAMTYPE_BLUDGEONING) &&
+          if (weapon && (dr->bypass_val[i] == DR_DAMTYPE_BLUDGEONING) &&
                   (HAS_DAMAGE_TYPE(weapon, DAMAGE_TYPE_BLUDGEONING))
                   passed = TRUE;
-          else if ((dr->bypass_val[i] == DR_DAMTYPE_SLASHING) &&
+          else if (weapon && (dr->bypass_val[i] == DR_DAMTYPE_SLASHING) &&
                   (HAS_DAMAGE_TYPE(weapon, DAMAGE_TYPE_SLASHING))
                   passed = TRUE;
-          else if ((dr->bypass_val[i] == DR_DAMTYPE_PIERCING) &&
+          else if (weapon && (dr->bypass_val[i] == DR_DAMTYPE_PIERCING) &&
                   (HAS_DAMAGE_TYPE(weapon, DAMAGE_TYPE_PIERCING))
                   passed = TRUE;
 
@@ -9927,7 +10226,7 @@ bool weapon_bypasses_dr(struct obj_data *weapon, struct damage_reduction_type *d
   dam -> how much damage is coming in
   return value for non display is the modified damage reduction */
 int apply_damage_reduction(struct char_data *ch, struct char_data *victim, struct obj_data *wielded,
-                           int dam, bool display)
+                           int dam, bool display, int attack_type)
 {
   struct damage_reduction_type *dr = NULL, *cur = NULL;
   int reduction = 0;
@@ -9939,12 +10238,13 @@ int apply_damage_reduction(struct char_data *ch, struct char_data *victim, struc
   dr = NULL;
   for (cur = GET_DR(victim); cur != NULL; cur = cur->next)
   {
-    if (dr == NULL || (dr->amount < cur->amount && (weapon_bypasses_dr(wielded, cur, ch) == FALSE)))
+    if (dr == NULL ||
+        (dr->amount < cur->amount && (weapon_bypasses_dr(wielded, cur, ch, attack_type) == FALSE)))
       dr = cur;
   }
 
   /* Now dr is set to the 'best' DR for the incoming damage. */
-  if (weapon_bypasses_dr(wielded, dr, ch) == TRUE)
+  if (weapon_bypasses_dr(wielded, dr, ch, attack_type) == TRUE)
   {
     reduction = 0;
   }
@@ -10621,6 +10921,7 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
     break;
   case ATTACK_TYPE_TWOHAND:
   case ATTACK_TYPE_PRIMARY_EVO_BITE:
+  case ATTACK_TYPE_PRIMARY_EVO_CLAWS:
     calc_bab += GET_STR_BONUS(ch);
     if (display)
       send_to_char(ch, "%2d: %-50s\r\n", GET_STR_BONUS(ch), "Str");
@@ -13865,7 +14166,8 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
       }
     }
 
-    if ((dam = apply_damage_reduction(ch, victim, wielded, dam - dr_bypass, FALSE)) == -1)
+    if ((dam = apply_damage_reduction(ch, victim, wielded, dam - dr_bypass, FALSE, attack_type)) ==
+        -1)
       return (HIT_MISS); /* This should be changed to something more reasonable */
 
     dam += dr_bypass; /* Add back the bypassed DR */
@@ -14597,6 +14899,8 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
 
   // determine weapon type, potentially a deprecated function
   w_type = determine_weapon_type(ch, victim, wielded, attack_type);
+  if (type == TYPE_BITE)
+    w_type = TYPE_BITE;
   /* some ranged attack handling */
   if (attack_type == ATTACK_TYPE_RANGED)
   {
@@ -15437,6 +15741,7 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   int ranged_attacks = 1; /* ranged combat gets 1 bonus attacks currently */
   bool dual = FALSE;
   bool perform_attack = FALSE;
+  bool dragon_disciple_natural_routine = FALSE;
   /* so if ranged is not performed and we fall through to melee, we need to make
    * sure our attacks with max. BAB are maintained */
   int drop_an_attack_at_max_bab = 0;
@@ -15869,6 +16174,9 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   /* Process Melee Attacks -------------------------------------------------- */
   // melee: now lets determine base attack(s) and resulting possible penalty
   dual = is_dual_wielding(ch) && !VITAL_STRIKING(ch); // trelux or has off-hander equipped
+  dragon_disciple_natural_routine =
+      HAS_FEAT(ch, FEAT_CLAWS_AND_BITE) && !GET_EQ(ch, WEAR_WIELD_1) &&
+      !GET_EQ(ch, WEAR_WIELD_2H) && !GET_EQ(ch, WEAR_WIELD_OFFHAND);
 
   /* we are going to exit melee combat if we are somehow wielding a ranged
              weapon here */
@@ -15928,15 +16236,16 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   else
   {
     // not dual wielding
-    numAttacks++; // default of one attack for everyone
+    if (!dragon_disciple_natural_routine)
+      numAttacks++; // default of one attack for everyone
 
-    if (mode == NORMAL_ATTACK_ROUTINE)
+    if (mode == NORMAL_ATTACK_ROUTINE && !dragon_disciple_natural_routine)
     { // normal attack routine
       if (valid_fight_cond(ch, FALSE))
         if (phase == PHASE_0 || phase == PHASE_1)
           hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, penalty, ATTACK_TYPE_PRIMARY);
     }
-    else if (mode == DISPLAY_ROUTINE_POTENTIAL)
+    else if (mode == DISPLAY_ROUTINE_POTENTIAL && !dragon_disciple_natural_routine)
     {
       /* display hitroll bonus */
       send_to_char(ch, "Mainhand, Attack Bonus:  %d; ",
@@ -15948,7 +16257,7 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   }
 
   /* haste or equivalent? */
-  if (!VITAL_STRIKING(ch) &&
+  if (!dragon_disciple_natural_routine && !VITAL_STRIKING(ch) &&
       (AFF_FLAGGED(ch, AFF_HASTE) || (!IS_NPC(ch) && HAS_FEAT(ch, FEAT_BLINDING_SPEED)) ||
        has_speed_weapon(ch)))
   {
@@ -15991,6 +16300,43 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
       }
     }
     GET_CONSECUTIVE_HITS(ch) = 0;
+  }
+  if (dragon_disciple_natural_routine)
+  {
+    int bite_dam = 0;
+
+    numAttacks += 3;
+    perform_natural_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 3, FALSE);
+    perform_natural_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 3, FALSE);
+    bite_dam = perform_natural_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_BITE, 1, FALSE);
+
+    if (mode == NORMAL_ATTACK_ROUTINE && bite_dam > 0 && FIGHTING(ch) &&
+        CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 6)
+    {
+      damage(ch, FIGHTING(ch), dice(1, 6), SPELL_DRACONIC_BLOODLINE_BREATHWEAPON,
+             draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)], ATTACK_TYPE_PRIMARY_EVO_BITE);
+    }
+  }
+  if (has_feral_mutagen_active(ch))
+  {
+    numAttacks += 3;
+    perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 3);
+    perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 3);
+    perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_BITE, 3);
+
+    if (MONK_TYPE(ch) && monk_gear_ok(ch) && AFF_FLAGGED(ch, AFF_FLURRY_OF_BLOWS))
+    {
+      if (has_feral_combat_training_for_attack(ch, ATTACK_TYPE_PRIMARY_EVO_CLAWS))
+      {
+        numAttacks++;
+        perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_CLAWS, 4);
+      }
+      if (has_feral_combat_training_for_attack(ch, ATTACK_TYPE_PRIMARY_EVO_BITE))
+      {
+        numAttacks++;
+        perform_feral_mutagen_attack(ch, mode, phase, ATTACK_TYPE_PRIMARY_EVO_BITE, 4);
+      }
+    }
   }
   if (HAS_EVOLUTION(ch, EVOLUTION_CLAWS))
   {
@@ -16099,7 +16445,7 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   }
 
   // execute the calculated attacks from above
-  if (VITAL_STRIKING(ch))
+  if (VITAL_STRIKING(ch) || dragon_disciple_natural_routine)
     bonus_mainhand_attacks = 0;
 
   int j = 0;

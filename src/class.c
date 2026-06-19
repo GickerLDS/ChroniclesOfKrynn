@@ -596,7 +596,8 @@ bool meets_class_prerequisite(struct char_data *ch, struct class_prerequisite *p
       {
         if (compute_slots_by_circle(ch, CLASS_WIZARD, prereq->values[2]) == 0 &&
             compute_slots_by_circle(ch, CLASS_SORCERER, prereq->values[2]) == 0 &&
-            compute_slots_by_circle(ch, CLASS_BARD, prereq->values[2]) == 0)
+            compute_slots_by_circle(ch, CLASS_BARD, prereq->values[2]) == 0 &&
+            compute_slots_by_circle(ch, CLASS_SUMMONER, prereq->values[2]) == 0)
           return FALSE;
       }
       break;
@@ -646,7 +647,9 @@ bool meets_class_prerequisite(struct char_data *ch, struct class_prerequisite *p
         return FALSE;
       break;
     case PREP_TYPE_SPONTANEOUS:
-      if (IS_MEM_BASED_CASTER(ch))
+      if (prereq->values[0] == CASTING_TYPE_ARCANE &&
+          !(CLASS_LEVEL(ch, CLASS_SORCERER) > 0 || CLASS_LEVEL(ch, CLASS_BARD) > 0 ||
+            CLASS_LEVEL(ch, CLASS_SUMMONER) > 0))
         return FALSE;
       break;
     case PREP_TYPE_ANY:
@@ -751,6 +754,21 @@ bool display_class_prereqs(struct char_data *ch, const char *classname)
 
   if (!found)
     send_to_char(ch, "\tWNo requirements!\tn\r\n");
+
+  if (class == CLASS_DRAGON_DISCIPLE)
+  {
+    send_to_char(ch, "\tn%sNondragon race\tn - %s\r\n",
+                 race_list[GET_REAL_RACE(ch)].family != RACE_TYPE_DRAGON ? "\tn" : "\tr",
+                 race_list[GET_REAL_RACE(ch)].family != RACE_TYPE_DRAGON ? "\tWFulfilled!\tn"
+                                                                          : "\trMissing\tn");
+    send_to_char(ch, "\tn%sLanguage: Draconic\tn - %s\r\n", CAN_SPEAK(ch, LANG_DRACONIC) ? "\tn" : "\tr",
+                 CAN_SPEAK(ch, LANG_DRACONIC) ? "\tWFulfilled!\tn" : "\trMissing\tn");
+    if (CLASS_LEVEL(ch, CLASS_SORCERER) > 0)
+      send_to_char(ch, "\tn%sSorcerer draconic bloodline\tn - %s\r\n",
+                   HAS_FEAT(ch, FEAT_SORCERER_BLOODLINE_DRACONIC) ? "\tn" : "\tr",
+                   HAS_FEAT(ch, FEAT_SORCERER_BLOODLINE_DRACONIC) ? "\tWFulfilled!\tn"
+                                                                  : "\trMissing\tn");
+  }
 
   /* close prereq display */
   send_to_char(ch, "\tC");
@@ -886,6 +904,16 @@ bool class_is_available(struct char_data *ch, int classnum, int iarg, char *sarg
       return FALSE; /* doesn't mean alignment reqs */
     if (has_race_restrictions && !has_valid_race)
       return FALSE; /* doesn't mean race reqs */
+  }
+
+  if (classnum == CLASS_DRAGON_DISCIPLE)
+  {
+    if (race_list[GET_REAL_RACE(ch)].family == RACE_TYPE_DRAGON)
+      return FALSE;
+    if (!CAN_SPEAK(ch, LANG_DRACONIC))
+      return FALSE;
+    if (CLASS_LEVEL(ch, CLASS_SORCERER) > 0 && !HAS_FEAT(ch, FEAT_SORCERER_BLOODLINE_DRACONIC))
+      return FALSE;
   }
 
   /* made it! */
@@ -1465,6 +1493,7 @@ int valid_align_by_class(int alignment, int class)
   case CLASS_INQUISITOR:
   case CLASS_WARLOCK:
   case CLASS_ARTIFICER:
+  case CLASS_DRAGON_DISCIPLE:
     return TRUE;
   }
   /* shouldn't get here if we got all classes listed above */
@@ -1665,6 +1694,10 @@ int parse_class_long(const char *arg_in)
     return CLASS_DRAGONRIDER;
   if (is_abbrev(arg, "dragon-rider"))
     return CLASS_DRAGONRIDER;
+  if (is_abbrev(arg, "dragondisciple"))
+    return CLASS_DRAGON_DISCIPLE;
+  if (is_abbrev(arg, "dragon-disciple"))
+    return CLASS_DRAGON_DISCIPLE;
   if (is_abbrev(arg, "artificer"))
     return CLASS_ARTIFICER;
   if (is_abbrev(arg, "shifter"))
@@ -3276,13 +3309,15 @@ void process_race_level_feats(struct char_data *ch)
 
 void process_conditional_class_level_feats(struct char_data *ch, int class)
 {
+  int draconic_level = get_effective_draconic_bloodline_level(ch);
+
   switch (class)
   {
   case CLASS_SORCERER:
     //  Mostly Bloodlines
     if (HAS_FEAT(ch, FEAT_SORCERER_BLOODLINE_DRACONIC))
     {
-      if (CLASS_LEVEL(ch, CLASS_SORCERER) >= 9 &&
+      if (draconic_level >= 9 &&
           !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON))
       {
         SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON, 1);
@@ -3296,7 +3331,7 @@ void process_conditional_class_level_feats(struct char_data *ch, int class)
                      feat_list[FEAT_DRACONIC_HERITAGE_CLAWS].name);
       }
       if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES) &&
-          CLASS_LEVEL(ch, CLASS_SORCERER) >= 3)
+          draconic_level >= 3)
       {
         SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES, 1);
         send_to_char(ch, "You have gained the %s feat!\r\n",
@@ -3308,14 +3343,13 @@ void process_conditional_class_level_feats(struct char_data *ch, int class)
         send_to_char(ch, "You have gained the %s feat!\r\n",
                      feat_list[FEAT_DRACONIC_BLOODLINE_ARCANA].name);
       }
-      if (CLASS_LEVEL(ch, CLASS_SORCERER) >= 15 && !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_WINGS))
+      if (draconic_level >= 15 && !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_WINGS))
       {
         SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_WINGS, 1);
         send_to_char(ch, "You have gained the %s feat!\r\n",
                      feat_list[FEAT_DRACONIC_HERITAGE_WINGS].name);
       }
-      if (CLASS_LEVEL(ch, CLASS_SORCERER) >= 20 &&
-          !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_POWER_OF_WYRMS))
+      if (draconic_level >= 20 && !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_POWER_OF_WYRMS))
       {
         SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_POWER_OF_WYRMS, 1);
         send_to_char(ch, "You have gained the %s feat!\r\n",
@@ -3448,6 +3482,45 @@ void process_conditional_class_level_feats(struct char_data *ch, int class)
         SET_FEAT(ch, FEAT_ONE_OF_US, 1);
         send_to_char(ch, "You have gained the %s feat!\r\n", feat_list[FEAT_ONE_OF_US].name);
       }
+    }
+    break;
+  case CLASS_DRAGON_DISCIPLE:
+    if (GET_BLOODLINE_SUBTYPE(ch) <= 0)
+    {
+      GET_BLOODLINE_SUBTYPE(ch) = DRACONIC_HERITAGE_RED;
+      send_to_char(ch, "Your draconic blood awakens as a red dragon lineage.\r\n");
+    }
+    if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES) && draconic_level >= 3)
+    {
+      SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES, 1);
+      send_to_char(ch, "You have gained the %s feat!\r\n",
+                   feat_list[FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES].name);
+    }
+    if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_BLOODLINE_ARCANA))
+    {
+      SET_FEAT(ch, FEAT_DRACONIC_BLOODLINE_ARCANA, 1);
+      send_to_char(ch, "You have gained the %s feat!\r\n",
+                   feat_list[FEAT_DRACONIC_BLOODLINE_ARCANA].name);
+    }
+    if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON) && draconic_level >= 9)
+    {
+      SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON, 1);
+      send_to_char(ch, "You have gained the %s feat!\r\n",
+                   feat_list[FEAT_DRACONIC_HERITAGE_BREATHWEAPON].name);
+    }
+    if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_WINGS) && draconic_level >= 15)
+    {
+      SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_WINGS, 1);
+      send_to_char(ch, "You have gained the %s feat!\r\n",
+                   feat_list[FEAT_DRACONIC_HERITAGE_WINGS].name);
+    }
+    if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_POWER_OF_WYRMS) && draconic_level >= 20)
+    {
+      SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_POWER_OF_WYRMS, 1);
+      send_to_char(ch, "You have gained the %s feat!\r\n",
+                   feat_list[FEAT_DRACONIC_HERITAGE_POWER_OF_WYRMS].name);
+      SET_FEAT(ch, FEAT_BLINDSENSE, 1);
+      send_to_char(ch, "You have gained the %s feat!\r\n", feat_list[FEAT_BLINDSENSE].name);
     }
     break;
   case CLASS_MYSTIC_THEURGE:
@@ -3610,6 +3683,13 @@ void advance_level(struct char_data *ch, int class)
       (CLASS_LEVEL(ch, CLASS_DRAGONRIDER) == 4 || CLASS_LEVEL(ch, CLASS_DRAGONRIDER) == 8))
   {
     class_feats++;
+  }
+
+  if (class == CLASS_DRAGON_DISCIPLE && (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 2 ||
+                                         CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 5 ||
+                                         CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 8))
+  {
+    class_feats++; // Dragon Disciples get a bloodline bonus feat at levels 2, 5, and 8
   }
 
   if (class == CLASS_NECROMANCER && CLASS_LEVEL(ch, CLASS_NECROMANCER) == 7)
@@ -3957,6 +4037,7 @@ long int level_exp(struct char_data *ch, int level)
   case CLASS_KNIGHT_OF_THE_LILY:
   case CLASS_DRAGONRIDER:
   case CLASS_ARTIFICER:
+  case CLASS_DRAGON_DISCIPLE:
     level--;
     if (level < 0)
       level = 0;
@@ -9496,8 +9577,86 @@ void load_class_list(void)
 
   /****************************************************************************/
 
-  classo(CLASS_PLACEHOLDER_1, "placeholder 1", "PL1", "\tCPL1\tn", "v) \tCPlaceholder 1\tn", 20, Y,
-         N, M, 6, 0, 1, 5, N, 0, 3, "", "", "");
+  /****************************************************************************/
+  /*     class-number               name      abrv   clr-abrv     menu-name*/
+  classo(CLASS_DRAGON_DISCIPLE, "dragon disciple", "DrD", "\tRDr\tYDisc\tn",
+         "v) \tRDragon \tYDisciple\tn",
+         /* max-lvl lock? prestige? BAB HD psp move trains in-game? unlkCst, eFeatp */
+         10, Y, Y, M, 12, 0, 1, 2, Y, 5000, 0,
+         /* prestige spell progression */
+         "Arcane spontaneous advancement at levels 2, 3, 4, 6, 7, 8, and 10",
+         /* primary attributes */
+         "Strength, Charisma for spellcasting and bloodline powers, Con/Dex for survivability",
+         /* descrip */
+         "Dragon disciples are spontaneous arcane casters whose draconic blood awakens as "
+         "they advance.  Their bodies grow tougher and stronger, they develop claws, a bite, "
+         "breath weapon, blindsense, wings, and eventually the ability to assume dragon form.");
+  /* class-number then saves: fortitude, reflex, will, poison, death */
+  assign_class_saves(CLASS_DRAGON_DISCIPLE, G, B, G, B, B);
+  assign_class_abils(CLASS_DRAGON_DISCIPLE, /* class number */
+                     /*acrobatics,stealth,perception,heal,intimidate,concentration, spellcraft*/
+                     CC, CC, CA, CC, CC, CA, CA,
+                     /*appraise,discipline,total_defense,lore,ride,climb,sleight_of_hand,bluff*/
+                     CC, CC, CC, CA, CA, CC, CC, CC,
+                     /*diplomacy,disable_device,disguise,escape_artist,handle_animal,sense_motive*/
+                     CA, CC, CC, CA, CC, CC,
+                     /*survival,swim,use_magic_device,perform*/
+                     CC, CC, CC, CC);
+  assign_class_titles(CLASS_DRAGON_DISCIPLE, /* class number */
+                      "",
+                      "the Dragon Disciple",
+                      "the Dragon Disciple",
+                      "the Dragon Disciple",
+                      "the Dragon Disciple",
+                      "the Dragon Disciple",
+                      "the Dragon Disciple",
+                      "the Immortal Dragon Disciple",
+                      "the Limitless Dragon Disciple",
+                      "the God of Dragon Disciples",
+                      "the Dragon Disciple");
+  /* feat assignment */
+  /*              class num             feat                              cfeat lvl stack */
+  /* 1st: blood of dragons, natural armor increase (+1) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_BLOOD_OF_DRAGONS, Y, 1, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_NATURAL_ARMOR_INCREASE, Y, 1, Y);
+  /* 2nd: ability boost (Str +2), dragon bite, draconic claws (bloodline) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_STRENGTH_BOOST, Y, 2, Y);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_DRACONIC_HERITAGE_CLAWS, Y, 2, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_CLAWS_AND_BITE, Y, 2, N);
+  /* 3rd: breath weapon */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_DRACONIC_HERITAGE_BREATHWEAPON, Y, 3, N);
+  /* 4th: ability boost (Str +2), natural armor increase (+1) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_STRENGTH_BOOST, Y, 4, Y);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_NATURAL_ARMOR_INCREASE, Y, 4, Y);
+  /* 5th: blindsense 30 ft. */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_BLINDSENSE, Y, 5, N);
+  /* 6th: ability boost (Con +2) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_CONSTITUTION_BOOST, Y, 6, Y);
+  /* 7th: dragon form (1/day), natural armor increase (+1) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_NATURAL_ARMOR_INCREASE, Y, 7, Y);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_DRAGON_DISCIPLE_DRAGON_FORM, Y, 7, Y);
+  /* 8th: ability boost (Int +2) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_INTELLIGENCE_BOOST, Y, 8, Y);
+  /* 9th: wings */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_DRACONIC_HERITAGE_WINGS, Y, 9, N);
+  /* 10th: blindsense 60 ft., dragon form (2/day) */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_BLINDSENSE, Y, 10, Y);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_DRAGON_DISCIPLE_DRAGON_FORM, Y, 10, Y);
+  /* draconic bloodline bonus feat options */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_BLIND_FIGHT, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_GREAT_FORTITUDE, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_IMPROVED_INITIATIVE, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_POWER_ATTACK, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_TOUGHNESS, Y, NOASSIGN_FEAT, N);
+  /* epic class feats */
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_GREAT_STRENGTH, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_GREAT_CONSTITUTION, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_GREAT_INTELLIGENCE, Y, NOASSIGN_FEAT, N);
+  /* class prerequisites */
+  class_prereq_ability(CLASS_DRAGON_DISCIPLE, ABILITY_ARCANA, 5);
+  class_prereq_spellcasting(CLASS_DRAGON_DISCIPLE, CASTING_TYPE_ARCANE, PREP_TYPE_SPONTANEOUS,
+                            1);
+
   classo(CLASS_PLACEHOLDER_2, "placeholder 2", "PL2", "\tCPL2\tn", "v) \tCPlaceholder 2\tn", 20, Y,
          N, M, 6, 0, 1, 5, N, 0, 3, "", "", "");
 }

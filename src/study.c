@@ -2909,36 +2909,40 @@ void study_parse(struct descriptor_data *d, char *arg)
       main_feat_disp_menu(d);
       break;
     case '3':
+    {
+      int dragon_disciple_arcane_class = get_dragon_disciple_arcane_class(ch);
+      bool is_arcane_progression_class =
+          LEVELUP(ch)->class == CLASS_ARCANE_ARCHER ||
+          LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
+          LEVELUP(ch)->class == CLASS_ARCANE_SHADOW ||
+          LEVELUP(ch)->class == CLASS_SPELLSWORD ||
+          LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE ||
+          LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
+          LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
+          (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1);
+
       if (CAN_STUDY_KNOWN_SPELLS(ch))
       {
         if (LEVELUP(ch)->class == CLASS_SORCERER ||
-            ((LEVELUP(ch)->class == CLASS_ARCANE_ARCHER ||
-              LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-              LEVELUP(ch)->class == CLASS_ARCANE_SHADOW || LEVELUP(ch)->class == CLASS_SPELLSWORD ||
-              LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
-              LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
-              (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1)) &&
-             GET_PREFERRED_ARCANE(ch) == CLASS_SORCERER))
+            (is_arcane_progression_class &&
+             ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+               dragon_disciple_arcane_class == CLASS_SORCERER) ||
+              (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+               GET_PREFERRED_ARCANE(ch) == CLASS_SORCERER))))
           sorc_known_spells_disp_menu(d);
         else if (LEVELUP(ch)->class == CLASS_BARD ||
-                 ((LEVELUP(ch)->class == CLASS_ARCANE_ARCHER ||
-                   LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-                   LEVELUP(ch)->class == CLASS_ARCANE_SHADOW ||
-                   LEVELUP(ch)->class == CLASS_SPELLSWORD ||
-                   LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
-                   LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
-                   (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1)) &&
-                  GET_PREFERRED_ARCANE(ch) == CLASS_BARD))
+                 (is_arcane_progression_class &&
+                  ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+                    dragon_disciple_arcane_class == CLASS_BARD) ||
+                   (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+                    GET_PREFERRED_ARCANE(ch) == CLASS_BARD))))
           bard_known_spells_disp_menu(d);
         else if (LEVELUP(ch)->class == CLASS_SUMMONER ||
-                 ((LEVELUP(ch)->class == CLASS_ARCANE_ARCHER ||
-                   LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-                   LEVELUP(ch)->class == CLASS_ARCANE_SHADOW ||
-                   LEVELUP(ch)->class == CLASS_SPELLSWORD ||
-                   LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
-                   LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
-                   (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1)) &&
-                  GET_PREFERRED_ARCANE(ch) == CLASS_SUMMONER))
+                 (is_arcane_progression_class &&
+                  ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+                    dragon_disciple_arcane_class == CLASS_SUMMONER) ||
+                   (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+                    GET_PREFERRED_ARCANE(ch) == CLASS_SUMMONER))))
           summoner_known_spells_disp_menu(d);
         else if (LEVELUP(ch)->class == CLASS_INQUISITOR ||
                  ((LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
@@ -2956,6 +2960,7 @@ void study_parse(struct descriptor_data *d, char *arg)
         generic_main_disp_menu(d);
       }
       break;
+    }
     case '4':
       if (LEVELUP(ch) && LEVELUP(ch)->inte != GET_REAL_INT(ch))
       {
@@ -5113,6 +5118,14 @@ void study_parse(struct descriptor_data *d, char *arg)
       break;
     case 'y':
     case 'Y':
+      if (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) > 0 &&
+          LEVELUP(ch)->tempFeat != FEAT_SORCERER_BLOODLINE_DRACONIC)
+      {
+        write_to_output(d, "Dragon Disciples who later take sorcerer levels must choose the "
+                           "draconic bloodline.\r\n");
+        set_sorcerer_bloodline(d);
+        break;
+      }
       if (add_levelup_feat(d, LEVELUP(ch)->tempFeat))
       {
         write_to_output(d, "Bloodline %s chosen!\r\n", feat_list[LEVELUP(ch)->tempFeat].name);

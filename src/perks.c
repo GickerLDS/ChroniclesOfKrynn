@@ -30197,6 +30197,8 @@ int class_to_perk_class(int class_type, int which_perk)
     return CLASS_WARRIOR;
   case CLASS_ARTIFICER:
     return CLASS_ARTIFICER;
+  case CLASS_DRAGON_DISCIPLE:
+    return CLASS_SORCERER;
   }
   return -1;
 }

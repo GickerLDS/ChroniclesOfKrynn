@@ -149,6 +149,8 @@ bool can_place_random_chest_in_room(room_rnum rrnum, int num_zone_rooms, int num
 int get_default_spell_weapon(struct char_data *ch);
 bool can_study_known_spells(struct char_data *ch);
 bool can_study_known_psionics(struct char_data *ch);
+int get_dragon_disciple_arcane_class(struct char_data *ch);
+int get_effective_draconic_bloodline_level(struct char_data *ch);
 int compute_bonus_caster_level(struct char_data *ch, int class);
 int compute_arcane_level(struct char_data *ch);
 bool can_npc_command(struct char_data *ch);
@@ -2245,6 +2247,7 @@ int ACTUAL_BAB(struct char_data *ch);
 #define IS_KNIGHT_OF_THE_LILY(ch) (CLASS_LEVEL(ch, CLASS_KNIGHT_OF_THE_LILY))
 #define IS_DRAGONRIDER(ch) (CLASS_LEVEL(ch, CLASS_DRAGONRIDER))
 #define IS_ARTIFICER(ch) (CLASS_LEVEL(ch, CLASS_ARTIFICER))
+#define IS_DRAGON_DISCIPLE(ch) (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE))
 
 #define IS_CASTER(ch)                                                                              \
   (GET_LEVEL(ch) >= LVL_IMMORT || IS_CLERIC(ch) || IS_WIZARD(ch) || IS_DRUID(ch) ||                \
@@ -2252,7 +2255,7 @@ int ACTUAL_BAB(struct char_data *ch);
    IS_ARCANE_ARCHER(ch) || IS_MYSTICTHEURGE(ch) || IS_ARCANE_SHADOW(ch) || IS_SACRED_FIST(ch) ||   \
    IS_SHIFTER(ch) || IS_ELDRITCH_KNIGHT(ch) || IS_BLACKGUARD(ch) || IS_INQUISITOR(ch) ||           \
    IS_SUMMONER(ch) || IS_NECROMANCER(ch) || IS_KNIGHT_OF_SOLAMNIA(ch) ||                           \
-   IS_KNIGHT_OF_THE_THORN(ch) || IS_KNIGHT_OF_THE_SKULL(ch))
+   IS_KNIGHT_OF_THE_THORN(ch) || IS_KNIGHT_OF_THE_SKULL(ch) || IS_DRAGON_DISCIPLE(ch))
 
 #define IS_FIGHTER(ch)                                                                             \
   (CLASS_LEVEL(ch, CLASS_WARRIOR) || CLASS_LEVEL(ch, CLASS_WEAPON_MASTER) ||                       \
@@ -2270,7 +2273,7 @@ int ACTUAL_BAB(struct char_data *ch);
    GET_CLASS(ch) == CLASS_SACRED_FIST || GET_CLASS(ch) == CLASS_SHIFTER ||                         \
    GET_CLASS(ch) == CLASS_INQUISITOR || GET_CLASS(ch) == CLASS_KNIGHT_OF_SOLAMNIA ||               \
    GET_CLASS(ch) == CLASS_KNIGHT_OF_THE_THORN || GET_CLASS(ch) == CLASS_KNIGHT_OF_THE_SKULL ||     \
-   GET_CLASS(ch) == CLASS_BARD)
+   GET_CLASS(ch) == CLASS_DRAGON_DISCIPLE || GET_CLASS(ch) == CLASS_BARD)
 
 #define GET_CASTING_CLASS(ch) (ch->player_specials->casting_class)
 

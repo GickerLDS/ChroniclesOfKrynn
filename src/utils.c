@@ -139,38 +139,90 @@ void gui_room_desc_wrap_close(struct char_data *ch)
   }
 }
 
+int get_dragon_disciple_arcane_class(struct char_data *ch)
+{
+  int preferred = CLASS_UNDEFINED;
+
+  if (!ch)
+    return CLASS_UNDEFINED;
+
+  preferred = GET_PREFERRED_ARCANE(ch);
+
+  if (preferred == CLASS_SORCERER && CLASS_LEVEL(ch, CLASS_SORCERER) > 0)
+    return CLASS_SORCERER;
+  if (preferred == CLASS_BARD && CLASS_LEVEL(ch, CLASS_BARD) > 0)
+    return CLASS_BARD;
+  if (preferred == CLASS_SUMMONER && CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
+    return CLASS_SUMMONER;
+
+  if (CLASS_LEVEL(ch, CLASS_SORCERER) > 0)
+    return CLASS_SORCERER;
+  if (CLASS_LEVEL(ch, CLASS_BARD) > 0)
+    return CLASS_BARD;
+  if (CLASS_LEVEL(ch, CLASS_SUMMONER) > 0)
+    return CLASS_SUMMONER;
+
+  return CLASS_UNDEFINED;
+}
+
+int get_effective_draconic_bloodline_level(struct char_data *ch)
+{
+  int draconic_level = 0;
+
+  if (!ch)
+    return 0;
+
+  draconic_level = CLASS_LEVEL(ch, CLASS_SORCERER);
+  if (HAS_FEAT(ch, FEAT_BLOOD_OF_DRAGONS) || CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) > 0)
+    draconic_level += CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE);
+
+  return draconic_level;
+}
+
 /* can this CH select the option to change their 'known' spells
  in the study system? */
 bool can_study_known_spells(struct char_data *ch)
 {
+  int dragon_disciple_arcane_class = CLASS_UNDEFINED;
+  bool is_arcane_progression_class = FALSE;
+
+  if (!ch)
+    return FALSE;
+
+  dragon_disciple_arcane_class = get_dragon_disciple_arcane_class(ch);
+  is_arcane_progression_class =
+      LEVELUP(ch)->class == CLASS_ARCANE_ARCHER ||
+      LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
+      LEVELUP(ch)->class == CLASS_ARCANE_SHADOW ||
+      LEVELUP(ch)->class == CLASS_SPELLSWORD ||
+      LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE ||
+      LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
+      LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
+      (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1);
+
   /* sorcerer*/
   if (LEVELUP(ch)->class == CLASS_SORCERER ||
-      ((LEVELUP(ch)->class == CLASS_ARCANE_ARCHER || LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-        LEVELUP(ch)->class == CLASS_ARCANE_SHADOW || LEVELUP(ch)->class == CLASS_SPELLSWORD ||
-        LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
-        LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
-        (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1)) &&
-       GET_PREFERRED_ARCANE(ch) == CLASS_SORCERER))
+      (is_arcane_progression_class &&
+       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+         dragon_disciple_arcane_class == CLASS_SORCERER) ||
+        (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+         GET_PREFERRED_ARCANE(ch) == CLASS_SORCERER))))
     return TRUE;
 
   /* bard */
   if (LEVELUP(ch)->class == CLASS_BARD ||
-      ((LEVELUP(ch)->class == CLASS_ARCANE_ARCHER || LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-        LEVELUP(ch)->class == CLASS_ARCANE_SHADOW || LEVELUP(ch)->class == CLASS_SPELLSWORD ||
-        LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
-        LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
-        (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1)) &&
-       GET_PREFERRED_ARCANE(ch) == CLASS_BARD))
+      (is_arcane_progression_class &&
+       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE && dragon_disciple_arcane_class == CLASS_BARD) ||
+        (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE && GET_PREFERRED_ARCANE(ch) == CLASS_BARD))))
     return TRUE;
 
   /* summoner */
   if (LEVELUP(ch)->class == CLASS_SUMMONER ||
-      ((LEVELUP(ch)->class == CLASS_ARCANE_ARCHER || LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-        LEVELUP(ch)->class == CLASS_ARCANE_SHADOW || LEVELUP(ch)->class == CLASS_SPELLSWORD ||
-        LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
-        LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
-        (LEVELUP(ch)->class == CLASS_NECROMANCER && NECROMANCER_CAST_TYPE(ch) == 1)) &&
-       GET_PREFERRED_ARCANE(ch) == CLASS_SUMMONER))
+      (is_arcane_progression_class &&
+       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+         dragon_disciple_arcane_class == CLASS_SUMMONER) ||
+        (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+         GET_PREFERRED_ARCANE(ch) == CLASS_SUMMONER))))
     return TRUE;
 
   /* inquisitor */
@@ -206,6 +258,8 @@ bool can_study_known_psionics(struct char_data *ch)
 int compute_bonus_caster_level(struct char_data *ch, int class)
 {
   int bonus_levels = 0;
+  int dragon_disciple_levels = CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE);
+  int dragon_disciple_class = get_dragon_disciple_arcane_class(ch);
 
   switch (class)
   {
@@ -218,6 +272,9 @@ int compute_bonus_caster_level(struct char_data *ch, int class)
                     ((1 + CLASS_LEVEL(ch, CLASS_SPELLSWORD)) / 2) +
                     CLASS_LEVEL(ch, CLASS_MYSTIC_THEURGE) +
                     CLASS_LEVEL(ch, CLASS_KNIGHT_OF_THE_THORN) + CLASS_LEVEL(ch, CLASS_NECROMANCER);
+    if (dragon_disciple_class == class)
+      bonus_levels += dragon_disciple_levels - (dragon_disciple_levels >= 1) -
+                      (dragon_disciple_levels >= 5) - (dragon_disciple_levels >= 9);
     break;
   case CLASS_CLERIC:
   case CLASS_DRUID:
@@ -262,6 +319,10 @@ int compute_arcane_level(struct char_data *ch)
   arcane_level += CLASS_LEVEL(ch, CLASS_MYSTIC_THEURGE) / 2;
   arcane_level += compute_arcana_golem_level(ch) - (SPELLBATTLE(ch) / 2);
   arcane_level += (CLASS_LEVEL(ch, CLASS_SPELLSWORD) + 1) / 2;
+  arcane_level += CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) -
+                  (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 1) -
+                  (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 5) -
+                  (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 9);
 
   return arcane_level;
 }
@@ -5611,13 +5672,23 @@ int get_daily_uses(struct char_data *ch, int featnum)
     daily_uses += HAS_FEAT(ch, featnum);
     break;
   case FEAT_DRACONIC_HERITAGE_BREATHWEAPON:
-    if (CLASS_LEVEL(ch, CLASS_SORCERER) >= 9)
+  {
+    /* Blood of Dragons: a dragon disciple adds his class level to his sorcerer
+       level when determining draconic bloodline powers. */
+    int draconic_level = get_effective_draconic_bloodline_level(ch);
+
+    if (draconic_level >= 9)
       daily_uses++;
-    if (CLASS_LEVEL(ch, CLASS_SORCERER) >= 17)
+    if (draconic_level >= 17)
       daily_uses++;
-    if (CLASS_LEVEL(ch, CLASS_SORCERER) >= 20)
+    if (draconic_level >= 20)
+      daily_uses++;
+    /* a dragon disciple gains the breath weapon power at 3rd level even if his
+       bloodline level does not yet grant it, plus an additional use each day */
+    if (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 3)
       daily_uses++;
     break;
+  }
   case FEAT_PIXIE_DUST:
     daily_uses = GET_REAL_CHA(ch) + 4;
     break;
@@ -5626,6 +5697,10 @@ int get_daily_uses(struct char_data *ch, int featnum)
     break;
   case FEAT_DRAGON_MAGIC:
     daily_uses = 10;
+    break;
+  case FEAT_DRAGON_DISCIPLE_DRAGON_FORM:
+    /* 1/day at 7th level (rank 1), 2/day at 10th level (rank 2) */
+    daily_uses = HAS_FEAT(ch, FEAT_DRAGON_DISCIPLE_DRAGON_FORM);
     break;
   case FEAT_TABAXI_CATS_CLAWS:
     daily_uses += MAX(1, GET_LEVEL(ch) / 3);

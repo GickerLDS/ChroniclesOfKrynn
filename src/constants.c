@@ -531,7 +531,7 @@ const char *class_names[] = {"Wizard", // 0
                              "Knight of the Pale Throne",      // (Skull)
                              "Knight of the Howling Moon",     // 33 (Lily)
 #endif
-                             "Dragon Rider", "Artificer", "Placeholder 1", "Placeholder 2",
+                             "Dragon Rider", "Artificer", "Dragon Disciple", "Placeholder 2",
                              //  "unfinished",
                              //  "unfinished",
                              //  "unfinished",
@@ -1784,8 +1784,9 @@ const char *equipment_types[] = {"Used as light", // 0
 CHECK_TABLE_SIZE(equipment_types, NUM_WEARS + 1);
 
 /* weapon family */
-const char *weapon_family[] = {"Monk",    "Light-Blade",   "Hammer", "Ranged", "Heavy-Blade",
-                               "Polearm", "Double-Weapon", "Axe",    "\n"};
+const char *weapon_family[] = {"Monk",    "Light-Blade", "Hammer",       "Ranged",
+                               "Heavy-Blade", "Polearm", "Double-Weapon", "Axe",
+                               "Natural-Bite", "Natural-Claw", "\n"};
 CHECK_TABLE_SIZE(weapon_family, NUM_WEAPON_FAMILIES + 1);
 
 /* weapon flags */
@@ -4214,7 +4215,7 @@ const char *spell_prep_dict[][4] = {
     {"", "", "", ""},                                        // knight of the lily 33
     {"", "", "", ""},                                        // dragonrider 34
     {"", "", "", ""},                                        // artificer 35
-    {"", "", "", ""},                                        // placeholder
+    {"", "", "", ""},                                        // dragon disciple 36
     {"", "", "", ""},                                        // placeholder
     //  {"",         "",           "",          ""            }, /* psion */
     //  {"",         "",           "",          ""            }, /* psy warr */
@@ -4263,7 +4264,7 @@ const char *spell_consign_dict[][4] = {
     {"", "", "", ""},                                            // knight of the lily 33
     {"", "", "", ""},                                            // dragonrider 34
     {"", "", "", ""},                                            // artificer 35
-    {"", "", "", ""},                                            // placeholder
+    {"", "", "", ""},                                            // dragon disciple 36
     {"", "", "", ""},                                            // placeholder
     //  {"",          "",            "",           ""            }, /* psion 18 */
     //  {"",          "",            "",           ""            }, /* psy warr 19 */
@@ -4508,7 +4509,8 @@ const char *class_short_descriptions[] = {
     "numerous special abilities.", // dragonrider
     "A brilliant inventor whose creations cancause destruction, "
     "protection and more.", // artificer
-    "",                     // placeholder
+    "A spontaneous arcane caster whose draconic blood transforms "
+    "them into a more powerful dragon-like being.", // dragon disciple
     "",                     // placeholder
     ""};
 CHECK_TABLE_SIZE(class_short_descriptions, NUM_CLASSES + 1);

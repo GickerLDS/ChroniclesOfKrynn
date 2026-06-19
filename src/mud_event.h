@@ -260,6 +260,7 @@ typedef enum
   eFIENDISH_RESILIENCE,         // warlock pact bonding Fiendish Resilience 5-minute cooldown
   eDARK_MASTERS_WILL,            // warlock pact bonding Dark Master's Will 5-minute cooldown
   eWARLOCK_ONE_WITH_PATRON,      // warlock pact bonding One with Patron 50% HP trigger cooldown
+  eDRAGON_DISCIPLE_FORM,         // dragon disciple dragon form daily use
 } event_id;
 
 /* probably a smart place to mention to not forget to update:

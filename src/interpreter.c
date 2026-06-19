@@ -412,6 +412,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"dracwings", "dracwings", POS_FIGHTING, do_sorcerer_draconic_wings, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"dragbreath", "dragbreath", POS_FIGHTING, do_dragonborn_breath_weapon, 1, 0, FALSE, ACTION_STANDARD, {0, 0}, can_dragonborn_breath_weapon},
     {"dragonfear", "dragonfear", POS_FIGHTING, do_dragonfear, 1, 0, FALSE, ACTION_SWIFT, {6, 0}, can_dragonfear},
+    {"dragonform", "dragonform", POS_FIGHTING, do_dragonform, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_dragonform},
     {"dragonmagic", "dragonmagic", POS_FIGHTING, do_dragonmagic, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_dragonmagic},
     {"draw", "draw", POS_SITTING, do_unsheath, 1, 0, FALSE, ACTION_NONE, {0, 6}, NULL},
     {"dice", "dice", POS_RECLINING, do_dice, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
@@ -3878,6 +3879,9 @@ void nanny(struct descriptor_data *d, char *arg)
       break;
     case CLASS_ELDRITCH_KNIGHT:
       perform_help(d, "class-eldritchknight");
+      break;
+    case CLASS_DRAGON_DISCIPLE:
+      perform_help(d, "class-dragondisciple");
       break;
     case CLASS_SACRED_FIST:
       perform_help(d, "class-sacredfist");

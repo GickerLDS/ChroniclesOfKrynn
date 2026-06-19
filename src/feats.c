@@ -22,6 +22,8 @@
 #include "assign_wpn_armor.h"
 #include "domains_schools.h"
 #include "spell_prep.h"
+#include "alchemy.h"
+#include "evolutions.h"
 
 /* Local Functions */
 /* Prerequisite definition procedures */
@@ -1318,6 +1320,17 @@ void assign_feats(void)
         "+1 to hit rolls for selected weapon", "+1 to hit rolls for selected weapon");
   feat_prereq_bab(FEAT_WEAPON_FOCUS, 1);
   feat_prereq_weapon_proficiency(FEAT_WEAPON_FOCUS);
+  feato(FEAT_FERAL_COMBAT_TRAINING, "feral combat training", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
+        "Use selected natural weapon with unarmed combat feats.",
+        "Choose one natural weapon. While using the selected natural weapon, you can apply effects "
+        "of feats that require Improved Unarmed Strike. Monks can use the selected natural weapon "
+        "with flurry of blows.");
+  feat_prereq_feat(FEAT_FERAL_COMBAT_TRAINING, FEAT_UNARMED_STRIKE, 1);
+  feat_prereq_cfeat(FEAT_FERAL_COMBAT_TRAINING, FEAT_WEAPON_FOCUS);
+  feato(FEAT_MULTIATTACK, "multiattack", TRUE, TRUE, FALSE, FEAT_TYPE_COMBAT,
+        "Secondary natural attacks take only a -2 penalty.",
+        "Your secondary natural attacks are more accurate. Their attack penalty is reduced from -5 "
+        "to -2.");
   feato(FEAT_GREATER_WEAPON_FOCUS, "greater weapon focus", TRUE, TRUE, TRUE, FEAT_TYPE_COMBAT,
         "+1 to hit rolls with weapon", "+1 to hit rolls with weapon");
   feat_prereq_cfeat(FEAT_GREATER_WEAPON_FOCUS, FEAT_WEAPON_FOCUS);
@@ -5611,16 +5624,30 @@ void assign_feats(void)
         "can cast haste 3x per day", "can cast haste 3x per day");
 
   /* dragon disciple */
+  feato(FEAT_BLOOD_OF_DRAGONS, "blood of dragons", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
+        "your dragon disciple levels stack with sorcerer levels for draconic bloodline powers",
+        "A dragon disciple adds his class level to his sorcerer levels when determining the "
+        "powers gained from his draconic bloodline (breath weapon uses, claws, natural armor and "
+        "similar bloodline benefits).");
+  feato(FEAT_DRAGON_DISCIPLE_DRAGON_FORM, "dragon form", TRUE, FALSE, TRUE, FEAT_TYPE_CLASS_ABILITY,
+        "you can assume the form of a dragon of your bloodline type",
+        "At 7th level a dragon disciple can assume the form of a dragon (as form of the dragon I) "
+        "once per day; at 10th level this functions as form of the dragon II and can be used twice "
+        "per day. The assumed dragon must match the disciple's bloodline type.");
   feato(FEAT_DRAGON_APOTHEOSIS, "dragon apotheosis", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_ELEMENTAL_IMMUNITY, "elemental immunity", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_BREATH_WEAPON, "breath weapon", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
-        "ask staff", "ask staff");
+        "grants the draconic bloodline breath weapon (see the breathe command)",
+        "Grants the draconic bloodline breath weapon even if your bloodline level does not yet "
+        "provide it. Use the breathe command to unleash it.");
   feato(FEAT_CHARISMA_BOOST, "charisma boost", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_CLAWS_AND_BITE, "claws and bite", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
-        "ask staff", "ask staff");
+        "grants a primary bite natural attack alongside draconic claws",
+        "Whenever you use your bloodline to grow claws you also gain a primary bite natural "
+        "attack. The bite deals additional energy damage of your bloodline type at higher level.");
   feato(FEAT_CONSTITUTION_BOOST, "constitution boost", FALSE, FALSE, FALSE,
         FEAT_TYPE_INNATE_ABILITY, "ask staff", "ask staff");
   feato(FEAT_INTELLIGENCE_BOOST, "intelligence boost", FALSE, FALSE, FALSE,
@@ -5628,12 +5655,16 @@ void assign_feats(void)
   feato(FEAT_SLEEP_PARALYSIS_IMMUNITY, "sleep & paralysis immunity", TRUE, FALSE, FALSE,
         FEAT_TYPE_INNATE_ABILITY, "cannot be put to sleep or paralyzed.",
         "cannot be put to sleep or paralyzed");
-  feato(FEAT_STRENGTH_BOOST, "strength boost", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY,
-        "ask staff", "ask staff");
+  feato(FEAT_STRENGTH_BOOST, "strength boost", FALSE, FALSE, TRUE, FEAT_TYPE_INNATE_ABILITY,
+        "increases your strength by +2 per rank",
+        "Your draconic heritage swells your muscles, granting a permanent +2 increase to your "
+        "Strength score for each rank of this feat.");
   feato(FEAT_TRAMPLE, "trample", FALSE, FALSE, FALSE, FEAT_TYPE_INNATE_ABILITY, "ask staff",
         "ask staff");
-  feato(FEAT_NATURAL_ARMOR_INCREASE, "natural armor increase", FALSE, FALSE, FALSE,
-        FEAT_TYPE_GENERAL, "ask staff", "ask staff");
+  feato(FEAT_NATURAL_ARMOR_INCREASE, "natural armor increase", FALSE, FALSE, TRUE,
+        FEAT_TYPE_CLASS_ABILITY, "increases your natural armor bonus by +1 per rank",
+        "As your skin thickens with draconic scales, your natural armor bonus to AC increases by "
+        "+1 for each rank of this feat. These bonuses stack with other natural armor.");
   feato(FEAT_BLINDSENSE, "blindsense", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "draconic bloodline, sorcerer level 20",
         "Allows full vision even when there is no light or the character is blinded.");
@@ -6054,6 +6085,7 @@ void assign_feats(void)
   combatfeat(FEAT_IMPROVED_CRITICAL);
   combatfeat(FEAT_WEAPON_FINESSE);
   combatfeat(FEAT_WEAPON_FOCUS);
+  combatfeat(FEAT_FERAL_COMBAT_TRAINING);
   combatfeat(FEAT_WEAPON_SPECIALIZATION);
   combatfeat(FEAT_GREATER_WEAPON_FOCUS);
   combatfeat(FEAT_GREATER_WEAPON_SPECIALIZATION);
@@ -6194,6 +6226,7 @@ void assign_feats(void)
   dailyfeat(FEAT_PIXIE_DUST, ePIXIEDUST);
   dailyfeat(FEAT_EFREETI_MAGIC, eEFREETIMAGIC);
   dailyfeat(FEAT_DRAGON_MAGIC, eDRAGONMAGIC);
+  dailyfeat(FEAT_DRAGON_DISCIPLE_DRAGON_FORM, eDRAGON_DISCIPLE_FORM);
   dailyfeat(FEAT_CHANNEL_SPELL, eCHANNELSPELL);
   dailyfeat(FEAT_PSIONIC_FOCUS, ePSIONICFOCUS);
   dailyfeat(FEAT_DOUBLE_MANIFEST, eDOUBLEMANIFEST);
@@ -6421,6 +6454,43 @@ int critical_feat_total(struct char_data *ch)
   if (HAS_FEAT(ch, FEAT_BLEEDING_CRITICAL))
     total++;
   return total;
+}
+
+static int count_available_natural_attacks(struct char_data *ch)
+{
+  int attacks = 0;
+
+  if (!ch)
+    return 0;
+
+  if (has_bite_attack(ch))
+    attacks++;
+
+  if (!IS_NPC(ch) && KNOWS_DISCOVERY(ch, ALC_DISC_FERAL_MUTAGEN))
+    attacks += 3;
+
+  if (HAS_EVOLUTION(ch, EVOLUTION_BITE))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_CLAWS))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_HOOVES))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_PINCERS))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_STING))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_TAIL_SLAP))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_TENTACLE))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_WING_BUFFET))
+    attacks += 2;
+  if (HAS_EVOLUTION(ch, EVOLUTION_GORE))
+    attacks++;
+  if (HAS_EVOLUTION(ch, EVOLUTION_RAKE))
+    attacks += 2;
+
+  return attacks;
 }
 
 /* The follwing function is used to check if the character satisfies the various prerequisite(s) (if any)
@@ -6830,6 +6900,9 @@ int feat_is_available(struct char_data *ch, int featnum, int iarg, char *sarg)
         return FALSE;
       return TRUE;
       return false;
+
+    case FEAT_MULTIATTACK:
+      return count_available_natural_attacks(ch) >= 3;
 
     case FEAT_LAST_FEAT:
       return FALSE;
@@ -9625,6 +9698,8 @@ int feat_to_cfeat(int feat)
     //    return CFEAT_WEAPON_FINESSE;
   case FEAT_WEAPON_FOCUS:
     return CFEAT_WEAPON_FOCUS;
+  case FEAT_FERAL_COMBAT_TRAINING:
+    return CFEAT_FERAL_COMBAT_TRAINING;
   case FEAT_WEAPON_SPECIALIZATION:
     return CFEAT_WEAPON_SPECIALIZATION;
   case FEAT_GREATER_WEAPON_FOCUS:

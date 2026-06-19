@@ -6090,6 +6090,9 @@ ACMD(do_minotaur_gore)
 
 ACMD(do_bite_attack)
 {
+  struct char_data *vict = NULL;
+  int bite_damage = 0;
+
   if (!has_bite_attack(ch))
   {
     send_to_char(ch, "You do not have a bite attack.\r\n");
@@ -6107,18 +6110,20 @@ ACMD(do_bite_attack)
     return;
   }
 
-  struct char_data *vict = FIGHTING(ch);
+  vict = FIGHTING(ch);
 
   act("You snap at $N with your vicious jaws.", true, ch, 0, vict, TO_CHAR);
   act("$n snaps at $N with $s vicious jaws.", TRUE, ch, 0, vict, TO_VICT);
   act("$n snaps at You with $s vicious jaws.", TRUE, ch, 0, vict, TO_NOTVICT);
 
-  if (combat_maneuver_check(ch, vict, COMBAT_MANEUVER_TYPE_BITE, 0) > 0)
+  if (attack_roll(ch, vict, ATTACK_TYPE_PRIMARY_EVO_BITE, FALSE, 1) > 0)
   {
-    damage(ch, vict, dice(1, 4) + GET_STR_BONUS(ch), SKILL_BITE, DAM_PUNCTURE, FALSE);
+    bite_damage = natural_attack_damage_roll(ch, ATTACK_TYPE_PRIMARY_EVO_BITE);
+    bite_damage += natural_attack_strength_bonus(ch, 1, FALSE);
+    damage(ch, vict, bite_damage, SKILL_BITE, DAM_PUNCTURE, FALSE);
 
     /* fire-shield, etc check */
-    damage_shield_check(ch, vict, ATTACK_TYPE_UNARMED, TRUE, DAM_PUNCTURE);
+    damage_shield_check(ch, vict, ATTACK_TYPE_PRIMARY_EVO_BITE, TRUE, DAM_PUNCTURE);
   }
   else
     damage(ch, vict, 0, SKILL_BITE, DAM_PUNCTURE, FALSE);
@@ -7246,6 +7251,103 @@ ACMD(do_dragonmagic)
   send_to_char(ch, "You have %d dragon magic uses left.\r\n", DRAGON_MAGIC_USES(ch));
 }
 
+static int dragon_disciple_subrace_from_bloodline(struct char_data *ch)
+{
+  switch (GET_BLOODLINE_SUBTYPE(ch))
+  {
+  case DRACONIC_HERITAGE_BLUE:
+  case DRACONIC_HERITAGE_BRASS:
+  case DRACONIC_HERITAGE_BRONZE:
+  case DRACONIC_HERITAGE_COPPER:
+    return SUBRACE_AIR;
+  case DRACONIC_HERITAGE_GREEN:
+  case DRACONIC_HERITAGE_BLACK:
+    return SUBRACE_WATER;
+  case DRACONIC_HERITAGE_WHITE:
+  case DRACONIC_HERITAGE_SILVER:
+    return SUBRACE_COLD;
+  case DRACONIC_HERITAGE_RED:
+  case DRACONIC_HERITAGE_GOLD:
+  default:
+    return SUBRACE_FIRE;
+  }
+}
+
+ACMDCHECK(can_dragonform)
+{
+  ACMDCHECK_PREREQ_HASFEAT(FEAT_DRAGON_DISCIPLE_DRAGON_FORM, "You have no idea how.\r\n");
+  return CAN_CMD;
+}
+
+ACMD(do_dragonform)
+{
+  struct affected_type af[4];
+  int i, dragon_disciple_level, duration, str_bonus, con_bonus, natural_armor;
+  int effective_draconic_level;
+
+  PREREQ_NOT_NPC();
+  PREREQ_CHECK(can_dragonform);
+
+  if (affected_by_spell(ch, SKILL_WILDSHAPE) && IS_MORPHED(ch) == RACE_TYPE_DRAGON)
+  {
+    send_to_char(ch, "You release your draconic form and return to normal.\r\n");
+    act("$n's draconic form fades away.", TRUE, ch, 0, 0, TO_ROOM);
+    affect_from_char(ch, SKILL_WILDSHAPE);
+    SUBRACE(ch) = 0;
+    IS_MORPHED(ch) = 0;
+    return;
+  }
+
+  PREREQ_HAS_USES(FEAT_DRAGON_DISCIPLE_DRAGON_FORM,
+                  "You must recover before assuming dragon form again.\r\n");
+
+  if (GET_BLOODLINE_SUBTYPE(ch) <= 0)
+    GET_BLOODLINE_SUBTYPE(ch) = DRACONIC_HERITAGE_RED;
+
+  if (affected_by_spell(ch, SKILL_WILDSHAPE))
+  {
+    affect_from_char(ch, SKILL_WILDSHAPE);
+    SUBRACE(ch) = 0;
+    IS_MORPHED(ch) = 0;
+  }
+
+  dragon_disciple_level = CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE);
+  effective_draconic_level = CLASS_LEVEL(ch, CLASS_SORCERER) + dragon_disciple_level;
+  duration = MAX(10, effective_draconic_level * 10);
+  str_bonus = (dragon_disciple_level >= 10) ? 6 : 4;
+  con_bonus = (dragon_disciple_level >= 10) ? 4 : 2;
+  natural_armor = (dragon_disciple_level >= 10) ? 6 : 4;
+
+  for (i = 0; i < 4; i++)
+  {
+    new_affect(&af[i]);
+    af[i].spell = SKILL_WILDSHAPE;
+    af[i].duration = duration;
+    af[i].bonus_type = BONUS_TYPE_RACIAL;
+  }
+
+  af[0].location = APPLY_STR;
+  af[0].modifier = str_bonus;
+  af[1].location = APPLY_CON;
+  af[1].modifier = con_bonus;
+  af[2].location = APPLY_AC_NEW;
+  af[2].modifier = natural_armor;
+  af[2].bonus_type = BONUS_TYPE_NATURALARMOR;
+  SET_BIT_AR(af[3].bitvector, AFF_FLYING);
+
+  for (i = 0; i < 4; i++)
+    affect_to_char(ch, &af[i]);
+
+  IS_MORPHED(ch) = RACE_TYPE_DRAGON;
+  SUBRACE(ch) = dragon_disciple_subrace_from_bloodline(ch);
+
+  start_daily_use_cooldown(ch, FEAT_DRAGON_DISCIPLE_DRAGON_FORM);
+  send_to_char(ch, "You assume the form of a %s dragon.\r\n",
+               DRCHRTLIST_NAME(GET_BLOODLINE_SUBTYPE(ch)));
+  act("$n's body expands into a draconic form!", TRUE, ch, 0, 0, TO_ROOM);
+  USE_STANDARD_ACTION(ch);
+}
+
 ACMDCHECK(can_efreetimagic)
 {
   ACMDCHECK_PERMFAIL_IF(!IS_EFREETI(ch), "You have no idea how.\r\n");
@@ -7882,12 +7984,13 @@ ACMD(do_sorcerer_breath_weapon)
 
   int damtype = draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)];
   int dam = 0;
+  int draconic_level = get_effective_draconic_bloodline_level(ch);
   struct sorcerer_breath_data breath_data;
 
-  if (GET_LEVEL(ch) <= 15)
-    dam = dice(GET_LEVEL(ch), 6);
+  if (draconic_level <= 15)
+    dam = dice(draconic_level, 6);
   else
-    dam = dice(GET_LEVEL(ch), 14);
+    dam = dice(draconic_level, 14);
 
   breath_data.dam = dam;
   breath_data.damtype = damtype;
@@ -7926,7 +8029,6 @@ ACMD(do_sorcerer_claw_attack)
   }
 
   struct affected_type af;
-  int i = 0;
 
   new_affect(&af);
 
@@ -7937,16 +8039,22 @@ ACMD(do_sorcerer_claw_attack)
 
   affect_to_char(ch, &af);
 
-  send_to_char(
-      ch, "Your hands morph into long draconic claws that you bring to bear on your opponent.\r\n");
-  hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, ATTACK_TYPE_PRIMARY);
+  send_to_char(ch, "Your hands morph into long draconic claws.\r\n");
+  perform_natural_attack(ch, MODE_NORMAL_HIT, 0, ATTACK_TYPE_PRIMARY_EVO_CLAWS,
+                         HAS_FEAT(ch, FEAT_CLAWS_AND_BITE) ? 3 : 2, FALSE);
+  if (FIGHTING(ch))
+    perform_natural_attack(ch, MODE_NORMAL_HIT, 0, ATTACK_TYPE_PRIMARY_EVO_CLAWS,
+                           HAS_FEAT(ch, FEAT_CLAWS_AND_BITE) ? 3 : 2, FALSE);
 
-  for (i = 0; i < NUM_ATTACKS_BAB(ch) / 5 + 1; i++)
+  if (HAS_FEAT(ch, FEAT_CLAWS_AND_BITE) && FIGHTING(ch))
   {
-    if (FIGHTING(ch))
-    {
-      hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, ATTACK_TYPE_PRIMARY);
-    }
+    int bite_dam;
+
+    send_to_char(ch, "You snap forward with a draconic bite.\r\n");
+    bite_dam = perform_natural_attack(ch, MODE_NORMAL_HIT, 0, ATTACK_TYPE_PRIMARY_EVO_BITE, 1, FALSE);
+    if (bite_dam > 0 && FIGHTING(ch) && CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 6)
+      damage(ch, FIGHTING(ch), dice(1, 6), SPELL_DRACONIC_BLOODLINE_BREATHWEAPON,
+             draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)], ATTACK_TYPE_PRIMARY_EVO_BITE);
   }
 
   affect_from_char(ch, SKILL_DRHRT_CLAWS);
