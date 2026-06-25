@@ -521,6 +521,10 @@ struct mud_event_list mud_event_index[] = {
     {"One with Patron", event_countdown, EVENT_CHAR, NULL, NULL, FEAT_UNDEFINED, 0},
     {"Dragon Disciple Form", event_daily_use_cooldown, EVENT_CHAR, NULL,
      "One of your dragon form uses has recovered.", FEAT_DRAGON_DISCIPLE_DRAGON_FORM, 0},
+    {"Defensive Strike Cooldown", event_countdown, EVENT_CHAR,
+     "You are ready to perform a defensive strike again.", NULL, FEAT_UNDEFINED, 0},
+    {"Bastion Cooldown", event_countdown, EVENT_CHAR,
+     "You are ready to invoke bastion of defense again.", NULL, FEAT_UNDEFINED, 0},
 };
 
 /* Expose registry count for validation */

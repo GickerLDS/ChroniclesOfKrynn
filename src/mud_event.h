@@ -261,6 +261,8 @@ typedef enum
   eDARK_MASTERS_WILL,            // warlock pact bonding Dark Master's Will 5-minute cooldown
   eWARLOCK_ONE_WITH_PATRON,      // warlock pact bonding One with Patron 50% HP trigger cooldown
   eDRAGON_DISCIPLE_FORM,         // dragon disciple dragon form daily use
+  eDEFENSIVE_STRIKE_COOLDOWN,    // paladin Sacred Defender perk: Defensive Strike 2-minute cooldown
+  eBASTION_COOLDOWN,             // paladin Sacred Defender perk: Bastion of Defense 5-minute cooldown
 } event_id;
 
 /* probably a smart place to mention to not forget to update:
