@@ -6149,6 +6149,13 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   if (!victim)
     return 0;
 
+  /* Capture whether this is self-inflicted damage (e.g. a per-round DoT such as
+     acid fog, bleed, caustic blood) BEFORE the last_attacker rewrite below can
+     reassign ch to the victim's last attacker.  Reflect effects like Energy
+     Retort must not fire on self-damage, otherwise the reflected hit (and the
+     attacker's own retort) can ping-pong between the two characters. */
+  bool original_self_damage = (ch == victim);
+
   if (offhand == 2)
     is_ranged = TRUE;
 
@@ -6714,7 +6721,8 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   }
 
   /* Energy Retort (Perk): reflect level-based energy damage on melee hits while psychokinesis affect active */
-  if (dam > 0 && has_energy_retort_perk(victim) && !is_ranged)
+  if (dam > 0 && has_energy_retort_perk(victim) && !is_ranged &&
+      !original_self_damage && w_type != PSIONIC_ENERGY_RETORT)
   {
     if (affected_by_spell(victim, PSIONIC_FORCE_SCREEN) ||
         affected_by_spell(victim, PSIONIC_INERTIAL_ARMOR) ||
