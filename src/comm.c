@@ -115,6 +115,8 @@
 #define INVALID_SOCKET (-1)
 #endif
 
+#define LINKDEAD_TIMEOUT (5 * SECS_PER_REAL_MIN)
+
 extern time_t motdmod;
 extern time_t newsmod;
 
@@ -182,6 +184,8 @@ static int perform_subst(struct descriptor_data *t, char *orig, char *subst);
 static void record_usage(void);
 static char *make_prompt(struct descriptor_data *point);
 static void check_idle_passwords(void);
+static void check_linkdead_players(void);
+static void extract_linkdead_player(struct char_data *ch);
 static void init_descriptor(struct descriptor_data *newd, int desc);
 
 static struct in_addr *get_bind_addr(void);
@@ -212,6 +216,7 @@ void moving_rooms_update(void);
 void recharge_activated_items(void);
 void check_thirty_seconds(void);
 void craft_update(void);
+void save_char_pets(struct char_data *ch);
 
 /* externally defined functions, used locally */
 #ifdef __CXREF__
@@ -1416,6 +1421,7 @@ void heartbeat(int heart_pulse)
   if (!(heart_pulse % PASSES_PER_SEC))
   { /* EVERY second */
     next_tick--;
+    check_linkdead_players();
     travel_tickdown();
     self_buffing();
     craft_update();
@@ -3194,6 +3200,58 @@ static int perform_subst(struct descriptor_data *t, char *orig, char *subst)
   return (0);
 }
 
+static void extract_linkdead_player(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch) || ch->desc)
+    return;
+
+  if (PLR_FLAGGED(ch, PLR_NOTDEADYET))
+    return;
+
+  mudlog(CMP, LVL_STAFF, TRUE, "%s linkdead for 5 minutes; saving and extracting.",
+         GET_NAME(ch));
+
+  if (IN_ROOM(ch) != NOWHERE)
+  {
+    if (FIGHTING(ch))
+    {
+      stop_fighting(FIGHTING(ch));
+      stop_fighting(ch);
+    }
+    act("$n fades away after being linkdead too long.", TRUE, ch, 0, 0, TO_ROOM);
+    char_from_room(ch);
+  }
+  char_to_room(ch, 3);
+
+  cleanup_supply_slots(ch);
+  save_char_pets(ch);
+  dismiss_all_followers(ch);
+  save_char(ch, 0);
+  Crash_rentsave(ch, 0);
+  add_llog_entry(ch, LAST_IDLEOUT);
+  extract_char(ch);
+}
+
+static void check_linkdead_players(void)
+{
+  struct char_data *ch, *next_ch;
+  time_t now = time(0);
+
+  for (ch = character_list; ch; ch = next_ch)
+  {
+    next_ch = ch->next;
+
+    if (IS_NPC(ch) || ch->desc)
+      continue;
+
+    if (!ch->char_specials.linkdead_at)
+      continue;
+
+    if ((now - ch->char_specials.linkdead_at) >= LINKDEAD_TIMEOUT)
+      extract_linkdead_player(ch);
+  }
+}
+
 void close_socket(struct descriptor_data *d)
 {
   struct descriptor_data *temp;
@@ -3254,6 +3312,8 @@ void close_socket(struct descriptor_data *d)
       if (link_challenged)
       {
         cleanup_supply_slots(link_challenged);
+        link_challenged->char_specials.timer = 0;
+        link_challenged->char_specials.linkdead_at = time(0);
       }
 
       save_char(link_challenged, 0);

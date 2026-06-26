@@ -332,6 +332,55 @@ static int get_perk_tier_min_level(int tier)
 
   return 1;
 }
+
+static int normalize_perk_class_id(int class_id)
+{
+  if (class_id == CLASS_SORCERER)
+    return CLASS_WIZARD;
+
+  return class_id;
+}
+
+static void migrate_sorcerer_perk_points_to_wizard(struct char_data *ch)
+{
+  int sorcerer_points;
+
+  if (!ch || IS_NPC(ch))
+    return;
+
+  sorcerer_points = ch->player_specials->saved.perk_points[CLASS_SORCERER];
+  if (sorcerer_points <= 0)
+    return;
+
+  ch->player_specials->saved.perk_points[CLASS_WIZARD] += sorcerer_points;
+  ch->player_specials->saved.perk_points[CLASS_SORCERER] = 0;
+}
+
+static bool character_can_use_perk_class(struct char_data *ch, int class_id)
+{
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  if (class_id < 0 || class_id >= NUM_CLASSES)
+    return FALSE;
+
+  if (CLASS_LEVEL(ch, class_id) > 0)
+    return TRUE;
+
+  return (normalize_perk_class_id(class_id) == CLASS_WIZARD &&
+          CLASS_LEVEL(ch, CLASS_SORCERER) > 0);
+}
+
+static const char *get_perk_class_display_name(int requested_class, int perk_class)
+{
+  if (requested_class == CLASS_SORCERER && perk_class == CLASS_WIZARD)
+    return "Sorcerer (Wizard)";
+
+  if (requested_class == CLASS_WIZARD && perk_class == CLASS_WIZARD)
+    return class_names[CLASS_WIZARD];
+
+  return class_names[requested_class];
+}
 /* Forward declarations for perk definition functions */
 void define_bard_perks(void);
 
@@ -17993,6 +18042,8 @@ int get_class_perks(int class_id, int *perk_ids, int max_perks)
 {
   int i, count = 0;
 
+  class_id = normalize_perk_class_id(class_id);
+
   for (i = 0; i < NUM_PERKS && count < max_perks; i++)
   {
     if (perk_list[i].id != PERK_UNDEFINED && perk_list[i].associated_class == class_id)
@@ -18547,6 +18598,8 @@ bool reconcile_legacy_perk_progress(struct char_data *ch, int *points_granted)
  */
 void award_stage_perk_points(struct char_data *ch, int class_id)
 {
+  int perk_class;
+
   if (!ch || IS_NPC(ch))
     return;
 
@@ -18556,11 +18609,14 @@ void award_stage_perk_points(struct char_data *ch, int class_id)
     return;
   }
 
+  migrate_sorcerer_perk_points_to_wizard(ch);
+  perk_class = normalize_perk_class_id(class_id);
+
   /* Award 1 perk point per stage (stages 1-3 only) */
-  ch->player_specials->saved.perk_points[class_id]++;
+  ch->player_specials->saved.perk_points[perk_class]++;
 
   send_to_char(ch, "\tGYou gain 1 perk point for your %s class! (Total: %d)\tn\r\n",
-               class_names[class_id], ch->player_specials->saved.perk_points[class_id]);
+               class_names[perk_class], ch->player_specials->saved.perk_points[perk_class]);
 }
 
 /*****************************************************************************
@@ -18603,6 +18659,8 @@ bool spend_perk_points(struct char_data *ch, int class_id, int amount)
   if (class_id < 0 || class_id >= NUM_CLASSES)
     return FALSE;
 
+  class_id = normalize_perk_class_id(class_id);
+
   if (amount < 0)
     return FALSE;
 
@@ -18631,6 +18689,8 @@ void add_perk_points(struct char_data *ch, int class_id, int amount)
 
   if (class_id < 0 || class_id >= NUM_CLASSES)
     return;
+
+  class_id = normalize_perk_class_id(class_id);
 
   if (amount < 0)
     return;
@@ -18672,16 +18732,27 @@ void display_perk_points(struct char_data *ch)
   if (!ch || IS_NPC(ch))
     return;
 
+  migrate_sorcerer_perk_points_to_wizard(ch);
   send_to_char(ch, "\tWPerk Points:\tn\r\n");
 
   /* Display points for each class the character has levels in */
   for (i = 0; i < NUM_CLASSES; i++)
   {
+    const char *display_name = class_list[i].name;
+
+    if (i == CLASS_SORCERER)
+      continue;
+
     /* Only show classes with levels or unspent points */
-    if (CLASS_LEVEL(ch, i) > 0 || ch->player_specials->saved.perk_points[i] > 0)
+    if (CLASS_LEVEL(ch, i) > 0 || ch->player_specials->saved.perk_points[i] > 0 ||
+        (i == CLASS_WIZARD && CLASS_LEVEL(ch, CLASS_SORCERER) > 0))
     {
+      if (i == CLASS_WIZARD && CLASS_LEVEL(ch, CLASS_SORCERER) > 0 &&
+          CLASS_LEVEL(ch, CLASS_WIZARD) == 0)
+        display_name = "Wizard (Sorcerer)";
+
       points = ch->player_specials->saved.perk_points[i];
-      send_to_char(ch, "  %-20s: %s%d\tn point%s\r\n", class_list[i].name,
+      send_to_char(ch, "  %-20s: %s%d\tn point%s\r\n", display_name,
                    points > 0 ? "\tG" : "\tD", points, points == 1 ? "" : "s");
       has_points = TRUE;
     }
@@ -18868,6 +18939,8 @@ struct char_perk_data *find_char_perk(struct char_data *ch, int perk_id, int cla
   if (class_id < 0 || class_id >= NUM_CLASSES)
     return NULL;
 
+  class_id = normalize_perk_class_id(class_id);
+
   for (perk = ch->player_specials->saved.perks; perk; perk = perk->next)
   {
     if (perk->perk_id == perk_id && perk->perk_class == class_id)
@@ -18896,6 +18969,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   int current_rank;
   int perk_tier;
   int min_level;
+  int perk_class;
 
   /* Clear error message */
   if (error_msg && error_len > 0)
@@ -18915,6 +18989,8 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
       snprintf(error_msg, error_len, "Invalid class.");
     return FALSE;
   }
+  perk_class = normalize_perk_class_id(class_id);
+  migrate_sorcerer_perk_points_to_wizard(ch);
 
   /* Get perk data */
   perk = get_perk_by_id(perk_id);
@@ -18926,21 +19002,21 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   }
 
   /* Check if perk belongs to this class */
-  if (perk->associated_class != class_id)
+  if (perk->associated_class != perk_class)
   {
     if (error_msg)
       snprintf(error_msg, error_len, "This perk does not belong to the %s class.",
-               class_list[class_id].name);
+               class_list[perk_class].name);
     return FALSE;
   }
 
   /* Check if character has levels in this class */
-  if (CLASS_LEVEL(ch, class_id) <= 0)
+  if (!character_can_use_perk_class(ch, class_id))
   {
     if (error_msg)
       snprintf(error_msg, error_len,
                "You must have at least one level in %s to purchase this perk.",
-               class_names[class_id]);
+               class_names[perk_class]);
     return FALSE;
   }
 
@@ -18955,7 +19031,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   }
 
   /* Check current rank */
-  char_perk = find_char_perk(ch, perk_id, class_id);
+  char_perk = find_char_perk(ch, perk_id, perk_class);
   current_rank = char_perk ? char_perk->current_rank : 0;
 
   /* Check if at max rank */
@@ -18968,11 +19044,11 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   }
 
   /* Check perk point cost */
-  if (get_perk_points(ch, class_id) < perk->cost)
+  if (get_perk_points(ch, perk_class) < perk->cost)
   {
     if (error_msg)
       snprintf(error_msg, error_len, "You need %d perk point%s (%d available) to purchase this.",
-               perk->cost, perk->cost == 1 ? "" : "s", get_perk_points(ch, class_id));
+               perk->cost, perk->cost == 1 ? "" : "s", get_perk_points(ch, perk_class));
     return FALSE;
   }
 
@@ -18984,7 +19060,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
 
     if (prereq_perk)
     {
-      int prereq_rank = get_perk_rank(ch, prereq_id, class_id);
+      int prereq_rank = get_perk_rank(ch, prereq_id, perk_class);
 
       /* Check if character has the prerequisite perk at required rank */
       if (prereq_rank < perk->prerequisite_rank)
@@ -19005,7 +19081,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Last Stand - requires both Toughness I and Resilience at max */
   if (perk_id == PERK_FIGHTER_LAST_STAND)
   {
-    int resilience_rank = get_perk_rank(ch, PERK_FIGHTER_RESILIENCE, class_id);
+    int resilience_rank = get_perk_rank(ch, PERK_FIGHTER_RESILIENCE, perk_class);
     if (resilience_rank < 3) /* Resilience max rank is 3 */
     {
       if (error_msg)
@@ -19018,7 +19094,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Immovable Object - also requires Armor Training III */
   if (perk_id == PERK_FIGHTER_IMMOVABLE_OBJECT)
   {
-    int armor_training_3_rank = get_perk_rank(ch, PERK_FIGHTER_ARMOR_TRAINING_3, class_id);
+    int armor_training_3_rank = get_perk_rank(ch, PERK_FIGHTER_ARMOR_TRAINING_3, perk_class);
     if (armor_training_3_rank < 1)
     {
       if (error_msg)
@@ -19031,7 +19107,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Coordinated Attack - requires Pack Tactics I at max AND Feral Charge */
   if (perk_id == PERK_RANGER_COORDINATED_ATTACK)
   {
-    int feral_charge_rank = get_perk_rank(ch, PERK_RANGER_FERAL_CHARGE, class_id);
+    int feral_charge_rank = get_perk_rank(ch, PERK_RANGER_FERAL_CHARGE, perk_class);
     if (feral_charge_rank < 1)
     {
       if (error_msg)
@@ -19044,7 +19120,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Cluster Bomb - requires Alchemical Bomb II (1 rank) AND Precise Bombs */
   if (perk_id == PERK_ALCHEMIST_CLUSTER_BOMB)
   {
-    int precise_bombs_rank = get_perk_rank(ch, PERK_ALCHEMIST_PRECISE_BOMBS_PERK, class_id);
+    int precise_bombs_rank = get_perk_rank(ch, PERK_ALCHEMIST_PRECISE_BOMBS_PERK, perk_class);
     if (precise_bombs_rank < 1)
     {
       if (error_msg)
@@ -19056,7 +19132,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Calculated Throw - requires Precise Bombs AND Quick Bomb */
   if (perk_id == PERK_ALCHEMIST_CALCULATED_THROW)
   {
-    int quick_bomb_rank = get_perk_rank(ch, PERK_ALCHEMIST_QUICK_BOMB, class_id);
+    int quick_bomb_rank = get_perk_rank(ch, PERK_ALCHEMIST_QUICK_BOMB, perk_class);
     if (quick_bomb_rank < 1)
     {
       if (error_msg)
@@ -19068,8 +19144,8 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Bomb Mastery - requires Alchemical Bomb II (any) AND (Concussive Bomb OR Poison Bomb) */
   if (perk_id == PERK_ALCHEMIST_BOMB_MASTERY)
   {
-    int concussive_rank = get_perk_rank(ch, PERK_ALCHEMIST_CONCUSSIVE_BOMB, class_id);
-    int poison_rank = get_perk_rank(ch, PERK_ALCHEMIST_POISON_BOMB, class_id);
+    int concussive_rank = get_perk_rank(ch, PERK_ALCHEMIST_CONCUSSIVE_BOMB, perk_class);
+    int poison_rank = get_perk_rank(ch, PERK_ALCHEMIST_POISON_BOMB, perk_class);
     if (concussive_rank < 1 && poison_rank < 1)
     {
       if (error_msg)
@@ -19082,7 +19158,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Bombardier Savant - requires Bomb Mastery AND Calculated Throw */
   if (perk_id == PERK_ALCHEMIST_BOMBARDIER_SAVANT)
   {
-    int calculated_throw_rank = get_perk_rank(ch, PERK_ALCHEMIST_CALCULATED_THROW, class_id);
+    int calculated_throw_rank = get_perk_rank(ch, PERK_ALCHEMIST_CALCULATED_THROW, perk_class);
     if (calculated_throw_rank < 1)
     {
       if (error_msg)
@@ -19095,7 +19171,7 @@ bool can_purchase_perk(struct char_data *ch, int perk_id, int class_id, char *er
   /* Special prerequisite check for Volatile Catalyst - requires Inferno Bomb AND Cluster Bomb */
   if (perk_id == PERK_ALCHEMIST_VOLATILE_CATALYST)
   {
-    int cluster_bomb_rank = get_perk_rank(ch, PERK_ALCHEMIST_CLUSTER_BOMB, class_id);
+    int cluster_bomb_rank = get_perk_rank(ch, PERK_ALCHEMIST_CLUSTER_BOMB, perk_class);
     if (cluster_bomb_rank < 1)
     {
       if (error_msg)
@@ -19122,6 +19198,7 @@ bool purchase_perk(struct char_data *ch, int perk_id, int class_id)
   struct perk_data *perk;
   struct char_perk_data *char_perk;
   char error_msg[MAX_STRING_LENGTH];
+  int perk_class;
 
   /* Validate purchase */
   if (!can_purchase_perk(ch, perk_id, class_id, error_msg, sizeof(error_msg)))
@@ -19134,15 +19211,17 @@ bool purchase_perk(struct char_data *ch, int perk_id, int class_id)
   if (!perk) /* Should never happen after validation */
     return FALSE;
 
+  perk_class = normalize_perk_class_id(class_id);
+
   /* Try to spend the perk points */
-  if (!spend_perk_points(ch, class_id, perk->cost))
+  if (!spend_perk_points(ch, perk_class, perk->cost))
   {
     send_to_char(ch, "Failed to spend perk points.\r\n");
     return FALSE;
   }
 
   /* Find or create the character perk entry */
-  char_perk = find_char_perk(ch, perk_id, class_id);
+  char_perk = find_char_perk(ch, perk_id, perk_class);
 
   if (char_perk)
   {
@@ -19154,7 +19233,7 @@ bool purchase_perk(struct char_data *ch, int perk_id, int class_id)
   else
   {
     /* Add new perk */
-    add_char_perk(ch, perk_id, class_id);
+    add_char_perk(ch, perk_id, perk_class);
     send_to_char(ch, "\tGYou have learned: %s (Rank 1/%d)!\tn\r\n", perk->name, perk->max_rank);
   }
 
@@ -19188,6 +19267,8 @@ void add_char_perk(struct char_data *ch, int perk_id, int class_id)
 
   if (class_id < 0 || class_id >= NUM_CLASSES)
     return;
+
+  class_id = normalize_perk_class_id(class_id);
 
   /* Check if already exists */
   if (find_char_perk(ch, perk_id, class_id))
@@ -23057,17 +23138,29 @@ void list_perks_for_class(struct char_data *ch, int class_id, int list_mode)
   int category_count;
   int displayed_count = 0;
   char cat_out[100];
+  int requested_class = class_id;
+  int perk_class;
+  const char *display_class_name;
 
-  count = get_class_perks(class_id, perk_ids, NUM_PERKS);
-
-  if (count == 0)
+  if (class_id < 0 || class_id >= NUM_CLASSES)
   {
-    send_to_char(ch, "No perks available for %s.\r\n", class_names[class_id]);
+    send_to_char(ch, "Invalid class.\r\n");
     return;
   }
 
-  send_to_char(ch, "\tc%s Perks\tn\r\n", class_names[class_id]);
-  send_to_char(ch, "Available Perk Points: \tY%d\tn\r\n\r\n", get_perk_points(ch, class_id));
+  migrate_sorcerer_perk_points_to_wizard(ch);
+  perk_class = normalize_perk_class_id(class_id);
+  display_class_name = get_perk_class_display_name(requested_class, perk_class);
+  count = get_class_perks(perk_class, perk_ids, NUM_PERKS);
+
+  if (count == 0)
+  {
+    send_to_char(ch, "No perks available for %s.\r\n", display_class_name);
+    return;
+  }
+
+  send_to_char(ch, "\tc%s Perks\tn\r\n", display_class_name);
+  send_to_char(ch, "Available Perk Points: \tY%d\tn\r\n\r\n", get_perk_points(ch, perk_class));
   send_to_char(ch, "Showing: \tW%s\tn\r\n\r\n", get_perk_list_mode_description(list_mode));
 
   /* Two column header */
@@ -23086,7 +23179,7 @@ void list_perks_for_class(struct char_data *ch, int class_id, int list_mode)
     {
       perk = get_perk_by_id(perk_ids[i]);
       if (perk && perk->perk_category == category &&
-          perk_matches_list_mode(ch, perk_ids[i], class_id, list_mode))
+          perk_matches_list_mode(ch, perk_ids[i], perk_class, list_mode))
       {
         category_perks[category_count++] = perk_ids[i];
       }
@@ -23098,7 +23191,7 @@ void list_perks_for_class(struct char_data *ch, int class_id, int list_mode)
 
     /* Debug output to syslog */
     log("PERK DEBUG: Displaying category %d (%s) with %d perks for class %s", category,
-        get_perk_category_name(category), category_count, class_names[class_id]);
+        get_perk_category_name(category), category_count, display_class_name);
 
     /* Sort perks within this category alphabetically by name */
     qsort(category_perks, category_count, sizeof(int), compare_perks_by_name);
@@ -23119,9 +23212,9 @@ void list_perks_for_class(struct char_data *ch, int class_id, int list_mode)
       if (!perk)
         continue;
 
-      char_perk = find_char_perk(ch, category_perks[j], class_id);
+      char_perk = find_char_perk(ch, category_perks[j], perk_class);
       int current_rank = char_perk ? char_perk->current_rank : 0;
-      bool can_purchase_left = meets_prerequisites_not_purchased(ch, category_perks[j], class_id);
+      bool can_purchase_left = meets_prerequisites_not_purchased(ch, category_perks[j], perk_class);
 
       char left_col[200];
       char perk_name_left[60];
@@ -23145,10 +23238,10 @@ void list_perks_for_class(struct char_data *ch, int class_id, int list_mode)
         perk = get_perk_by_id(category_perks[j + 1]);
         if (perk)
         {
-          char_perk = find_char_perk(ch, category_perks[j + 1], class_id);
+          char_perk = find_char_perk(ch, category_perks[j + 1], perk_class);
           current_rank = char_perk ? char_perk->current_rank : 0;
           bool can_purchase_right =
-              meets_prerequisites_not_purchased(ch, category_perks[j + 1], class_id);
+              meets_prerequisites_not_purchased(ch, category_perks[j + 1], perk_class);
 
           char perk_name_right[60];
           if (can_purchase_right)
@@ -23472,6 +23565,8 @@ ACMD(do_perk)
     return;
   }
 
+  migrate_sorcerer_perk_points_to_wizard(ch);
+
   *arg1 = '\0';
   *arg2 = '\0';
   *arg3 = '\0';
@@ -23553,7 +23648,7 @@ ACMD(do_perk)
         class_id = found_class;
       }
 
-      if (CLASS_LEVEL(ch, class_id) == 0)
+      if (!character_can_use_perk_class(ch, class_id))
       {
         send_to_char(ch, "You don't have any levels in %s.\r\n", class_names[class_id]);
         return;
@@ -23570,9 +23665,11 @@ ACMD(do_perk)
     {
       if (CLASS_LEVEL(ch, class_id) > 0)
       {
-        int points = get_perk_points(ch, class_id);
-        send_to_char(ch, "  %-15s (Level %2d): \tY%d\tn perk point%s\r\n", class_names[class_id],
-                     CLASS_LEVEL(ch, class_id), points, points != 1 ? "s" : "");
+        int perk_class = normalize_perk_class_id(class_id);
+        int points = get_perk_points(ch, perk_class);
+        send_to_char(ch, "  %-15s (Level %2d): \tY%d\tn perk point%s\r\n",
+                     get_perk_class_display_name(class_id, perk_class), CLASS_LEVEL(ch, class_id),
+                     points, points != 1 ? "s" : "");
       }
     }
 
@@ -23633,11 +23730,12 @@ ACMD(do_perk)
     /* Purchase the perk */
     if (purchase_perk(ch, perk_id, class_id))
     {
-      char_perk = find_char_perk(ch, perk_id, class_id);
+      int perk_class = normalize_perk_class_id(class_id);
+      char_perk = find_char_perk(ch, perk_id, perk_class);
       send_to_char(ch, "\tGYou have purchased rank %d of '%s'!\tn\r\n", char_perk->current_rank,
                    perk->name);
-      send_to_char(ch, "Remaining perk points for %s: \tY%d\tn\r\n", class_names[class_id],
-                   get_perk_points(ch, class_id));
+      send_to_char(ch, "Remaining perk points for %s: \tY%d\tn\r\n", class_names[perk_class],
+                   get_perk_points(ch, perk_class));
 
       /* Recalculate stats to apply new perk */
       affect_total(ch);
@@ -23824,7 +23922,7 @@ ACMD(do_perk)
   }
 
   /* Check if character has this class */
-  if (CLASS_LEVEL(ch, class_id) == 0)
+  if (!character_can_use_perk_class(ch, class_id))
   {
     send_to_char(ch, "You don't have any levels in %s.\r\n", class_names[class_id]);
     return;
@@ -23908,6 +24006,11 @@ bool remove_char_perk(struct char_data *ch, int perk_id, int class_id)
   if (!ch || IS_NPC(ch))
     return FALSE;
 
+  if (class_id < 0 || class_id >= NUM_CLASSES)
+    return FALSE;
+
+  class_id = normalize_perk_class_id(class_id);
+
   /* Find and remove the perk from the linked list */
   for (perk = ch->player_specials->saved.perks; perk != NULL; prev = perk, perk = perk->next)
   {
@@ -23955,6 +24058,10 @@ void remove_class_perks(struct char_data *ch, int class_id)
   if (!ch || IS_NPC(ch))
     return;
 
+  if (class_id < 0 || class_id >= NUM_CLASSES)
+    return;
+
+  class_id = normalize_perk_class_id(class_id);
   perk = ch->player_specials->saved.perks;
 
   while (perk != NULL)
@@ -30094,7 +30201,7 @@ int class_to_perk_class(int class_type, int which_perk)
   case CLASS_BERSERKER:
     return CLASS_BERSERKER;
   case CLASS_SORCERER:
-    return CLASS_SORCERER;
+    return CLASS_WIZARD;
   case CLASS_PALADIN:
     return CLASS_PALADIN;
   case CLASS_RANGER:
@@ -30188,7 +30295,7 @@ int class_to_perk_class(int class_type, int which_perk)
   case CLASS_ARTIFICER:
     return CLASS_ARTIFICER;
   case CLASS_DRAGON_DISCIPLE:
-    return CLASS_SORCERER;
+    return CLASS_WIZARD;
   }
   return -1;
 }

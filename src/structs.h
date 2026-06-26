@@ -6686,6 +6686,7 @@ struct char_special_data
   int preparing_state[NUM_CLASSES]; /* spell preparation */
   byte position;                    /**< Standing, fighting, sleeping, etc. */
   int timer;                        /**< Timer for update */
+  time_t linkdead_at;               /**< Real time when a player lost link, 0 if connected. */
 
   int weather; /**< The current weather this player is affected by. */
 

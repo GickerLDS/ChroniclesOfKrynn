@@ -174,10 +174,11 @@ bool concentration_check(struct char_data *ch, int spellnum)
       CASTING_CLASS(ch) != CLASS_ALCHEMIST && CASTING_CLASS(ch) != CLASS_SHADOW_DANCER)
   {
     /* Witch of the Multiverse - auto-reroll failed concentration once per 10 minutes */
-    if (!IS_NPC(ch) && has_warlock_witch_of_the_multiverse(ch) && 
+    if (!IS_NPC(ch) && has_warlock_witch_of_the_multiverse(ch) &&
         GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) == 0)
     {
-      send_to_char(ch, "\tMThe multiverse bends to your will - your concentration is restored!\tn\r\n");
+      send_to_char(ch,
+                   "\tMThe multiverse bends to your will - your concentration is restored!\tn\r\n");
       GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) = 100; /* 10 minutes = 100 ticks */
       return TRUE;
     }
@@ -244,6 +245,9 @@ static void say_spell(struct char_data *ch, int spellnum, struct char_data *tch,
 
   *buf = '\0';
   strlcpy(lbuf, spell_name(spellnum), sizeof(lbuf));
+
+  if (!strcmp(lbuf, "!UNUSED!"))
+    return;
 
   while (lbuf[ofs])
   {
@@ -688,7 +692,8 @@ int call_magic(struct char_data *caster, struct char_data *cvict, struct obj_dat
     }
   }
 
-  if (cvict && MOB_FLAGGED(cvict, MOB_NOKILL) && spellnum != SPELL_TELEPORT && spellnum != SPELL_PORTAL)
+  if (cvict && MOB_FLAGGED(cvict, MOB_NOKILL) && spellnum != SPELL_TELEPORT &&
+      spellnum != SPELL_PORTAL)
   {
     send_to_char(caster, "This mob is protected.\r\n");
     return (0);
@@ -1598,8 +1603,9 @@ int castingCheckOk(struct char_data *ch)
   int metamagic = CASTING_METAMAGIC(ch);
   bool still_spell = false;
 
-  if (IS_SET(metamagic, METAMAGIC_STILL) || (HAS_FEAT(ch, FEAT_AUTOMATIC_SILENT_SPELL) &&
-      compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3))
+  if (IS_SET(metamagic, METAMAGIC_STILL) ||
+      (HAS_FEAT(ch, FEAT_AUTOMATIC_SILENT_SPELL) &&
+       compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3))
     still_spell = true;
 
   /* position check */
@@ -1889,59 +1895,62 @@ void finishCasting(struct char_data *ch)
     }
 
     /* Summoner Empower Spell: 10% chance to empower spells */
-    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER &&
-        has_summoner_empower_spell(ch) && !IS_SET(final_metamagic, METAMAGIC_EMPOWER) &&
-        can_spell_be_empowered(spellnum) && rand_number(1, 100) <= 10)
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && has_summoner_empower_spell(ch) &&
+        !IS_SET(final_metamagic, METAMAGIC_EMPOWER) && can_spell_be_empowered(spellnum) &&
+        rand_number(1, 100) <= 10)
     {
       SET_BIT(final_metamagic, METAMAGIC_EMPOWER);
       send_to_char(ch, "\tC[Your spell manifests with greater power!]\tn\r\n");
     }
 
     /* Summoner Extend Spell: 10% chance to extend spells */
-    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER &&
-        has_summoner_extend_spell(ch) && !IS_SET(final_metamagic, METAMAGIC_EXTEND) &&
-        can_spell_be_extended(spellnum) && rand_number(1, 100) <= 10)
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && has_summoner_extend_spell(ch) &&
+        !IS_SET(final_metamagic, METAMAGIC_EXTEND) && can_spell_be_extended(spellnum) &&
+        rand_number(1, 100) <= 10)
     {
       SET_BIT(final_metamagic, METAMAGIC_EXTEND);
       send_to_char(ch, "\tC[Your spell persists longer than expected!]\tn\r\n");
     }
 
     /* Summoner Arcane Channeler Tree - caster level bonuses */
-    int cast_level = (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch);
-    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && spellnum > 0 && spellnum < NUM_SPELLS)
+    int cast_level =
+        (CASTING_CLASS(ch) == CLASS_PSIONICIST) ? GET_PSIONIC_LEVEL(ch) : CASTER_LEVEL(ch);
+    if (!IS_NPC(ch) && GET_CASTING_CLASS(ch) == CLASS_SUMMONER && spellnum > 0 &&
+        spellnum < NUM_SPELLS)
     {
       int school = spell_info[spellnum].schoolOfMagic;
-      
+
       /* Spell Focus: Abjuration (+1 caster level for Abjuration spells) */
       if (school == ABJURATION)
       {
         cast_level += get_summoner_abjuration_caster_level_bonus(ch);
       }
-      
+
       /* Spell Focus: Transmutation (+1 caster level for Transmutation spells) */
       if (school == TRANSMUTATION)
       {
         cast_level += get_summoner_transmutation_caster_level_bonus(ch);
       }
-      
+
       /* Master of Conjuration (+2 caster level for Conjuration spells) */
       if (school == CONJURATION)
       {
         cast_level += get_summoner_master_of_conjuration_caster_level_bonus(ch);
       }
-      
+
       /* Epic Spellcasting (+1 caster level to all spells) */
       cast_level += get_summoner_epic_spellcasting_caster_level_bonus(ch);
     }
 
     /* Warlock Invocation Mastery - Witch of the Multiverse (+2 caster level for warlock spells) */
-    if (!IS_NPC(ch) && has_warlock_witch_of_the_multiverse(ch) && GET_CASTING_CLASS(ch) == CLASS_WARLOCK)
+    if (!IS_NPC(ch) && has_warlock_witch_of_the_multiverse(ch) &&
+        GET_CASTING_CLASS(ch) == CLASS_WARLOCK)
     {
       cast_level += 2;
     }
 
-    call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic,
-               cast_level, final_casttype);
+    call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic, cast_level,
+               final_casttype);
 
     /* Set cosmic awareness cooldown after successful manifestation */
     if (!IS_NPC(ch) && spellnum == PSIONIC_COSMIC_AWARENESS)
@@ -2029,16 +2038,18 @@ void finishCasting(struct char_data *ch)
         affect_to_char(CASTING_TCH(ch), &af);
 
         if (CASTING_TCH(ch) == ch)
-          send_to_char(ch, "\tC[Your extract leaves a safeguarding ward around you! +%d to saves]\tn\r\n",
-                       infusion_bonus);
+          send_to_char(
+              ch, "\tC[Your extract leaves a safeguarding ward around you! +%d to saves]\tn\r\n",
+              infusion_bonus);
         else
         {
           send_to_char(ch,
                        "\tC[Your extract wards %s with safeguarding infusion! +%d to saves]\tn\r\n",
                        GET_NAME(CASTING_TCH(ch)), infusion_bonus);
-          send_to_char(CASTING_TCH(ch),
-                       "\tC[The infused extract leaves a safeguarding ward around you! +%d to saves]\tn\r\n",
-                       infusion_bonus);
+          send_to_char(
+              CASTING_TCH(ch),
+              "\tC[The infused extract leaves a safeguarding ward around you! +%d to saves]\tn\r\n",
+              infusion_bonus);
         }
       }
     }
@@ -2425,8 +2436,7 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
   }
 
   /* Players cannot directly cast spells flagged as no_player (consumables are handled elsewhere) */
-  if (!IS_NPC(ch) && spellnum > 0 && spellnum <= TOP_SPELL_DEFINE &&
-      spell_info[spellnum].no_player)
+  if (!IS_NPC(ch) && spellnum > 0 && spellnum <= TOP_SPELL_DEFINE && spell_info[spellnum].no_player)
   {
     send_to_char(ch, "That magic cannot be invoked directly by mortals.\r\n");
     return 0;
@@ -2476,7 +2486,7 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
   if (AFF_FLAGGED(ch, AFF_SILENCED) && !is_spellnum_psionic(spellnum))
   {
     if (HAS_FEAT(ch, FEAT_AUTOMATIC_SILENT_SPELL) &&
-      compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3)
+        compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3)
     {
       // allow automatic silent spell to bypass silence
     }
@@ -2521,7 +2531,9 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
     int seconds = seconds_left % 60;
 
     if (minutes > 0)
-      send_to_char(ch, "You must wait %d minute%s and %d second%s before manifesting cosmic awareness again.\r\n",
+      send_to_char(ch,
+                   "You must wait %d minute%s and %d second%s before manifesting cosmic awareness "
+                   "again.\r\n",
                    minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
     else
       send_to_char(ch, "You must wait %d second%s before manifesting cosmic awareness again.\r\n",
@@ -2546,19 +2558,20 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
 
     if (!can_cast_via_other_means)
     {
-    int seconds_left = get_warlock_book_of_ancient_secrets_cooldown(ch, spellnum) * 6;
-    int minutes = seconds_left / 60;
-    int seconds = seconds_left % 60;
+      int seconds_left = get_warlock_book_of_ancient_secrets_cooldown(ch, spellnum) * 6;
+      int minutes = seconds_left / 60;
+      int seconds = seconds_left % 60;
 
-    if (minutes > 0)
-      send_to_char(ch,
-                   "Your Book of Ancient Secrets cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
-                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
-    else
-      send_to_char(ch,
-                   "Your Book of Ancient Secrets cannot cast that spell yet. Wait %d second%s.\r\n",
-                   seconds, (seconds != 1 ? "s" : ""));
-    return 0;
+      if (minutes > 0)
+        send_to_char(ch,
+                     "Your Book of Ancient Secrets cannot cast that spell yet. Wait %d minute%s "
+                     "and %d second%s.\r\n",
+                     minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+      else
+        send_to_char(
+            ch, "Your Book of Ancient Secrets cannot cast that spell yet. Wait %d second%s.\r\n",
+            seconds, (seconds != 1 ? "s" : ""));
+      return 0;
     }
   }
 
@@ -2579,19 +2592,20 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
 
     if (!can_cast_via_other_means)
     {
-    int seconds_left = GET_WARLOCK_WHISPERS_COOLDOWN(ch) * 6;
-    int minutes = seconds_left / 60;
-    int seconds = seconds_left % 60;
+      int seconds_left = GET_WARLOCK_WHISPERS_COOLDOWN(ch) * 6;
+      int minutes = seconds_left / 60;
+      int seconds = seconds_left % 60;
 
-    if (minutes > 0)
-      send_to_char(ch,
-                   "Your Whispers of the Grave cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
-                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
-    else
-      send_to_char(ch,
-                   "Your Whispers of the Grave cannot cast that spell yet. Wait %d second%s.\r\n",
-                   seconds, (seconds != 1 ? "s" : ""));
-    return 0;
+      if (minutes > 0)
+        send_to_char(ch,
+                     "Your Whispers of the Grave cannot cast that spell yet. Wait %d minute%s and "
+                     "%d second%s.\r\n",
+                     minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+      else
+        send_to_char(ch,
+                     "Your Whispers of the Grave cannot cast that spell yet. Wait %d second%s.\r\n",
+                     seconds, (seconds != 1 ? "s" : ""));
+      return 0;
     }
   }
 
@@ -2612,19 +2626,19 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
 
     if (!can_cast_via_other_means)
     {
-    int seconds_left = GET_WARLOCK_CHAINS_COOLDOWN(ch) * 6;
-    int minutes = seconds_left / 60;
-    int seconds = seconds_left % 60;
+      int seconds_left = GET_WARLOCK_CHAINS_COOLDOWN(ch) * 6;
+      int minutes = seconds_left / 60;
+      int seconds = seconds_left % 60;
 
-    if (minutes > 0)
-      send_to_char(ch,
-                   "Your Chains of Carceri cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
-                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
-    else
-      send_to_char(ch,
-                   "Your Chains of Carceri cannot cast that spell yet. Wait %d second%s.\r\n",
-                   seconds, (seconds != 1 ? "s" : ""));
-    return 0;
+      if (minutes > 0)
+        send_to_char(ch,
+                     "Your Chains of Carceri cannot cast that spell yet. Wait %d minute%s and %d "
+                     "second%s.\r\n",
+                     minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+      else
+        send_to_char(ch, "Your Chains of Carceri cannot cast that spell yet. Wait %d second%s.\r\n",
+                     seconds, (seconds != 1 ? "s" : ""));
+      return 0;
     }
   }
 
@@ -2645,19 +2659,20 @@ static int cast_spell_with_type(struct char_data *ch, struct char_data *tch, str
 
     if (!can_cast_via_other_means)
     {
-    int seconds_left = GET_WARLOCK_VISIONS_COOLDOWN(ch) * 6;
-    int minutes = seconds_left / 60;
-    int seconds = seconds_left % 60;
+      int seconds_left = GET_WARLOCK_VISIONS_COOLDOWN(ch) * 6;
+      int minutes = seconds_left / 60;
+      int seconds = seconds_left % 60;
 
-    if (minutes > 0)
-      send_to_char(ch,
-                   "Your Visions of Distant Realms cannot cast that spell yet. Wait %d minute%s and %d second%s.\r\n",
-                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
-    else
-      send_to_char(ch,
-                   "Your Visions of Distant Realms cannot cast that spell yet. Wait %d second%s.\r\n",
-                   seconds, (seconds != 1 ? "s" : ""));
-    return 0;
+      if (minutes > 0)
+        send_to_char(ch,
+                     "Your Visions of Distant Realms cannot cast that spell yet. Wait %d minute%s "
+                     "and %d second%s.\r\n",
+                     minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+      else
+        send_to_char(
+            ch, "Your Visions of Distant Realms cannot cast that spell yet. Wait %d second%s.\r\n",
+            seconds, (seconds != 1 ? "s" : ""));
+      return 0;
     }
   }
 
@@ -3524,7 +3539,7 @@ ACMDU(do_gen_cast)
   if (AFF_FLAGGED(ch, AFF_SILENCED) && !is_spellnum_psionic(spellnum))
   {
     if (HAS_FEAT(ch, FEAT_AUTOMATIC_SILENT_SPELL) &&
-      compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3)
+        compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3)
     {
       // allow automatic silent spell to bypass silence
     }
@@ -4236,7 +4251,8 @@ return;
 
   /* METAMAGIC BUG FIX: Check spell availability with exact metamagic BEFORE casting */
   if (!IS_NPC(ch) && GET_LEVEL(ch) < LVL_IMMORT && subcmd != SCMD_CAST_SHADOW &&
-      !canCastAtWill(ch, spellnum) && !isEpicSpell(spellnum) && is_spellnum_psionic(spellnum) == FALSE)
+      !canCastAtWill(ch, spellnum) && !isEpicSpell(spellnum) &&
+      is_spellnum_psionic(spellnum) == FALSE)
   {
     /* For prepared casters, verify they have the exact spell+metamagic combination */
     int available_class = spell_prep_gen_check(ch, spellnum, metamagic);
@@ -4492,9 +4508,10 @@ void mag_assign_spells(void)
 
   // shared
   spello(SPELL_INFRAVISION, "infravision", 0, 0, 0, POS_FIGHTING, // enchant
-         TAR_CHAR_ROOM, FALSE, MAG_AFFECTS, "Your night vision seems to fade.", 13, 13, TRANSMUTATION,
-         FALSE); // wizard 4, cleric 4
-  spello(SPELL_POISON, "poison", 0, 0, 0, POS_FIGHTING,              // enchantment
+         TAR_CHAR_ROOM, FALSE, MAG_AFFECTS, "Your night vision seems to fade.", 13, 13,
+         TRANSMUTATION,
+         FALSE);                                        // wizard 4, cleric 4
+  spello(SPELL_POISON, "poison", 0, 0, 0, POS_FIGHTING, // enchantment
          TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_OBJ_INV, TRUE, MAG_AFFECTS | MAG_ALTER_OBJS,
          "You feel less sick.", 5, 13, NECROMANCY, FALSE); // wizard 4, cleric 5
   spello(SPELL_ENERGY_DRAIN, "energy drain", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT,
@@ -4538,14 +4555,15 @@ void mag_assign_spells(void)
          "You feel less dexterous.", 2, 7, TRANSMUTATION, FALSE); // wiz2, cle1
   spello(SPELL_SCARE, "scare", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_AFFECTS, "You no longer feel scared.", 1, 7, NECROMANCY, FALSE); // wiz1, cle2
-  spello(SPELL_BANE, "bane", 0, 0, 0, POS_FIGHTING,
-         TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
-         "You no longer feel burdened by bane.", 2, 7, ENCHANTMENT, FALSE); // wiz1, cle1
-  spello(SPELL_DISGUISE_SELF, "disguise self", 0, 0, 0, POS_FIGHTING,
-         TAR_CHAR_ROOM | TAR_SELF_ONLY, FALSE, MAG_AFFECTS,
-         "Your illusionary disguise fades away.", 2, 7, ILLUSION, FALSE); // wiz1, cle1
+  spello(SPELL_BANE, "bane", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT,
+         TRUE, MAG_AFFECTS, "You no longer feel burdened by bane.", 2, 7, ENCHANTMENT,
+         FALSE); // wiz1, cle1
+  spello(SPELL_DISGUISE_SELF, "disguise self", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
+         FALSE, MAG_AFFECTS, "Your illusionary disguise fades away.", 2, 7, ILLUSION,
+         FALSE); // wiz1, cle1
   spello(SPELL_ALTER_SELF, "alter self", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_MANUAL,
-         "Your altered form fades away.", 2, 7, TRANSMUTATION, FALSE); // alchemist/bard/sorcerer/wizard/summoner @ lvl 2
+         "Your altered form fades away.", 2, 7, TRANSMUTATION,
+         FALSE); // alchemist/bard/sorcerer/wizard/summoner @ lvl 2
   spello(SPELL_FEAR, "cause fear", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE,
          MAG_AFFECTS, "You no longer feel afraid.", 1, 7, NECROMANCY, FALSE); // wiz4, cle5
   spello(SPELL_SUMMON_CREATURE_2, "summon creature ii", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
@@ -4787,8 +4805,8 @@ void mag_assign_spells(void)
   spello(SPELL_ENTANGLE, "entangle", 0, 0, 0, POS_FIGHTING,
          TAR_CHAR_ROOM | TAR_NOT_SELF | TAR_FIGHT_VICT, TRUE, MAG_AFFECTS,
          "The vines around your feet turn to dust.", 3, 7, TRANSMUTATION, FALSE);
-  spello(SPELL_MAGIC_STONE, "magic stone", 0, 0, 0, POS_FIGHTING, 
-         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE, MAG_LOOPS, NULL, 0, 7, TRANSMUTATION, FALSE);
+  spello(SPELL_MAGIC_STONE, "magic stone", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_FIGHT_VICT,
+         TRUE, MAG_LOOPS, NULL, 0, 7, TRANSMUTATION, FALSE);
   spello(SPELL_SHIELD, "mage shield", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,
          "Your magical shield fades away.", 3, 7, ABJURATION, FALSE);
   spello(SPELL_ANT_HAUL, "ant haul", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,
@@ -5078,10 +5096,10 @@ void mag_assign_spells(void)
          MAG_SUMMONS, NULL, 8, 17, CONJURATION, FALSE);
   spello(SPELL_ACID_FOG, "acid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS | MAG_ROOM,
          "You watch as the acid fog dissipates.", 7, 17, CONJURATION, FALSE);
-  spello(SPELL_FIRE_SEEDS, "fire seeds", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
-         NULL, 7, 17, CONJURATION, FALSE);
-  spello(SPELL_TRANSPORT_VIA_PLANTS, "transport via plants", 0, 0, 0, POS_STANDING, TAR_CHAR_WORLD | TAR_NOT_SELF,
-         FALSE, MAG_MANUAL, NULL, 8, 17, CONJURATION, FALSE);
+  spello(SPELL_FIRE_SEEDS, "fire seeds", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS, NULL,
+         7, 17, CONJURATION, FALSE);
+  spello(SPELL_TRANSPORT_VIA_PLANTS, "transport via plants", 0, 0, 0, POS_STANDING,
+         TAR_CHAR_WORLD | TAR_NOT_SELF, FALSE, MAG_MANUAL, NULL, 8, 17, CONJURATION, FALSE);
   // summon creature 6 - shared
   /* necromancy */
   spello(SPELL_TRANSFORMATION, "transformation", 0, 0, 0, POS_FIGHTING,
@@ -5171,14 +5189,14 @@ void mag_assign_spells(void)
   /* illusion */
   spello(SPELL_DISPLACEMENT, "displacement", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
          FALSE, MAG_AFFECTS, "You feel your displacement spell wear off.", 6, 19, ILLUSION, FALSE);
-  spello(SPELL_BLINK, "blink", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY,
-         FALSE, MAG_AFFECTS, "You feel your blink spell wear off.", 6, 19, TRANSMUTATION, FALSE);
+  spello(SPELL_BLINK, "blink", 0, 0, 0, POS_FIGHTING, TAR_CHAR_ROOM | TAR_SELF_ONLY, FALSE,
+         MAG_AFFECTS, "You feel your blink spell wear off.", 6, 19, TRANSMUTATION, FALSE);
   /* Warlock at-will spell - Hurl Through Hell */
   spello(SPELL_HURL_THROUGH_HELL, "hurl through hell", 0, 0, 0, POS_FIGHTING,
          TAR_CHAR_ROOM | TAR_FIGHT_VICT, TRUE, MAG_MANUAL, NULL, 5, 11, NOSCHOOL, FALSE);
   /* Warlock at-will spell - Planar Anchor */
-  spello(SPELL_PLANAR_ANCHOR, "planar anchor", 0, 0, 0, POS_STANDING,
-         TAR_CHAR_ROOM, FALSE, MAG_AFFECTS, "You no longer feel anchored to this plane.", 5, 11, ABJURATION, FALSE);
+  spello(SPELL_PLANAR_ANCHOR, "planar anchor", 0, 0, 0, POS_STANDING, TAR_CHAR_ROOM, FALSE,
+         MAG_AFFECTS, "You no longer feel anchored to this plane.", 5, 11, ABJURATION, FALSE);
   spello(SPELL_FOG_CLOUD, "fog cloud", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
          "The fog cloud begins to dissipate.", 2, 7, CONJURATION, FALSE);
   spello(SPELL_SOLID_FOG, "solid fog", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_ROOM,
@@ -5519,8 +5537,8 @@ void mag_assign_spells(void)
   spello(SPELL_VIGORIZE_CRITICAL, "vigorize critical", 58, 43, 1, POS_FIGHTING, TAR_CHAR_ROOM,
          FALSE, MAG_POINTS, NULL, 4, 16, CONJURATION, FALSE);
   spello(SPELL_FREE_MOVEMENT, "free movement", 58, 43, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
-         MAG_AFFECTS | MAG_UNAFFECTS, "You feel the free movement spell wear off.", 5, 16, ABJURATION,
-         FALSE);
+         MAG_AFFECTS | MAG_UNAFFECTS, "You feel the free movement spell wear off.", 5, 16,
+         ABJURATION, FALSE);
   spello(SPELL_STRENGTHEN_BONE, "strengthen bones", 58, 43, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
          MAG_AFFECTS, "You feel your undead bones weaken again.", 5, 16, NECROMANCY, FALSE);
   // poison - shared
@@ -5763,16 +5781,16 @@ void mag_assign_spells(void)
 
   spello(AFFECT_PERSISTENT_JUDGMENT, "persistent judgment", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
          MAG_AREAS, NULL, 0, 0, ENCHANTMENT, FALSE);
-    spello(AFFECT_BERSERKER_BLOOD_FRENZY, "blood frenzy", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
-      FALSE, MAG_AFFECTS, "Your blood frenzy slows and the surge of speed fades.", 0, 0,
-      TRANSMUTATION, FALSE);
-    spello(AFFECT_BERSERKER_FRENZY, "frenzied berserker", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
-      FALSE, MAG_AFFECTS, "Your killing frenzy burns out.", 0, 0, ENCHANTMENT, FALSE);
-    spello(AFFECT_BERSERKER_DEATH_FROM_ABOVE, "death from above", 0, 0, 0, POS_FIGHTING,
-      TAR_IGNORE, FALSE, MAG_AFFECTS, NULL, 0, 0, TRANSMUTATION, FALSE);
-    spello(AFFECT_BERSERKER_RELENTLESS_ASSAULT, "relentless assault", 0, 0, 0, POS_FIGHTING,
-      TAR_IGNORE, TRUE, MAG_AFFECTS, "You recover some of your footing.", 0, 0,
-      ENCHANTMENT, FALSE);
+  spello(AFFECT_BERSERKER_BLOOD_FRENZY, "blood frenzy", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
+         MAG_AFFECTS, "Your blood frenzy slows and the surge of speed fades.", 0, 0, TRANSMUTATION,
+         FALSE);
+  spello(AFFECT_BERSERKER_FRENZY, "frenzied berserker", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
+         MAG_AFFECTS, "Your killing frenzy burns out.", 0, 0, ENCHANTMENT, FALSE);
+  spello(AFFECT_BERSERKER_DEATH_FROM_ABOVE, "death from above", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+         FALSE, MAG_AFFECTS, NULL, 0, 0, TRANSMUTATION, FALSE);
+  spello(AFFECT_BERSERKER_RELENTLESS_ASSAULT, "relentless assault", 0, 0, 0, POS_FIGHTING,
+         TAR_IGNORE, TRUE, MAG_AFFECTS, "You recover some of your footing.", 0, 0, ENCHANTMENT,
+         FALSE);
 
   // 2nd level spell
   spello(SPELL_PROTECTION_FROM_ARROWS, "protection from arrows", 79, 64, 1, POS_FIGHTING,
@@ -5886,7 +5904,7 @@ void mag_assign_spells(void)
 
   spello(SPELL_KEEN_EDGE, "keen edge", 79, 64, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE, MAG_AFFECTS,
          "Your weapons lose their keen edge.", 7, 11, TRANSMUTATION, FALSE);
-         
+
   spello(SPELL_WEAPON_OF_IMPACT, "weapon of impact", 79, 64, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
          MAG_AFFECTS, "Your weapons stop glowing blue.", 7, 11, TRANSMUTATION, FALSE);
 
@@ -5943,8 +5961,8 @@ void mag_assign_spells(void)
          TAR_IGNORE, FALSE, MAG_AFFECTS, "Your inspiration from recent performances fades.", 1, 1,
          NOSCHOOL, FALSE);
 
-  spello(AFFECT_PERK_WARLOCK_FIENDISH_RESILIENCE, "warlock perk fiendish resilience", 0, 0, 0, POS_FIGHTING,
-         TAR_IGNORE, FALSE, MAG_AFFECTS, "Your fiendish resilience fades.", 1, 1,
+  spello(AFFECT_PERK_WARLOCK_FIENDISH_RESILIENCE, "warlock perk fiendish resilience", 0, 0, 0,
+         POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AFFECTS, "Your fiendish resilience fades.", 1, 1,
          NOSCHOOL, FALSE);
 
   spello(SPELL_REMOVE_PARALYSIS, "remove paralysis", 44, 29, 1, POS_FIGHTING, TAR_CHAR_ROOM, FALSE,
@@ -5960,31 +5978,30 @@ void mag_assign_spells(void)
   spello(BLACKGUARD_CRUELTY_AFFECTS, "blackguard cruelty", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
          MAG_AFFECTS, "A blackguard cruelty effect has expired.", 0, 0, NOSCHOOL, FALSE);
 
-    spello(AFFECT_BLACKGUARD_SHAKEN, "blackguard shaken", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
-      MAG_AFFECTS, "You steady your nerves and are no longer shaken.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_FEAR, "blackguard fear", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
-      MAG_AFFECTS, "Your overwhelming terror subsides.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_COWER, "blackguard cower", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
-      MAG_AFFECTS, "You stop cowering in terror.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_CRUEL_MOMENTUM, "cruel momentum", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
-      FALSE, MAG_AFFECTS, "Your cruel momentum fades.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_PROFANE_WEAPON_BOND, "profane weapon bond", 0, 0, 0, POS_FIGHTING,
-      TAR_IGNORE, FALSE, MAG_AFFECTS, "The profane bond empowering your weapon fades.", 0, 0,
-      NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_BLEEDING, "profane bleeding", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
-      MAG_AFFECTS, "The profane bleeding finally stops.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_UNHOLY_BLITZ, "unholy blitz", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
-      FALSE, MAG_AFFECTS, "Your unholy blitz slows to an end.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_AVATAR_OF_PROFANITY, "avatar of profanity", 0, 0, 0, POS_FIGHTING,
-      TAR_IGNORE, FALSE, MAG_AFFECTS, "Your avatar of profanity fades.", 0, 0, NOSCHOOL,
-      FALSE);
-    spello(AFFECT_BLACKGUARD_CATACLYSMIC_SMITE, "cataclysmic smite", 0, 0, 0, POS_FIGHTING,
-      TAR_IGNORE, TRUE, MAG_AFFECTS, "The cataclysmic smite's lingering force fades.", 0, 0,
-      NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_SHADE_STEP, "shade step", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
-      MAG_AFFECTS, "You step fully back from the shadows.", 0, 0, NOSCHOOL, FALSE);
-    spello(AFFECT_BLACKGUARD_REPRISAL, "blackguard reprisal", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
-      FALSE, MAG_AFFECTS, "Your blackguard reprisal fades.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_SHAKEN, "blackguard shaken", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+         MAG_AFFECTS, "You steady your nerves and are no longer shaken.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_FEAR, "blackguard fear", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+         MAG_AFFECTS, "Your overwhelming terror subsides.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_COWER, "blackguard cower", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+         MAG_AFFECTS, "You stop cowering in terror.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_CRUEL_MOMENTUM, "cruel momentum", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+         FALSE, MAG_AFFECTS, "Your cruel momentum fades.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_PROFANE_WEAPON_BOND, "profane weapon bond", 0, 0, 0, POS_FIGHTING,
+         TAR_IGNORE, FALSE, MAG_AFFECTS, "The profane bond empowering your weapon fades.", 0, 0,
+         NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_BLEEDING, "profane bleeding", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, TRUE,
+         MAG_AFFECTS, "The profane bleeding finally stops.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_UNHOLY_BLITZ, "unholy blitz", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
+         MAG_AFFECTS, "Your unholy blitz slows to an end.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_AVATAR_OF_PROFANITY, "avatar of profanity", 0, 0, 0, POS_FIGHTING,
+         TAR_IGNORE, FALSE, MAG_AFFECTS, "Your avatar of profanity fades.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_CATACLYSMIC_SMITE, "cataclysmic smite", 0, 0, 0, POS_FIGHTING,
+         TAR_IGNORE, TRUE, MAG_AFFECTS, "The cataclysmic smite's lingering force fades.", 0, 0,
+         NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_SHADE_STEP, "shade step", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
+         MAG_AFFECTS, "You step fully back from the shadows.", 0, 0, NOSCHOOL, FALSE);
+  spello(AFFECT_BLACKGUARD_REPRISAL, "blackguard reprisal", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
+         FALSE, MAG_AFFECTS, "Your blackguard reprisal fades.", 0, 0, NOSCHOOL, FALSE);
 
   spello(PALADIN_MERCY_INJURED_FAST_HEALING, "paladin mercy fast healing", 0, 0, 0, POS_FIGHTING,
          TAR_IGNORE, FALSE, MAG_AREAS, NULL, 0, 0, NOSCHOOL, FALSE);
@@ -6211,12 +6228,11 @@ void mag_assign_spells(void)
 
   spello(ABILITY_BOZAK_DRACONIAN_DEATH_THROES, "bozak draconian death throes", 0, 0, 0,
          POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS, NULL, 5, 9, TRANSMUTATION, FALSE);
-  
-  spello(AFFECT_POOL_OF_ACID, "pool of acid", 0, 0, 0,
-         POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS, NULL, 5, 9, TRANSMUTATION, FALSE);
-    spello(AFFECT_ALCHEMIST_INFUSION_WARD, "infusion ward", 0, 0, 0, POS_FIGHTING, TAR_IGNORE,
-      FALSE, MAG_AFFECTS, "The ward from your infused extract fades.", 1, 1, TRANSMUTATION,
-      FALSE);
+
+  spello(AFFECT_POOL_OF_ACID, "pool of acid", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE, MAG_AREAS,
+         NULL, 5, 9, TRANSMUTATION, FALSE);
+  spello(AFFECT_ALCHEMIST_INFUSION_WARD, "infusion ward", 0, 0, 0, POS_FIGHTING, TAR_IGNORE, FALSE,
+         MAG_AFFECTS, "The ward from your infused extract fades.", 1, 1, TRANSMUTATION, FALSE);
 
   /*
 spello(SPELL_IDENTIFY, "!UNUSED!", 0, 0, 0, 0,
@@ -6648,7 +6664,7 @@ int find_cantrip_class(struct char_data *ch, int spellnum)
   if (!spell_is_cantrip(spellnum))
     return CLASS_UNDEFINED;
 
-  for (class = 0; class < NUM_CLASSES; class ++)
+  for (class = 0; class < NUM_CLASSES; class++)
   {
     int required_level = LVL_IMMORT + 1;
 

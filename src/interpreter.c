@@ -2273,6 +2273,7 @@ static int perform_dupe_check(struct descriptor_data *d)
   d->character->desc = d;
   d->original = NULL;
   d->character->char_specials.timer = 0;
+  d->character->char_specials.linkdead_at = 0;
   REMOVE_BIT_AR(PLR_FLAGS(d->character), PLR_MAILING);
   REMOVE_BIT_AR(PLR_FLAGS(d->character), PLR_WRITING);
   STATE(d) = CON_PLAYING;
