@@ -2185,7 +2185,16 @@ void proc_d20_round(void)
 
     if (affected_by_spell(i, SPELL_ACID_FOG))
     {
-      call_magic(i, i, NULL, SPELL_ACID_FOG, 0, 11, CAST_SPELL);
+      /* Deal the acid fog's per-round damage to the affected character only.
+         Previously this re-cast the entire spell (call_magic with CAST_SPELL),
+         which - because acid fog is MAG_AREAS | MAG_ROOM - made every affected
+         creature re-apply the "covered in acid fog" affect to everyone else in
+         the room each round (including NPCs, who then did the same), causing a
+         runaway cascade.  It also never dealt damage, because acid fog is an
+         "effect only" area spell (mag_areas applies the affect but does not
+         call mag_damage).  Damaging the affected character directly here both
+         stops the cascade and restores the intended 2d6 acid per round. */
+      mag_damage(11, i, i, NULL, SPELL_ACID_FOG, 0, SAVING_FORT, CAST_SPELL);
     }
 
     /* Cowering: 10% chance per round to be too afraid to act */
