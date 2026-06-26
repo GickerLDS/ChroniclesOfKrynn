@@ -3900,6 +3900,7 @@ void display_available_slots(struct char_data *ch, int class)
 {
   int slot, num_circles = 0, slot_array[NUM_CIRCLES],
             highest_circle = get_class_highest_circle(ch, class), line_length = 80;
+  int bonus_domain_slots_available = 0;
   bool printed = FALSE, found_slot = FALSE;
   char buf[MAX_INPUT_LENGTH] = {'\0'};
 
@@ -3919,6 +3920,18 @@ void display_available_slots(struct char_data *ch, int class)
     }
   }
 
+  /* Clerics can earn extra domain spell slots via Domain Master perks; report
+     how many remain so the availability line isn't misleadingly empty.  Usage is
+     derived from live prep state, so it falls and restores with the normal
+     cast + re-pray cycle. */
+  if (class == CLASS_CLERIC && !IS_NPC(ch))
+  {
+    bonus_domain_slots_available =
+        get_cleric_bonus_domain_spells(ch) - count_cleric_bonus_domain_slots_used(ch);
+    if (bonus_domain_slots_available < 0)
+      bonus_domain_slots_available = 0;
+  }
+
   send_to_char(ch, "\tYAvailable:");
 
   for (slot = 0; slot <= highest_circle; slot++)
@@ -3936,9 +3949,17 @@ void display_available_slots(struct char_data *ch, int class)
     }
   }
   if (!printed)
-    send_to_char(ch, " \tYno more %s!\tn\r\n", class == CLASS_ALCHEMIST ? "extracts" : "spells");
+  {
+    if (bonus_domain_slots_available > 0)
+      send_to_char(ch, " \tYno standard spell slots!\tn\r\n");
+    else
+      send_to_char(ch, " \tYno more %s!\tn\r\n", class == CLASS_ALCHEMIST ? "extracts" : "spells");
+  }
   else
     send_to_char(ch, "\tn\r\n");
+
+  if (bonus_domain_slots_available > 0)
+    send_to_char(ch, "\tYBonus domain spell slots available: \tn%d\r\n", bonus_domain_slots_available);
 
   if (APOTHEOSIS_SLOTS(ch) > 0)
     send_to_char(ch, "\tYStored apotheosis charges: \tn%d\r\n", APOTHEOSIS_SLOTS(ch));
