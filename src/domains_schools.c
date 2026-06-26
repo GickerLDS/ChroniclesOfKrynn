@@ -19,6 +19,7 @@
 #include "screen.h"
 #include "modify.h"
 #include "class.h"
+#include "spell_prep.h"
 
 struct domain_info domain_list[NUM_DOMAINS];
 struct school_info school_list[NUM_SCHOOLS];
@@ -699,7 +700,71 @@ ACMD(do_domain)
 {
   int i = 0, j = 0;
   char buf[MAX_STRING_LENGTH] = {'\0'};
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
   size_t len = 0;
+
+  one_argument(argument, arg);
+
+  /* "domain spells" - list the spells granted by the character's OWN domains,
+     with the circle each falls in and whether the character can prepare it yet. */
+  if (*arg && is_abbrev(arg, "spells"))
+  {
+    int domains[2], num_domains = 0, d = 0, spellnum = 0, grant_level = 0,
+        domain_class = CLASS_CLERIC, caster_level = 0, highest_circle = 0;
+
+    if (IS_NPC(ch))
+    {
+      send_to_char(ch, "NPCs do not have deity domains.\r\n");
+      return;
+    }
+
+    if (GET_1ST_DOMAIN(ch) != DOMAIN_UNDEFINED)
+      domains[num_domains++] = GET_1ST_DOMAIN(ch);
+    if (GET_2ND_DOMAIN(ch) != DOMAIN_UNDEFINED)
+      domains[num_domains++] = GET_2ND_DOMAIN(ch);
+
+    if (num_domains == 0)
+    {
+      send_to_char(ch, "You have no deity domains, so you have no domain spells.\r\n");
+      return;
+    }
+
+    /* Inquisitors also receive a domain; use their progression if not a cleric. */
+    if (CLASS_LEVEL(ch, CLASS_CLERIC) <= 0 && CLASS_LEVEL(ch, CLASS_INQUISITOR) > 0)
+      domain_class = CLASS_INQUISITOR;
+
+    caster_level = CLASS_LEVEL(ch, domain_class) + BONUS_CASTER_LEVEL(ch, domain_class);
+    highest_circle = get_class_highest_circle(ch, domain_class);
+
+    len += snprintf(buf + len, sizeof(buf) - len,
+                    "%sDomain spells granted to you%s (%sgreen%s = ready to prepare, "
+                    "%sred%s = higher level required):\r\n",
+                    QCYN, QNRM, QGRN, QNRM, QRED, QNRM);
+
+    for (d = 0; d < num_domains; d++)
+    {
+      len += snprintf(buf + len, sizeof(buf) - len, "\r\n%s%s Domain:%s\r\n", QCYN,
+                      domain_list[domains[d]].name, QNRM);
+
+      for (j = 0; j < MAX_DOMAIN_SPELLS; j++)
+      {
+        spellnum = domain_list[domains[d]].domain_spells[j];
+        if (spellnum == SPELL_RESERVED_DBC)
+          continue;
+
+        /* The domain grants this spell at the per-domain level configured for it. */
+        grant_level = spell_info[spellnum].domain[domains[d]];
+
+        len += snprintf(buf + len, sizeof(buf) - len, "  %sCircle %d (min level %d)%s: %s%s%s\r\n",
+                        QCYN, j + 1, grant_level, QNRM,
+                        (caster_level >= grant_level && (j + 1) <= highest_circle) ? QGRN : QRED,
+                        spell_info[spellnum].name, QNRM);
+      }
+    }
+
+    page_string(ch->desc, buf, 1);
+    return;
+  }
 
   /* 0-value is undefined, it is used in the code, but not displayed */
   for (i = 1; i < NUM_DOMAINS; i++)
@@ -746,6 +811,10 @@ ACMD(do_domain)
     len += snprintf(buf + len, sizeof(buf) - len, "\r\n\r\n");
     /*send_to_char(ch, "\r\n\r\n");*/
   }
+
+  len += snprintf(buf + len, sizeof(buf) - len,
+                  "%sType '%sdomain spells%s' to list the spells granted by your own domains.%s\r\n",
+                  QCYN, QYEL, QCYN, QNRM);
 
   page_string(ch->desc, buf, 1);
 }

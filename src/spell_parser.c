@@ -491,6 +491,29 @@ int find_skill_num(char *name)
   return (-1);
 }
 
+/* Returns TRUE if the given spell slot is an unused/placeholder entry that
+   should never be presented to or used by players - for example when randomly
+   selecting a spell for generated treasure (wands/staves/scrolls/potions) or
+   when an NPC picks a spell to cast.  This catches both slots that were never
+   defined (name == unused_spellname) and slots explicitly defined with the
+   "!UNUSED!" placeholder name, as well as out-of-range/reserved spell numbers.
+   strcmp is used (rather than a pointer compare) so literal "!UNUSED!" spello
+   definitions are caught regardless of string-literal merging. */
+bool is_unused_spell(int spellnum)
+{
+  const char *name = NULL;
+
+  if (spellnum <= SPELL_RESERVED_DBC || spellnum > TOP_SPELL_DEFINE)
+    return TRUE;
+
+  name = spell_info[spellnum].name;
+
+  if (!name || name == unused_spellname || !strcmp(name, unused_spellname))
+    return TRUE;
+
+  return FALSE;
+}
+
 /* send a string that is theortically the name of an ability, return
    the ability number
  */

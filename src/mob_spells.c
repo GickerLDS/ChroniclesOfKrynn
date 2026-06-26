@@ -286,7 +286,7 @@ bool mob_knows_assigned_spells(struct char_data *ch)
 
   for (i = 0; i < NUM_SPELLS; i++)
   {
-    if (MOB_KNOWS_SPELL(ch, i))
+    if (MOB_KNOWS_SPELL(ch, i) && !is_unused_spell(i))
     {
       return true;
     }
@@ -296,8 +296,9 @@ bool mob_knows_assigned_spells(struct char_data *ch)
 
 void npc_assigned_spells(struct char_data *ch)
 {
-  int i = 0, spellnum = 0;
-  bool found = false;
+  int i = 0, spellnum = -1;
+  int known_spells[NUM_SPELLS];
+  int num_known = 0;
   struct char_data *victim = NULL;
 
   if (!ch || !IS_NPC(ch))
@@ -309,23 +310,22 @@ void npc_assigned_spells(struct char_data *ch)
   if (!is_action_available(ch, atSTANDARD, FALSE))
     return;
 
-  while (!found)
+  /* Build a list of the mob's castable known spells, skipping unused/placeholder
+     ("!UNUSED!") slots so the mob never tries to cast one (which would display
+     as casting "!UNUSED!").  Collecting first also avoids the infinite selection
+     loop that occurred when a mob had no valid spell to pick. */
+  for (i = 0; i < NUM_SPELLS; i++)
   {
-    for (i = 0; i < NUM_SPELLS; i++)
-    {
-      if (MOB_KNOWS_SPELL(ch, i))
-      {
-        if (dice(1, 10) == 1)
-        {
-          found = true;
-          spellnum = i;
-          break;
-        }
-      }
-    }
+    if (MOB_KNOWS_SPELL(ch, i) && !is_unused_spell(i))
+      known_spells[num_known++] = i;
   }
 
-  if (spellnum < 0 || spellnum >= NUM_SPELLS)
+  if (num_known == 0)
+    return;
+
+  spellnum = known_spells[rand_number(0, num_known - 1)];
+
+  if (spellnum <= SPELL_RESERVED_DBC || spellnum >= NUM_SPELLS)
     return;
 
   if (spell_info[spellnum].violent == FALSE)
@@ -479,7 +479,7 @@ static int find_known_buff_spell(struct char_data *ch, struct char_data *target)
   {
     for (i = 0; i < NUM_SPELLS; i++)
     {
-      if (MOB_KNOWS_SPELL(ch, i) && has_known_spell_slot(ch, i))
+      if (MOB_KNOWS_SPELL(ch, i) && !is_unused_spell(i) && has_known_spell_slot(ch, i))
       {
         int category = categorize_known_spell(i);
 
@@ -508,7 +508,7 @@ static int find_known_heal_spell(struct char_data *ch)
   /* Try to find a known healing spell with available slots */
   for (i = 0; i < NUM_SPELLS; i++)
   {
-    if (MOB_KNOWS_SPELL(ch, i) && has_known_spell_slot(ch, i))
+    if (MOB_KNOWS_SPELL(ch, i) && !is_unused_spell(i) && has_known_spell_slot(ch, i))
     {
       int category = categorize_known_spell(i);
 
@@ -532,7 +532,7 @@ static int find_known_offensive_spell(struct char_data *ch)
   /* Try to find a known offensive spell with available slots */
   for (i = 0; i < NUM_SPELLS; i++)
   {
-    if (MOB_KNOWS_SPELL(ch, i) && has_known_spell_slot(ch, i))
+    if (MOB_KNOWS_SPELL(ch, i) && !is_unused_spell(i) && has_known_spell_slot(ch, i))
     {
       int category = categorize_known_spell(i);
 

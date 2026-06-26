@@ -1809,6 +1809,7 @@ ASPELL(spell_alter_self);
 /* basic magic calling functions */
 int find_skill_num(char *name);
 int find_ability_num(char *name);
+bool is_unused_spell(int spellnum);
 
 int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct obj_data *obj,
                int spellnum, int metamagic, int savetype, int casttype);

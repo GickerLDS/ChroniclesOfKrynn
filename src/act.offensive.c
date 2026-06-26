@@ -10212,9 +10212,15 @@ ACMD(do_defensive_strike)
     return;
   }
 
-  /* Check cooldown */
-  PREREQ_HAS_USES(SKILL_DEFENSIVE_STRIKE,
-                  "You must recover before you can use defensive strike again.\r\n");
+  /* Check cooldown - 2 minute cooldown.  This ability is a perk-granted
+     ability identified by a SKILL_ number, which is outside the bounds of the
+     feat-indexed daily-use system, so we use a dedicated mud-event cooldown
+     instead of start_daily_use_cooldown()/daily_uses_remaining(). */
+  if (char_has_mud_event(ch, eDEFENSIVE_STRIKE_COOLDOWN))
+  {
+    send_to_char(ch, "You must recover before you can use defensive strike again.\r\n");
+    return;
+  }
 
   /* Find target */
   one_argument(argument, arg, sizeof(arg));
@@ -10257,9 +10263,9 @@ ACMD(do_defensive_strike)
   send_to_char(ch, "You assume a defensive posture, gaining +2 AC!\r\n");
   act("$n assumes a defensive posture!", FALSE, ch, 0, 0, TO_ROOM);
 
-  /* Start cooldown */
+  /* Start cooldown - 2 minutes */
   if (!IS_NPC(ch))
-    start_daily_use_cooldown(ch, SKILL_DEFENSIVE_STRIKE);
+    attach_mud_event(new_mud_event(eDEFENSIVE_STRIKE_COOLDOWN, ch, NULL), 120 RL_SEC);
 
   USE_MOVE_ACTION(ch);
 }
@@ -10278,8 +10284,14 @@ ACMD(do_bastion)
     return;
   }
 
-  /* Check cooldown - 5 minute cooldown */
-  PREREQ_HAS_USES(SKILL_BASTION, "You must recover before you can invoke bastion again.\r\n");
+  /* Check cooldown - 5 minute cooldown.  Like Defensive Strike, this perk
+     ability is keyed by a SKILL_ number outside the feat-indexed daily-use
+     system, so we use a dedicated mud-event cooldown. */
+  if (char_has_mud_event(ch, eBASTION_COOLDOWN))
+  {
+    send_to_char(ch, "You must recover before you can invoke bastion again.\r\n");
+    return;
+  }
 
   /* Check if already active */
   if (affected_by_spell(ch, SKILL_BASTION))
@@ -10308,9 +10320,9 @@ ACMD(do_bastion)
   af.bonus_type = BONUS_TYPE_SACRED;
   affect_to_char(ch, &af);
 
-  /* Start cooldown */
+  /* Start cooldown - 5 minutes */
   if (!IS_NPC(ch))
-    start_daily_use_cooldown(ch, SKILL_BASTION);
+    attach_mud_event(new_mud_event(eBASTION_COOLDOWN, ch, NULL), 300 RL_SEC);
 
   USE_SWIFT_ACTION(ch);
 }

@@ -6149,6 +6149,13 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   if (!victim)
     return 0;
 
+  /* Capture whether this is self-inflicted damage (e.g. a per-round DoT such as
+     acid fog, bleed, caustic blood) BEFORE the last_attacker rewrite below can
+     reassign ch to the victim's last attacker.  Reflect effects like Energy
+     Retort must not fire on self-damage, otherwise the reflected hit (and the
+     attacker's own retort) can ping-pong between the two characters. */
+  bool original_self_damage = (ch == victim);
+
   if (offhand == 2)
     is_ranged = TRUE;
 
@@ -6714,7 +6721,8 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   }
 
   /* Energy Retort (Perk): reflect level-based energy damage on melee hits while psychokinesis affect active */
-  if (dam > 0 && has_energy_retort_perk(victim) && !is_ranged)
+  if (dam > 0 && has_energy_retort_perk(victim) && !is_ranged &&
+      !original_self_damage && w_type != PSIONIC_ENERGY_RETORT)
   {
     if (affected_by_spell(victim, PSIONIC_FORCE_SCREEN) ||
         affected_by_spell(victim, PSIONIC_INERTIAL_ARMOR) ||
@@ -10850,9 +10858,12 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
       if (display)
         send_to_char(ch, "%2d: %-50s\r\n", GET_DEX_BONUS(ch), "Weapon Finesse Dex");
     }
-    else if (!wielded && HAS_FEAT(ch, FEAT_UNARMED_STRIKE) && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
+    else if (!wielded && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
              GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
     {
+      /* Unarmed strikes count as light weapons, so Weapon Finesse applies to
+         them for any character with the feat - no monk unarmed-strike class
+         ability is required. */
       calc_bab += GET_DEX_BONUS(ch); /* superior bonus is used */
       if (display)
         send_to_char(ch, "%2d: %-50s\r\n", GET_DEX_BONUS(ch), "Weapon Finesse Dex");
@@ -10904,7 +10915,10 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
     }
     break;
   case ATTACK_TYPE_UNARMED:
-    if (HAS_FEAT(ch, FEAT_UNARMED_STRIKE) && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
+    /* Unarmed strikes count as light weapons, so Weapon Finesse applies to them
+       for any character with the feat - no monk unarmed-strike class ability is
+       required. */
+    if (HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
         GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
     {
       calc_bab += GET_DEX_BONUS(ch); /* superior bonus is used */

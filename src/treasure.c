@@ -282,6 +282,11 @@ void say_treasure(struct char_data *ch, struct obj_data *obj)
  function returns TRUE if the spell is OK, FALSE if not */
 bool valid_item_spell(int spellnum)
 {
+  /* never put an unused/placeholder ("!UNUSED!") spell on generated treasure -
+     these would show up as "!UNUSED!" wands/scrolls/potions to players */
+  if (is_unused_spell(spellnum))
+    return FALSE;
+
   /* just list exceptions NOTE if you add any exception here, better make
    sure wizards have another way of getting the spell
    * update: added 'research' so wizards have another way to acquire spells */

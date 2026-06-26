@@ -18273,9 +18273,89 @@ int calculate_stage_xp_needed(struct char_data *ch)
 }
 
 /**
+ * Determine the two perk classes that should receive points for an award class.
+ *
+ * Most classes map statically via class_to_perk_class(). The Dragon Disciple
+ * prestige class is special: its arcane progression can be built on top of any
+ * spontaneous arcane base class (Sorcerer, Bard, Summoner, etc.), and a player
+ * may also have other non-arcane base classes. Rather than hardcoding its perk
+ * points to Sorcerer, distribute them across the character's two highest base
+ * (non-prestige) leveled classes, so a Blackguard/Bard, for example, receives
+ * one point for each class instead of two Sorcerer points.
+ *
+ * @param ch The character advancing
+ * @param award_class The class being advanced (GET_CLASS or a specific class id)
+ * @param perk_class_1 Output - first perk class to receive a point (-1 if none)
+ * @param perk_class_2 Output - second perk class to receive a point (-1 if none)
+ */
+static void get_award_perk_classes(struct char_data *ch, int award_class,
+                                   int *perk_class_1, int *perk_class_2)
+{
+  int i;
+  int best_class = -1, second_class = -1;
+  int best_level = 0, second_level = 0;
+
+  if (perk_class_1)
+    *perk_class_1 = -1;
+  if (perk_class_2)
+    *perk_class_2 = -1;
+
+  /* Non-Dragon-Disciple classes use the static mapping. */
+  if (!ch || award_class != CLASS_DRAGON_DISCIPLE)
+  {
+    if (perk_class_1)
+      *perk_class_1 = class_to_perk_class(award_class, 1);
+    if (perk_class_2)
+      *perk_class_2 = class_to_perk_class(award_class, 2);
+    return;
+  }
+
+  /* Dragon Disciple: find the two highest base (non-prestige) leveled classes. */
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    if (i == CLASS_DRAGON_DISCIPLE || CLSLIST_PRESTIGE(i))
+      continue;
+    if (CLASS_LEVEL(ch, i) <= 0)
+      continue;
+
+    if (CLASS_LEVEL(ch, i) > best_level)
+    {
+      second_class = best_class;
+      second_level = best_level;
+      best_class = i;
+      best_level = CLASS_LEVEL(ch, i);
+    }
+    else if (CLASS_LEVEL(ch, i) > second_level)
+    {
+      second_class = i;
+      second_level = CLASS_LEVEL(ch, i);
+    }
+  }
+
+  /* No base classes found (shouldn't happen) - fall back to the static mapping. */
+  if (best_class < 0)
+  {
+    if (perk_class_1)
+      *perk_class_1 = class_to_perk_class(award_class, 1);
+    if (perk_class_2)
+      *perk_class_2 = class_to_perk_class(award_class, 2);
+    return;
+  }
+
+  /* Only one base class: both points go to it (mirrors a single-class award). */
+  if (second_class < 0)
+    second_class = best_class;
+
+  if (perk_class_1)
+    *perk_class_1 = best_class;
+  if (perk_class_2)
+    *perk_class_2 = second_class;
+}
+
+/**
  * Check if character has enough XP to advance to the next stage.
  * Awards perk points for stages 1-3, and sets ready-to-level flag for stage 4.
- * Perk points are awarded using class_to_perk_class to determine the appropriate classes.
+ * Perk points are awarded using get_award_perk_classes to determine the appropriate classes.
  *
  * @param ch The character
  * @param perk_points_awarded Output parameter - set to 1 if points awarded, 0 otherwise
@@ -18337,9 +18417,8 @@ bool check_stage_advancement(struct char_data *ch, int *perk_points_awarded)
                      NUM_CLASSES - 1);
       }
 
-      /* Get the two perk classes using class_to_perk_class */
-      perk_class_1 = class_to_perk_class(award_class, 1);
-      perk_class_2 = class_to_perk_class(award_class, 2);
+      /* Get the two perk classes (Dragon Disciple splits across base classes) */
+      get_award_perk_classes(ch, award_class, &perk_class_1, &perk_class_2);
 
       if (perk_class_1 == perk_class_2 && perk_class_1 >= 0 && perk_class_1 < NUM_CLASSES &&
           perk_class_2 >= 0 && perk_class_2 < NUM_CLASSES)
@@ -18491,8 +18570,7 @@ static void add_legacy_points_for_level_class(struct char_data *ch, int class_id
   if (class_id < 0 || class_id >= NUM_CLASSES)
     return;
 
-  perk_class_1 = class_to_perk_class(class_id, 1);
-  perk_class_2 = class_to_perk_class(class_id, 2);
+  get_award_perk_classes(ch, class_id, &perk_class_1, &perk_class_2);
 
   while (points >= 2)
   {
