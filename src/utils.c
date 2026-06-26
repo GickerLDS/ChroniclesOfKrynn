@@ -5765,6 +5765,15 @@ int start_daily_use_cooldown(struct char_data *ch, int featnum)
   char buf[MAX_STRING_LENGTH];
   event_id iId = 0;
 
+  /* Guard against out-of-range identifiers.  feat_list is sized NUM_FEATS, so
+     callers that pass a non-feat number (e.g. a SKILL_ id) would otherwise read
+     out of bounds.  Such abilities must use their own cooldown mechanism. */
+  if (featnum < 0 || featnum >= NUM_FEATS)
+  {
+    log("SYSERR: start_daily_use_cooldown called with out-of-range featnum %d", featnum);
+    return (0);
+  }
+
   /* Transform the feat number to the event id for that ability. */
   if ((iId = feat_list[featnum].event) == eNULL)
   {
@@ -5829,6 +5838,12 @@ int daily_uses_remaining(struct char_data *ch, int featnum)
   int uses = 0;
   int uses_per_day = 0;
   event_id iId = 0;
+
+  /* Guard against out-of-range identifiers (see start_daily_use_cooldown).
+     feat_list is sized NUM_FEATS; a non-feat number would read out of bounds.
+     Treat such ids as "not a daily-use feat". */
+  if (featnum < 0 || featnum >= NUM_FEATS)
+    return -1;
 
   if ((iId = feat_list[featnum].event) == eNULL)
     return -1;
