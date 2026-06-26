@@ -39,6 +39,8 @@
 #include "perks.h"
 #include "moon_bonus_spells.h"
 
+#define GOLEM_REGEN_DIVISOR 4
+
 // external functions
 void save_char_pets(struct char_data *ch);
 void rem_room_aff(struct raff_node *raff);
@@ -512,13 +514,27 @@ int get_healing_aura_regen_bonus(struct char_data *ch)
 }
 
 /* we do the math for our hps regen per tick here -zusuk */
+static int reduced_golem_regen_amount(int hp)
+{
+  int reduced = 0;
+  int remainder = 0;
+
+  if (hp <= 0)
+    return 0;
+
+  reduced = hp / GOLEM_REGEN_DIVISOR;
+  remainder = hp % GOLEM_REGEN_DIVISOR;
+
+  if (remainder > 0 && rand_number(1, GOLEM_REGEN_DIVISOR) <= remainder)
+    reduced++;
+
+  return reduced;
+}
+
 int regen_hps(struct char_data *ch)
 {
   int hp = 0;
-
-  /* Constructed golems never regenerate naturally; they must be repaired */
-  if (IS_GOLEM(ch))
-    return 0;
+  bool is_golem = IS_GOLEM(ch);
 
   /* base regen rate */
   if (rand_number(0, 1))
@@ -610,6 +626,9 @@ int regen_hps(struct char_data *ch)
   /* blackmantle stops natural regeneration */
   if (AFF_FLAGGED(ch, AFF_BLACKMANTLE) || ROOM_FLAGGED(IN_ROOM(ch), ROOM_NOHEAL))
     hp = 0;
+
+  if (is_golem)
+    hp = reduced_golem_regen_amount(hp);
 
   return hp;
 }
@@ -791,7 +810,7 @@ void regen_update(struct char_data *ch)
   }
   /* End of bleeding check! */
 
-  /* Golems: immune to fatigue/move drain and rely solely on repairs for HP */
+  /* Golems: immune to fatigue/move drain and regenerate HP slowly over time. */
   if (IS_GOLEM(ch))
   {
     if (AFF_FLAGGED(ch, AFF_FATIGUED))

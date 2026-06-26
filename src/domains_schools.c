@@ -703,14 +703,14 @@ ACMD(do_domain)
   char arg[MAX_INPUT_LENGTH] = {'\0'};
   size_t len = 0;
 
-  one_argument(argument, arg);
+  one_argument(argument, arg, sizeof(arg));
 
   /* "domain spells" - list the spells granted by the character's OWN domains,
      with the circle each falls in and whether the character can prepare it yet. */
   if (*arg && is_abbrev(arg, "spells"))
   {
     int domains[2], num_domains = 0, d = 0, spellnum = 0, grant_level = 0,
-        domain_class = CLASS_CLERIC, caster_level = 0, highest_circle = 0;
+                    domain_class = CLASS_CLERIC, caster_level = 0, highest_circle = 0;
 
     if (IS_NPC(ch))
     {
@@ -812,9 +812,10 @@ ACMD(do_domain)
     /*send_to_char(ch, "\r\n\r\n");*/
   }
 
-  len += snprintf(buf + len, sizeof(buf) - len,
-                  "%sType '%sdomain spells%s' to list the spells granted by your own domains.%s\r\n",
-                  QCYN, QYEL, QCYN, QNRM);
+  len +=
+      snprintf(buf + len, sizeof(buf) - len,
+               "%sType '%sdomain spells%s' to list the spells granted by your own domains.%s\r\n",
+               QCYN, QYEL, QCYN, QNRM);
 
   page_string(ch->desc, buf, 1);
 }

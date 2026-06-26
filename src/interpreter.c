@@ -516,7 +516,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"goals", "goals", POS_SLEEPING, do_goals, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"gmcptest", "gmcptest", POS_DEAD, do_gmcptest, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"gold", "gol", POS_RECLINING, do_gold, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
-    {"golemrepair", "golemrepair", POS_STANDING, do_golemrepair, 0, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
+    {"golemrepair", "golemrepair", POS_STANDING, do_golemrepair, 0, 0, FALSE, ACTION_STANDARD, {3, 0}, NULL},
     {"gossip", "gos", POS_SLEEPING, do_gen_comm, 0, SCMD_GOSSIP, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"gore", "gore", POS_FIGHTING, do_minotaur_gore, 0, 0, TRUE, ACTION_SWIFT, {0, 0}, NULL},
     {"group", "gr", POS_RECLINING, do_group, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},

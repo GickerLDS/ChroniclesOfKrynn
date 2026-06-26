@@ -2959,7 +2959,7 @@ ACMD(do_golemrepair)
   /* Success! Consume materials - use the selected material type */
   GET_CRAFT_MAT(ch, material_type) -= material_needed;
 
-  /* Calculate healing amount - heal all damage in phases over 2 seconds per 10% missing HP */
+  /* Calculate healing amount - successful repairs restore all missing hit points. */
   missing_hp = GET_MAX_HIT(golem) - GET_HIT(golem);
   heal_amount = missing_hp; /* Full repair on successful check */
 

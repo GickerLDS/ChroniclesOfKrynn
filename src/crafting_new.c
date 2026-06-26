@@ -12985,8 +12985,8 @@ int get_golem_repair_material_cost(int golem_type, int golem_size)
 
   if (num_mats > 0 && material_amounts[0] > 0)
   {
-    /* Return 0.625% of the primary material requirement per 10% repair (1/16 of 10%, which is 1/4 of the original 1/40) */
-    return material_amounts[0] / 160;
+    /* Reduced repair cost: 0.3125% of the primary material requirement per 10% repair. */
+    return material_amounts[0] / 320;
   }
   return 0;
 }
@@ -13071,9 +13071,9 @@ bool can_repair_golem(struct char_data *ch, struct char_data *golem, int *materi
     return false;
   }
 
-  /* Calculate repair percentage and material cost */
+  /* Calculate repair percentage and reduced material cost. */
   repair_percent = (missing_hp * 100) / GET_MAX_HIT(golem);
-  *material_needed = MAX(1, repair_percent / 25);
+  *material_needed = MAX(1, (repair_percent + 49) / 50);
   *material_type = get_golem_repair_material_type(golem_type);
 
   /* Check if player has enough materials */
