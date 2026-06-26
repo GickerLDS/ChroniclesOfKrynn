@@ -10858,9 +10858,12 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
       if (display)
         send_to_char(ch, "%2d: %-50s\r\n", GET_DEX_BONUS(ch), "Weapon Finesse Dex");
     }
-    else if (!wielded && HAS_FEAT(ch, FEAT_UNARMED_STRIKE) && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
+    else if (!wielded && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
              GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
     {
+      /* Unarmed strikes count as light weapons, so Weapon Finesse applies to
+         them for any character with the feat - no monk unarmed-strike class
+         ability is required. */
       calc_bab += GET_DEX_BONUS(ch); /* superior bonus is used */
       if (display)
         send_to_char(ch, "%2d: %-50s\r\n", GET_DEX_BONUS(ch), "Weapon Finesse Dex");
@@ -10912,7 +10915,10 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
     }
     break;
   case ATTACK_TYPE_UNARMED:
-    if (HAS_FEAT(ch, FEAT_UNARMED_STRIKE) && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
+    /* Unarmed strikes count as light weapons, so Weapon Finesse applies to them
+       for any character with the feat - no monk unarmed-strike class ability is
+       required. */
+    if (HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
         GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
     {
       calc_bab += GET_DEX_BONUS(ch); /* superior bonus is used */
