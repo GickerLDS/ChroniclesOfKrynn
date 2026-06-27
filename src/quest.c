@@ -527,18 +527,39 @@ void add_completed_quest(struct char_data *ch, qst_vnum vnum)
 void remove_completed_quest(struct char_data *ch, qst_vnum vnum)
 {
   qst_vnum *temp;
-  int i, j = 0;
+  int i, j = 0, removed = 0;
+
+  if (!ch || IS_NPC(ch) || vnum == NOTHING || GET_NUM_QUESTS(ch) <= 0 ||
+      !ch->player_specials->saved.completed_quests)
+    return;
 
   CREATE(temp, qst_vnum, GET_NUM_QUESTS(ch));
   for (i = 0; i < GET_NUM_QUESTS(ch); i++)
+  {
     if (ch->player_specials->saved.completed_quests[i] != vnum)
       temp[j++] = ch->player_specials->saved.completed_quests[i];
+    else
+      removed++;
+  }
 
-  GET_NUM_QUESTS(ch)--;
+  if (!removed)
+  {
+    free(temp);
+    return;
+  }
+
+  GET_NUM_QUESTS(ch) = j;
 
   if (ch->player_specials->saved.completed_quests)
     free(ch->player_specials->saved.completed_quests);
-  ch->player_specials->saved.completed_quests = temp;
+
+  if (GET_NUM_QUESTS(ch) > 0)
+    ch->player_specials->saved.completed_quests = temp;
+  else
+  {
+    free(temp);
+    ch->player_specials->saved.completed_quests = NULL;
+  }
 }
 
 /* called when a quest is completed! */
@@ -2590,6 +2611,99 @@ static int questline_max_position(int quest_line_id)
   return max_pos;
 }
 
+static bool questline_load_vnums_through(struct char_data *ch, int quest_line_id,
+                                         qst_vnum cutoff_vnum, bool reverse_order,
+                                         qst_vnum **quest_vnums, int *quest_count)
+{
+  char query[256];
+  MYSQL_RES *result = NULL;
+  MYSQL_ROW row;
+  my_ulonglong row_count;
+  qst_vnum *vnums = NULL;
+  int count = 0;
+  bool found_cutoff = FALSE;
+
+  if (quest_vnums)
+    *quest_vnums = NULL;
+  if (quest_count)
+    *quest_count = 0;
+
+  if (!quest_vnums || !quest_count)
+    return FALSE;
+
+  snprintf(query, sizeof(query),
+           "SELECT position, quest_vnum FROM quest_line_steps "
+           "WHERE quest_line_id = %d ORDER BY position %s",
+           quest_line_id, reverse_order ? "DESC" : "ASC");
+
+  if (mysql_query_safe(conn, query))
+  {
+    send_to_char(ch, "Could not load quest line %d.\r\n", quest_line_id);
+    return FALSE;
+  }
+
+  result = mysql_store_result_safe(conn);
+  if (!result)
+  {
+    send_to_char(ch, "Could not read quest line %d.\r\n", quest_line_id);
+    return FALSE;
+  }
+
+  row_count = mysql_num_rows(result);
+  if (row_count == 0)
+  {
+    send_to_char(ch, "Quest line %d is empty or does not exist.\r\n", quest_line_id);
+    mysql_free_result(result);
+    return FALSE;
+  }
+
+  CREATE(vnums, qst_vnum, row_count);
+
+  while ((row = mysql_fetch_row(result)))
+  {
+    qst_vnum quest_vnum = row[1] ? atoi(row[1]) : NOTHING;
+
+    vnums[count++] = quest_vnum;
+    if (quest_vnum == cutoff_vnum)
+    {
+      found_cutoff = TRUE;
+      break;
+    }
+  }
+
+  mysql_free_result(result);
+
+  if (!found_cutoff)
+  {
+    free(vnums);
+    send_to_char(ch, "Quest %d is not in quest line %d.\r\n", cutoff_vnum, quest_line_id);
+    return FALSE;
+  }
+
+  *quest_vnums = vnums;
+  *quest_count = count;
+  return TRUE;
+}
+
+static int clear_current_quest_by_vnum(struct char_data *ch, qst_vnum quest_vnum)
+{
+  int i, cleared = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  for (i = 0; i < MAX_CURRENT_QUESTS; i++)
+  {
+    if (GET_QUEST(ch, i) == quest_vnum)
+    {
+      clear_quest(ch, i);
+      cleared++;
+    }
+  }
+
+  return cleared;
+}
+
 static void questline_list(struct char_data *ch)
 {
   MYSQL_RES *result = NULL;
@@ -3173,6 +3287,161 @@ ACMDU(do_questline)
   {
     send_to_char(ch, "Unknown questline subcommand.\r\n");
   }
+}
+
+ACMD(do_questcomplete)
+{
+  char player_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char line_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char cutoff_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char action_arg[MAX_INPUT_LENGTH] = {'\0'};
+  struct char_data *victim = NULL;
+  qst_vnum *quest_vnums = NULL;
+  int quest_count = 0;
+  int quest_line_id = 0;
+  qst_vnum cutoff_vnum = NOTHING;
+  bool set_complete = FALSE;
+  int changed = 0, unchanged = 0, skipped_missing = 0, active_cleared = 0;
+  int i;
+  const char *range_desc;
+
+  four_arguments(argument, player_arg, sizeof(player_arg), line_arg, sizeof(line_arg),
+                 cutoff_arg, sizeof(cutoff_arg), action_arg, sizeof(action_arg));
+
+  if (GET_LEVEL(ch) < LVL_STAFF)
+  {
+    send_to_char(ch, "Huh!?!\r\n");
+    return;
+  }
+
+  if (!*player_arg || !*line_arg || !*cutoff_arg || !*action_arg)
+  {
+    send_to_char(ch, "Usage: questcomplete <player> <questline id> <quest vnum> <complete|incomplete>\r\n");
+    return;
+  }
+
+  if (!is_number(line_arg) || !is_number(cutoff_arg))
+  {
+    send_to_char(ch, "Questline id and quest vnum must be numbers.\r\n");
+    return;
+  }
+
+  quest_line_id = atoi(line_arg);
+  cutoff_vnum = atoi(cutoff_arg);
+
+  if (quest_line_id <= 0)
+  {
+    send_to_char(ch, "Questline id must be greater than zero.\r\n");
+    return;
+  }
+
+  if (cutoff_vnum <= 0 || real_quest(cutoff_vnum) == NOTHING)
+  {
+    send_to_char(ch, "Quest vnum %d does not exist.\r\n", cutoff_vnum);
+    return;
+  }
+
+  if (is_abbrev(action_arg, "complete"))
+    set_complete = TRUE;
+  else if (is_abbrev(action_arg, "incomplete"))
+    set_complete = FALSE;
+  else
+  {
+    send_to_char(ch, "Final argument must be 'complete' or 'incomplete'.\r\n");
+    return;
+  }
+
+  if ((victim = get_player_vis(ch, player_arg, NULL, FIND_CHAR_WORLD)) == NULL)
+  {
+    send_to_char(ch, "Can not find that player. They must be online.\r\n");
+    return;
+  }
+
+  if (!questline_mysql_ready(ch))
+    return;
+
+  if (!questline_load_vnums_through(ch, quest_line_id, cutoff_vnum, !set_complete,
+                                    &quest_vnums, &quest_count))
+    return;
+
+  for (i = 0; i < quest_count; i++)
+  {
+    qst_vnum quest_vnum = quest_vnums[i];
+
+    if (quest_vnum <= 0 || real_quest(quest_vnum) == NOTHING)
+    {
+      skipped_missing++;
+      continue;
+    }
+
+    if (set_complete)
+    {
+      if (is_complete(victim, quest_vnum))
+        unchanged++;
+      else
+      {
+        add_completed_quest(victim, quest_vnum);
+        changed++;
+      }
+
+      active_cleared += clear_current_quest_by_vnum(victim, quest_vnum);
+    }
+    else
+    {
+      if (is_complete(victim, quest_vnum))
+      {
+        remove_completed_quest(victim, quest_vnum);
+        changed++;
+      }
+      else
+        unchanged++;
+    }
+  }
+
+  free(quest_vnums);
+  save_char(victim, 0);
+
+  range_desc = set_complete ? "from the start through" : "from the end through";
+  send_to_char(ch,
+               "Questline %d %s quest %d set %s for %s: %d changed, %d already %s",
+               quest_line_id, range_desc, cutoff_vnum, set_complete ? "complete" : "incomplete",
+               GET_NAME(victim), changed, unchanged,
+               set_complete ? "complete" : "incomplete");
+
+  if (active_cleared > 0)
+    send_to_char(ch, ", %d active quest slot%s cleared", active_cleared,
+                 active_cleared == 1 ? "" : "s");
+
+  if (skipped_missing > 0)
+    send_to_char(ch, ", %d missing quest%s skipped", skipped_missing,
+                 skipped_missing == 1 ? "" : "s");
+
+  send_to_char(ch, ".\r\n");
+
+  if (victim != ch)
+  {
+    send_to_char(victim,
+                 "\tY%s updated your quest progress: questline %d %s quest %d set %s. "
+                 "%d changed, %d already %s",
+                 GET_NAME(ch), quest_line_id, range_desc, cutoff_vnum,
+                 set_complete ? "complete" : "incomplete", changed, unchanged,
+                 set_complete ? "complete" : "incomplete");
+
+    if (active_cleared > 0)
+      send_to_char(victim, ", %d active quest slot%s cleared", active_cleared,
+                   active_cleared == 1 ? "" : "s");
+
+    if (skipped_missing > 0)
+      send_to_char(victim, ", %d missing quest%s skipped", skipped_missing,
+                   skipped_missing == 1 ? "" : "s");
+
+    send_to_char(victim, ".\tn\r\n");
+  }
+
+  mudlog(BRF, LVL_STAFF, TRUE,
+         "QUESTCOMPLETE: %s set %s questline %d %s quest %d for %s: %d changed, %d unchanged, %d active cleared, %d missing skipped.",
+         GET_NAME(ch), set_complete ? "complete" : "incomplete", quest_line_id, range_desc,
+         cutoff_vnum, GET_NAME(victim), changed, unchanged, active_cleared, skipped_missing);
 }
 
 /* with a given object vnum, finds references to quests in game */

@@ -165,6 +165,7 @@ void check_timed_quests(void);
 void quest_walkto(struct char_data *ch, char argument[MAX_STRING_LENGTH]);
 SPECIAL_DECL(questmaster);
 ACMD_DECL(do_quest);
+ACMD_DECL(do_questcomplete);
 ACMD_DECL(do_questline);
 ACMD_DECL(do_aqref);
 ACMD_DECL(do_walkto_quest);

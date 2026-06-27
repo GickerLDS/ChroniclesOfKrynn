@@ -822,6 +822,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"quaff", "qua", POS_FIGHTING, do_use_consumable, 0, SCMD_QUAFF, FALSE, ACTION_SWIFT, {0, 6}, NULL},
     {"qecho", "qec", POS_DEAD, do_qcomm, LVL_STAFF, SCMD_QECHO, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"quest", "que", POS_DEAD, do_quest, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"questcomplete", "questcomplete", POS_DEAD, do_questcomplete, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"questline", "questline", POS_DEAD, do_questline, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"qui", "qui", POS_DEAD, do_quit, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
 #if defined(CAMPAIGN_FR) || defined(CAMPAIGN_DL)
