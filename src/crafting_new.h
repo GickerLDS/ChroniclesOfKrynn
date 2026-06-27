@@ -45,9 +45,13 @@
 #define CRAFT_MAT_BONE 35
 #define CRAFT_MAT_STONE 36
 #define CRAFT_MAT_DRAGONBLOOD 37
+#define CRAFT_MAT_CATALYST 38
+#define CRAFT_MAT_CATALYST_FRAGMENT 39
 
-#define NUM_CRAFT_MATS 38
+#define NUM_CRAFT_MATS 40
 // also set in structs.h
+
+#define CRAFT_CATALYST_MAX 5
 
 #define CRAFT_GROUP_NONE 0
 #define CRAFT_GROUP_HARD_METALS 1
@@ -150,8 +154,9 @@
 #define SCMD_NEWCRAFT_EQUIPMENT 7
 #define SCMD_NEWCRAFT_GOLEM 8
 #define SCMD_NEWCRAFT_BUTCHER 9
+#define SCMD_NEWCRAFT_DISENCHANT 10
 
-#define NUM_CRAFTING_METHODS 9
+#define NUM_CRAFTING_METHODS 10
 
 // Supply order contract types
 #define SUPPLY_CONTRACT_BASIC 1
@@ -276,6 +281,7 @@ int get_craft_obj_level(struct obj_data *obj, struct char_data *ch);
 int craft_motes_required(int location, int modifier, int bonus_type, int enhancement);
 int crafting_mote_by_bonus_location(int location, int specific, int bonus_type);
 void set_crafting_motes(struct char_data *ch, const char *argument);
+void set_crafting_catalysts(struct char_data *ch, const char *argument);
 void reset_craft_materials(struct char_data *ch, bool verbose, bool reimburse);
 int get_craft_project_level(struct char_data *ch);
 int get_enhancement_mote_type(struct char_data *ch, int type, int spec);
@@ -357,6 +363,7 @@ void newcraft_supplyorder(struct char_data *ch, const char *argument);
 void newcraft_equipment(struct char_data *ch, const char *argument);
 void newcraft_show_tools(struct char_data *ch, const char *argument);
 void newcraft_golem(struct char_data *ch, const char *argument);
+void newcraft_disenchant(struct char_data *ch, const char *argument);
 void craft_golem_complete(struct char_data *ch);
 void set_golem_type(struct char_data *ch, const char *arg);
 void set_golem_size(struct char_data *ch, const char *arg);

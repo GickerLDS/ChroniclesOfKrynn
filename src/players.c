@@ -984,6 +984,8 @@ int load_char(const char *name, struct char_data *ch)
           GET_CRAFT(ch).obj_level = atoi(line);
         else if (!strcmp(tag, "CrLA"))
           GET_CRAFT(ch).level_adjust = atoi(line);
+        else if (!strcmp(tag, "CrCa"))
+          GET_CRAFT(ch).catalysts_used = MAX(0, MIN(atoi(line), CRAFT_CATALYST_MAX));
         else if (!strcmp(tag, "CrSN"))
           GET_CRAFT(ch).supply_num_required = atoi(line);
         else if (!strcmp(tag, "CrSR"))
@@ -3131,6 +3133,7 @@ void save_char(struct char_data *ch, int mode)
 
   BUFFER_WRITE("CrOL: %d\n", GET_CRAFT(ch).obj_level);
   BUFFER_WRITE("CrLA: %d\n", GET_CRAFT(ch).level_adjust);
+  BUFFER_WRITE("CrCa: %d\n", GET_CRAFT(ch).catalysts_used);
 
   BUFFER_WRITE("CrSN: %d\n", GET_CRAFT(ch).supply_num_required);
   BUFFER_WRITE("CrAS: %d\n", GET_CRAFT(ch).supply_active_slot);

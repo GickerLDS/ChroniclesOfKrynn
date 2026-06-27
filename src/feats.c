@@ -1719,8 +1719,9 @@ void assign_feats(void)
   feato(FEAT_WEAPON_FINESSE, "weapon finesse", TRUE, TRUE, FALSE, FEAT_TYPE_COMBAT,
         "use dex for hit roll of weapons",
         "Use dexterity bonus for hit roll of weapons (if better than strength bonus), "
-        "there is no benefit to this feat for archery.  Only works for 'light' classed "
-        "weapons, or weapons that are a smaller size class than the character.");
+        "there is no benefit to this feat for archery.  Only works for weapons that "
+        "qualify for finesse, including light weapons, smaller weapons, and weapons "
+        "with the finesse flag such as rapiers.");
   feat_prereq_bab(FEAT_WEAPON_FINESSE, 1);
 
   /* feat-number | name | in game? | learnable? | stackable? | feat-type | short-descrip | long descrip */

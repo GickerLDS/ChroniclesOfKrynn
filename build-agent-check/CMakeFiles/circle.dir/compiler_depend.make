@@ -2273,6 +2273,7 @@ CMakeFiles/circle.dir/src/asciimap.c.o: /home/krynn/code/src/asciimap.c \
 CMakeFiles/circle.dir/src/assign_wpn_armor.c.o: /home/krynn/code/src/assign_wpn_armor.c \
   /home/krynn/code/src/actionqueues.h \
   /home/krynn/code/src/actions.h \
+  /home/krynn/code/src/alchemy.h \
   /home/krynn/code/src/assign_wpn_armor.h \
   /home/krynn/code/src/bool.h \
   /home/krynn/code/src/campaign.h \
@@ -7832,6 +7833,7 @@ CMakeFiles/circle.dir/src/domains_schools.c.o: /home/krynn/code/src/domains_scho
   /home/krynn/code/src/perfmon.h \
   /home/krynn/code/src/protocol.h \
   /home/krynn/code/src/screen.h \
+  /home/krynn/code/src/spell_prep.h \
   /home/krynn/code/src/spells.h \
   /home/krynn/code/src/structs.h \
   /home/krynn/code/src/sysdep.h \
@@ -8291,6 +8293,7 @@ CMakeFiles/circle.dir/src/evolutions.c.o: /home/krynn/code/src/evolutions.c \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
 
 CMakeFiles/circle.dir/src/feats.c.o: /home/krynn/code/src/feats.c \
+  /home/krynn/code/src/alchemy.h \
   /home/krynn/code/src/assign_wpn_armor.h \
   /home/krynn/code/src/bool.h \
   /home/krynn/code/src/campaign.h \
@@ -8302,6 +8305,7 @@ CMakeFiles/circle.dir/src/feats.c.o: /home/krynn/code/src/feats.c \
   /home/krynn/code/src/dg_event.h \
   /home/krynn/code/src/dg_scripts.h \
   /home/krynn/code/src/domains_schools.h \
+  /home/krynn/code/src/evolutions.h \
   /home/krynn/code/src/feats.h \
   /home/krynn/code/src/handler.h \
   /home/krynn/code/src/helpers.h \

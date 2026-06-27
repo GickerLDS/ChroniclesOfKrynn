@@ -749,68 +749,33 @@ CHECK_TABLE_SIZE(grapple_size_modifiers, NUM_SIZES);
 const char *dr_damtypes[] = {"bludgeoning", "slashing", "piercing", "\n"};
 CHECK_TABLE_SIZE(dr_damtypes, NUM_DR_DAMTYPES + 1);
 
-const char *damtypes[] = {"RESERVED",
-                          "fire",
-                          "cold",
-                          "air",
-                          "earth",
-                          "acid",
-                          "holy",
-                          "electric",
-                          "unholy",
-                          "slashing",
-                          "piercing",
-                          "bludgeon",
-                          "sonic",
-                          "poison",
-                          "disease",
-                          "negative",
-                          "illusion",
-                          "mental",
-                          "light",
-                          "energy",
-                          "water",
-                          "celestial poison",
-                          "bleeding",
-                          "temporal",
-                          "chaos",
-                          "sunlight",
-                          "moving water",
-                          "blood drain",
-                          "force",
-                          "\n"};
+const char *damtypes[] = {"RESERVED",     "fire",
+                          "cold",         "air",
+                          "earth",        "acid",
+                          "holy",         "electric",
+                          "unholy",       "slashing",
+                          "piercing",     "bludgeon",
+                          "sonic",        "poison",
+                          "disease",      "negative",
+                          "illusion",     "mental",
+                          "light",        "energy",
+                          "water",        "celestial poison",
+                          "bleeding",     "temporal",
+                          "chaos",        "sunlight",
+                          "moving water", "blood drain",
+                          "force",        "\n"};
 CHECK_TABLE_SIZE(damtypes, NUM_DAM_TYPES + 1);
 
-const char *damtype_display[] = {"RESERVED",
-                                 "Damage Fire",
-                                 "Damage Cold",
-                                 "Damage Air",
-                                 "Damage Earth",
-                                 "Damage Acid",
-                                 "Damage Holy",
-                                 "Damage Electric",
-                                 "Damage Unholy",
-                                 "Damage Slashing",
-                                 "Damage Piercing",
-                                 "Damage Bludgeoning",
-                                 "Damage Sound",
-                                 "Damage Poison",
-                                 "Damage Disease",
-                                 "Damage Negative",
-                                 "Damage Illusion",
-                                 "Damage Mental",
-                                 "Damage Light",
-                                 "Damage Energy",
-                                 "Damage Water",
-                                 "DmgCelestialPoison",
-                                 "Damage Bleeding",
-                                 "Damage Temporal",
-                                 "Damage Chaos",
-                                 "Damage Sunlight",
-                                 "Damage Moving Water",
-                                 "Damage Blood Drain",
-                                 "Damage Force",
-                                 "\n"};
+const char *damtype_display[] = {"RESERVED",           "Damage Fire",     "Damage Cold",
+                                 "Damage Air",         "Damage Earth",    "Damage Acid",
+                                 "Damage Holy",        "Damage Electric", "Damage Unholy",
+                                 "Damage Slashing",    "Damage Piercing", "Damage Bludgeoning",
+                                 "Damage Sound",       "Damage Poison",   "Damage Disease",
+                                 "Damage Negative",    "Damage Illusion", "Damage Mental",
+                                 "Damage Light",       "Damage Energy",   "Damage Water",
+                                 "DmgCelestialPoison", "Damage Bleeding", "Damage Temporal",
+                                 "Damage Chaos",       "Damage Sunlight", "Damage Moving Water",
+                                 "Damage Blood Drain", "Damage Force",    "\n"};
 CHECK_TABLE_SIZE(damtype_display, NUM_DAM_TYPES + 1);
 
 /** Description of cardinal directions.
@@ -1223,6 +1188,7 @@ const char *action_bits[] = {"<spec>", // 0
                              "Golem",
                              "No-Teleport",
                              "Summon-Solar",
+                             "Flightless",
                              "\n"};
 CHECK_TABLE_SIZE(action_bits, NUM_MOB_FLAGS + 1);
 
@@ -1784,9 +1750,9 @@ const char *equipment_types[] = {"Used as light", // 0
 CHECK_TABLE_SIZE(equipment_types, NUM_WEARS + 1);
 
 /* weapon family */
-const char *weapon_family[] = {"Monk",    "Light-Blade", "Hammer",       "Ranged",
-                               "Heavy-Blade", "Polearm", "Double-Weapon", "Axe",
-                               "Natural-Bite", "Natural-Claw", "\n"};
+const char *weapon_family[] = {"Monk",    "Light-Blade",   "Hammer", "Ranged",       "Heavy-Blade",
+                               "Polearm", "Double-Weapon", "Axe",    "Natural-Bite", "Natural-Claw",
+                               "\n"};
 CHECK_TABLE_SIZE(weapon_family, NUM_WEAPON_FAMILIES + 1);
 
 /* weapon flags */
@@ -2233,9 +2199,8 @@ const int apply_type_food_or_drink[] = {TRUE,  // none
                                         TRUE,  // spell duration
                                         TRUE,  // spell penetration
                                         TRUE,  // move speed
-                                        TRUE,   // resist force
-                                        TRUE
-                                    };
+                                        TRUE,  // resist force
+                                        TRUE};
 CHECK_TABLE_SIZE(apply_type_food_or_drink, NUM_APPLIES + 1);
 
 /** Matrix to show which bonus types are allowed for which apply locations */
@@ -4511,7 +4476,7 @@ const char *class_short_descriptions[] = {
     "protection and more.", // artificer
     "A spontaneous arcane caster whose draconic blood transforms "
     "them into a more powerful dragon-like being.", // dragon disciple
-    "",                     // placeholder
+    "",                                             // placeholder
     ""};
 CHECK_TABLE_SIZE(class_short_descriptions, NUM_CLASSES + 1);
 
@@ -4858,6 +4823,8 @@ const char *crafting_materials[] = {"",
                                     "bone",
                                     "stone",
                                     "dragonblood",
+                                    "catalyst",
+                                    "catalyst fragment",
                                     "\n"};
 CHECK_TABLE_SIZE(crafting_materials, NUM_CRAFT_MATS + 1);
 
@@ -4899,6 +4866,8 @@ const char *crafting_material_descriptions[] = {"",
                                                 "bone",
                                                 "stone",
                                                 "dragonblood",
+                                                "catalyst",
+                                                "catalyst fragment",
                                                 "\n"};
 CHECK_TABLE_SIZE(crafting_material_descriptions, NUM_CRAFT_MATS + 1);
 
@@ -4940,6 +4909,8 @@ const char *crafting_material_nodes[] = {"",
                                          "bone",
                                          "a stone quarry",
                                          "a pool of dragonblood",
+                                         "a catalyst",
+                                         "catalyst fragments",
                                          "\n"};
 CHECK_TABLE_SIZE(crafting_material_nodes, NUM_CRAFT_MATS + 1);
 
@@ -4981,6 +4952,8 @@ const char *harvesting_messages[] = {"",
                                      "bone",
                                      "quarrying stone",
                                      "collecting dragonblood",
+                                     "collecting a catalyst",
+                                     "collecting catalyst fragments",
                                      "\n"};
 CHECK_TABLE_SIZE(harvesting_messages, NUM_CRAFT_MATS + 1);
 
@@ -5005,12 +4978,22 @@ const char *crafting_motes[] = {"",           "air mote", "dark mote",  "earth m
                                 "fire mote",  "ice mote", "light mote", "lightning mote",
                                 "water mote", ""};
 
-const char *crafting_methods[] = {"",         "crafting", "surveying",           "harvesting",
-                                  "refining", "resizing", "doing a supplyorder", "\n"};
+const char *crafting_methods[] = {"",
+                                  "crafting",
+                                  "surveying",
+                                  "harvesting",
+                                  "refining",
+                                  "resizing",
+                                  "doing a supplyorder",
+                                  "using crafting equipment",
+                                  "constructing a golem",
+                                  "butchering",
+                                  "disenchanting",
+                                  "\n"};
 
-const char *crafting_methods_short[] = {"",       "craft",  "survey",      "harvest",
-                                        "refine", "resize", "supplyorder", "equipment",
-                                        "golem",  "butcher", "\n"};
+const char *crafting_methods_short[] = {"",       "craft",   "survey",      "harvest",
+                                        "refine", "resize",  "supplyorder", "equipment",
+                                        "golem",  "butcher", "disenchant",  "\n"};
 
 const char *campaigns[] = {"Default (Luminari)", "Dragonlance", "Forgotten Realms", "\n"};
 

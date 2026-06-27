@@ -1277,8 +1277,10 @@
 #define MOB_NOTELEPORT 104 /**< Mob cannot be teleported */
 
 #define MOB_SUMMON_SOLAR 105
+#define MOB_FLIGHTLESS                                                                             \
+  106 // Flightless mobs cannot fly even if they could under normal, non magical circumstances
 /**********************/
-#define NUM_MOB_FLAGS 106
+#define NUM_MOB_FLAGS 107
 /**********************/
 /**********************/
 
@@ -1476,10 +1478,10 @@
 #define PRF_BOARDCHECK 83         /**< Display board check on login */
 #define PRF_AUTOSEARCH                                                                             \
   84 /**< Automatically search for traps when moving (1/2 perception, 1/2 speed, lose initiative) */
-#define PRF_SWEEPING_STRIKE 85 /**< Monk sweeping strike: auto-trip on first flurry attack */
+#define PRF_SWEEPING_STRIKE 85     /**< Monk sweeping strike: auto-trip on first flurry attack */
 #define PRF_SURVEY_ROOMS_PROMPT 86 /**< Display survey rooms in prompt */
-#define PRF_AUTOLIGHT 87 /**< Automatically replace burned-out light from inventory */
-#define PRF_NO_WALKTO_CONFIRM 88 /**< Skip walkto confirmation for quest targets/masters */
+#define PRF_AUTOLIGHT 87           /**< Automatically replace burned-out light from inventory */
+#define PRF_NO_WALKTO_CONFIRM 88   /**< Skip walkto confirmation for quest targets/masters */
 
 /** Total number of available PRF flags */
 #define NUM_PRF_FLAGS 89
@@ -4901,7 +4903,7 @@
 /** Total number of item mats.*/
 #define NUM_MATERIALS 60
 
-#define NUM_CRAFT_MATS 38
+#define NUM_CRAFT_MATS 40
 #define NUM_CRAFT_MOTES 9
 
 #define NUM_CRAFT_GROUPS 9
@@ -5071,12 +5073,12 @@
 #define ITEM_CRAFTING_JEWELCRAFTING_STATION 110
 #define ITEM_CRAFTING_TANNERY 111
 #define ITEM_CRAFTING_CARPENTRY_TABLE 112
-#define ITEM_TRAPPED 113     // This object has a trap attached
-#define ITEM_ACCOUNT_EXP 114 // item is bought for account exp
-#define ITEM_REFORGEABLE 115 // item can be reforged
+#define ITEM_TRAPPED 113       // This object has a trap attached
+#define ITEM_ACCOUNT_EXP 114   // item is bought for account exp
+#define ITEM_REFORGEABLE 115   // item can be reforged
 #define ITEM_ARTISANPOINTS 116 // item is purchased with artisan points
-#define ITEM_BUTCHERED 117   // corpse has been butchered
-#define ITEM_NO_SALVAGE 118   // item cannot be salvaged for crafting materials
+#define ITEM_BUTCHERED 117     // corpse has been butchered
+#define ITEM_NO_SALVAGE 118    // item cannot be salvaged for crafting materials
 /** Total number of item flags */
 #define NUM_ITEM_FLAGS 119
 
@@ -5281,7 +5283,7 @@
 /* Nonlethal: These weapons deal nonlethal damage (see Combat). */
 #define WEAPON_FLAG_NONLETHAL (1 << 10)
 #define WEAPON_FLAG_SLOW_RELOAD (1 << 11)
-#define WEAPON_FLAG_BALANCED (1 << 12)
+#define WEAPON_FLAG_FINESSE (1 << 12)
 #define WEAPON_FLAG_CHARGE (1 << 13)
 #define WEAPON_FLAG_REPEATING (1 << 14)
 #define WEAPON_FLAG_TWO_HANDED (1 << 15)
@@ -5864,7 +5866,7 @@
 #define PLR_DESC_LENGTH 4096             /**< Max length for PC description */
 #define MAX_HELP_ENTRY MAX_STRING_LENGTH /**< Max size of help entry */
 
-#define MAX_MESSAGES 1000        /**< Max Different attack message types */
+#define MAX_MESSAGES 1000       /**< Max Different attack message types */
 #define MAX_NAME_LENGTH 20      /**< Max PC/NPC name length */
 #define MAX_PWD_LENGTH 30       /**< Max PC password length */
 #define MAX_TITLE_LENGTH 80     /**< Max PC title length */
@@ -6140,9 +6142,9 @@ struct crafting_data_info
   // supply order slot system
   struct supply_contract supply_slots[5]; // 5 persistent supply order slots
   bool supply_slot_active[5];             // Which slots are occupied
-  time_t supply_slot_cooldowns[5];  // Individual cooldowns for each slot (when taken/abandoned)
-  time_t supply_slots_last_refresh; // When slots were last refreshed
-  time_t supply_slots_next_refresh; // When next refresh is available
+  time_t supply_slot_cooldowns[5];   // Individual cooldowns for each slot (when taken/abandoned)
+  time_t supply_slots_last_refresh;  // When slots were last refreshed
+  time_t supply_slots_next_refresh;  // When next refresh is available
   time_t supply_cooldown_start_time; // When current cooldown window started (0 if no cooldown)
   int supply_orders_completed_count; // How many orders completed in current window
 
@@ -6158,6 +6160,7 @@ struct crafting_data_info
 
   // efficient talent saved materials [material_type][amount]
   int efficient_saved_materials[NUM_CRAFT_GROUPS][2];
+  int catalysts_used;
 
   // golem crafting info
   int golem_type;                            // GOLEM_TYPE_WOOD, STONE, IRON
@@ -6166,11 +6169,12 @@ struct crafting_data_info
   int golem_motes_required[NUM_CRAFT_MOTES]; // motes needed for golem
 
   // butchering info
-  int butcher_material; // Material being extracted from corpse (separate from room harvesting)
+  int butcher_material;      // Material being extracted from corpse (separate from room harvesting)
   char *butcher_corpse_desc; // Temporary description of corpse being butchered
 
   // specialization info
-  int craft_specialization[2]; // Two crafting/harvesting skills to specialize in (ABILITY_* values, -1 if unset)
+  int craft_specialization
+      [2]; // Two crafting/harvesting skills to specialize in (ABILITY_* values, -1 if unset)
 };
 
 /* ============================================================================ */
@@ -6588,11 +6592,11 @@ struct char_special_data_saved
   int psionic_energy_type; // this is the element that will be used when using psionic energy powers
 
   /* Golem crafting info - saved to pfile */
-  int golem_stored_type;                     // Type of golem stored for recall (GOLEM_TYPE_*)
-  int golem_stored_size;                     // Size of golem stored for recall (GOLEM_SIZE_*)
-  int golem_stored_hp;                       // HP preserved for quick battlefield redeploys
-  time_t golem_recall_cooldown;              // When golem can be recalled again
-  int golem_directive;                       // Active construct directive (GOLEM_DIRECTIVE_*)
+  int golem_stored_type;        // Type of golem stored for recall (GOLEM_TYPE_*)
+  int golem_stored_size;        // Size of golem stored for recall (GOLEM_SIZE_*)
+  int golem_stored_hp;          // HP preserved for quick battlefield redeploys
+  time_t golem_recall_cooldown; // When golem can be recalled again
+  int golem_directive;          // Active construct directive (GOLEM_DIRECTIVE_*)
 };
 
 /* not saved player data used for condensed combat */
@@ -6768,7 +6772,7 @@ struct char_special_data
   bool perk_luck_active; // temporary flag for Dark One's Own Luck perk bonus
 
   int dark_revelation_mob_rnum; // Dark Revelation lored target rnum for combat bonus
-  bool dark_revelation_used; // Dark Revelation bonus already applied this combat
+  bool dark_revelation_used;    // Dark Revelation bonus already applied this combat
 
   bool is_charmie;
   int sage_mob_vnum;
@@ -6870,12 +6874,12 @@ struct char_perk_data
 
 struct stored_potion
 {
-  char *name;      /* Custom name for the potion (e.g., "Healing Salve", "Invisibility Draught") */
-  int cast_level;      /* The spell cast level/circle for this potion */
-  int spells[3];       /* Up to 3 spells in this potion (-1 if unused) */
-  int num_spells;      /* Number of spells actually stored */
-  int quantity;        /* Number of this potion stored */
-  int vnum;            /* Original potion vnum (for restoring original object, ITEM_PROTOTYPE if generated) */
+  char *name;     /* Custom name for the potion (e.g., "Healing Salve", "Invisibility Draught") */
+  int cast_level; /* The spell cast level/circle for this potion */
+  int spells[3];  /* Up to 3 spells in this potion (-1 if unused) */
+  int num_spells; /* Number of spells actually stored */
+  int quantity;   /* Number of this potion stored */
+  int vnum; /* Original potion vnum (for restoring original object, ITEM_PROTOTYPE if generated) */
 };
 
 /* Phase 4.5: Material storage structure for wilderness harvesting */
@@ -7154,12 +7158,12 @@ struct player_special_data_saved
   int warlock_whispers_cooldown; // Animate Dead cooldown in ticks (5 minutes = 50 ticks)
 
   /* Warlock Invocation Mastery - Tier 4 */
-  int warlock_chains_cooldown; // Hold Monster cooldown in ticks (5 minutes = 50 ticks)
-  int warlock_visions_cooldown; // Wizard Eye cooldown in ticks (5 minutes = 50 ticks)
+  int warlock_chains_cooldown;              // Hold Monster cooldown in ticks (5 minutes = 50 ticks)
+  int warlock_visions_cooldown;             // Wizard Eye cooldown in ticks (5 minutes = 50 ticks)
   int warlock_witch_concentration_cooldown; // Witch concentration reroll cooldown (10 minutes = 100 ticks)
 
   /* Artificer device recharge tracking */
-  int device_recharge_timer;    // Timer tracking seconds until next device recharge check
+  int device_recharge_timer; // Timer tracking seconds until next device recharge check
 
   int character_age;
   bool character_age_saved;
@@ -7180,13 +7184,13 @@ struct player_special_data_saved
   /* Stores wilderness materials with (category, subtype, quality) structure */
   int stored_material_count; /* Number of different materials stored */
   struct material_storage stored_materials[MAX_STORED_MATERIALS]; /* Material storage array */
-  
+
   /* New individual potion storage system */
   /* Stores potions individually by name with cast level and spells */
-  int stored_potion_count; /* Number of unique potions stored */
+  int stored_potion_count;                                 /* Number of unique potions stored */
   struct stored_potion stored_potions[MAX_STORED_POTIONS]; /* Individual potion storage array */
-  
-  int ability_exp[MAX_ABILITIES + 1];                             // abilities
+
+  int ability_exp[MAX_ABILITIES + 1]; // abilities
 
   int new_supply_num_made;
   int new_supply_cooldown;
@@ -7228,27 +7232,33 @@ struct player_special_data_saved
   bool chimeric_breath_used;          /**< Whether chimeric breath was used this combat cycle */
 
   /* Artificer Spell-Stored Cascade tracking (Weird Science Tier 4) */
-  time_t cascade_last_combat;         /**< Timestamp of last combat end for cascade */
-  bool cascade_used;                  /**< Whether cascade was used this combat cycle */
+  time_t cascade_last_combat; /**< Timestamp of last combat end for cascade */
+  bool cascade_used;          /**< Whether cascade was used this combat cycle */
 
   /* Artificer Weird Science Engineering tracking */
-  time_t stable_circuitry_ii_cooldown; /**< Timestamp until Stable Circuitry II can prevent another break */
+  time_t
+      stable_circuitry_ii_cooldown; /**< Timestamp until Stable Circuitry II can prevent another break */
   time_t field_recompiler_cooldown; /**< Timestamp until Field Recompiler can be used again */
-  bool was_fighting_last_tick; /**< Tracks combat->non-combat transition for recharge pulse bonuses */
+  bool
+      was_fighting_last_tick; /**< Tracks combat->non-combat transition for recharge pulse bonuses */
 
   /* Artificer Infusion & Battlefield Support tracking */
-  time_t flash_insight_cooldown; /**< Timestamp until Flash Insight can be used again */
+  time_t flash_insight_cooldown;      /**< Timestamp until Flash Insight can be used again */
   time_t emergency_infusion_cooldown; /**< Timestamp until Emergency Infusion can be used again */
-  int flash_insight_bonus; /**< Bonus applied to next saving throw or skill check */
-  time_t flash_insight_expires; /**< Expiration timestamp for pending Flash Insight bonus */
-  bool flash_insight_survival_only; /**< Pending Flash Insight applies only to death/poison-style saves */
-  time_t aegis_protocol_cooldown; /**< Timestamp until Aegis Protocol can trigger again */
+  int flash_insight_bonus;            /**< Bonus applied to next saving throw or skill check */
+  time_t flash_insight_expires;       /**< Expiration timestamp for pending Flash Insight bonus */
+  bool
+      flash_insight_survival_only; /**< Pending Flash Insight applies only to death/poison-style saves */
+  time_t aegis_protocol_cooldown;     /**< Timestamp until Aegis Protocol can trigger again */
   time_t soulbound_infusion_cooldown; /**< Timestamp until Soulbound Infusion can trigger again */
 
   /* Artificer Construct Command tracking */
-  time_t siege_frame_slam_cooldown; /**< Timestamp until Arcana Siege Frame slam can be used again */
-  time_t omni_forge_commander_cooldown; /**< Timestamp until Omni-Forge Commander refit can be used again */
-  bool omni_forge_free_command; /**< First eligible golem command in the next combat ignores cooldown */
+  time_t
+      siege_frame_slam_cooldown; /**< Timestamp until Arcana Siege Frame slam can be used again */
+  time_t
+      omni_forge_commander_cooldown; /**< Timestamp until Omni-Forge Commander refit can be used again */
+  bool
+      omni_forge_free_command; /**< First eligible golem command in the next combat ignores cooldown */
 
   /* Wizard Evoker perks */
   time_t
@@ -8009,16 +8019,16 @@ struct staffevent_struct
 /** Happy Hour Data */
 struct happyhour
 {
-  int qp_rate;              // % increase in qp
-  int exp_rate;             // % increase in exp
-  int gold_rate;            // % increase in gold
-  int treasure_rate;        // % increase in treasure drop
-  int crafting_exp_rate;    // % increase in crafting exp
-  int harvesting_exp_rate;  // % increase in harvesting exp
-  int harvesting_materials_rate; // % increase in materials harvested
-  int harvesting_motes_chance_rate; // % increase in mote drop chance
+  int qp_rate;                        // % increase in qp
+  int exp_rate;                       // % increase in exp
+  int gold_rate;                      // % increase in gold
+  int treasure_rate;                  // % increase in treasure drop
+  int crafting_exp_rate;              // % increase in crafting exp
+  int harvesting_exp_rate;            // % increase in harvesting exp
+  int harvesting_materials_rate;      // % increase in materials harvested
+  int harvesting_motes_chance_rate;   // % increase in mote drop chance
   int harvesting_motes_obtained_rate; // % increase in motes obtained
-  int ticks_left;           // time left for happyhour
+  int ticks_left;                     // time left for happyhour
 };
 
 /** structure for list of recent players (see 'recent' command) */
@@ -8074,16 +8084,16 @@ struct game_data
 // automatic hour happy info saved in game config, cedit
 struct happy_hour_data
 {
-  int qp;       // percent increase in number of qp
-  int exp;      // percent increase in exp
-  int gold;     // percent increase in gold
-  int treasure; // percent increase in random treasure chance
-  int crafting_exp; // percent increase in crafting exp
-  int harvesting_exp; // percent increase in harvesting exp
-  int harvesting_materials; // percent increase in materials harvested
-  int harvesting_motes_chance; // percent increase in mote drop chance
+  int qp;                        // percent increase in number of qp
+  int exp;                       // percent increase in exp
+  int gold;                      // percent increase in gold
+  int treasure;                  // percent increase in random treasure chance
+  int crafting_exp;              // percent increase in crafting exp
+  int harvesting_exp;            // percent increase in harvesting exp
+  int harvesting_materials;      // percent increase in materials harvested
+  int harvesting_motes_chance;   // percent increase in mote drop chance
   int harvesting_motes_obtained; // percent increase in motes obtained
-  int chance;   // percent chance the happy hour will occur each rl hour
+  int chance;                    // percent chance the happy hour will occur each rl hour
 };
 
 /** The rent and crashsave options. */
@@ -8143,13 +8153,13 @@ struct autowiz_data
 };
 
 #define NUM_MOB_STAT_LEVEL_RANGES 7
-#define MOB_STAT_LEVEL_1_5       0
-#define MOB_STAT_LEVEL_6_10      1
-#define MOB_STAT_LEVEL_11_15     2
-#define MOB_STAT_LEVEL_16_20     3
-#define MOB_STAT_LEVEL_21_25     4
-#define MOB_STAT_LEVEL_26_30     5
-#define MOB_STAT_LEVEL_30_PLUS   6
+#define MOB_STAT_LEVEL_1_5 0
+#define MOB_STAT_LEVEL_6_10 1
+#define MOB_STAT_LEVEL_11_15 2
+#define MOB_STAT_LEVEL_16_20 3
+#define MOB_STAT_LEVEL_21_25 4
+#define MOB_STAT_LEVEL_26_30 5
+#define MOB_STAT_LEVEL_30_PLUS 6
 
 struct mob_stat_category
 {

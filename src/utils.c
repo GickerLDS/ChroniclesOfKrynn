@@ -191,10 +191,8 @@ bool can_study_known_spells(struct char_data *ch)
 
   dragon_disciple_arcane_class = get_dragon_disciple_arcane_class(ch);
   is_arcane_progression_class =
-      LEVELUP(ch)->class == CLASS_ARCANE_ARCHER ||
-      LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
-      LEVELUP(ch)->class == CLASS_ARCANE_SHADOW ||
-      LEVELUP(ch)->class == CLASS_SPELLSWORD ||
+      LEVELUP(ch)->class == CLASS_ARCANE_ARCHER || LEVELUP(ch)->class == CLASS_MYSTIC_THEURGE ||
+      LEVELUP(ch)->class == CLASS_ARCANE_SHADOW || LEVELUP(ch)->class == CLASS_SPELLSWORD ||
       LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE ||
       LEVELUP(ch)->class == CLASS_KNIGHT_OF_THE_THORN ||
       LEVELUP(ch)->class == CLASS_ELDRITCH_KNIGHT ||
@@ -202,27 +200,26 @@ bool can_study_known_spells(struct char_data *ch)
 
   /* sorcerer*/
   if (LEVELUP(ch)->class == CLASS_SORCERER ||
-      (is_arcane_progression_class &&
-       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
-         dragon_disciple_arcane_class == CLASS_SORCERER) ||
-        (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
-         GET_PREFERRED_ARCANE(ch) == CLASS_SORCERER))))
+      (is_arcane_progression_class && ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+                                        dragon_disciple_arcane_class == CLASS_SORCERER) ||
+                                       (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+                                        GET_PREFERRED_ARCANE(ch) == CLASS_SORCERER))))
     return TRUE;
 
   /* bard */
   if (LEVELUP(ch)->class == CLASS_BARD ||
       (is_arcane_progression_class &&
-       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE && dragon_disciple_arcane_class == CLASS_BARD) ||
+       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+         dragon_disciple_arcane_class == CLASS_BARD) ||
         (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE && GET_PREFERRED_ARCANE(ch) == CLASS_BARD))))
     return TRUE;
 
   /* summoner */
   if (LEVELUP(ch)->class == CLASS_SUMMONER ||
-      (is_arcane_progression_class &&
-       ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
-         dragon_disciple_arcane_class == CLASS_SUMMONER) ||
-        (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
-         GET_PREFERRED_ARCANE(ch) == CLASS_SUMMONER))))
+      (is_arcane_progression_class && ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
+                                        dragon_disciple_arcane_class == CLASS_SUMMONER) ||
+                                       (LEVELUP(ch)->class != CLASS_DRAGON_DISCIPLE &&
+                                        GET_PREFERRED_ARCANE(ch) == CLASS_SUMMONER))))
     return TRUE;
 
   /* inquisitor */
@@ -319,10 +316,9 @@ int compute_arcane_level(struct char_data *ch)
   arcane_level += CLASS_LEVEL(ch, CLASS_MYSTIC_THEURGE) / 2;
   arcane_level += compute_arcana_golem_level(ch) - (SPELLBATTLE(ch) / 2);
   arcane_level += (CLASS_LEVEL(ch, CLASS_SPELLSWORD) + 1) / 2;
-  arcane_level += CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) -
-                  (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 1) -
-                  (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 5) -
-                  (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 9);
+  arcane_level +=
+      CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) - (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 1) -
+      (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 5) - (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 9);
 
   return arcane_level;
 }
@@ -7277,6 +7273,9 @@ bool can_fly(struct char_data *ch)
 
   if (affected_by_spell(ch, SPELL_FLY))
     return TRUE;
+
+  if (IS_DRAGON(ch) && (!IS_NPC(ch) || !MOB_FLAGGED(ch, MOB_FLIGHTLESS)))
+    return true;
 
   struct obj_data *obj = NULL;
   int i = 0;

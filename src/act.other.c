@@ -2253,7 +2253,8 @@ ACMD(do_call)
   }
   else if (is_abbrev(argument, "familiar"))
   {
-    level = CLASS_LEVEL(ch, CLASS_SORCERER) + CLASS_LEVEL(ch, CLASS_WIZARD) + CLASS_LEVEL(ch, CLASS_WARLOCK);
+    level = CLASS_LEVEL(ch, CLASS_SORCERER) + CLASS_LEVEL(ch, CLASS_WIZARD) +
+            CLASS_LEVEL(ch, CLASS_WARLOCK);
 
     if (!HAS_FEAT(ch, FEAT_SUMMON_FAMILIAR))
     {
@@ -3382,7 +3383,7 @@ ACMDU(do_gain)
     return;
   }
 
-  for (class = 0; class < NUM_CLASSES; class ++)
+  for (class = 0; class < NUM_CLASSES; class++)
   {
     /* need to spend their points before advancing */
     if ((GET_PRACTICES(ch) != 0) || (GET_TRAINS(ch) > 1) || (GET_BOOSTS(ch) != 0) ||
@@ -5735,16 +5736,21 @@ ACMD(do_lore)
 
   one_argument(argument, arg, sizeof(arg));
 
-  target = generic_find(arg, FIND_CHAR_ROOM | FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch,
-                        &tch, &tobj);
+  // target = generic_find(arg, FIND_CHAR_ROOM | FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tch, &tobj);
+
+  target = generic_find(arg, FIND_OBJ_INV, ch, &tch, &tobj);
 
   if (*arg)
   {
     if (!target)
     {
-      act("There is nothing to here to use your Lore ability on...", FALSE, ch, NULL, NULL,
-          TO_CHAR);
-      return;
+      target = generic_find(arg, FIND_CHAR_ROOM, ch, &tch, &tobj);
+      if (!target)
+      {
+        act("There is nothing to here to use your Lore ability on...", FALSE, ch, NULL, NULL,
+            TO_CHAR);
+        return;
+      }
     }
   }
   else
@@ -5788,8 +5794,9 @@ ACMD(do_lore)
       {
         ch->char_specials.dark_revelation_mob_rnum = GET_MOB_RNUM(tch);
         ch->char_specials.dark_revelation_used = FALSE;
-        send_to_char(ch, "\tY[Your patron reveals this creature's weaknesses! "
-                         "You gain +2 to hit and +2d6 damage in your next battle against it.]\tn\r\n");
+        send_to_char(ch,
+                     "\tY[Your patron reveals this creature's weaknesses! "
+                     "You gain +2 to hit and +2d6 damage in your next battle against it.]\tn\r\n");
       }
     }
   }
@@ -6112,22 +6119,34 @@ ACMD(do_invisiblerogue)
 /* race trelux innate ability */
 ACMD(do_fly)
 {
+  struct char_data *rec = ch;
+  bool first_pers = true;
+
+  if (IS_NPC(ch))
+  {
+    if (AFF_FLAGGED(ch, AFF_CHARM) && ch->master && !IS_NPC(ch->master))
+    {
+      rec = ch->master;
+      first_pers = false;
+    }
+  }
   if (!can_fly(ch))
   {
-    send_to_char(ch, "You don't have this ability.\r\n");
+    send_to_char(rec, "%s don't have this ability.\r\n", first_pers ? "You" : "They");
     return;
   }
 
   /* Check if grounded by gale spirits */
   if (affected_by_spell(ch, SKILL_RUSH_OF_GALE_SPIRITS))
   {
-    send_to_char(ch, "The violent winds still prevent you from taking flight!\r\n");
+    send_to_char(rec, "The violent winds still prevent %s from taking flight!\r\n",
+                 first_pers ? "you" : "them");
     return;
   }
 
   if (AFF_FLAGGED(ch, AFF_FLYING))
   {
-    send_to_char(ch, "You are already flying!\r\n");
+    send_to_char(rec, "%s are already flying!\r\n", first_pers ? "You" : "They");
     return;
   }
   else
@@ -6468,7 +6487,7 @@ ACMD(do_hide)
   if (FIGHTING(ch) && !AFF_FLAGGED(ch, AFF_GRAPPLED) && !AFF_FLAGGED(ch, AFF_ENTANGLED))
   {
     if (HAS_FEAT(ch, FEAT_HIDE_IN_PLAIN_SIGHT) ||
-      has_perk_active(ch, PERK_WARLOCK_ONE_WITH_SHADOWS) || can_one_with_shadows(ch) ||
+        has_perk_active(ch, PERK_WARLOCK_ONE_WITH_SHADOWS) || can_one_with_shadows(ch) ||
         can_naturally_stealthy(ch) || has_perk(ch, PERK_MONK_SHADOW_MASTER))
     {
       USE_STANDARD_ACTION(ch);
@@ -8567,7 +8586,8 @@ ACMD(do_gen_tog)
       // 70
       {"Autolight disabled.\r\n", "Autolight enabled.\r\n"},
       // 71
-      {"Walk-to confirmation required.\r\n", "Walk-to confirmation skipped for quest targets/masters.\r\n"},
+      {"Walk-to confirmation required.\r\n",
+       "Walk-to confirmation skipped for quest targets/masters.\r\n"},
   };
 
   if (IS_NPC(ch))
@@ -8936,7 +8956,8 @@ ACMD(do_diplomacy)
 void show_happyhour(struct char_data *ch)
 {
   char happyexp[80], happygold[80], happyqp[80], happytreasure[80];
-  char happycraftexp[80], happyharvestexp[80], happyharvestmat[80], happyharvestmotechance[80], happyharvestmoteobtained[80];
+  char happycraftexp[80], happyharvestexp[80], happyharvestmat[80], happyharvestmotechance[80],
+      happyharvestmoteobtained[80];
   int secs_left;
 
   if ((IS_HAPPYHOUR) || (GET_LEVEL(ch) >= LVL_GRSTAFF))
@@ -8960,35 +8981,43 @@ void show_happyhour(struct char_data *ch)
              CCYEL(ch, C_NRM), HAPPY_HARVESTING_EXP, CCNRM(ch, C_NRM));
     snprintf(happyharvestmat, sizeof(happyharvestmat), "%s+%d%%%s to Materials Harvested\r\n",
              CCYEL(ch, C_NRM), HAPPY_HARVESTING_MATERIALS, CCNRM(ch, C_NRM));
-    snprintf(happyharvestmotechance, sizeof(happyharvestmotechance), "%s+%d%%%s to Mote Drop Chance\r\n",
-             CCYEL(ch, C_NRM), HAPPY_HARVESTING_MOTES_CHANCE, CCNRM(ch, C_NRM));
-    snprintf(happyharvestmoteobtained, sizeof(happyharvestmoteobtained), "%s+%d%%%s to Motes Obtained\r\n",
-             CCYEL(ch, C_NRM), HAPPY_HARVESTING_MOTES_OBTAINED, CCNRM(ch, C_NRM));
+    snprintf(happyharvestmotechance, sizeof(happyharvestmotechance),
+             "%s+%d%%%s to Mote Drop Chance\r\n", CCYEL(ch, C_NRM), HAPPY_HARVESTING_MOTES_CHANCE,
+             CCNRM(ch, C_NRM));
+    snprintf(happyharvestmoteobtained, sizeof(happyharvestmoteobtained),
+             "%s+%d%%%s to Motes Obtained\r\n", CCYEL(ch, C_NRM), HAPPY_HARVESTING_MOTES_OBTAINED,
+             CCNRM(ch, C_NRM));
 
 #if defined(CAMPAIGN_DL)
-    send_to_char(ch,
-                 "Chronicles of Krynn Happy Hour!\r\n"
+    send_to_char(
+        ch,
+        "Chronicles of Krynn Happy Hour!\r\n"
 #elif defined(CAMPAIGN_FR)
-    send_to_char(ch,
-                 "Faerun Happy Hour!\r\n"
+    send_to_char(
+        ch,
+        "Faerun Happy Hour!\r\n"
 #else
-    send_to_char(ch,
-                 "LuminariMUD Happy Hour!\r\n"
+    send_to_char(
+        ch,
+        "LuminariMUD Happy Hour!\r\n"
 #endif
-                 "------------------\r\n"
-                 "%s%s%s%s%s%s%s%s%sTime Remaining: %s%d%s hours %s%d%s mins %s%d%s secs\r\n",
-                 (IS_HAPPYEXP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyexp : "",
-                 (IS_HAPPYGOLD || (GET_LEVEL(ch) >= LVL_STAFF)) ? happygold : "",
-                 (IS_HAPPYTREASURE || (GET_LEVEL(ch) >= LVL_STAFF)) ? happytreasure : "",
-                 (IS_HAPPYQP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyqp : "",
-                 (HAPPY_CRAFTING_EXP > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happycraftexp : "",
-                 (HAPPY_HARVESTING_EXP > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestexp : "",
-                 (HAPPY_HARVESTING_MATERIALS > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmat : "",
-                 (HAPPY_HARVESTING_MOTES_CHANCE > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmotechance : "",
-                 (HAPPY_HARVESTING_MOTES_OBTAINED > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmoteobtained : "",
-                 CCYEL(ch, C_NRM),
-                 (secs_left / 3600), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), (secs_left % 3600) / 60,
-                 CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), (secs_left % 60), CCNRM(ch, C_NRM));
+        "------------------\r\n"
+        "%s%s%s%s%s%s%s%s%sTime Remaining: %s%d%s hours %s%d%s mins %s%d%s secs\r\n",
+        (IS_HAPPYEXP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyexp : "",
+        (IS_HAPPYGOLD || (GET_LEVEL(ch) >= LVL_STAFF)) ? happygold : "",
+        (IS_HAPPYTREASURE || (GET_LEVEL(ch) >= LVL_STAFF)) ? happytreasure : "",
+        (IS_HAPPYQP || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyqp : "",
+        (HAPPY_CRAFTING_EXP > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happycraftexp : "",
+        (HAPPY_HARVESTING_EXP > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestexp : "",
+        (HAPPY_HARVESTING_MATERIALS > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmat : "",
+        (HAPPY_HARVESTING_MOTES_CHANCE > 0 || (GET_LEVEL(ch) >= LVL_STAFF)) ? happyharvestmotechance
+                                                                            : "",
+        (HAPPY_HARVESTING_MOTES_OBTAINED > 0 || (GET_LEVEL(ch) >= LVL_STAFF))
+            ? happyharvestmoteobtained
+            : "",
+        CCYEL(ch, C_NRM), (secs_left / 3600), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM),
+        (secs_left % 3600) / 60, CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), (secs_left % 60),
+        CCNRM(ch, C_NRM));
   }
   else
   {
@@ -9092,19 +9121,22 @@ ACMD(do_happyhour)
   {
     num = MIN(MAX((atoi(val)), 0), 1000);
     HAPPY_HARVESTING_MATERIALS = num;
-    send_to_char(ch, "Happy Hour Materials Harvested rate set to +%d%%\r\n", HAPPY_HARVESTING_MATERIALS);
+    send_to_char(ch, "Happy Hour Materials Harvested rate set to +%d%%\r\n",
+                 HAPPY_HARVESTING_MATERIALS);
   }
   else if (is_abbrev(arg, "harvestingmotechance"))
   {
     num = MIN(MAX((atoi(val)), 0), 100);
     HAPPY_HARVESTING_MOTES_CHANCE = num;
-    send_to_char(ch, "Happy Hour Mote Drop Chance rate set to +%d%%\r\n", HAPPY_HARVESTING_MOTES_CHANCE);
+    send_to_char(ch, "Happy Hour Mote Drop Chance rate set to +%d%%\r\n",
+                 HAPPY_HARVESTING_MOTES_CHANCE);
   }
   else if (is_abbrev(arg, "harvestingmotesobtained"))
   {
     num = MIN(MAX((atoi(val)), 0), 1000);
     HAPPY_HARVESTING_MOTES_OBTAINED = num;
-    send_to_char(ch, "Happy Hour Motes Obtained rate set to +%d%%\r\n", HAPPY_HARVESTING_MOTES_OBTAINED);
+    send_to_char(ch, "Happy Hour Motes Obtained rate set to +%d%%\r\n",
+                 HAPPY_HARVESTING_MOTES_OBTAINED);
   }
   else if (is_abbrev(arg, "show"))
   {
@@ -9143,34 +9175,32 @@ ACMD(do_happyhour)
     send_to_char(
         ch,
         "Usage: %shappyhour                               %s- show usage (this info)\r\n"
-        "       %shappyhour show                          %s- display current settings (what mortals see)\r\n"
-        "       %shappyhour time <ticks>                  %s- set happyhour time and start timer\r\n"
+        "       %shappyhour show                          %s- display current settings (what "
+        "mortals see)\r\n"
+        "       %shappyhour time <ticks>                  %s- set happyhour time and start "
+        "timer\r\n"
         "       %shappyhour qp <num>                      %s- set qp percentage gain\r\n"
         "       %shappyhour exp <num>                     %s- set exp percentage gain\r\n"
         "       %shappyhour gold <num>                    %s- set gold percentage gain\r\n"
         "       %shappyhour treasure <num>                %s- set treasure drop-rate gain\r\n"
         "       %shappyhour craftingexp <num>             %s- set crafting exp percentage gain\r\n"
-        "       %shappyhour harvestingexp <num>           %s- set harvesting exp percentage gain\r\n"
-        "       %shappyhour harvestingmaterials <num>     %s- set materials harvested percentage gain\r\n"
+        "       %shappyhour harvestingexp <num>           %s- set harvesting exp percentage "
+        "gain\r\n"
+        "       %shappyhour harvestingmaterials <num>     %s- set materials harvested percentage "
+        "gain\r\n"
         "       %shappyhour harvestingmotechance <num>    %s- set mote drop chance (max 100)\r\n"
-        "       %shappyhour harvestingmotesobtained <num> %s- set motes obtained percentage gain\r\n"
+        "       %shappyhour harvestingmotesobtained <num> %s- set motes obtained percentage "
+        "gain\r\n"
         "       \tyhappyhour default            \tw- sets a default setting for happyhour\r\n\r\n"
         "Configure the happyhour settings and start a happyhour.\r\n"
         "Currently 1 hour IRL = %d ticks\r\n"
         "If no number is specified, 0 (off) is assumed.\r\nThe command \tyhappyhour time\tn will "
         "therefore stop the happyhour timer.\r\n",
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), 
-        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM),
+        CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM),
+        CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
+        CCYEL(ch, C_NRM), CCNRM(ch, C_NRM), CCYEL(ch, C_NRM), CCNRM(ch, C_NRM),
         (3600 / SECS_PER_MUD_HOUR));
   }
 }
@@ -10968,7 +10998,8 @@ ACMDU(do_borrow)
           award_magic_ammo(ch, grade, GET_LEVEL(vict));
           break;
         case 11:
-          award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade), GET_LEVEL(vict));
+          award_misc_magic_item(ch, determine_rnd_misc_cat(), cp_convert_grade_enchantment(grade),
+                                GET_LEVEL(vict));
           break;
         }
         ch->char_specials.which_treasure_message = CUSTOM_TREASURE_MESSAGE_NONE;
@@ -11373,7 +11404,8 @@ ACMDU(do_flashinsight)
   {
     if (!can_target_self)
     {
-      send_to_char(ch, "Flash Insight I must target an ally unless you use the survival mode from Genius Under Pressure.\r\n");
+      send_to_char(ch, "Flash Insight I must target an ally unless you use the survival mode from "
+                       "Genius Under Pressure.\r\n");
       return;
     }
   }
@@ -11402,25 +11434,28 @@ ACMDU(do_flashinsight)
 
   if (survival_mode)
   {
-    send_to_char(ch,
-                 "You lock in a crisis response for %s (+%d to the next death or poison-style save).\r\n",
-                 vict == ch ? "yourself" : GET_NAME(vict), bonus);
+    send_to_char(
+        ch,
+        "You lock in a crisis response for %s (+%d to the next death or poison-style save).\r\n",
+        vict == ch ? "yourself" : GET_NAME(vict), bonus);
     send_to_char(vict,
-                 "%s calibrates a crisis response for you (+%d to your next death or poison-style save).\r\n",
+                 "%s calibrates a crisis response for you (+%d to your next death or poison-style "
+                 "save).\r\n",
                  GET_NAME(ch), bonus);
-    act("$n makes a razor-fast adjustment, priming $N for a lethal or toxic threat.", TRUE, ch,
-        0, vict, TO_NOTVICT);
+    act("$n makes a razor-fast adjustment, priming $N for a lethal or toxic threat.", TRUE, ch, 0,
+        vict, TO_NOTVICT);
   }
   else
   {
-    send_to_char(ch,
-                 "You deliver a flash of tactical insight to %s (+%d to next save or skill check).\r\n",
-                 GET_NAME(vict), bonus);
-    send_to_char(vict,
-                 "%s grants you a flash of insight (+%d to your next saving throw or skill check).\r\n",
-                 GET_NAME(ch), bonus);
-    act("$n gestures sharply, sharing a burst of battlefield insight with $N.", TRUE, ch, 0,
-        vict, TO_NOTVICT);
+    send_to_char(
+        ch, "You deliver a flash of tactical insight to %s (+%d to next save or skill check).\r\n",
+        GET_NAME(vict), bonus);
+    send_to_char(
+        vict,
+        "%s grants you a flash of insight (+%d to your next saving throw or skill check).\r\n",
+        GET_NAME(ch), bonus);
+    act("$n gestures sharply, sharing a burst of battlefield insight with $N.", TRUE, ch, 0, vict,
+        TO_NOTVICT);
   }
 }
 
@@ -11550,7 +11585,7 @@ ACMDU(do_device)
   int spell_assignment_level, max_spell_level;
   /* char spell_list[MAX_STRING_LENGTH]; */ /* moved to event handler */
 
-  #define SINFO spell_info[spell_num]
+#define SINFO spell_info[spell_num]
 
   /* Clear any pending device destroy confirmation codes when using other commands */
   {
@@ -11655,14 +11690,16 @@ ACMDU(do_device)
     send_to_char(ch, "  device use <device> [target]            - Use a weird science device "
                      "(optional target)\r\n");
     send_to_char(ch,
-           "  device recompile <device> <slot> <spell> - Field Recompiler swap (perk)\r\n");
+                 "  device recompile <device> <slot> <spell> - Field Recompiler swap (perk)\r\n");
     send_to_char(ch, "  device list                             - List your current devices\r\n");
     send_to_char(ch,
                  "  device info <device>                    - Get information about a device\r\n");
     send_to_char(ch, "  device rename <device> <new name>       - Change the name of a device\r\n");
     send_to_char(ch, "  device repair <device>                  - Repair a broken device (removes "
                      "instability)\r\n");
-    send_to_char(ch, "  device overcharge [on|off]              - Toggle Volatile Theorem overcharge mode\r\n");
+    send_to_char(
+        ch,
+        "  device overcharge [on|off]              - Toggle Volatile Theorem overcharge mode\r\n");
     send_to_char(ch, "  device destroy <device>                 - Permanently destroy a device "
                      "(requires confirmation)\r\n");
     send_to_char(ch,
@@ -11902,7 +11939,7 @@ ACMDU(do_device)
 
     /* Check that all spells are either violent or non-violent (no mixing) */
     int first_spell_violent = spell_info[spell_nums[0]].violent;
-    
+
     for (i = 1; i < num_spells; i++)
     {
       if (spell_info[spell_nums[i]].violent != first_spell_violent)
@@ -11917,42 +11954,42 @@ ACMDU(do_device)
     /* Check that spells with object targets can only combine with other object-target spells */
     int first_spell_is_obj_target = 0;
     int first_spell_target = spell_info[spell_nums[0]].targets;
-    
-    if (first_spell_target == TAR_OBJ_INV || 
-        first_spell_target == TAR_OBJ_ROOM || 
+
+    if (first_spell_target == TAR_OBJ_INV || first_spell_target == TAR_OBJ_ROOM ||
         first_spell_target == TAR_OBJ_EQUIP)
     {
       first_spell_is_obj_target = 1;
     }
-    
+
     for (i = 1; i < num_spells; i++)
     {
       int current_target = spell_info[spell_nums[i]].targets;
-      int current_is_obj_target = (current_target == TAR_OBJ_INV || 
-                                   current_target == TAR_OBJ_ROOM || 
-                                   current_target == TAR_OBJ_EQUIP);
-      
+      int current_is_obj_target =
+          (current_target == TAR_OBJ_INV || current_target == TAR_OBJ_ROOM ||
+           current_target == TAR_OBJ_EQUIP);
+
       if (first_spell_is_obj_target != current_is_obj_target)
       {
+        send_to_char(
+            ch, "You cannot combine object-targeting spells with non-object-targeting spells.\r\n");
         send_to_char(ch,
-                     "You cannot combine object-targeting spells with non-object-targeting spells.\r\n");
-        send_to_char(ch, "All spells must either target objects or target non-objects, not mixed.\r\n");
+                     "All spells must either target objects or target non-objects, not mixed.\r\n");
         return;
       }
     }
 
     /* Check that spells with TAR_OBJ_WORLD can only combine with other TAR_OBJ_WORLD spells */
     int first_spell_is_world_target = (first_spell_target == TAR_OBJ_WORLD);
-    
+
     for (i = 1; i < num_spells; i++)
     {
       int current_target = spell_info[spell_nums[i]].targets;
       int current_is_world_target = (current_target == TAR_OBJ_WORLD);
-      
+
       if (first_spell_is_world_target != current_is_world_target)
       {
-        send_to_char(ch,
-                     "You cannot combine world-targeting spells with non-world-targeting spells.\r\n");
+        send_to_char(
+            ch, "You cannot combine world-targeting spells with non-world-targeting spells.\r\n");
         send_to_char(ch, "All spells must either target the world or not, not mixed.\r\n");
         return;
       }
@@ -11960,17 +11997,18 @@ ACMDU(do_device)
 
     /* Check that spells with TAR_CHAR_WORLD can only combine with other TAR_CHAR_WORLD spells */
     int first_spell_is_char_world_target = (first_spell_target == TAR_CHAR_WORLD);
-    
+
     for (i = 1; i < num_spells; i++)
     {
       int current_target = spell_info[spell_nums[i]].targets;
       int current_is_char_world_target = (current_target == TAR_CHAR_WORLD);
-      
+
       if (first_spell_is_char_world_target != current_is_char_world_target)
       {
+        send_to_char(ch, "You cannot combine character-world-targeting spells with "
+                         "non-character-world-targeting spells.\r\n");
         send_to_char(ch,
-                     "You cannot combine character-world-targeting spells with non-character-world-targeting spells.\r\n");
-        send_to_char(ch, "All spells must either target characters world-wide or not, not mixed.\r\n");
+                     "All spells must either target characters world-wide or not, not mixed.\r\n");
         return;
       }
     }
@@ -11998,14 +12036,14 @@ ACMDU(do_device)
       for (j = 0; j < 4; j++)
         max_circles[j] = weird_science_table[19].devices[j];
     }
-    
+
     /* Unbound Invention: +1 to all circle limits */
     if (has_artificer_unbound_invention(ch))
     {
       for (j = 0; j < 4; j++)
         max_circles[j]++;
     }
-    
+
     /* Count current spell circles used */
     int used_circles[4] = {0, 0, 0, 0};
     int support_matrix_exempt = spell_matrix_rank;
@@ -12153,9 +12191,8 @@ ACMDU(do_device)
                                   : (circle_level == 2) ? "nd"
                                   : (circle_level == 3) ? "rd"
                                                         : "th";
-            send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level,
-                         ordinal, lower_level,
-                         used_circles[lower_circle] + new_circles[lower_circle],
+            send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level, ordinal,
+                         lower_level, used_circles[lower_circle] + new_circles[lower_circle],
                          max_circles[lower_circle]);
           }
           if (higher_circle >= 0 && higher_circle < 4 && higher_circle != lower_circle)
@@ -12165,9 +12202,8 @@ ACMDU(do_device)
                                   : (circle_level == 2) ? "nd"
                                   : (circle_level == 3) ? "rd"
                                                         : "th";
-            send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level,
-                         ordinal, higher_level,
-                         used_circles[higher_circle] + new_circles[higher_circle],
+            send_to_char(ch, "  - %d%s circle (level %d): %d/%d used\r\n", circle_level, ordinal,
+                         higher_level, used_circles[higher_circle] + new_circles[higher_circle],
                          max_circles[higher_circle]);
           }
           return;
@@ -12184,10 +12220,11 @@ ACMDU(do_device)
                                 : (circle_level == 2) ? "nd"
                                 : (circle_level == 3) ? "rd"
                                                       : "th";
-          send_to_char(ch,
-                       "You can't create this invention: it would exceed your allowed number of %d%s "
-                       "circle spells (%d max, you have %d).\r\n",
-                       circle_level, ordinal, max_circles[i], used_circles[i]);
+          send_to_char(
+              ch,
+              "You can't create this invention: it would exceed your allowed number of %d%s "
+              "circle spells (%d max, you have %d).\r\n",
+              circle_level, ordinal, max_circles[i], used_circles[i]);
           char spell_list_o[MAX_STRING_LENGTH * 4];
           strcpy(spell_list_o, spell_info[spell_nums[0]].name);
           for (j = 1; j < num_spells; j++)
@@ -12221,7 +12258,7 @@ ACMDU(do_device)
     if (has_artificer_unbound_invention(ch))
       max_devices_allowed++;
     max_devices_allowed += spell_matrix_rank;
-    
+
     if (ch->player_specials->saved.num_inventions >= max_devices_allowed)
     {
       send_to_char(ch,
@@ -12251,9 +12288,11 @@ ACMDU(do_device)
       if (spell_matrix_ii && !FIGHTING(ch))
         creation_time = 1;
 
-      send_to_char(ch, "Your spell matrix stores this support profile outside your normal invention budget.\r\n");
+      send_to_char(ch, "Your spell matrix stores this support profile outside your normal "
+                       "invention budget.\r\n");
       if (spell_matrix_ii && !FIGHTING(ch))
-        send_to_char(ch, "Spell Matrix II lets you reconfigure that support profile almost instantly out of combat.\r\n");
+        send_to_char(ch, "Spell Matrix II lets you reconfigure that support profile almost "
+                         "instantly out of combat.\r\n");
     }
 
     /* Check if player is already creating an invention */
@@ -12680,7 +12719,8 @@ ACMDU(do_device)
       return;
     }
 
-    if (FIGHTING(ch) || char_has_mud_event(ch, eDEVICE_CREATION) || char_has_mud_event(ch, eDEVICE_REPAIR))
+    if (FIGHTING(ch) || char_has_mud_event(ch, eDEVICE_CREATION) ||
+        char_has_mud_event(ch, eDEVICE_REPAIR))
     {
       send_to_char(ch, "You need a stable workspace to recompile a device.\r\n");
       return;
@@ -12697,7 +12737,8 @@ ACMDU(do_device)
     struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
     if (slot_idx < 0 || slot_idx >= inv->num_spells)
     {
-      send_to_char(ch, "Invalid slot. Use a value from 1 to %d for this device.\r\n", inv->num_spells);
+      send_to_char(ch, "Invalid slot. Use a value from 1 to %d for this device.\r\n",
+                   inv->num_spells);
       return;
     }
 
@@ -12744,7 +12785,8 @@ ACMDU(do_device)
     else if (cleric_level < LVL_IMMORT)
       spell_assignment_level = cleric_level;
 
-    if (spell_assignment_level >= LVL_IMMORT || ((spell_assignment_level + 1) / 2) > max_spell_level)
+    if (spell_assignment_level >= LVL_IMMORT ||
+        ((spell_assignment_level + 1) / 2) > max_spell_level)
     {
       send_to_char(ch, "That spell is not available to artificers of your level.\r\n");
       return;
@@ -12774,8 +12816,7 @@ ACMDU(do_device)
 
       if (spell_info[new_spell].violent != spell_info[existing_spell].violent)
       {
-        send_to_char(ch,
-                     "You cannot mix violent and non-violent spells in the same device.\r\n");
+        send_to_char(ch, "You cannot mix violent and non-violent spells in the same device.\r\n");
         return;
       }
     }
@@ -12805,9 +12846,9 @@ ACMDU(do_device)
     {
       send_to_char(ch, "Overcharge is currently %s%s%s.\r\n", current ? "\tG" : "\tr",
                    current ? "ON" : "OFF", "\tn");
-      send_to_char(ch,
-                   "Usage: device overcharge <on|off>\r\n"
-                   "While ON: +10%% device effect magnitude, +2 instability growth on failures.\r\n");
+      send_to_char(
+          ch, "Usage: device overcharge <on|off>\r\n"
+              "While ON: +10%% device effect magnitude, +2 instability growth on failures.\r\n");
       return;
     }
 
@@ -12848,7 +12889,7 @@ ACMDU(do_device)
     struct char_data *target = NULL;
     struct obj_data *obj_target = NULL;
     struct player_invention *inv = &ch->player_specials->saved.inventions[inv_idx];
-    
+
     for (i = 0; i < inv->num_spells; i++)
     {
       int spell_num = inv->spell_effects[i];
@@ -12867,7 +12908,7 @@ ACMDU(do_device)
               target = NULL;
               break;
             }
-            
+
             /* 2. Check objects in inventory or equipped */
             obj_target = get_obj_in_list_vis(ch, arg3, NULL, ch->carrying);
             if (obj_target)
@@ -12875,7 +12916,7 @@ ACMDU(do_device)
               target = NULL;
               break;
             }
-            
+
             /* 3. Check objects in world (if TAR_OBJ_WORLD is set) */
             if (IS_SET(SINFO.targets, TAR_OBJ_WORLD) && !obj_target)
             {
@@ -12903,7 +12944,7 @@ ACMDU(do_device)
                 break;
               }
             }
-            
+
             /* 5. Check characters in the room (if TAR_CHAR_ROOM is set) */
             if (IS_SET(SINFO.targets, TAR_CHAR_ROOM))
             {
@@ -12941,9 +12982,9 @@ ACMDU(do_device)
     if (inv->disabled_until > time(0))
     {
       int remaining = (int)(inv->disabled_until - time(0));
-      send_to_char(ch,
-                   "The device is venting volatile energy and is temporarily disabled (%d seconds).\r\n",
-                   remaining);
+      send_to_char(
+          ch, "The device is venting volatile energy and is temporarily disabled (%d seconds).\r\n",
+          remaining);
       return;
     }
 
@@ -13050,8 +13091,8 @@ ACMDU(do_device)
               rand_number(1, 100) <= stable_circuitry_break_save_chance)
           {
             ch->player_specials->saved.stable_circuitry_ii_cooldown = time(0) + 300;
-            send_to_char(ch,
-                         "Your stabilized circuitry catches the fault just in time, preventing a break!\r\n");
+            send_to_char(ch, "Your stabilized circuitry catches the fault just in time, preventing "
+                             "a break!\r\n");
             act("$n's invention shudders violently, then stabilizes at the last second.", TRUE, ch,
                 0, 0, TO_ROOM);
             return;
@@ -13060,8 +13101,8 @@ ACMDU(do_device)
           if (predictive_venting_rank > 0 && rand_number(1, 100) <= (predictive_venting_rank * 10))
           {
             inv->disabled_until = time(0) + 30;
-            send_to_char(ch,
-                         "Predictive venting dumps excess arcana; the device is disabled for 30 seconds instead of breaking.\r\n");
+            send_to_char(ch, "Predictive venting dumps excess arcana; the device is disabled for "
+                             "30 seconds instead of breaking.\r\n");
             act("$n's invention vents a burst of unstable energy and goes inert.", TRUE, ch, 0, 0,
                 TO_ROOM);
             return;
@@ -13106,8 +13147,8 @@ ACMDU(do_device)
                              "\tRYou are caught in the explosion and take %d force damage!\tn\r\n",
                              damage);
                 GET_HIT(tch) -= damage;
-                send_to_char(ch,
-                       "  device recompile <device> <slot> <spell> - Field Recompiler swap (perk)\r\n");
+                send_to_char(ch, "  device recompile <device> <slot> <spell> - Field Recompiler "
+                                 "swap (perk)\r\n");
 
                 /* Check if anyone died from the explosion */
                 if (GET_HIT(tch) <= 0)
@@ -13147,11 +13188,11 @@ ACMDU(do_device)
       }
       /* Success! But still increase DC penalty since device is out of charges */
       int penalty_to_add = penalty_growth;
-      
+
       /* Perfected Weird Science: successful overcharge doesn't add instability penalty */
       if (overcharge_on && overcharge_penalty > 0 && has_artificer_perfected_weird_science(ch))
         penalty_to_add -= overcharge_penalty;
-      
+
       inv->dc_penalty += penalty_to_add;
       if (inv->dc_penalty > 4)
       {
@@ -13162,9 +13203,10 @@ ACMDU(do_device)
       }
       else if (overcharge_on && has_artificer_perfected_weird_science(ch) && inv->dc_penalty > 0)
       {
-        send_to_char(ch,
-                     "Your perfected overcharge technique keeps the device stable. (DC penalty: +%d)\r\n",
-                     inv->dc_penalty);
+        send_to_char(
+            ch,
+            "Your perfected overcharge technique keeps the device stable. (DC penalty: +%d)\r\n",
+            inv->dc_penalty);
       }
     }
 
@@ -13182,7 +13224,7 @@ ACMDU(do_device)
     }
 
     int effective_artificer_level = artificer_level;
-    
+
     /* Spell-Stored Cascade: Once per combat, first device gets +10% damage/duration */
     if (has_artificer_spell_stored_cascade(ch))
     {
@@ -13193,7 +13235,7 @@ ACMDU(do_device)
       {
         ch->player_specials->saved.cascade_used = FALSE;
       }
-      
+
       /* Apply cascade if not used yet this combat */
       if (!ch->player_specials->saved.cascade_used)
       {
@@ -13203,7 +13245,7 @@ ACMDU(do_device)
         send_to_char(ch, "\tYYour stored cascade energy surges through the device!\tn\r\n");
       }
     }
-    
+
     if (overcharge_on)
     {
       int bonus_level = MAX(1, artificer_level / 10);
@@ -13227,8 +13269,7 @@ ACMDU(do_device)
         call_magic(ch, target, obj_target, spell_num, 0, effective_artificer_level, CAST_DEVICE);
 
         if (resonant_imbuement_rank > 0 && !device_is_violent && target && !obj_target &&
-            IN_ROOM(target) == IN_ROOM(ch) &&
-            IS_SET(spell_info[spell_num].routines, MAG_AFFECTS) &&
+            IN_ROOM(target) == IN_ROOM(ch) && IS_SET(spell_info[spell_num].routines, MAG_AFFECTS) &&
             !IS_SET(spell_info[spell_num].routines, MAG_GROUPS) &&
             !IS_SET(spell_info[spell_num].routines, MAG_MASSES) &&
             !IS_SET(spell_info[spell_num].routines, MAG_AREAS) &&
@@ -13630,7 +13671,8 @@ ACMDU(do_device)
       return;
     }
 
-    send_to_char(ch, "Available %s spells for artificer level %d:\r\n\r\n", class_name, artificer_level);
+    send_to_char(ch, "Available %s spells for artificer level %d:\r\n\r\n", class_name,
+                 artificer_level);
 
     /* Show spells by level (1st through max available) */
     for (spell_level = 1; spell_level <= max_spell_level; spell_level++)
@@ -14403,8 +14445,10 @@ EVENTFUNC(event_device_repair)
   /* Check if device still needs repair (may have stabilized during repair process) */
   if (!inv->broken && inv->dc_penalty <= 0)
   {
-    send_to_char(ch, "Your device repair for %s has been cancelled - the device has stabilized on its own!\r\n",
-                 inv->short_description);
+    send_to_char(
+        ch,
+        "Your device repair for %s has been cancelled - the device has stabilized on its own!\r\n",
+        inv->short_description);
     act("$n's device repair process stops as the invention stabilizes on its own.", TRUE, ch, 0, 0,
         TO_ROOM);
     save_char(ch, 0);
@@ -14498,8 +14542,7 @@ ACMD(do_fiendish_vigor_perk)
   GET_HIT(ch) = MIN(GET_MAX_HIT(ch) + 50, GET_HIT(ch) + temp_hp);
 
   send_to_char(ch, "\tY[Fiendish Vigor: You gain +%d temporary HP!]\tn\r\n", temp_hp);
-  act("$n's body writhes with dark vitality as false life animates $m.", TRUE, ch, 0, 0,
-      TO_ROOM);
+  act("$n's body writhes with dark vitality as false life animates $m.", TRUE, ch, 0, 0, TO_ROOM);
 }
 
 /* Warlock Fiendish Resilience perk command: activate damage resistance */
@@ -14512,7 +14555,8 @@ ACMD(do_fiendish_resilience_perk)
 
   PREREQ_NOT_NPC();
 
-  rank = get_warlock_fiendish_resilience_bonus(ch) / 25; /* Return percentage value, divide by 25 to get rank */
+  rank = get_warlock_fiendish_resilience_bonus(ch) /
+         25; /* Return percentage value, divide by 25 to get rank */
   if (rank <= 0)
   {
     send_to_char(ch, "You have not mastered Fiendish Resilience.\r\n");
@@ -14524,7 +14568,8 @@ ACMD(do_fiendish_resilience_perk)
   if (!*arg)
   {
     send_to_char(ch, "Usage: fiendishresilience <damage_type>\r\n");
-    send_to_char(ch, "Available types: fire, cold, acid, electric, sonic, force, mental, holy, unholy, slashing, piercing, bludgeoning\r\n");
+    send_to_char(ch, "Available types: fire, cold, acid, electric, sonic, force, mental, holy, "
+                     "unholy, slashing, piercing, bludgeoning\r\n");
     send_to_char(ch, "You gain %d%% resistance per rank for 1 minute.\r\n", rank * 25);
     return;
   }
@@ -14629,10 +14674,11 @@ ACMD(do_fiendish_resilience_perk)
   /* Set cooldown (5 minutes = 300 seconds) */
   attach_mud_event(new_mud_event(eFIENDISH_RESILIENCE, ch, NULL), 300 * PASSES_PER_SEC);
 
-  send_to_char(ch, "\tY[Fiendish Resilience: You gain %d%% resistance to %s damage for 1 minute!]\tn\r\n", 
-               resistance_pct, arg);
-  act("$n's form writhes with fiendish energy, becoming resistant to $s chosen harm.", TRUE, ch, 0, 0,
-      TO_ROOM);
+  send_to_char(
+      ch, "\tY[Fiendish Resilience: You gain %d%% resistance to %s damage for 1 minute!]\tn\r\n",
+      resistance_pct, arg);
+  act("$n's form writhes with fiendish energy, becoming resistant to $s chosen harm.", TRUE, ch, 0,
+      0, TO_ROOM);
 }
 
 /* undefines */

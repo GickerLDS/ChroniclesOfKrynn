@@ -237,7 +237,7 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
                CBWHT(d->character, C_NRM));
 
   /* The top section of the actual menu */
-    send_to_char(
+  send_to_char(
       d->character,
       "%s1%s) Use Stored Consumables  %s[%s%3s%s]        %s9%s) Charmie Combat Roll              "
       "%s[%s%3s%s]\r\n"
@@ -351,7 +351,8 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       ONOFF(PREFEDIT_FLAGGED(PRF_AUTOBLAST)), CCCYN(d->character, C_NRM),
       /*******J*********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
-      PREFEDIT_FLAGGED(PRF_NO_CRAFT_PROGRESS) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_NO_CRAFT_PROGRESS) ? CBGRN(d->character, C_NRM)
+                                              : CBRED(d->character, C_NRM),
       ONOFF(PREFEDIT_FLAGGED(PRF_NO_CRAFT_PROGRESS)), CCCYN(d->character, C_NRM),
       /*******K*********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
@@ -367,7 +368,8 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       ONOFF(PREFEDIT_FLAGGED(PRF_PVP)), CCCYN(d->character, C_NRM),
       /*******N*********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
-      PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM) ? CBGRN(d->character, C_NRM) : CBRED(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM) ? CBGRN(d->character, C_NRM)
+                                              : CBRED(d->character, C_NRM),
       ONOFF(PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM)), CCCYN(d->character, C_NRM)
 
       /*end*/);
@@ -578,14 +580,10 @@ static void prefedit_disp_prompt_menu(struct descriptor_data *d)
   else
     snprintf(
         prompt_string, sizeof(prompt_string), "%s%s%s%s%s%s%s%s%s%s%s",
-        PREFEDIT_FLAGGED(PRF_DISPHP) ? "H" : "", 
-        PREFEDIT_FLAGGED(PRF_DISPPSP) ? "M" : "",
-        PREFEDIT_FLAGGED(PRF_DISPMOVE) ? "V" : "", 
-        PREFEDIT_FLAGGED(PRF_DISPEXP) ? " XP" : "",
-        PREFEDIT_FLAGGED(PRF_DISPGOLD) ? " $$" : "", 
-        PREFEDIT_FLAGGED(PRF_DISPEXITS) ? " EX" : "",
-        PREFEDIT_FLAGGED(PRF_DISPTIME) ? " Time" : "", 
-        PREFEDIT_FLAGGED(PRF_DISPROOM) ? " RM" : "",
+        PREFEDIT_FLAGGED(PRF_DISPHP) ? "H" : "", PREFEDIT_FLAGGED(PRF_DISPPSP) ? "M" : "",
+        PREFEDIT_FLAGGED(PRF_DISPMOVE) ? "V" : "", PREFEDIT_FLAGGED(PRF_DISPEXP) ? " XP" : "",
+        PREFEDIT_FLAGGED(PRF_DISPGOLD) ? " $$" : "", PREFEDIT_FLAGGED(PRF_DISPEXITS) ? " EX" : "",
+        PREFEDIT_FLAGGED(PRF_DISPTIME) ? " Time" : "", PREFEDIT_FLAGGED(PRF_DISPROOM) ? " RM" : "",
         PREFEDIT_FLAGGED(PRF_DISPMEMTIME) ? " MT" : "",
         PREFEDIT_FLAGGED(PRF_DISPACTIONS) ? " AC" : "",
         PREFEDIT_FLAGGED(PRF_SURVEY_ROOMS_PROMPT) ? " Survey" : "");
@@ -607,22 +605,17 @@ static void prefedit_disp_prompt_menu(struct descriptor_data *d)
                "\r\n"
                "%sCurrent Prompt: %s%s%s\r\n\r\n"
                "%s0%s) Quit (to main menu)\r\n",
-               CBWHT(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), 
-               CCNRM(d->character, C_NRM), prompt_string,
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
-               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM));
+               CBWHT(d->character, C_NRM), CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
+               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM),
+               CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
+               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM),
+               CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
+               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM),
+               CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM),
+               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM),
+               CCNRM(d->character, C_NRM), CCNRM(d->character, C_NRM), prompt_string,
+               CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CBYEL(d->character, C_NRM),
+               CCNRM(d->character, C_NRM));
 
   send_to_char(d->character, "Enter Choice :");
   OLC_MODE(d) = PREFEDIT_PROMPT;
@@ -866,12 +859,12 @@ void prefedit_parse(struct descriptor_data *d, char *arg)
 
   case PREFEDIT_PAGELENGTH:
     number = atoi(arg);
-    OLC_PREFS(d)->page_length = MAX(10, MIN(number, 60));
+    OLC_PREFS(d)->page_length = MAX(10, MIN(number, 200));
     break;
 
   case PREFEDIT_SCREENWIDTH:
     number = atoi(arg);
-    OLC_PREFS(d)->screen_width = MAX(40, MIN(number, 120));
+    OLC_PREFS(d)->screen_width = MAX(40, MIN(number, 200));
     break;
 
   case PREFEDIT_ENCOUNTERS:

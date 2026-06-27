@@ -998,13 +998,10 @@ void char_from_furniture(struct char_data *ch);
        ? GET_LEVEL(ch)                                                                             \
        : (CLASS_LEVEL(ch, CLASS_SUMMONER) + CLASS_LEVEL(ch, CLASS_NECROMANCER)))
 #define GET_PSIONIC_LEVEL(ch)                                                                      \
-  (( \
-  (IS_NPC(ch) && GET_CLASS(ch) == CLASS_PSIONICIST) || \
-  (!IS_NPC(ch) && GET_LEVEL(ch) >= LVL_IMMORT) \
-   ) \
+  (((IS_NPC(ch) && GET_CLASS(ch) == CLASS_PSIONICIST) ||                                           \
+    (!IS_NPC(ch) && GET_LEVEL(ch) >= LVL_IMMORT))                                                  \
        ? GET_LEVEL(ch)                                                                             \
-       : CLASS_LEVEL(ch, CLASS_PSIONICIST) \
-  )
+       : CLASS_LEVEL(ch, CLASS_PSIONICIST))
 #define IS_PSIONIC(ch)                                                                             \
   (GET_PSIONIC_LEVEL(ch) > 0 || (IS_NPC(ch) && GET_CLASS(ch) == CLASS_PSIONICIST))
 #define PSIONIC_LEVEL(ch)                                                                          \
@@ -1336,9 +1333,9 @@ void char_from_furniture(struct char_data *ch);
 /* special spell macros */
 #define IS_EPIC_SPELL(spellnum)                                                                    \
   (spellnum == SPELL_MUMMY_DUST || spellnum == SPELL_DRAGON_KNIGHT ||                              \
-   spellnum == SPELL_SUMMON_SOLAR ||                                                             \
-   spellnum == SPELL_GREATER_RUIN || spellnum == SPELL_HELLBALL ||                                 \
-   spellnum == SPELL_EPIC_MAGE_ARMOR || spellnum == SPELL_EPIC_WARDING)
+   spellnum == SPELL_SUMMON_SOLAR || spellnum == SPELL_GREATER_RUIN ||                             \
+   spellnum == SPELL_HELLBALL || spellnum == SPELL_EPIC_MAGE_ARMOR ||                              \
+   spellnum == SPELL_EPIC_WARDING)
 
 /* domain macros */
 #define GET_1ST_DOMAIN(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.domain_1))
@@ -1426,12 +1423,11 @@ void char_from_furniture(struct char_data *ch);
 #define GET_HOST(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->host))
 #define GET_LAST_MOTD(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.lastmotd))
 #define GET_LAST_NEWS(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.lastnews))
-#define GET_QUIT_SURVEY_DONE(ch)                                                                \
+#define GET_QUIT_SURVEY_DONE(ch)                                                                   \
   CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.quit_survey_completed))
-#define GET_SURVEY_EXP_COOLDOWN(ch) \
+#define GET_SURVEY_EXP_COOLDOWN(ch)                                                                \
   CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.survey_exp_cooldown))
-#define GET_SURVEY_ROOMS(ch) \
-  CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.survey_rooms))
+#define GET_SURVEY_ROOMS(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.survey_rooms))
 
 /** Get channel history i for ch. */
 #define GET_HISTORY(ch, i) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->saved.comm_hist[i]))
@@ -1581,7 +1577,6 @@ void char_from_furniture(struct char_data *ch);
   ((GET_OBJ_TYPE(obj) == ITEM_WEAPON) || (GET_OBJ_TYPE(obj) == ITEM_FIREWEAPON)                    \
        ? GET_OBJ_VAL(obj, 0)                                                                       \
        : 0)
-#define IS_LIGHT_WEAPON_TYPE(type) (IS_SET(weapon_list[type].weaponFlags, WEAPON_FLAG_LIGHT))
 #define HAS_WEAPON_FLAG(obj, flag)                                                                 \
   ((GET_OBJ_TYPE(obj) == ITEM_WEAPON) || (GET_OBJ_TYPE(obj) == ITEM_FIREWEAPON)                    \
        ? IS_SET(weapon_list[GET_WEAPON_TYPE(obj)].weaponFlags, flag)                               \
@@ -3020,7 +3015,8 @@ bool has_reach(struct char_data *ch);
 #define GET_WARLOCK_WHISPERS_COOLDOWN(ch) (ch->player_specials->saved.warlock_whispers_cooldown)
 #define GET_WARLOCK_CHAINS_COOLDOWN(ch) (ch->player_specials->saved.warlock_chains_cooldown)
 #define GET_WARLOCK_VISIONS_COOLDOWN(ch) (ch->player_specials->saved.warlock_visions_cooldown)
-#define GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch) (ch->player_specials->saved.warlock_witch_concentration_cooldown)
+#define GET_WARLOCK_WITCH_CONCENTRATION_COOLDOWN(ch)                                               \
+  (ch->player_specials->saved.warlock_witch_concentration_cooldown)
 
 #define GET_SAGE_MOB_VNUM(ch) (ch->char_specials.sage_mob_vnum)
 

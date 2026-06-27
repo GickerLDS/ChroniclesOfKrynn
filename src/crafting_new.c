@@ -52,6 +52,7 @@
 #define GOLEM_BATTLEFIELD_RETRIEVAL_COOLDOWN 30
 #define GOLEM_SIEGE_FRAME_SLAM_COOLDOWN 30
 #define GOLEM_OMNI_FORGE_COMMANDER_COOLDOWN (60 * 60)
+#define DISENCHANT_MIN_LEVEL 5
 
 ACMD_DECL(do_practice);
 
@@ -63,6 +64,13 @@ int get_efficient_talent_bonus(struct char_data *ch, int skill);
 void return_efficient_saved_materials(struct char_data *ch);
 void save_char_pets(struct char_data *ch);
 bool can_recall_golem(struct char_data *ch);
+static bool craft_project_has_catalyst_target(struct char_data *ch);
+static bool craft_has_pending_noncreate_project(struct char_data *ch);
+static bool obj_has_catalyst_target(struct obj_data *obj);
+static bool is_catalyst_affect_eligible(const struct obj_affected_type *affect);
+static int catalyst_modifier_increase(int location);
+static int disenchant_fragment_yield(struct obj_data *obj);
+static bool can_disenchant_obj(struct obj_data *obj);
 
 int materials_sort_info[NUM_CRAFT_MATS];
 
@@ -90,16 +98,18 @@ int materials_sort_info[NUM_CRAFT_MATS];
   "craft instrument (quality|effectiveness|breakability) (amount)\r\n"                             \
   "craft materials (add|remove) (material type)\r\n"                                               \
   "craft motes (add|remove) (enhancement|quality|effectiveness|breakability|bonus slot #)\r\n"     \
+  "craft catalysts (0-5|add #|remove [#])\r\n"                                                     \
   "craft leveladjust (level adjustment)\r\n"                                                       \
   "craft score\r\n"                                                                                \
   "craft specialize (skill name) - Choose up to 2 skills for +5 bonus and 2x exp\r\n"             \
   "craft show\r\n"                                                                                 \
   "craft check\r\n"                                                                                \
   "craft reset (no "                                                                               \
-  "argument|motes|materials|enhancement|instrument|bonuses|descriptions|refine|rezize)\r\n"        \
+  "argument|motes|materials|enhancement|instrument|bonuses|descriptions|refine|resize|catalysts)\r\n" \
   "craft start\r\n"                                                                                \
   "\r\n"                                                                                           \
   "Other commands:\r\n"                                                                            \
+  "disenchant <item> - Convert a magical item into catalyst fragments\r\n"                         \
   "craft equipment - Show your equipped crafting gear\r\n"                                         \
   "craft tools - Show your equipped crafting/harvesting tools\r\n"
 
@@ -993,6 +1003,8 @@ int craft_group_by_material(int material)
 
   case CRAFT_MAT_COAL:
   case CRAFT_MAT_DRAGONBLOOD:
+  case CRAFT_MAT_CATALYST_FRAGMENT:
+  case CRAFT_MAT_CATALYST:
     return CRAFT_GROUP_REFINING;
   }
   return CRAFT_GROUP_NONE;
@@ -1866,6 +1878,120 @@ void set_crafting_motes(struct char_data *ch, const char *argument)
   {
     send_to_char(ch, "%s", CRAFT_MOTE_NOARG);
   }
+}
+
+void set_crafting_catalysts(struct char_data *ch, const char *argument)
+{
+  char arg1[100], arg2[100];
+  int amount = 0, target = 0, delta = 0;
+
+  two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+
+  if (GET_CRAFT(ch).craft_duration > 0)
+  {
+    send_to_char(ch, "You cannot change catalysts after crafting has begun.\r\n");
+    return;
+  }
+
+  if (!*arg1)
+  {
+    send_to_char(ch, "Usage: craft catalysts <0-%d|add #|remove [#]>.\r\n",
+                 CRAFT_CATALYST_MAX);
+    send_to_char(ch, "You have %d catalyst%s stored and %d allocated to this project.\r\n",
+                 GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST),
+                 GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST) == 1 ? "" : "s",
+                 GET_CRAFT(ch).catalysts_used);
+    return;
+  }
+
+  if (is_abbrev(arg1, "remove") || is_abbrev(arg1, "reset") || is_abbrev(arg1, "clear"))
+  {
+    amount = *arg2 ? atoi(arg2) : GET_CRAFT(ch).catalysts_used;
+    if (amount <= 0)
+    {
+      send_to_char(ch, "You do not have any catalysts allocated to remove.\r\n");
+      return;
+    }
+    amount = MIN(amount, GET_CRAFT(ch).catalysts_used);
+    GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST) += amount;
+    GET_CRAFT(ch).catalysts_used -= amount;
+    send_to_char(ch, "You recover %d catalyst%s from your project. %d remain allocated.\r\n",
+                 amount, amount == 1 ? "" : "s", GET_CRAFT(ch).catalysts_used);
+    return;
+  }
+
+  if (craft_has_pending_noncreate_project(ch))
+  {
+    send_to_char(ch, "Catalysts can only be added to new item crafting projects.\r\n");
+    return;
+  }
+
+  if (is_abbrev(arg1, "add"))
+  {
+    if (!*arg2)
+    {
+      send_to_char(ch, "Add how many catalysts? You may allocate up to %d.\r\n",
+                   CRAFT_CATALYST_MAX);
+      return;
+    }
+    amount = atoi(arg2);
+    if (amount <= 0)
+    {
+      send_to_char(ch, "You must add at least one catalyst.\r\n");
+      return;
+    }
+    target = GET_CRAFT(ch).catalysts_used + amount;
+  }
+  else
+  {
+    if (!is_number(arg1))
+    {
+      send_to_char(ch, "Usage: craft catalysts <0-%d|add #|remove [#]>.\r\n",
+                   CRAFT_CATALYST_MAX);
+      return;
+    }
+    target = atoi(arg1);
+    if (target < 0)
+    {
+      send_to_char(ch, "You may allocate between 0 and %d catalysts.\r\n", CRAFT_CATALYST_MAX);
+      return;
+    }
+  }
+
+  if (target > CRAFT_CATALYST_MAX)
+  {
+    send_to_char(ch, "You may allocate no more than %d catalysts for a %d%% critical chance.\r\n",
+                 CRAFT_CATALYST_MAX, CRAFT_CATALYST_MAX);
+    return;
+  }
+
+  if (target > 0 && !craft_project_has_catalyst_target(ch))
+  {
+    send_to_char(ch, "Catalysts require a weapon, armor, or at least one item bonus to improve.\r\n");
+    return;
+  }
+
+  delta = target - GET_CRAFT(ch).catalysts_used;
+  if (delta > 0)
+  {
+    if (GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST) < delta)
+    {
+      send_to_char(ch, "You need %d more catalyst%s, but only have %d stored.\r\n",
+                   delta, delta == 1 ? "" : "s", GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST));
+      return;
+    }
+    GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST) -= delta;
+  }
+  else if (delta < 0)
+  {
+    GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST) += -delta;
+  }
+
+  GET_CRAFT(ch).catalysts_used = target;
+  send_to_char(ch, "You have %d catalyst%s allocated for a %d%% critical chance.\r\n",
+               GET_CRAFT(ch).catalysts_used,
+               GET_CRAFT(ch).catalysts_used == 1 ? "" : "s",
+               GET_CRAFT(ch).catalysts_used);
 }
 
 int get_crafting_instrument_dc_modifier(struct char_data *ch)
@@ -2748,6 +2874,14 @@ void show_current_craft(struct char_data *ch)
     send_to_char(ch, "-- none\r\n");
   }
 
+  send_to_char(ch, "\r\n");
+  send_to_char(ch, "\tc   CATALYSTS:\tn\r\n");
+  send_to_char(ch, "-- %d catalyst%s allocated (%d%% critical chance). You have %d stored.\r\n",
+               GET_CRAFT(ch).catalysts_used,
+               GET_CRAFT(ch).catalysts_used == 1 ? "" : "s",
+               MIN(GET_CRAFT(ch).catalysts_used, CRAFT_CATALYST_MAX),
+               GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST));
+
   if (GET_CRAFT(ch).crafting_item_type && GET_CRAFT(ch).crafting_specific)
   {
     spec_type = GET_CRAFT(ch).crafting_specific;
@@ -2831,6 +2965,7 @@ void reset_craft_materials(struct char_data *ch, bool verbose, bool reimburse)
 #define CR_RESET_DESCRIPTIONS 6
 #define CR_RESET_REFINE 7
 #define CR_RESET_RESIZE 8
+#define CR_RESET_CATALYSTS 9
 
 void reset_current_craft(struct char_data *ch, char *arg2, bool verbose, bool reimburse)
 {
@@ -2855,6 +2990,8 @@ void reset_current_craft(struct char_data *ch, char *arg2, bool verbose, bool re
       mode = CR_RESET_REFINE;
     else if (is_abbrev(arg2, "resize"))
       mode = CR_RESET_RESIZE;
+    else if (is_abbrev(arg2, "catalysts") || is_abbrev(arg2, "catalyst"))
+      mode = CR_RESET_CATALYSTS;
   }
 
   // reimburse motes
@@ -2916,6 +3053,26 @@ void reset_current_craft(struct char_data *ch, char *arg2, bool verbose, bool re
   {
     // reimburse materials
     reset_craft_materials(ch, verbose, reimburse);
+  }
+
+  if (mode == CR_RESET_ALL || mode == CR_RESET_CATALYSTS)
+  {
+    if (GET_CRAFT(ch).catalysts_used > 0)
+    {
+      if (reimburse)
+      {
+        GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST) += GET_CRAFT(ch).catalysts_used;
+        if (verbose)
+        {
+          send_to_char(ch, "You have recovered %d catalyst%s.\r\n",
+                       GET_CRAFT(ch).catalysts_used,
+                       GET_CRAFT(ch).catalysts_used == 1 ? "" : "s");
+        }
+      }
+      GET_CRAFT(ch).catalysts_used = 0;
+      if (verbose && mode == CR_RESET_CATALYSTS)
+        send_to_char(ch, "You have reset catalyst use to zero.\r\n");
+    }
   }
 
   if (mode == CR_RESET_ALL || mode == CR_RESET_MATERIALS || mode == CR_RESET_REFINE)
@@ -3014,6 +3171,7 @@ void reset_current_craft(struct char_data *ch, char *arg2, bool verbose, bool re
     GET_CRAFT(ch).dc = 0;
     GET_CRAFT(ch).craft_variant = -1;
     GET_CRAFT(ch).level_adjust = 0;
+    GET_CRAFT(ch).catalysts_used = 0;
   }
 
   if (verbose)
@@ -3200,6 +3358,21 @@ bool is_craft_ready(struct char_data *ch, bool verbose)
                    craft_motes_required(0, 0, 0, GET_CRAFT(ch).enhancement),
                    crafting_motes[get_enhancement_mote_type(ch, GET_CRAFT(ch).crafting_item_type,
                                                             GET_CRAFT(ch).crafting_specific)]);
+    }
+  }
+
+  if (GET_CRAFT(ch).catalysts_used < 0 || GET_CRAFT(ch).catalysts_used > CRAFT_CATALYST_MAX)
+  {
+    ready = FALSE;
+    if (verbose)
+      send_to_char(ch, "You can allocate between 0 and %d catalysts.\r\n", CRAFT_CATALYST_MAX);
+  }
+  else if (GET_CRAFT(ch).catalysts_used > 0 && !craft_project_has_catalyst_target(ch))
+  {
+    ready = FALSE;
+    if (verbose)
+    {
+      send_to_char(ch, "Catalysts require a weapon, armor, or at least one item bonus to improve.\r\n");
     }
   }
 
@@ -4488,96 +4661,198 @@ void create_craft_misc(struct char_data *ch)
   reset_current_craft(ch, NULL, FALSE, FALSE);
 }
 
-/* Process critical success on crafting - 5% base chance, can chain */
-void process_craft_critical_success(struct char_data *ch, struct obj_data *obj)
+static bool is_catalyst_affect_eligible(const struct obj_affected_type *affect)
 {
-  int crit_count = 0;
-  int i, bonus_increases = 0;
-  bool had_increase = FALSE;
-  int total_bonuses = 0;
-  int bonus_indices[MAX_OBJ_AFFECT];
-  bool has_enhancement = FALSE;
+  if (!affect)
+    return FALSE;
+  if (!is_valid_apply(affect->location))
+    return FALSE;
+  if (affect->modifier <= 0)
+    return FALSE;
 
-  /* Check for weapon or armor with enhancement bonus */
-  if (GET_OBJ_TYPE(obj) == ITEM_WEAPON || GET_OBJ_TYPE(obj) == ITEM_ARMOR)
+  switch (affect->location)
   {
-    if (GET_OBJ_VAL(obj, 4) > 0)
-      has_enhancement = TRUE;
+  case APPLY_FEAT:
+  case APPLY_SPECIAL:
+  case APPLY_ELDRITCH_SHAPE:
+  case APPLY_ELDRITCH_ESSENCE:
+    return FALSE;
   }
 
-  /* Count total bonuses and store their indices */
+  return TRUE;
+}
+
+static bool craft_project_has_catalyst_target(struct char_data *ch)
+{
+  int i;
+
+  if (!ch)
+    return FALSE;
+
+  if (GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_WEAPON ||
+      GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR)
+    return TRUE;
+
   for (i = 0; i < MAX_OBJ_AFFECT; i++)
   {
-    if (obj->affected[i].location != APPLY_NONE)
+    if (is_catalyst_affect_eligible(&GET_CRAFT(ch).affected[i]))
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+static bool craft_has_pending_noncreate_project(struct char_data *ch)
+{
+  if (!ch)
+    return FALSE;
+
+  if (GET_CRAFT(ch).crafting_method != 0 &&
+      GET_CRAFT(ch).crafting_method != SCMD_NEWCRAFT_CREATE)
+    return TRUE;
+
+  if (GET_CRAFT(ch).refining_result[0] != CRAFT_MAT_NONE ||
+      GET_CRAFT(ch).refining_result[1] > 0)
+    return TRUE;
+
+  if (GET_CRAFT(ch).new_size != 0)
+    return TRUE;
+
+  if (GET_CRAFT(ch).supply_num_required > 0)
+    return TRUE;
+
+  if (GET_CRAFT(ch).golem_type != GOLEM_TYPE_NONE)
+    return TRUE;
+
+  if (GET_CRAFT(ch).butcher_material != CRAFT_MAT_NONE)
+    return TRUE;
+
+  return FALSE;
+}
+
+static bool obj_has_catalyst_target(struct obj_data *obj)
+{
+  int i;
+
+  if (!obj)
+    return FALSE;
+
+  if (GET_OBJ_TYPE(obj) == ITEM_WEAPON || GET_OBJ_TYPE(obj) == ITEM_ARMOR)
+    return TRUE;
+
+  for (i = 0; i < MAX_OBJ_AFFECT; i++)
+  {
+    if (is_catalyst_affect_eligible(&obj->affected[i]))
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+static int catalyst_modifier_increase(int location)
+{
+  switch (location)
+  {
+  case APPLY_HIT:
+  case APPLY_PSP:
+    return 5;
+
+  case APPLY_MOVE:
+    return 10;
+
+  case APPLY_RES_FIRE:
+  case APPLY_RES_COLD:
+  case APPLY_RES_AIR:
+  case APPLY_RES_EARTH:
+  case APPLY_RES_ACID:
+  case APPLY_RES_HOLY:
+  case APPLY_RES_ELECTRIC:
+  case APPLY_RES_UNHOLY:
+  case APPLY_RES_SLICE:
+  case APPLY_RES_PUNCTURE:
+  case APPLY_RES_BLUDGEON:
+  case APPLY_RES_SOUND:
+  case APPLY_RES_POISON:
+  case APPLY_RES_DISEASE:
+  case APPLY_RES_NEGATIVE:
+  case APPLY_RES_ILLUSION:
+  case APPLY_RES_MENTAL:
+  case APPLY_RES_LIGHT:
+  case APPLY_RES_ENERGY:
+  case APPLY_RES_WATER:
+  case APPLY_RES_FORCE:
+  case APPLY_POWER_RES:
+  case APPLY_SKILL:
+    return 2;
+  }
+
+  return 1;
+}
+
+/* Process catalyst-driven critical success after a crafted item succeeds. */
+void process_craft_critical_success(struct char_data *ch, struct obj_data *obj)
+{
+  int catalysts = 0;
+  int i, total_bonuses = 0;
+  int bonus_indices[MAX_OBJ_AFFECT];
+  bool improved_enhancement = FALSE;
+  bool improved_affect = FALSE;
+  char affect_buf[128];
+
+  if (!ch || !obj)
+    return;
+
+  catalysts = MIN(MAX(GET_CRAFT(ch).catalysts_used, 0), CRAFT_CATALYST_MAX);
+  if (catalysts <= 0)
+    return;
+
+  GET_CRAFT(ch).catalysts_used = 0;
+
+  if (!obj_has_catalyst_target(obj))
+    return;
+
+  if (rand_number(1, 100) > catalysts)
+  {
+    send_to_char(ch, "The catalyst%s consumed, but no critical resonance occurs.\r\n",
+                 catalysts == 1 ? " is" : "s are");
+    return;
+  }
+
+  if (GET_OBJ_TYPE(obj) == ITEM_WEAPON || GET_OBJ_TYPE(obj) == ITEM_ARMOR)
+  {
+    GET_OBJ_VAL(obj, 4) += 1;
+    improved_enhancement = TRUE;
+  }
+
+  for (i = 0; i < MAX_OBJ_AFFECT; i++)
+  {
+    if (is_catalyst_affect_eligible(&obj->affected[i]))
     {
       bonus_indices[total_bonuses] = i;
       total_bonuses++;
     }
   }
 
-  /* If there are no bonuses and no enhancement, nothing to improve */
-  if (total_bonuses == 0 && !has_enhancement)
-    return;
-
-  /* Keep rolling for crits until we fail - 5% chance each time */
-  while (rand_number(1, 100) <= 5)
+  if (total_bonuses > 0)
   {
-    crit_count++;
-    bonus_increases = 0;
-    had_increase = FALSE;
+    int random_idx = bonus_indices[rand_number(0, total_bonuses - 1)];
+    int increase = catalyst_modifier_increase(obj->affected[random_idx].location);
 
-    /* Process enhancement bonus for weapons/armor (25% chance) */
-    if (has_enhancement && rand_number(1, 100) <= 25)
-    {
-      GET_OBJ_VAL(obj, 4)++;
-      bonus_increases++;
-      had_increase = TRUE;
-    }
+    obj->affected[random_idx].modifier += increase;
+    improved_affect = TRUE;
+    snprintf(affect_buf, sizeof(affect_buf), "%s +%d",
+             apply_types[obj->affected[random_idx].location], increase);
 
-    /* Process each bonus with 25% chance to increase */
-    for (i = 0; i < total_bonuses; i++)
-    {
-      int idx = bonus_indices[i];
-      if (rand_number(1, 100) <= 25)
-      {
-        int increase = 1;
-
-        /* Universal bonuses increase by 1, others by 2 */
-        if (obj->affected[idx].bonus_type != BONUS_TYPE_UNIVERSAL)
-          increase = 2;
-
-        obj->affected[idx].modifier += increase;
-        bonus_increases++;
-        had_increase = TRUE;
-      }
-    }
-
-    /* Guarantee at least one bonus increases if we didn't get any */
-    if (!had_increase)
-    {
-      /* Prefer enhancement bonus if available, otherwise pick random bonus */
-      if (has_enhancement)
-      {
-        GET_OBJ_VAL(obj, 4)++;
-      }
-      else if (total_bonuses > 0)
-      {
-        int random_idx = bonus_indices[rand_number(0, total_bonuses - 1)];
-        int increase = 1;
-
-        if (obj->affected[random_idx].bonus_type != BONUS_TYPE_UNIVERSAL)
-          increase = 2;
-
-        obj->affected[random_idx].modifier += increase;
-      }
-    }
-
-    /* Announce the critical success */
-    if (crit_count == 1)
-      send_to_char(ch, "\tY**CRITICAL SUCCESS!**\tn The item's properties have been enhanced!\r\n");
-    else
-      send_to_char(ch, "\tY**CRITICAL SUCCESS x%d!**\tn Another enhancement applied!\r\n",
-                   crit_count);
+    send_to_char(ch,
+                 "\tY**CATALYST CRITICAL!**\tn The craft resonates: %s%s%s.\r\n",
+                 improved_enhancement ? "enhancement +1" : "",
+                 improved_enhancement && improved_affect ? ", " : "",
+                 improved_affect ? affect_buf : "");
+  }
+  else if (improved_enhancement)
+  {
+    send_to_char(ch,
+                 "\tY**CATALYST CRITICAL!**\tn The craft resonates: enhancement +1.\r\n");
   }
 }
 
@@ -5153,6 +5428,11 @@ void newcraft_create(struct char_data *ch, const char *argument)
     show_craft_tutorial(ch);
     return;
   }
+  else if (is_abbrev(arg1, "disenchant"))
+  {
+    newcraft_disenchant(ch, arg2);
+    return;
+  }
   else if (is_abbrev(arg1, "golem"))
   {
     if (CONFIG_CRAFTING_SYSTEM != CRAFTING_SYSTEM_MOTES)
@@ -5237,6 +5517,10 @@ void newcraft_create(struct char_data *ch, const char *argument)
   else if (is_abbrev(arg1, "motes"))
   {
     set_crafting_motes(ch, arg2);
+  }
+  else if (is_abbrev(arg1, "catalysts") || is_abbrev(arg1, "catalyst"))
+  {
+    set_crafting_catalysts(ch, arg2);
   }
   else if (is_abbrev(arg1, "instrument"))
   {
@@ -7356,6 +7640,12 @@ ACMD(do_list_craft_materials)
 
     /* Convert craft material type to object material */
     obj_material = craft_material_to_obj_material(material_type);
+    if (obj_material == MATERIAL_UNDEFINED)
+    {
+      send_to_char(ch, "%s cannot be unstored as a physical material bundle.\r\n",
+                   crafting_materials[material_type]);
+      return;
+    }
 
     /* Set up the material object */
     GET_OBJ_TYPE(new_mat_obj) = ITEM_MATERIAL;
@@ -8597,6 +8887,112 @@ void newcraft_supplyorder(struct char_data *ch, const char *argument)
   send_to_char(ch, SUPPLY_ORDER_NOARG1);
 }
 
+static int disenchant_fragment_yield(struct obj_data *obj)
+{
+  int level;
+
+  if (!obj)
+    return 0;
+
+  level = MAX(1, GET_OBJ_LEVEL(obj));
+  return MAX(1, level / 5);
+}
+
+static bool can_disenchant_obj(struct obj_data *obj)
+{
+  int i;
+  bool has_magic = FALSE;
+
+  if (!obj)
+    return FALSE;
+
+  if (OBJ_FLAGGED(obj, ITEM_QUEST) || OBJ_FLAGGED(obj, ITEM_NODROP) ||
+      OBJ_FLAGGED(obj, ITEM_NORENT) || OBJ_FLAGGED(obj, ITEM_NOSAC) ||
+      OBJ_FLAGGED(obj, ITEM_NO_SALVAGE) || OBJ_FLAGGED(obj, ITEM_ACCOUNT_EXP) ||
+      OBJ_FLAGGED(obj, ITEM_ARTISANPOINTS))
+    return FALSE;
+
+  if (GET_OBJ_TYPE(obj) == ITEM_CONTAINER && obj->contains)
+    return FALSE;
+
+  if (OBJ_FLAGGED(obj, ITEM_MAGIC))
+    has_magic = TRUE;
+
+  if ((GET_OBJ_TYPE(obj) == ITEM_WEAPON || GET_OBJ_TYPE(obj) == ITEM_ARMOR) &&
+      GET_OBJ_VAL(obj, 4) > 0)
+    has_magic = TRUE;
+
+  for (i = 0; i < MAX_OBJ_AFFECT; i++)
+  {
+    if (is_valid_apply(obj->affected[i].location) && obj->affected[i].modifier != 0)
+    {
+      has_magic = TRUE;
+      break;
+    }
+  }
+
+  return has_magic;
+}
+
+void newcraft_disenchant(struct char_data *ch, const char *argument)
+{
+  char arg[MAX_INPUT_LENGTH];
+  struct obj_data *obj = NULL;
+  int fragments = 0;
+
+  one_argument(argument, arg, sizeof(arg));
+
+  if (CONFIG_CRAFTING_SYSTEM != CRAFTING_SYSTEM_MOTES)
+  {
+    send_to_char(ch, "Disenchanting is handled by crafting kits on this server.\r\n");
+    return;
+  }
+
+  if (!*arg)
+  {
+    send_to_char(ch, "Disenchant what?\r\n");
+    return;
+  }
+
+  if (!has_crafting_station_in_room(ch, ABILITY_CRAFT_ALCHEMY))
+  {
+    send_to_char(ch, "You need to be in a room with %s to disenchant items.\r\n",
+                 get_crafting_station_name(ABILITY_CRAFT_ALCHEMY));
+    return;
+  }
+
+  if (!(obj = get_obj_in_list_vis(ch, arg, NULL, ch->carrying)))
+  {
+    send_to_char(ch, "You don't have anything like that in your inventory.\r\n");
+    return;
+  }
+
+  if (GET_OBJ_LEVEL(obj) < DISENCHANT_MIN_LEVEL)
+  {
+    send_to_char(ch, "That item is not powerful enough to yield catalyst fragments.\r\n");
+    return;
+  }
+
+  if (!can_disenchant_obj(obj))
+  {
+    send_to_char(ch, "That item cannot be disenchanted.\r\n");
+    return;
+  }
+
+  fragments = disenchant_fragment_yield(obj);
+  GET_CRAFT_MAT(ch, CRAFT_MAT_CATALYST_FRAGMENT) += fragments;
+
+  send_to_char(ch, "You disenchant %s and recover %d catalyst fragment%s.\r\n",
+               GET_OBJ_SHORT(obj), fragments, fragments == 1 ? "" : "s");
+  act("$n disenchants $p, drawing out faint catalyst fragments.", FALSE, ch, obj, 0, TO_ROOM);
+
+  obj_from_char(obj);
+  extract_obj(obj);
+
+  save_char(ch, 0);
+  Crash_crashsave(ch);
+}
+
 
 ACMD(do_newcraft)
 {
@@ -8676,6 +9072,11 @@ ACMD(do_newcraft)
   else if (subcmd == SCMD_NEWCRAFT_BUTCHER)
   {
     newcraft_butcher(ch, argument);
+    return;
+  }
+  else if (subcmd == SCMD_NEWCRAFT_DISENCHANT)
+  {
+    newcraft_disenchant(ch, argument);
     return;
   }
 }
