@@ -3311,6 +3311,9 @@ void close_socket(struct descriptor_data *d)
       /* Clean up supply order slots before saving */
       if (link_challenged)
       {
+        if (link_challenged->trade)
+          cancel_trade(link_challenged, "Trade canceled because someone lost link.\r\n");
+        clear_trade_invites(link_challenged, "Trade request canceled because someone lost link.\r\n");
         cleanup_supply_slots(link_challenged);
         link_challenged->char_specials.timer = 0;
         link_challenged->char_specials.linkdead_at = time(0);

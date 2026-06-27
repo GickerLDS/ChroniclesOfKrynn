@@ -5542,6 +5542,10 @@ void perform_player_quit(struct char_data *ch)
   save_char_pets(ch);
   dismiss_all_followers(ch);
 
+  if (ch->trade)
+    cancel_trade(ch, "Trade canceled because someone quit.\r\n");
+  clear_trade_invites(ch, "Trade request canceled because someone quit.\r\n");
+
   for (index = 0; index < MAX_CURRENT_QUESTS; index++)
   { /* loop through all the character's quest slots */
     if (GET_QUEST_TIME(ch, index) != -1)
@@ -8588,6 +8592,9 @@ ACMD(do_gen_tog)
       // 71
       {"Walk-to confirmation required.\r\n",
        "Walk-to confirmation skipped for quest targets/masters.\r\n"},
+      // 72
+      {"You will now accept incoming trade requests.\r\n",
+       "You will now reject incoming trade requests.\r\n"},
   };
 
   if (IS_NPC(ch))
@@ -8924,6 +8931,11 @@ ACMD(do_gen_tog)
     break;
   case SCMD_NO_WALKTO_CONFIRM:
     result = PRF_TOG_CHK(ch, PRF_NO_WALKTO_CONFIRM);
+    break;
+  case SCMD_REJECT_TRADES:
+    result = PRF_TOG_CHK(ch, PRF_REJECT_TRADES);
+    if (result)
+      clear_trade_invites(ch, "Trade request canceled.\r\n");
     break;
   default:
     log("SYSERR: Unknown subcmd %d in do_gen_toggle.", subcmd);

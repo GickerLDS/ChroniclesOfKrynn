@@ -1482,9 +1482,10 @@
 #define PRF_SURVEY_ROOMS_PROMPT 86 /**< Display survey rooms in prompt */
 #define PRF_AUTOLIGHT 87           /**< Automatically replace burned-out light from inventory */
 #define PRF_NO_WALKTO_CONFIRM 88   /**< Skip walkto confirmation for quest targets/masters */
+#define PRF_REJECT_TRADES 89       /**< Reject incoming trade requests */
 
 /** Total number of available PRF flags */
-#define NUM_PRF_FLAGS 89
+#define NUM_PRF_FLAGS 90
 
 /* Score Color Theme constants */
 #define SCORE_THEME_ENHANCED 0     /**< Enhanced theme with rich colors */
@@ -7703,6 +7704,8 @@ struct oldNextMove
   room_num moveRoom;
 };
 
+struct trade_session_data;
+
 /** Master structure for PCs and NPCs. */
 struct char_data
 {
@@ -7742,7 +7745,10 @@ struct char_data
   struct follow_type *followers; /**< List of characters following */
   struct char_data *master;      /**< List of character being followed */
 
-  struct group_data *group; /**< Character's Group */
+  struct group_data *group;        /**< Character's Group */
+  struct trade_session_data *trade; /**< Active player trade session, if any */
+  struct char_data *trade_invite_from; /**< Player who has requested a trade with this character */
+  struct char_data *trade_invite_to;   /**< Player this character has requested a trade with */
 
   long pref; /**< unique session id */
 

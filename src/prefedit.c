@@ -20,6 +20,7 @@
 #include "oasis.h"
 #include "prefedit.h"
 #include "screen.h"
+#include "act.h"
 #include "encounters.h"
 #include "perks.h"
 
@@ -80,6 +81,8 @@ static void prefedit_save_to_char(struct descriptor_data *d)
     GET_SCREEN_WIDTH(vict) = OLC_PREFS(d)->screen_width;
 
     BLASTING(vict) = PRF_FLAGGED(vict, PRF_AUTOBLAST);
+    if (PRF_FLAGGED(vict, PRF_REJECT_TRADES))
+      clear_trade_invites(vict, "Trade request canceled.\r\n");
 
     save_char(vict, 0);
   }
@@ -272,7 +275,8 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       "%sL%s) Auto-Light Replacement  %s[%s%3s%s]        %sM%s) PvP Flag                         "
       "%s[%s%3s%s]\r\n"
       /* Line 11 (11) No Walk-To Confirm */
-      "%sN%s) No Walk-To Confirmation %s[%s%3s%s]\r\n",
+      "%sN%s) No Walk-To Confirmation %s[%s%3s%s]        %sO%s) Reject Trade Requests            "
+      "%s[%s%3s%s]\r\n",
       /*******1********/
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_USE_STORED_CONSUMABLES) ? CBGRN(d->character, C_NRM)
@@ -370,7 +374,12 @@ static void prefedit_extra_disp_toggles_menu(struct descriptor_data *d)
       CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
       PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM) ? CBGRN(d->character, C_NRM)
                                               : CBRED(d->character, C_NRM),
-      ONOFF(PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM)), CCCYN(d->character, C_NRM)
+      ONOFF(PREFEDIT_FLAGGED(PRF_NO_WALKTO_CONFIRM)), CCCYN(d->character, C_NRM),
+      /*******O*********/
+      CBYEL(d->character, C_NRM), CCNRM(d->character, C_NRM), CCCYN(d->character, C_NRM),
+      PREFEDIT_FLAGGED(PRF_REJECT_TRADES) ? CBGRN(d->character, C_NRM)
+                                          : CBRED(d->character, C_NRM),
+      ONOFF(PREFEDIT_FLAGGED(PRF_REJECT_TRADES)), CCCYN(d->character, C_NRM)
 
       /*end*/);
 
@@ -1264,6 +1273,11 @@ void prefedit_parse(struct descriptor_data *d, char *arg)
     case 'n':
     case 'N':
       TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_NO_WALKTO_CONFIRM);
+      break;
+
+    case 'o':
+    case 'O':
+      TOGGLE_BIT_AR(PREFEDIT_GET_FLAGS, PRF_REJECT_TRADES);
       break;
 
     default:

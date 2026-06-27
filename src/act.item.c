@@ -85,6 +85,1369 @@ int can_lore_target(struct char_data *ch, struct char_data *target_ch, struct ob
 
 /**** start file code *****/
 
+struct trade_object_node
+{
+  long obj_id;
+  char *keywords;
+  char *display_name;
+  struct trade_object_node *next;
+};
+
+struct trade_offer_data
+{
+  struct trade_object_node *objects;
+  int gold;
+  int materials[NUM_CRAFT_MATS];
+  int motes[NUM_CRAFT_MOTES];
+  bool accepted;
+};
+
+struct trade_session_data
+{
+  struct char_data *participants[2];
+  struct trade_offer_data offers[2];
+};
+
+static int trade_slot(struct trade_session_data *trade, struct char_data *ch)
+{
+  if (!trade || !ch)
+    return -1;
+
+  if (trade->participants[0] == ch)
+    return 0;
+  if (trade->participants[1] == ch)
+    return 1;
+
+  return -1;
+}
+
+static struct char_data *trade_partner(struct char_data *ch)
+{
+  int slot = -1;
+
+  if (!ch || !ch->trade)
+    return NULL;
+
+  slot = trade_slot(ch->trade, ch);
+  if (slot < 0)
+    return NULL;
+
+  return ch->trade->participants[1 - slot];
+}
+
+static struct trade_offer_data *trade_offer_for(struct char_data *ch)
+{
+  int slot = -1;
+
+  if (!ch || !ch->trade)
+    return NULL;
+
+  slot = trade_slot(ch->trade, ch);
+  if (slot < 0)
+    return NULL;
+
+  return &ch->trade->offers[slot];
+}
+
+static void trade_usage(struct char_data *ch)
+{
+  send_to_char(ch,
+               "Usage:\r\n"
+               "  trade <player>\r\n"
+               "  trade show\r\n"
+               "  trade accept [player]\r\n"
+               "  trade cancel\r\n"
+               "  trade add item <item>\r\n"
+               "  trade add gold <amount>\r\n"
+               "  trade add material <amount> <material>\r\n"
+               "  trade add mote <amount> <mote>\r\n"
+               "  trade remove item <item>\r\n"
+               "  trade remove gold <amount>\r\n"
+               "  trade remove material <amount> <material>\r\n"
+               "  trade remove mote <amount> <mote>\r\n");
+}
+
+static void normalize_trade_resource_name(char *name)
+{
+  int i = 0;
+
+  if (!name)
+    return;
+
+  for (i = 0; name[i]; i++)
+    if (name[i] == '-')
+      name[i] = ' ';
+}
+
+static bool parse_trade_amount(struct char_data *ch, const char *arg, int *amount)
+{
+  long value = 0;
+  char *end = NULL;
+
+  if (!arg || !*arg)
+  {
+    send_to_char(ch, "How many?\r\n");
+    return false;
+  }
+
+  value = strtol(arg, &end, 10);
+  if (*end || value <= 0 || value > INT_MAX)
+  {
+    send_to_char(ch, "Please specify a positive number.\r\n");
+    return false;
+  }
+
+  *amount = (int)value;
+  return true;
+}
+
+static int find_trade_material(const char *name)
+{
+  int i = 0;
+
+  if (!name || !*name)
+    return CRAFT_MAT_NONE;
+
+  for (i = 1; i < NUM_CRAFT_MATS; i++)
+    if (is_abbrev(name, crafting_materials[i]))
+      return i;
+
+  return CRAFT_MAT_NONE;
+}
+
+static int find_trade_mote(const char *name)
+{
+  int i = 0;
+
+  if (!name || !*name)
+    return 0;
+
+  for (i = 1; i < NUM_CRAFT_MOTES; i++)
+    if (is_abbrev(name, crafting_motes[i]))
+      return i;
+
+  return 0;
+}
+
+static const char *trade_object_display_name(struct trade_object_node *node)
+{
+  if (node && node->display_name && *node->display_name)
+    return node->display_name;
+
+  return "an item";
+}
+
+static struct obj_data *find_trade_object(struct char_data *owner, struct trade_object_node *node)
+{
+  struct obj_data *obj = NULL;
+
+  if (!owner || !node)
+    return NULL;
+
+  for (obj = owner->carrying; obj; obj = obj->next_content)
+    if (GET_ID(obj) == node->obj_id)
+      return obj;
+
+  return NULL;
+}
+
+static bool trade_offer_has_object(struct trade_offer_data *offer, long obj_id)
+{
+  struct trade_object_node *node = NULL;
+
+  if (!offer)
+    return false;
+
+  for (node = offer->objects; node; node = node->next)
+    if (node->obj_id == obj_id)
+      return true;
+
+  return false;
+}
+
+static void trade_offer_object_totals(struct char_data *owner, struct trade_offer_data *offer,
+                                      int *count, int *weight)
+{
+  struct trade_object_node *node = NULL;
+  struct obj_data *obj = NULL;
+
+  if (count)
+    *count = 0;
+  if (weight)
+    *weight = 0;
+
+  if (!offer)
+    return;
+
+  for (node = offer->objects; node; node = node->next)
+  {
+    obj = find_trade_object(owner, node);
+    if (!obj)
+      continue;
+
+    if (count)
+      (*count)++;
+    if (weight)
+      (*weight) += GET_OBJ_WEIGHT(obj);
+  }
+}
+
+static bool trade_offer_is_empty(struct trade_offer_data *offer)
+{
+  int i = 0;
+
+  if (!offer)
+    return true;
+
+  if (offer->objects || offer->gold > 0)
+    return false;
+
+  for (i = 1; i < NUM_CRAFT_MATS; i++)
+    if (offer->materials[i] > 0)
+      return false;
+
+  for (i = 1; i < NUM_CRAFT_MOTES; i++)
+    if (offer->motes[i] > 0)
+      return false;
+
+  return true;
+}
+
+static void trade_reset_acceptance(struct trade_session_data *trade)
+{
+  bool was_accepted = false;
+  int i = 0;
+
+  if (!trade)
+    return;
+
+  was_accepted = trade->offers[0].accepted || trade->offers[1].accepted;
+
+  for (i = 0; i < 2; i++)
+    trade->offers[i].accepted = false;
+
+  if (was_accepted)
+  {
+    for (i = 0; i < 2; i++)
+      if (trade->participants[i])
+        send_to_char(trade->participants[i],
+                     "The trade offer changed. Both players must accept again.\r\n");
+  }
+}
+
+static void trade_show_offer(struct char_data *viewer, const char *title,
+                             struct trade_offer_data *offer, struct char_data *owner)
+{
+  struct trade_object_node *node = NULL;
+  int i = 0;
+  bool printed = false;
+
+  send_to_char(viewer, "\tc%s\tn\r\n", title);
+
+  if (trade_offer_is_empty(offer))
+  {
+    send_to_char(viewer, "  Nothing.\r\n");
+    return;
+  }
+
+  if (offer->gold > 0)
+  {
+    send_to_char(viewer, "  Gold: %d\r\n", offer->gold);
+    printed = true;
+  }
+
+  for (node = offer->objects; node; node = node->next)
+  {
+    send_to_char(viewer, "  Item: %s%s\r\n", trade_object_display_name(node),
+                 find_trade_object(owner, node) ? "" : " (no longer available)");
+    printed = true;
+  }
+
+  for (i = 1; i < NUM_CRAFT_MATS; i++)
+  {
+    if (offer->materials[i] > 0)
+    {
+      send_to_char(viewer, "  Material: %d %s\r\n", offer->materials[i],
+                   crafting_materials[i]);
+      printed = true;
+    }
+  }
+
+  for (i = 1; i < NUM_CRAFT_MOTES; i++)
+  {
+    if (offer->motes[i] > 0)
+    {
+      send_to_char(viewer, "  Mote: %d %s\r\n", offer->motes[i], crafting_motes[i]);
+      printed = true;
+    }
+  }
+
+  if (!printed)
+    send_to_char(viewer, "  Nothing.\r\n");
+}
+
+static void show_trade(struct char_data *ch)
+{
+  struct char_data *partner = trade_partner(ch);
+  int slot = -1;
+
+  if (!ch->trade || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  slot = trade_slot(ch->trade, ch);
+  if (slot < 0)
+  {
+    send_to_char(ch, "Your trade is in an invalid state.\r\n");
+    cancel_trade(ch, "The trade was canceled because it became invalid.\r\n");
+    return;
+  }
+
+  send_to_char(ch, "\tCTrade with %s\tn\r\n", GET_NAME(partner));
+  trade_show_offer(ch, "Your offer", &ch->trade->offers[slot], ch);
+  trade_show_offer(ch, "Their offer", &ch->trade->offers[1 - slot], partner);
+  send_to_char(ch, "Accepted: you [%s], %s [%s]\r\n",
+               ch->trade->offers[slot].accepted ? "yes" : "no", GET_NAME(partner),
+               ch->trade->offers[1 - slot].accepted ? "yes" : "no");
+}
+
+static bool trade_invites_pending(struct char_data *ch)
+{
+  return ch && (ch->trade_invite_from || ch->trade_invite_to);
+}
+
+static void show_trade_invites(struct char_data *ch)
+{
+  bool shown = false;
+
+  if (!ch)
+    return;
+
+  if (ch->trade_invite_from)
+  {
+    send_to_char(ch, "%s has requested a trade with you.\r\n", GET_NAME(ch->trade_invite_from));
+    send_to_char(ch, "Use 'trade accept' to open the trade, or 'trade cancel' to decline.\r\n");
+    shown = true;
+  }
+
+  if (ch->trade_invite_to)
+  {
+    send_to_char(ch, "You have requested a trade with %s.\r\n", GET_NAME(ch->trade_invite_to));
+    send_to_char(ch, "Use 'trade cancel' to withdraw the request.\r\n");
+    shown = true;
+  }
+
+  if (!shown)
+    send_to_char(ch, "You are not currently trading.\r\n");
+}
+
+static void free_trade_object_node(struct trade_object_node *node)
+{
+  if (!node)
+    return;
+
+  if (node->keywords)
+    free(node->keywords);
+  if (node->display_name)
+    free(node->display_name);
+  free(node);
+}
+
+static void free_trade_object_nodes(struct trade_object_node *node)
+{
+  struct trade_object_node *next = NULL;
+
+  while (node)
+  {
+    next = node->next;
+    free_trade_object_node(node);
+    node = next;
+  }
+}
+
+static void clear_trade_offer(struct trade_offer_data *offer)
+{
+  if (!offer)
+    return;
+
+  free_trade_object_nodes(offer->objects);
+  offer->objects = NULL;
+}
+
+void clear_trade_invites(struct char_data *ch, const char *reason)
+{
+  struct char_data *notify[2] = {NULL, NULL};
+  struct char_data *other = NULL;
+  bool cleared = false;
+  int notify_count = 0;
+  int i = 0;
+
+  if (!ch)
+    return;
+
+  other = ch->trade_invite_from;
+  if (other)
+  {
+    if (other->trade_invite_to == ch)
+      other->trade_invite_to = NULL;
+    ch->trade_invite_from = NULL;
+    notify[notify_count++] = other;
+    cleared = true;
+  }
+
+  other = ch->trade_invite_to;
+  if (other)
+  {
+    if (other->trade_invite_from == ch)
+      other->trade_invite_from = NULL;
+    ch->trade_invite_to = NULL;
+    if (notify_count == 0 || notify[0] != other)
+      notify[notify_count++] = other;
+    cleared = true;
+  }
+
+  if (cleared && reason && *reason)
+  {
+    send_to_char(ch, "%s", reason);
+    for (i = 0; i < notify_count; i++)
+      if (notify[i])
+        send_to_char(notify[i], "%s", reason);
+  }
+}
+
+void cancel_trade(struct char_data *ch, const char *reason)
+{
+  struct trade_session_data *trade = NULL;
+  struct char_data *participant[2] = {NULL, NULL};
+  int i = 0;
+
+  if (!ch || !ch->trade)
+    return;
+
+  trade = ch->trade;
+  participant[0] = trade->participants[0];
+  participant[1] = trade->participants[1];
+
+  for (i = 0; i < 2; i++)
+    clear_trade_offer(&trade->offers[i]);
+
+  for (i = 0; i < 2; i++)
+    if (participant[i])
+      participant[i]->trade = NULL;
+
+  if (reason && *reason)
+  {
+    for (i = 0; i < 2; i++)
+      if (participant[i])
+        send_to_char(participant[i], "%s", reason);
+  }
+
+  free(trade);
+}
+
+static bool trade_participants_ready(struct trade_session_data *trade, char *reason, size_t reason_size)
+{
+  struct char_data *a = NULL, *b = NULL;
+
+  if (!trade)
+  {
+    snprintf(reason, reason_size, "The trade no longer exists.");
+    return false;
+  }
+
+  a = trade->participants[0];
+  b = trade->participants[1];
+
+  if (!a || !b || IS_NPC(a) || IS_NPC(b))
+  {
+    snprintf(reason, reason_size, "The trade participants are invalid.");
+    return false;
+  }
+
+  if (!a->desc || !b->desc || STATE(a->desc) != CON_PLAYING || STATE(b->desc) != CON_PLAYING)
+  {
+    snprintf(reason, reason_size, "Both players must be connected and playing.");
+    return false;
+  }
+
+  if (IN_ROOM(a) == NOWHERE || IN_ROOM(b) == NOWHERE || IN_ROOM(a) != IN_ROOM(b))
+  {
+    snprintf(reason, reason_size, "Both players must be in the same room.");
+    return false;
+  }
+
+  return true;
+}
+
+static bool trade_validate_resources(struct trade_session_data *trade, char *reason,
+                                     size_t reason_size)
+{
+  struct char_data *ch = NULL, *other = NULL;
+  int slot = 0, i = 0;
+  long long final_gold = 0;
+
+  for (slot = 0; slot < 2; slot++)
+  {
+    ch = trade->participants[slot];
+    other = trade->participants[1 - slot];
+
+    if (GET_GOLD(ch) < trade->offers[slot].gold)
+    {
+      snprintf(reason, reason_size, "%s no longer has enough gold.", GET_NAME(ch));
+      return false;
+    }
+
+    final_gold = (long long)GET_GOLD(ch) - trade->offers[slot].gold +
+                 trade->offers[1 - slot].gold;
+    if (final_gold > MAX_GOLD)
+    {
+      snprintf(reason, reason_size, "%s cannot carry that much gold.", GET_NAME(ch));
+      return false;
+    }
+
+    for (i = 1; i < NUM_CRAFT_MATS; i++)
+    {
+      if (GET_CRAFT_MAT(ch, i) < trade->offers[slot].materials[i])
+      {
+        snprintf(reason, reason_size, "%s no longer has enough %s.", GET_NAME(ch),
+                 crafting_materials[i]);
+        return false;
+      }
+    }
+
+    for (i = 1; i < NUM_CRAFT_MOTES; i++)
+    {
+      if (GET_CRAFT_MOTES(ch, i) < trade->offers[slot].motes[i])
+      {
+        snprintf(reason, reason_size, "%s no longer has enough %s.", GET_NAME(ch),
+                 crafting_motes[i]);
+        return false;
+      }
+    }
+
+    if (!other)
+    {
+      snprintf(reason, reason_size, "The trade participant is invalid.");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool trade_validate_objects(struct trade_session_data *trade, char *reason,
+                                   size_t reason_size)
+{
+  struct char_data *owner = NULL;
+  struct trade_object_node *node = NULL;
+  struct obj_data *obj = NULL;
+  int slot = 0;
+
+  for (slot = 0; slot < 2; slot++)
+  {
+    owner = trade->participants[slot];
+
+    for (node = trade->offers[slot].objects; node; node = node->next)
+    {
+      obj = find_trade_object(owner, node);
+      if (!obj)
+      {
+        snprintf(reason, reason_size, "%s no longer has %s available.", GET_NAME(owner),
+                 trade_object_display_name(node));
+        return false;
+      }
+
+      if (OBJ_FLAGGED(obj, ITEM_NODROP) && !PRF_FLAGGED(owner, PRF_NOHASSLE))
+      {
+        snprintf(reason, reason_size, "%s can no longer trade %s.", GET_NAME(owner),
+                 trade_object_display_name(node));
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+static bool trade_validate_carrying(struct trade_session_data *trade, char *reason,
+                                    size_t reason_size)
+{
+  struct char_data *receiver = NULL, *giver = NULL;
+  int slot = 0, incoming_count = 0, incoming_weight = 0;
+  int outgoing_count = 0, outgoing_weight = 0;
+
+  for (slot = 0; slot < 2; slot++)
+  {
+    receiver = trade->participants[slot];
+    giver = trade->participants[1 - slot];
+    trade_offer_object_totals(receiver, &trade->offers[slot], &outgoing_count, &outgoing_weight);
+    trade_offer_object_totals(giver, &trade->offers[1 - slot], &incoming_count, &incoming_weight);
+
+    if (GET_LEVEL(receiver) < LVL_IMMORT &&
+        IS_CARRYING_N(receiver) - outgoing_count + incoming_count > CAN_CARRY_N(receiver))
+    {
+      snprintf(reason, reason_size, "%s cannot carry that many items.", GET_NAME(receiver));
+      return false;
+    }
+
+    if (GET_LEVEL(receiver) < LVL_IMMORT &&
+        IS_CARRYING_W(receiver) - outgoing_weight + incoming_weight > CAN_CARRY_W(receiver))
+    {
+      snprintf(reason, reason_size, "%s cannot carry that much weight.", GET_NAME(receiver));
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool trade_can_finalize(struct trade_session_data *trade, char *reason, size_t reason_size)
+{
+  if (!trade_participants_ready(trade, reason, reason_size))
+    return false;
+
+  if (!trade_validate_resources(trade, reason, reason_size))
+    return false;
+
+  if (!trade_validate_objects(trade, reason, reason_size))
+    return false;
+
+  if (!trade_validate_carrying(trade, reason, reason_size))
+    return false;
+
+  return true;
+}
+
+static void trade_move_objects_to(struct trade_offer_data *offer, struct char_data *owner,
+                                  struct char_data *receiver)
+{
+  struct trade_object_node *node = NULL;
+  struct obj_data *obj = NULL;
+
+  if (!offer || !owner || !receiver)
+    return;
+
+  for (node = offer->objects; node; node = node->next)
+  {
+    obj = find_trade_object(owner, node);
+    if (obj)
+    {
+      obj_from_char(obj);
+      obj_to_char(obj, receiver);
+    }
+  }
+
+  free_trade_object_nodes(offer->objects);
+  offer->objects = NULL;
+}
+
+static void complete_trade(struct trade_session_data *trade)
+{
+  struct char_data *a = trade->participants[0];
+  struct char_data *b = trade->participants[1];
+  int i = 0;
+
+  trade_move_objects_to(&trade->offers[0], a, b);
+  trade_move_objects_to(&trade->offers[1], b, a);
+
+  if (trade->offers[0].gold > 0)
+    decrease_gold(a, trade->offers[0].gold);
+  if (trade->offers[1].gold > 0)
+    decrease_gold(b, trade->offers[1].gold);
+  if (trade->offers[1].gold > 0)
+    increase_gold(a, trade->offers[1].gold);
+  if (trade->offers[0].gold > 0)
+    increase_gold(b, trade->offers[0].gold);
+
+  for (i = 1; i < NUM_CRAFT_MATS; i++)
+  {
+    GET_CRAFT_MAT(a, i) -= trade->offers[0].materials[i];
+    GET_CRAFT_MAT(b, i) -= trade->offers[1].materials[i];
+    GET_CRAFT_MAT(a, i) += trade->offers[1].materials[i];
+    GET_CRAFT_MAT(b, i) += trade->offers[0].materials[i];
+  }
+
+  for (i = 1; i < NUM_CRAFT_MOTES; i++)
+  {
+    GET_CRAFT_MOTES(a, i) -= trade->offers[0].motes[i];
+    GET_CRAFT_MOTES(b, i) -= trade->offers[1].motes[i];
+    GET_CRAFT_MOTES(a, i) += trade->offers[1].motes[i];
+    GET_CRAFT_MOTES(b, i) += trade->offers[0].motes[i];
+  }
+
+  a->trade = NULL;
+  b->trade = NULL;
+
+  send_to_char(a, "Trade complete.\r\n");
+  send_to_char(b, "Trade complete.\r\n");
+  act("$n and $N complete a trade.", TRUE, a, 0, b, TO_NOTVICT);
+
+  save_char(a, 0);
+  save_char(b, 0);
+
+  free(trade);
+}
+
+static void try_complete_trade(struct char_data *ch)
+{
+  char reason[MAX_INPUT_LENGTH] = {'\0'};
+  struct trade_session_data *trade = ch->trade;
+  int i = 0;
+
+  if (!trade)
+    return;
+
+  if (!trade->offers[0].accepted || !trade->offers[1].accepted)
+    return;
+
+  if (!trade_can_finalize(trade, reason, sizeof(reason)))
+  {
+    for (i = 0; i < 2; i++)
+      if (trade->participants[i])
+        send_to_char(trade->participants[i], "Trade cannot be completed: %s\r\n", reason);
+    trade_reset_acceptance(trade);
+    return;
+  }
+
+  complete_trade(trade);
+}
+
+static void open_trade_session(struct char_data *ch, struct char_data *vict)
+{
+  struct trade_session_data *trade = NULL;
+
+  if (!ch || !vict)
+    return;
+
+  clear_trade_invites(ch, NULL);
+  clear_trade_invites(vict, NULL);
+
+  CREATE(trade, struct trade_session_data, 1);
+  trade->participants[0] = ch;
+  trade->participants[1] = vict;
+  ch->trade = trade;
+  vict->trade = trade;
+
+  send_to_char(ch, "You open a trade with %s.\r\n", GET_NAME(vict));
+  send_to_char(vict, "%s opens a trade with you.\r\n", GET_NAME(ch));
+  show_trade(ch);
+  show_trade(vict);
+}
+
+static bool trade_participant_can_open(struct char_data *ch, struct char_data *vict, char *reason,
+                                       size_t reason_size)
+{
+  if (!ch || !vict || IS_NPC(ch) || IS_NPC(vict))
+  {
+    snprintf(reason, reason_size, "Trade participants must be players.");
+    return false;
+  }
+
+  if (ch->trade)
+  {
+    snprintf(reason, reason_size, "%s is already trading.", GET_NAME(ch));
+    return false;
+  }
+
+  if (vict->trade)
+  {
+    snprintf(reason, reason_size, "%s is already trading.", GET_NAME(vict));
+    return false;
+  }
+
+  if (!ch->desc || !vict->desc || STATE(ch->desc) != CON_PLAYING ||
+      STATE(vict->desc) != CON_PLAYING)
+  {
+    snprintf(reason, reason_size, "Both players must be connected and playing.");
+    return false;
+  }
+
+  if (IN_ROOM(ch) == NOWHERE || IN_ROOM(vict) == NOWHERE || IN_ROOM(ch) != IN_ROOM(vict))
+  {
+    snprintf(reason, reason_size, "Both players must be in the same room.");
+    return false;
+  }
+
+  return true;
+}
+
+static void accept_trade_invite(struct char_data *ch, char *target_name)
+{
+  struct char_data *inviter = NULL;
+  char reason[MAX_INPUT_LENGTH] = {'\0'};
+
+  skip_spaces(&target_name);
+
+  if (!ch || IS_NPC(ch))
+  {
+    send_to_char(ch, "NPCs cannot trade.\r\n");
+    return;
+  }
+
+  inviter = ch->trade_invite_from;
+  if (!inviter || inviter->trade_invite_to != ch)
+  {
+    clear_trade_invites(ch, NULL);
+    send_to_char(ch, "You have no pending trade request to accept.\r\n");
+    return;
+  }
+
+  if (*target_name && !is_abbrev(target_name, GET_NAME(inviter)) &&
+      !isname(target_name, inviter->player.name))
+  {
+    send_to_char(ch, "You do not have a trade request from that player.\r\n");
+    return;
+  }
+
+  if (!trade_participant_can_open(inviter, ch, reason, sizeof(reason)))
+  {
+    send_to_char(ch, "Trade request cannot be accepted: %s\r\n", reason);
+    send_to_char(inviter, "Trade request cannot be accepted: %s\r\n", reason);
+    clear_trade_invites(ch, NULL);
+    return;
+  }
+
+  open_trade_session(inviter, ch);
+}
+
+static void start_trade(struct char_data *ch, char *target_name)
+{
+  struct char_data *vict = NULL;
+  char reason[MAX_INPUT_LENGTH] = {'\0'};
+
+  if (IS_NPC(ch))
+  {
+    send_to_char(ch, "NPCs cannot trade.\r\n");
+    return;
+  }
+
+  if (!target_name || !*target_name)
+  {
+    send_to_char(ch, "Trade with whom?\r\n");
+    return;
+  }
+
+  if (ch->trade)
+  {
+    send_to_char(ch, "You are already trading.\r\n");
+    return;
+  }
+
+  if (!(vict = get_char_vis(ch, target_name, NULL, FIND_CHAR_ROOM)))
+  {
+    send_to_char(ch, "%s", CONFIG_NOPERSON);
+    return;
+  }
+
+  if (vict == ch)
+  {
+    send_to_char(ch, "Trading with yourself would be impressively circular.\r\n");
+    return;
+  }
+
+  if (IS_NPC(vict))
+  {
+    send_to_char(ch, "You can only trade with players.\r\n");
+    return;
+  }
+
+  if (vict->trade_invite_to == ch)
+  {
+    accept_trade_invite(ch, target_name);
+    return;
+  }
+
+  if (!trade_participant_can_open(ch, vict, reason, sizeof(reason)))
+  {
+    send_to_char(ch, "%s\r\n", reason);
+    return;
+  }
+
+  if (PRF_FLAGGED(vict, PRF_REJECT_TRADES))
+  {
+    send_to_char(ch, "%s is not accepting trade requests.\r\n", GET_NAME(vict));
+    return;
+  }
+
+  if (trade_invites_pending(ch))
+  {
+    show_trade_invites(ch);
+    return;
+  }
+
+  if (trade_invites_pending(vict))
+  {
+    send_to_char(ch, "%s already has a pending trade request.\r\n", GET_NAME(vict));
+    return;
+  }
+
+  ch->trade_invite_to = vict;
+  vict->trade_invite_from = ch;
+
+  send_to_char(ch, "You request a trade with %s.\r\n", GET_NAME(vict));
+  send_to_char(vict, "%s requests a trade with you.\r\n", GET_NAME(ch));
+  send_to_char(vict, "Use 'trade accept' to open the trade, or 'trade cancel' to decline.\r\n");
+}
+
+static void add_trade_item(struct char_data *ch, char *item_name)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct trade_object_node *node = NULL;
+  struct obj_data *obj = NULL;
+  struct char_data *partner = trade_partner(ch);
+
+  skip_spaces(&item_name);
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!*item_name)
+  {
+    send_to_char(ch, "Add which item?\r\n");
+    return;
+  }
+
+  if (!(obj = get_obj_in_list_vis(ch, item_name, NULL, ch->carrying)))
+  {
+    send_to_char(ch, "You don't seem to have %s %s.\r\n", AN(item_name), item_name);
+    return;
+  }
+
+  if (OBJ_FLAGGED(obj, ITEM_NODROP) && !PRF_FLAGGED(ch, PRF_NOHASSLE))
+  {
+    act("You can't let go of $p!!", FALSE, ch, obj, 0, TO_CHAR);
+    return;
+  }
+
+  if (trade_offer_has_object(offer, GET_ID(obj)))
+  {
+    act("You have already added $p to the trade.", FALSE, ch, obj, 0, TO_CHAR);
+    return;
+  }
+
+  CREATE(node, struct trade_object_node, 1);
+  node->obj_id = GET_ID(obj);
+  node->keywords = strdup(obj->name ? obj->name : "");
+  node->display_name = strdup(GET_OBJ_SHORT(obj) ? GET_OBJ_SHORT(obj) : "an item");
+  node->next = offer->objects;
+  offer->objects = node;
+
+  trade_reset_acceptance(ch->trade);
+  act("You add $p to the trade.", FALSE, ch, obj, 0, TO_CHAR);
+  act("$n adds $p to the trade.", FALSE, ch, obj, partner, TO_VICT);
+}
+
+static void remove_trade_item(struct char_data *ch, char *item_name)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct trade_object_node *node = NULL, *prev = NULL;
+  struct char_data *partner = trade_partner(ch);
+  struct obj_data *obj = NULL;
+  const char *display_name = NULL;
+
+  skip_spaces(&item_name);
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!*item_name)
+  {
+    send_to_char(ch, "Remove which item?\r\n");
+    return;
+  }
+
+  for (node = offer->objects; node; prev = node, node = node->next)
+  {
+    obj = find_trade_object(ch, node);
+    if ((obj && isname(item_name, obj->name)) || isname(item_name, node->keywords))
+      break;
+  }
+
+  if (!node)
+  {
+    send_to_char(ch, "You have not offered that item.\r\n");
+    return;
+  }
+
+  if (prev)
+    prev->next = node->next;
+  else
+    offer->objects = node->next;
+
+  obj = find_trade_object(ch, node);
+  display_name = trade_object_display_name(node);
+  trade_reset_acceptance(ch->trade);
+  if (obj)
+  {
+    act("You remove $p from the trade.", FALSE, ch, obj, 0, TO_CHAR);
+    act("$n removes $p from the trade.", FALSE, ch, obj, partner, TO_VICT);
+  }
+  else
+  {
+    send_to_char(ch, "You remove %s from the trade.\r\n", display_name);
+    send_to_char(partner, "%s removes %s from the trade.\r\n", GET_NAME(ch), display_name);
+  }
+  free_trade_object_node(node);
+}
+
+static void add_trade_gold(struct char_data *ch, char *argument)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct char_data *partner = trade_partner(ch);
+  char amount_arg[MAX_INPUT_LENGTH] = {'\0'};
+  int amount = 0;
+
+  one_argument(argument, amount_arg, sizeof(amount_arg));
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!parse_trade_amount(ch, amount_arg, &amount))
+    return;
+
+  if ((long long)offer->gold + amount > GET_GOLD(ch))
+  {
+    send_to_char(ch, "You do not have that much gold available.\r\n");
+    return;
+  }
+
+  offer->gold += amount;
+  trade_reset_acceptance(ch->trade);
+  send_to_char(ch, "You add %d gold to the trade.\r\n", amount);
+  send_to_char(partner, "%s adds %d gold to the trade.\r\n", GET_NAME(ch), amount);
+}
+
+static void remove_trade_gold(struct char_data *ch, char *argument)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct char_data *partner = trade_partner(ch);
+  char amount_arg[MAX_INPUT_LENGTH] = {'\0'};
+  int amount = 0;
+
+  one_argument(argument, amount_arg, sizeof(amount_arg));
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!parse_trade_amount(ch, amount_arg, &amount))
+    return;
+
+  if (amount > offer->gold)
+  {
+    send_to_char(ch, "You have not offered that much gold.\r\n");
+    return;
+  }
+
+  offer->gold -= amount;
+  trade_reset_acceptance(ch->trade);
+  send_to_char(ch, "You remove %d gold from the trade.\r\n", amount);
+  send_to_char(partner, "%s removes %d gold from the trade.\r\n", GET_NAME(ch), amount);
+}
+
+static void add_trade_material(struct char_data *ch, char *argument)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct char_data *partner = trade_partner(ch);
+  char amount_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char material_arg[MAX_INPUT_LENGTH] = {'\0'};
+  int amount = 0, material = CRAFT_MAT_NONE;
+
+  half_chop(argument, amount_arg, material_arg);
+  normalize_trade_resource_name(material_arg);
+
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!parse_trade_amount(ch, amount_arg, &amount))
+    return;
+
+  if ((material = find_trade_material(material_arg)) == CRAFT_MAT_NONE)
+  {
+    send_to_char(ch, "That is not a valid crafting material.\r\n");
+    return;
+  }
+
+  if ((long long)offer->materials[material] + amount > GET_CRAFT_MAT(ch, material))
+  {
+    send_to_char(ch, "You do not have that much %s available.\r\n",
+                 crafting_materials[material]);
+    return;
+  }
+
+  offer->materials[material] += amount;
+  trade_reset_acceptance(ch->trade);
+  send_to_char(ch, "You add %d %s to the trade.\r\n", amount, crafting_materials[material]);
+  send_to_char(partner, "%s adds %d %s to the trade.\r\n", GET_NAME(ch), amount,
+               crafting_materials[material]);
+}
+
+static void remove_trade_material(struct char_data *ch, char *argument)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct char_data *partner = trade_partner(ch);
+  char amount_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char material_arg[MAX_INPUT_LENGTH] = {'\0'};
+  int amount = 0, material = CRAFT_MAT_NONE;
+
+  half_chop(argument, amount_arg, material_arg);
+  normalize_trade_resource_name(material_arg);
+
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!parse_trade_amount(ch, amount_arg, &amount))
+    return;
+
+  if ((material = find_trade_material(material_arg)) == CRAFT_MAT_NONE)
+  {
+    send_to_char(ch, "That is not a valid crafting material.\r\n");
+    return;
+  }
+
+  if (amount > offer->materials[material])
+  {
+    send_to_char(ch, "You have not offered that much %s.\r\n", crafting_materials[material]);
+    return;
+  }
+
+  offer->materials[material] -= amount;
+  trade_reset_acceptance(ch->trade);
+  send_to_char(ch, "You remove %d %s from the trade.\r\n", amount,
+               crafting_materials[material]);
+  send_to_char(partner, "%s removes %d %s from the trade.\r\n", GET_NAME(ch), amount,
+               crafting_materials[material]);
+}
+
+static void add_trade_mote(struct char_data *ch, char *argument)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct char_data *partner = trade_partner(ch);
+  char amount_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char mote_arg[MAX_INPUT_LENGTH] = {'\0'};
+  int amount = 0, mote = 0;
+
+  half_chop(argument, amount_arg, mote_arg);
+  normalize_trade_resource_name(mote_arg);
+
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!parse_trade_amount(ch, amount_arg, &amount))
+    return;
+
+  if ((mote = find_trade_mote(mote_arg)) == 0)
+  {
+    send_to_char(ch, "That is not a valid mote type.\r\n");
+    return;
+  }
+
+  if ((long long)offer->motes[mote] + amount > GET_CRAFT_MOTES(ch, mote))
+  {
+    send_to_char(ch, "You do not have that much %s available.\r\n", crafting_motes[mote]);
+    return;
+  }
+
+  offer->motes[mote] += amount;
+  trade_reset_acceptance(ch->trade);
+  send_to_char(ch, "You add %d %s to the trade.\r\n", amount, crafting_motes[mote]);
+  send_to_char(partner, "%s adds %d %s to the trade.\r\n", GET_NAME(ch), amount,
+               crafting_motes[mote]);
+}
+
+static void remove_trade_mote(struct char_data *ch, char *argument)
+{
+  struct trade_offer_data *offer = trade_offer_for(ch);
+  struct char_data *partner = trade_partner(ch);
+  char amount_arg[MAX_INPUT_LENGTH] = {'\0'};
+  char mote_arg[MAX_INPUT_LENGTH] = {'\0'};
+  int amount = 0, mote = 0;
+
+  half_chop(argument, amount_arg, mote_arg);
+  normalize_trade_resource_name(mote_arg);
+
+  if (!offer || !partner)
+  {
+    send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (!parse_trade_amount(ch, amount_arg, &amount))
+    return;
+
+  if ((mote = find_trade_mote(mote_arg)) == 0)
+  {
+    send_to_char(ch, "That is not a valid mote type.\r\n");
+    return;
+  }
+
+  if (amount > offer->motes[mote])
+  {
+    send_to_char(ch, "You have not offered that much %s.\r\n", crafting_motes[mote]);
+    return;
+  }
+
+  offer->motes[mote] -= amount;
+  trade_reset_acceptance(ch->trade);
+  send_to_char(ch, "You remove %d %s from the trade.\r\n", amount, crafting_motes[mote]);
+  send_to_char(partner, "%s removes %d %s from the trade.\r\n", GET_NAME(ch), amount,
+               crafting_motes[mote]);
+}
+
+static void trade_add(struct char_data *ch, char *argument)
+{
+  char type[MAX_INPUT_LENGTH] = {'\0'};
+  char original[MAX_INPUT_LENGTH] = {'\0'};
+
+  skip_spaces(&argument);
+  strlcpy(original, argument, sizeof(original));
+  argument = (char *)one_argument(argument, type, sizeof(type));
+
+  if (!*type)
+  {
+    trade_usage(ch);
+    return;
+  }
+
+  if (is_abbrev(type, "item"))
+    add_trade_item(ch, argument);
+  else if (is_abbrev(type, "gold"))
+    add_trade_gold(ch, argument);
+  else if (is_abbrev(type, "material"))
+    add_trade_material(ch, argument);
+  else if (is_abbrev(type, "mote"))
+    add_trade_mote(ch, argument);
+  else
+    add_trade_item(ch, original);
+}
+
+static void trade_remove(struct char_data *ch, char *argument)
+{
+  char type[MAX_INPUT_LENGTH] = {'\0'};
+  char original[MAX_INPUT_LENGTH] = {'\0'};
+
+  skip_spaces(&argument);
+  strlcpy(original, argument, sizeof(original));
+  argument = (char *)one_argument(argument, type, sizeof(type));
+
+  if (!*type)
+  {
+    trade_usage(ch);
+    return;
+  }
+
+  if (is_abbrev(type, "item"))
+    remove_trade_item(ch, argument);
+  else if (is_abbrev(type, "gold"))
+    remove_trade_gold(ch, argument);
+  else if (is_abbrev(type, "material"))
+    remove_trade_material(ch, argument);
+  else if (is_abbrev(type, "mote"))
+    remove_trade_mote(ch, argument);
+  else
+    remove_trade_item(ch, original);
+}
+
+ACMDU(do_trade)
+{
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  struct trade_offer_data *offer = NULL;
+  struct char_data *partner = NULL;
+
+  skip_spaces(&argument);
+  argument = (char *)one_argument(argument, arg, sizeof(arg));
+
+  if (!*arg)
+  {
+    if (ch->trade)
+      show_trade(ch);
+    else if (trade_invites_pending(ch))
+      show_trade_invites(ch);
+    else
+      trade_usage(ch);
+    return;
+  }
+
+  if (is_abbrev(arg, "show") || is_abbrev(arg, "status") || is_abbrev(arg, "list"))
+  {
+    if (ch->trade)
+      show_trade(ch);
+    else
+      show_trade_invites(ch);
+    return;
+  }
+
+  if (is_abbrev(arg, "cancel") || is_abbrev(arg, "decline") || is_abbrev(arg, "reject"))
+  {
+    if (ch->trade)
+      cancel_trade(ch, "Trade canceled.\r\n");
+    else if (trade_invites_pending(ch))
+      clear_trade_invites(ch, "Trade request canceled.\r\n");
+    else
+      send_to_char(ch, "You are not currently trading.\r\n");
+    return;
+  }
+
+  if (is_abbrev(arg, "add"))
+  {
+    trade_add(ch, argument);
+    return;
+  }
+
+  if (is_abbrev(arg, "remove"))
+  {
+    trade_remove(ch, argument);
+    return;
+  }
+
+  if (is_abbrev(arg, "accept"))
+  {
+    if (!ch->trade)
+    {
+      accept_trade_invite(ch, argument);
+      return;
+    }
+
+    if (!(offer = trade_offer_for(ch)) || !(partner = trade_partner(ch)))
+    {
+      send_to_char(ch, "You are not currently trading.\r\n");
+      return;
+    }
+
+    offer->accepted = true;
+    send_to_char(ch, "You accept the trade.\r\n");
+    send_to_char(partner, "%s accepts the trade.\r\n", GET_NAME(ch));
+    try_complete_trade(ch);
+    return;
+  }
+
+  if (is_abbrev(arg, "help"))
+  {
+    trade_usage(ch);
+    return;
+  }
+
+  start_trade(ch, arg);
+}
+
 /*
         case ITEM_CLANARMOR:
           if (GET_OBJ_VAL(obj, 2) == NO_CLAN) {

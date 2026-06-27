@@ -1525,6 +1525,13 @@ void char_from_room(struct char_data *ch)
 
   char_from_furniture(ch);
 
+  if (!IS_NPC(ch))
+  {
+    if (ch->trade)
+      cancel_trade(ch, "Trade canceled because someone moved away.\r\n");
+    clear_trade_invites(ch, "Trade request canceled because someone moved away.\r\n");
+  }
+
   /* checks for light, globes of darkness, etc */
   check_room_lighting(IN_ROOM(ch), ch, FALSE);
 

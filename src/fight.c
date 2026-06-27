@@ -2671,6 +2671,13 @@ void raw_kill(struct char_data *ch, struct char_data *killer)
   struct char_data *k, *temp;
   struct affected_type af = {0}; /* Zero-initialize to prevent stack garbage */
 
+  if (!IS_NPC(ch))
+  {
+    if (ch->trade)
+      cancel_trade(ch, "Trade canceled because someone died.\r\n");
+    clear_trade_invites(ch, "Trade request canceled because someone died.\r\n");
+  }
+
   /* stop relevant fighting */
   if (FIGHTING(ch))
     stop_fighting(ch);

@@ -858,6 +858,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"recite", "reci", POS_FIGHTING, do_use_consumable, 0, SCMD_RECITE, FALSE, ACTION_SWIFT, {0, 6}, NULL},
     {"receive", "rece", POS_STANDING, do_not_here, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"recent", "recent", POS_DEAD, do_recent, LVL_IMMORT, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"rejecttrades", "rejecttrades", POS_DEAD, do_gen_tog, 0, SCMD_REJECT_TRADES, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"remove", "rem", POS_RESTING, do_remove_board, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"rent", "rent", POS_STANDING, do_not_here, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"replace", "repl", POS_RECLINING, do_not_here, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
@@ -1063,6 +1064,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"tedit", "tedit", POS_DEAD, do_tedit, LVL_STAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL}, /* XXX: Oasisify */
     {"thaw", "thaw", POS_DEAD, do_wizutil, LVL_GRSTAFF, SCMD_THAW, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"threaten", "threaten", POS_STANDING, do_dialogue_quest, 1, SCMD_DIALOGUE_INTIMIDATE, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"trade", "trade", POS_STANDING, do_trade, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"title", "title", POS_DEAD, do_title, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"time", "time", POS_DEAD, do_time, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"tinker", "tinker", POS_STANDING, do_tinker, 0, 0, TRUE, ACTION_NONE, {0, 0}, can_tinker},

@@ -359,6 +359,8 @@ void check_auction(void);
 void auc_send_to_all(char *messg, bool buyer);
 void list_consumables(struct char_data *ch, int type);
 void sort_object_bag(struct char_data *ch, char *objname, int subcmd, int bagnum);
+void cancel_trade(struct char_data *ch, const char *reason);
+void clear_trade_invites(struct char_data *ch, const char *reason);
 /* do_look, do_inventory utility functions */
 void list_obj_to_char(struct obj_data *list, struct char_data *ch, int mode, int show,
                       int mxp_type);
@@ -424,6 +426,7 @@ ACMD_DECL(do_put);
 ACMD_DECL(do_remove);
 ACMD_DECL(do_salvage);
 ACMD_DECL(do_sac);
+ACMD_DECL(do_trade);
 ACMD_DECL(do_wear);
 ACMD_DECL(do_wield);
 ACMD_DECL(do_auction);
@@ -935,6 +938,7 @@ ACMD_DECL(do_buildwalk);
 #define SCMD_SURVEY_ROOMS_PROMPT 69
 #define SCMD_AUTOLIGHT 70
 #define SCMD_NO_WALKTO_CONFIRM 71
+#define SCMD_REJECT_TRADES 72
 
 /* do_quit */
 ACMD_DECL(do_quit);
