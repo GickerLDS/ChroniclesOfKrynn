@@ -1967,7 +1967,7 @@ void set_crafting_catalysts(struct char_data *ch, const char *argument)
 
   if (target > 0 && !craft_project_has_catalyst_target(ch))
   {
-    send_to_char(ch, "Catalysts require a weapon, armor, or at least one item bonus to improve.\r\n");
+    send_to_char(ch, "Catalysts require a new item crafting project.\r\n");
     return;
   }
 
@@ -3372,7 +3372,7 @@ bool is_craft_ready(struct char_data *ch, bool verbose)
     ready = FALSE;
     if (verbose)
     {
-      send_to_char(ch, "Catalysts require a weapon, armor, or at least one item bonus to improve.\r\n");
+      send_to_char(ch, "Catalysts require a new item crafting project.\r\n");
     }
   }
 
@@ -4684,20 +4684,14 @@ static bool is_catalyst_affect_eligible(const struct obj_affected_type *affect)
 
 static bool craft_project_has_catalyst_target(struct char_data *ch)
 {
-  int i;
-
   if (!ch)
     return FALSE;
 
   if (GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_WEAPON ||
-      GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR)
+      GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_ARMOR ||
+      GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_MISC ||
+      GET_CRAFT(ch).crafting_item_type == CRAFT_TYPE_INSTRUMENT)
     return TRUE;
-
-  for (i = 0; i < MAX_OBJ_AFFECT; i++)
-  {
-    if (is_catalyst_affect_eligible(&GET_CRAFT(ch).affected[i]))
-      return TRUE;
-  }
 
   return FALSE;
 }
@@ -4737,7 +4731,7 @@ static bool obj_has_catalyst_target(struct obj_data *obj)
   if (!obj)
     return FALSE;
 
-  if (GET_OBJ_TYPE(obj) == ITEM_WEAPON || GET_OBJ_TYPE(obj) == ITEM_ARMOR)
+  if (OBJ_FLAGGED(obj, ITEM_CRAFTED))
     return TRUE;
 
   for (i = 0; i < MAX_OBJ_AFFECT; i++)
@@ -4789,6 +4783,40 @@ static int catalyst_modifier_increase(int location)
   return 1;
 }
 
+static bool catalyst_improve_instrument(struct obj_data *obj, char *buf, size_t buf_size)
+{
+  int roll = 0;
+
+  if (!obj || GET_OBJ_TYPE(obj) != ITEM_INSTRUMENT || !buf || buf_size == 0)
+    return FALSE;
+
+  roll = rand_number(1, 3);
+
+  switch (roll)
+  {
+  case 1:
+    GET_OBJ_VAL(obj, 1) += 1;
+    snprintf(buf, buf_size, "instrument quality +1");
+    return TRUE;
+  case 2:
+    GET_OBJ_VAL(obj, 2) += 1;
+    snprintf(buf, buf_size, "instrument effectiveness +1");
+    return TRUE;
+  default:
+    if (GET_OBJ_VAL(obj, 3) > 0)
+    {
+      GET_OBJ_VAL(obj, 3) = MAX(0, GET_OBJ_VAL(obj, 3) - 1);
+      snprintf(buf, buf_size, "instrument breakability -1");
+    }
+    else
+    {
+      GET_OBJ_VAL(obj, 1) += 1;
+      snprintf(buf, buf_size, "instrument quality +1");
+    }
+    return TRUE;
+  }
+}
+
 /* Process catalyst-driven critical success after a crafted item succeeds. */
 void process_craft_critical_success(struct char_data *ch, struct obj_data *obj)
 {
@@ -4797,7 +4825,10 @@ void process_craft_critical_success(struct char_data *ch, struct obj_data *obj)
   int bonus_indices[MAX_OBJ_AFFECT];
   bool improved_enhancement = FALSE;
   bool improved_affect = FALSE;
-  char affect_buf[128];
+  bool improved_instrument = FALSE;
+  char affect_buf[128] = {'\0'};
+  char instrument_buf[128] = {'\0'};
+  char resonance_buf[256] = {'\0'};
 
   if (!ch || !obj)
     return;
@@ -4818,7 +4849,11 @@ void process_craft_critical_success(struct char_data *ch, struct obj_data *obj)
     return;
   }
 
-  if (GET_OBJ_TYPE(obj) == ITEM_WEAPON || GET_OBJ_TYPE(obj) == ITEM_ARMOR)
+  if (GET_OBJ_TYPE(obj) == ITEM_INSTRUMENT)
+  {
+    improved_instrument = catalyst_improve_instrument(obj, instrument_buf, sizeof(instrument_buf));
+  }
+  else if (OBJ_FLAGGED(obj, ITEM_CRAFTED))
   {
     GET_OBJ_VAL(obj, 4) += 1;
     improved_enhancement = TRUE;
@@ -4842,18 +4877,28 @@ void process_craft_critical_success(struct char_data *ch, struct obj_data *obj)
     improved_affect = TRUE;
     snprintf(affect_buf, sizeof(affect_buf), "%s +%d",
              apply_types[obj->affected[random_idx].location], increase);
+  }
 
-    send_to_char(ch,
-                 "\tY**CATALYST CRITICAL!**\tn The craft resonates: %s%s%s.\r\n",
-                 improved_enhancement ? "enhancement +1" : "",
-                 improved_enhancement && improved_affect ? ", " : "",
-                 improved_affect ? affect_buf : "");
-  }
-  else if (improved_enhancement)
+  if (improved_enhancement)
   {
-    send_to_char(ch,
-                 "\tY**CATALYST CRITICAL!**\tn The craft resonates: enhancement +1.\r\n");
+    strlcat(resonance_buf, "enhancement +1", sizeof(resonance_buf));
   }
+  if (improved_instrument)
+  {
+    if (*resonance_buf)
+      strlcat(resonance_buf, ", ", sizeof(resonance_buf));
+    strlcat(resonance_buf, instrument_buf, sizeof(resonance_buf));
+  }
+  if (improved_affect)
+  {
+    if (*resonance_buf)
+      strlcat(resonance_buf, ", ", sizeof(resonance_buf));
+    strlcat(resonance_buf, affect_buf, sizeof(resonance_buf));
+  }
+
+  if (*resonance_buf)
+    send_to_char(ch, "\tY**CATALYST CRITICAL!**\tn The craft resonates: %s.\r\n",
+                 resonance_buf);
 }
 
 void craft_create_complete(struct char_data *ch)
