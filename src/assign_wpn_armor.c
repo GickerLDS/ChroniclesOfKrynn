@@ -1310,7 +1310,7 @@ void load_weapons(void)
             HANDLE_TYPE_HILT, HEAD_TYPE_BLADE,
             "A bastard sword is about 4 feet in length, making it too large to use in one hand "
             "without special training");
-  setweapon(WEAPON_TYPE_ESTOC, "estoc", 2, 4, 2, 2, WEAPON_FLAG_EXOTIC, 50,
+  setweapon(WEAPON_TYPE_ESTOC, "estoc", 2, 4, 2, 2, WEAPON_FLAG_EXOTIC | WEAPON_FLAG_FINESSE, 50,
             DAMAGE_TYPE_PIERCING, 4, 0, WEAPON_FAMILY_MEDIUM_BLADE, SIZE_MEDIUM, MATERIAL_STEEL,
             HANDLE_TYPE_HILT, HEAD_TYPE_BLADE,
             "An estoc is a stiff, edgeless thrusting sword made to pierce mail and armor with its "
@@ -1322,8 +1322,8 @@ void load_weapons(void)
             "This long, thin elven blade curves gracefully and is balanced for fluid, precise "
             "slashes despite its two-handed length.");
   setweapon(WEAPON_TYPE_FALCATA, "falcata", 1, 8, 1, 3, WEAPON_FLAG_EXOTIC, 18,
-            DAMAGE_TYPE_SLASHING, 4, 0, WEAPON_FAMILY_MEDIUM_BLADE, SIZE_MEDIUM,
-            MATERIAL_STEEL, HANDLE_TYPE_HILT, HEAD_TYPE_BLADE,
+            DAMAGE_TYPE_SLASHING, 4, 0, WEAPON_FAMILY_MEDIUM_BLADE, SIZE_MEDIUM, MATERIAL_STEEL,
+            HANDLE_TYPE_HILT, HEAD_TYPE_BLADE,
             "A falcata is a heavy, forward-curving sword with a broad chopping blade.");
   setweapon(WEAPON_TYPE_KHOPESH, "khopesh", 1, 8, 2, 2, WEAPON_FLAG_EXOTIC, 35,
             DAMAGE_TYPE_SLASHING, 6, 0, WEAPON_FAMILY_MEDIUM_BLADE, SIZE_MEDIUM, MATERIAL_STEEL,
@@ -1351,9 +1351,9 @@ void load_weapons(void)
             HANDLE_TYPE_GRIP, HEAD_TYPE_CHAIN,
             "A spiked chain is about 4 feet in length, covered in wicked barbs.");
   setweapon(WEAPON_TYPE_FAUCHARD, "fauchard", 1, 10, 2, 2,
-            WEAPON_FLAG_EXOTIC | WEAPON_FLAG_REACH | WEAPON_FLAG_TRIP, 14,
-            DAMAGE_TYPE_SLASHING, 10, 0, WEAPON_FAMILY_POLEARM, SIZE_LARGE, MATERIAL_STEEL,
-            HANDLE_TYPE_SHAFT, HEAD_TYPE_BLADE,
+            WEAPON_FLAG_EXOTIC | WEAPON_FLAG_REACH | WEAPON_FLAG_TRIP, 14, DAMAGE_TYPE_SLASHING, 10,
+            0, WEAPON_FAMILY_POLEARM, SIZE_LARGE, MATERIAL_STEEL, HANDLE_TYPE_SHAFT,
+            HEAD_TYPE_BLADE,
             "A fauchard is a polearm with a long, curved blade that can hook foes and strike from "
             "reach.");
   setweapon(

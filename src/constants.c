@@ -1758,12 +1758,11 @@ const char *weapon_family[] = {"Monk",    "Light-Blade",   "Hammer", "Ranged",  
 CHECK_TABLE_SIZE(weapon_family, NUM_WEAPON_FAMILIES + 1);
 
 /* weapon flags */
-const char *weapon_flags[] = {"Simple",      "Martial",     "Exotic",    "Ranged",      "Thrown",
-                              "Reach",       "Entangle",    "Trip",      "Double",      "Disarm",
-                              "Non-Lethal",  "Slow-Reload", "Balanced",  "Charge",      "Repeating",
-                              "Two-Handed",  "Light",       "Blocking",  "Bracing",     "Deadly",
-                              "Distracting", "Fragile",     "Grappling", "Performance", "Strength",
-                              "Sunder",      "\n"};
+const char *weapon_flags[] = {
+    "Simple",    "Martial",    "Exotic",      "Ranged",     "Thrown",      "Reach",   "Entangle",
+    "Trip",      "Double",     "Disarm",      "Non-Lethal", "Slow-Reload", "Finesse", "Charge",
+    "Repeating", "Two-Handed", "Light",       "Blocking",   "Bracing",     "Deadly",  "Distracting",
+    "Fragile",   "Grappling",  "Performance", "Strength",   "Sunder",      "\n"};
 CHECK_TABLE_SIZE(weapon_flags, NUM_WEAPON_FLAGS + 1);
 
 const char *ability_score_names[6] = {"strength",     "dexterity", "constitution",
