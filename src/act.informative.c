@@ -280,10 +280,7 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
         int slots_max = 2; /* Max slots per spell */
         int slots_used = slots_max - slots_remaining;
 
-        send_to_char(ch, "  %-35s [%d/%d]\r\n", 
-                     spell_info[i].name, 
-                     slots_used, 
-                     slots_max);
+        send_to_char(ch, "  %-35s [%d/%d]\r\n", spell_info[i].name, slots_used, slots_max);
 
         total_spells++;
         total_slots_used += slots_used;
@@ -297,7 +294,7 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
     /* Show class-based spell slots if mob has any */
     bool has_class_slots = FALSE;
     int circle;
-    
+
     for (circle = 0; circle < 10; circle++)
     {
       if (tch->mob_specials.max_spell_slots[circle] > 0)
@@ -310,7 +307,7 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
     if (has_class_slots)
     {
       const char *circle_suffix[] = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
-      
+
       text_line(ch, "\tYClass Spell Slots\tC", 80, '-', '-');
 
       if (MOB_FLAGGED(tch, MOB_UNLIMITED_SPELL_SLOTS))
@@ -327,10 +324,7 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
             int maximum = tch->mob_specials.max_spell_slots[circle];
             int used = maximum - current;
 
-            send_to_char(ch, "  %d%s Circle: %d/%d used\r\n", 
-                         circle, 
-                         circle_suffix[circle], 
-                         used, 
+            send_to_char(ch, "  %d%s Circle: %d/%d used\r\n", circle, circle_suffix[circle], used,
                          maximum);
           }
         }
@@ -412,11 +406,10 @@ void lore_id_vict(struct char_data *ch, struct char_data *tch)
         long total_seconds = time_remaining / PASSES_PER_SEC;
         long minutes = total_seconds / 60;
         long seconds = total_seconds % 60;
-        
+
         text_line(ch, "\tYSummon Duration\tC", 80, '-', '-');
-        send_to_char(ch, "  Time Remaining: %ld minute%s and %ld second%s\r\n", 
-                     minutes, (minutes != 1) ? "s" : "",
-                     seconds, (seconds != 1) ? "s" : "");
+        send_to_char(ch, "  Time Remaining: %ld minute%s and %ld second%s\r\n", minutes,
+                     (minutes != 1) ? "s" : "", seconds, (seconds != 1) ? "s" : "");
       }
     }
   }
@@ -1532,7 +1525,8 @@ void look_at_room(struct char_data *ch, int ignore_brief)
   target_room = IN_ROOM(ch);
   zn = GET_ROOM_ZONE(target_room);
 
-  if (target_room == NOWHERE) return;
+  if (target_room == NOWHERE)
+    return;
 
   /* Check if room is dark (magical darkness or normal darkness) */
   if (ROOM_FLAGGED(target_room, ROOM_MAGICDARK) || IS_DARK(target_room))
@@ -1706,7 +1700,8 @@ void look_at_room(struct char_data *ch, int ignore_brief)
   {
     if (world[IN_ROOM(ch)].harvest_material != 0 && world[IN_ROOM(ch)].harvest_material_amount > 0)
     {
-      send_to_char(ch, "\r\n\tyYour surveying has uncovered %s.\r\n\tn", crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
+      send_to_char(ch, "\r\n\tyYour surveying has uncovered %s.\r\n\tn",
+                   crafting_material_nodes[world[IN_ROOM(ch)].harvest_material]);
     }
   }
 
@@ -1855,7 +1850,8 @@ void look_at_room(struct char_data *ch, int ignore_brief)
           {
             if (!found_aggro)
             {
-              send_to_char(ch, "\tR[Your heightened senses detect hostile creatures nearby!]\tn\r\n");
+              send_to_char(ch,
+                           "\tR[Your heightened senses detect hostile creatures nearby!]\tn\r\n");
               found_aggro = 1;
             }
             break;
@@ -2312,10 +2308,11 @@ static void look_at_target(struct char_data *ch, char *arg)
 
         found = TRUE;
       }
-  
-      // if the object has an arcane mark cast on it, show it.
+
+  // if the object has an arcane mark cast on it, show it.
   if (found_obj && GET_OBJ_ARCANE_MARK(found_obj) != NULL)
-    send_to_char(ch, "\tCIt bears an arcane mark reading \"%s\"\tn.\r\n", GET_OBJ_ARCANE_MARK(found_obj));
+    send_to_char(ch, "\tCIt bears an arcane mark reading \"%s\"\tn.\r\n",
+                 GET_OBJ_ARCANE_MARK(found_obj));
 
   /* If an object was found back in generic_find */
   if (bits)
@@ -2347,10 +2344,9 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
     int seconds_left = GET_SURVEY_EXP_COOLDOWN(k) - now;
     int minutes_left = seconds_left / 60;
     seconds_left = seconds_left % 60;
-    send_to_char(ch,
-                 "Survey Exp Cooldown: You can gain survey exp again in %d minute%s %d second%s.\r\n",
-                 minutes_left, (minutes_left == 1) ? "" : "s", seconds_left,
-                 (seconds_left == 1) ? "" : "s");
+    send_to_char(
+        ch, "Survey Exp Cooldown: You can gain survey exp again in %d minute%s %d second%s.\r\n",
+        minutes_left, (minutes_left == 1) ? "" : "s", seconds_left, (seconds_left == 1) ? "" : "s");
   }
 
   // Device creation cooldown (global for artificer)
@@ -2868,7 +2864,7 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
                  GRASP_OF_THE_DEAD_TIMER(ch) * 6);
   if (INCORPOREAL_FORM_TIMER(ch) > 0)
     send_to_char(ch, "Incorporeal Form (Undead Bloodline) Cooldown - Duration: %d seconds\r\n",
-                  INCORPOREAL_FORM_TIMER(ch) * 6);
+                 INCORPOREAL_FORM_TIMER(ch) * 6);
   if (GET_MISSION_COOLDOWN(k) > 0)
     send_to_char(ch, "Mission Ready Cooldown - Duration: %d seconds\r\n",
                  GET_MISSION_COOLDOWN(k) * 6);
@@ -2898,21 +2894,22 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
   if (GET_SPELL_RECALL_COOLDOWN(k) > 0)
     send_to_char(ch, "Spell Recall - Duration: %d seconds\r\n", GET_SPELL_RECALL_COOLDOWN(k) * 6);
   if (GET_COSMIC_AWARENESS_COOLDOWN(k) > 0)
-    send_to_char(ch, "Cosmic Awareness - Duration: %d seconds\r\n", GET_COSMIC_AWARENESS_COOLDOWN(k) * 6);
+    send_to_char(ch, "Cosmic Awareness - Duration: %d seconds\r\n",
+                 GET_COSMIC_AWARENESS_COOLDOWN(k) * 6);
 
   /* Warlock Book of Ancient Secrets cooldowns */
   if (CONFIG_PERK_SYSTEM && !IS_NPC(k))
   {
     int max_spells = get_warlock_book_of_ancient_secrets_max_spells(k);
     int i;
-    
+
     if (max_spells > 0)
     {
       for (i = 0; i < max_spells; i++)
       {
         int spell_id = GET_WARLOCK_BOOK_SPELL(k, i);
         int cooldown = GET_WARLOCK_BOOK_COOLDOWN(k, i);
-        
+
         if (spell_id > 0 && cooldown > 0)
         {
           send_to_char(ch, "Book of Ancient Secrets (%s) - Duration: %d seconds\r\n",
@@ -3013,89 +3010,6 @@ void perform_resistances(struct char_data *ch, struct char_data *k)
       if (dcount % 2)
         send_to_char(ch, "\r\n");
     }
-  }
-
-  send_to_char(ch, "\r\n\tC");
-  text_line(ch, "\tYSpell Resistance\tC", 80, '-', '-');
-  send_to_char(ch, "\tn");
-  send_to_char(ch, "Spell Resist: %d\r\n", compute_spell_res(k, k, 0));
-
-  send_to_char(ch, "\tC");
-  text_line(ch, "\tYConcealment\tC", 80, '-', '-');
-  send_to_char(ch, "\tn");
-  send_to_char(ch, "Conceal Percent: %d\r\n", compute_concealment(k, NULL));
-
-  send_to_char(ch, "\tC");
-  text_line(ch, "\tYDamage Reduction\tC", 80, '-', '-');
-  send_to_char(ch, "\tn");
-
-  /* old damage reduction is still used */
-  send_to_char(ch, "General damage reduction: %d\r\n", compute_damage_reduction(k, 0));
-
-  /* new DR */
-  struct damage_reduction_type *dr;
-  dr = GET_DR(k);
-  while (dr != NULL)
-  {
-    if (dr->spell != SPELL_RESERVED_DBC)
-    {
-      /* This is from a spell */
-      send_to_char(ch, "%s%-19s%s ", CCCYN(ch, C_NRM), spell_name(dr->spell), CCNRM(ch, C_NRM));
-    }
-    else if (dr->feat != FEAT_UNDEFINED)
-    {
-      /* This is from a feat */
-      send_to_char(ch, "%s%-19s%s ", CCCYN(ch, C_NRM), feat_list[dr->feat].name, CCNRM(ch, C_NRM));
-    }
-
-    send_to_char(ch, "DR %d/", dr->amount);
-
-    for (i = 0; i < MAX_DR_BYPASS; i++)
-    {
-      if (dr->bypass_cat[i] != DR_BYPASS_CAT_UNUSED)
-      {
-        if (i > 0)
-        {
-          send_to_char(ch, " or ");
-        }
-        switch (dr->bypass_cat[i])
-        {
-        case DR_BYPASS_CAT_NONE:
-          /* Nothing bypasses this dr. */
-          send_to_char(ch, "-");
-          break;
-        case DR_BYPASS_CAT_MATERIAL:
-          send_to_char(ch, "%s", material_name[dr->bypass_val[i]]);
-          break;
-        case DR_BYPASS_CAT_MAGIC:
-          send_to_char(ch, "magic");
-          break;
-        case DR_BYPASS_CAT_DAMTYPE:
-          send_to_char(ch, "%s", damtypes[dr->bypass_val[i]]);
-          break;
-        case DR_BYPASS_CAT_ALIGNMENT:
-          send_to_char(ch, "%s", dr_aligns[dr->bypass_val[i]]);
-        default:
-          send_to_char(ch, "???");
-        }
-      }
-    }
-    if (dr->max_damage > 0)
-      send_to_char(ch, " %d damage left", dr->max_damage);
-    send_to_char(ch, "\r\n");
-    dr = dr->next;
-  }
-  send_to_char(ch, "\tC");
-  draw_line(ch, 80, '-', '-');
-  send_to_char(ch, "\tn");
-
-  /* leads to other related commands */
-  if (ch == k)
-  {
-    send_to_char(ch, "\tDType 'affects' to see your affects and conditions.\tn\r\n");
-    send_to_char(ch, "\tDType 'cooldowns' to see your cooldowns.\tn\r\n");
-    send_to_char(ch, "\tDType 'abilities' to see your class and innate abilities.\tn\r\n");
-    send_to_char(ch, "\tDType 'damagereduction' to see your damage reduction breakdown.\tn\r\n");
   }
 }
 
@@ -4375,6 +4289,7 @@ ACMD(do_defenses)
 {
   struct char_data *attacker = FIGHTING(ch);
   int line_length = 80;
+  int i = 0;
 
   send_to_char(ch, "\tC");
   text_line(ch, "\tYDefenses\tC", line_length, '-', '-');
@@ -4393,6 +4308,97 @@ ACMD(do_defenses)
   send_to_char(ch, "\tC");
   draw_line(ch, line_length, '-', '-');
   send_to_char(ch, "\tn");
+
+  send_to_char(ch, "\r\n\tC");
+  text_line(ch, "\tYSpell Resistance\tC", 80, '-', '-');
+  send_to_char(ch, "\tn");
+  send_to_char(ch, "Spell Resist: %d\r\n", compute_spell_res(ch, ch, 0));
+
+  send_to_char(ch, "\tC");
+  text_line(ch, "\tYConcealment\tC", 80, '-', '-');
+  send_to_char(ch, "\tn");
+  send_to_char(ch, "Conceal Percent: %d\r\n", compute_concealment(ch, NULL));
+
+  send_to_char(ch, "\tC");
+  text_line(ch, "\tYDamage Reduction\tC", 80, '-', '-');
+  send_to_char(ch, "\tn");
+
+  /* old damage reduction is still used */
+  send_to_char(ch, "General damage reduction: %d\r\n", compute_damage_reduction(ch, 0));
+
+  /* new DR */
+  struct damage_reduction_type *dr;
+  int dr_count = 0;
+  int max_dr_entries = 100;
+  dr = GET_DR(ch);
+  while (dr != NULL && dr_count < max_dr_entries)
+  {
+    dr_count++;
+
+    if (dr->spell != SPELL_RESERVED_DBC)
+    {
+      /* This is from a spell */
+      send_to_char(ch, "%s%-19s%s ", CCCYN(ch, C_NRM), spell_name(dr->spell), CCNRM(ch, C_NRM));
+    }
+    else if (dr->feat != FEAT_UNDEFINED)
+    {
+      /* This is from a feat */
+      send_to_char(ch, "%s%-19s%s ", CCCYN(ch, C_NRM), feat_list[dr->feat].name, CCNRM(ch, C_NRM));
+    }
+
+    send_to_char(ch, "DR %d/", dr->amount);
+
+    for (i = 0; i < MAX_DR_BYPASS; i++)
+    {
+      if (dr->bypass_cat[i] != DR_BYPASS_CAT_UNUSED)
+      {
+        if (i > 0)
+        {
+          send_to_char(ch, " or ");
+        }
+        switch (dr->bypass_cat[i])
+        {
+        case DR_BYPASS_CAT_NONE:
+          /* Nothing bypasses this dr. */
+          send_to_char(ch, "-");
+          break;
+        case DR_BYPASS_CAT_MATERIAL:
+          send_to_char(ch, "%s", material_name[dr->bypass_val[i]]);
+          break;
+        case DR_BYPASS_CAT_MAGIC:
+          send_to_char(ch, "magic");
+          break;
+        case DR_BYPASS_CAT_DAMTYPE:
+          send_to_char(ch, "%s", damtypes[dr->bypass_val[i]]);
+          break;
+        case DR_BYPASS_CAT_ALIGNMENT:
+          send_to_char(ch, "%s", dr_aligns[dr->bypass_val[i]]);
+          break;
+        default:
+          send_to_char(ch, "???");
+        }
+      }
+    }
+    if (dr->max_damage > 0)
+      send_to_char(ch, " %d damage left", dr->max_damage);
+    send_to_char(ch, "\r\n");
+    dr = dr->next;
+  }
+  if (dr != NULL)
+  {
+    send_to_char(ch,
+                 "\tRDamage reduction output truncated; your DR list appears to be corrupt.\tn\r\n");
+    log("SYSERR: do_defenses: possible DR list cycle/corruption for %s", GET_NAME(ch));
+  }
+  send_to_char(ch, "\tC");
+  draw_line(ch, 80, '-', '-');
+  send_to_char(ch, "\tn");
+
+  send_to_char(ch, "\tDType 'affects' to see your affects and conditions.\tn\r\n");
+  send_to_char(ch, "\tDType 'cooldowns' to see your cooldowns.\tn\r\n");
+  send_to_char(ch, "\tDType 'abilities' to see your class and innate abilities.\tn\r\n");
+  send_to_char(ch, "\tDType 'resistances' to see your damage type resistances breakdown.\tn\r\n");
+  send_to_char(ch, "\tDType 'damagereduction' to see your damage reduction breakdown.\tn\r\n");
 }
 
 /**
@@ -8543,8 +8549,7 @@ ACMD(do_toggle)
        "You will no longer be careful with your pets (and vice versa).\r\n",
        "You will now be careful with your pets (and vice versa).\r\n"},
       /*51*/
-      {"spontaneous", PRF_SPONTANEOUS_CASTING, 0,
-       "Cleric spontaneous casting disabled.\r\n",
+      {"spontaneous", PRF_SPONTANEOUS_CASTING, 0, "Cleric spontaneous casting disabled.\r\n",
        "Cleric spontaneous casting enabled. Prepared cleric spells will convert to cure or "
        "cause/harm spells based on your energy alignment.\r\n"},
 
@@ -9128,7 +9133,7 @@ ACMD(do_history)
     struct txt_block *tmp;
     for (tmp = GET_HISTORY(ch, type); tmp; tmp = tmp->next)
       send_to_char(ch, "%s", tmp->text);
-      /* Make this a 1 if you want history to clear after viewing */
+    /* Make this a 1 if you want history to clear after viewing */
 #if 0
     free_history(ch, type);
 #endif
@@ -11675,37 +11680,38 @@ ACMD(do_gmcptest)
 {
   protocol_t *pProtocol = NULL;
   char arg[MAX_INPUT_LENGTH] = {'\0'};
-  
+
   one_argument(argument, arg, sizeof(arg));
-  
+
   /* Check if descriptor exists */
   if (!ch->desc)
   {
     send_to_char(ch, "You have no descriptor (are you a mob?).\r\n");
     return;
   }
-  
+
   pProtocol = ch->desc->pProtocol;
-  
+
   /* Check if protocol is initialized */
   if (!pProtocol)
   {
     send_to_char(ch, "Protocol system is not initialized for your connection.\r\n");
     return;
   }
-  
+
   /* Display protocol status */
   send_to_char(ch, "\tCGMCP Protocol Test\tn\r\n");
   send_to_char(ch, "===================\r\n\r\n");
-  
+
   send_to_char(ch, "Protocol Status:\r\n");
   send_to_char(ch, "  GMCP Enabled:  %s\r\n", pProtocol->bGMCP ? "\tGYES\tn" : "\tRNO\tn");
   send_to_char(ch, "  MSDP Enabled:  %s\r\n", pProtocol->bMSDP ? "\tGYES\tn" : "\tRNO\tn");
   send_to_char(ch, "  MXP Enabled:   %s\r\n", pProtocol->bMXP ? "\tGYES\tn" : "\tRNO\tn");
-  send_to_char(ch, "  256 Color:     %s\r\n", 
-               pProtocol->b256Support == eYES ? "\tGYES\tn" : 
-               pProtocol->b256Support == eSOMETIMES ? "\tYSOMETIMES\tn" : "\tRNO\tn");
-  
+  send_to_char(ch, "  256 Color:     %s\r\n",
+               pProtocol->b256Support == eYES         ? "\tGYES\tn"
+               : pProtocol->b256Support == eSOMETIMES ? "\tYSOMETIMES\tn"
+                                                      : "\tRNO\tn");
+
   if (!*arg)
   {
     send_to_char(ch, "\r\nUsage: gmcptest <package.variable>\r\n");
@@ -11714,19 +11720,20 @@ ACMD(do_gmcptest)
     send_to_char(ch, "Check your client's GMCP debug window to see if you receive it.\r\n");
     return;
   }
-  
+
   /* Send a test GMCP message if requested */
   if (pProtocol->bGMCP)
   {
     char gmcp_data[MAX_STRING_LENGTH];
-    
+
     snprintf(gmcp_data, sizeof(gmcp_data),
-             "{ \"name\": \"%s\", \"level\": %d, \"health\": %d, \"max_health\": %d, \"test\": \"GMCP is working!\" }",
+             "{ \"name\": \"%s\", \"level\": %d, \"health\": %d, \"max_health\": %d, \"test\": "
+             "\"GMCP is working!\" }",
              GET_NAME(ch), GET_LEVEL(ch), GET_HIT(ch), GET_MAX_HIT(ch));
-    
+
     /* Send via the MSDP system (which sends as GMCP when bGMCP is true) */
     MSDPSendPair(ch->desc, arg, gmcp_data);
-    
+
     send_to_char(ch, "\r\n\tGTest GMCP message sent!\tn\r\n");
     send_to_char(ch, "Package: %s\r\n", arg);
     send_to_char(ch, "Data: %s\r\n", gmcp_data);

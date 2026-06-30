@@ -575,7 +575,7 @@ void compute_char_cap(struct char_data *ch, int mode)
 
   /*** here is the actual class modifiers ***/
 
-  for (class = 0; class < MAX_CLASSES; class ++)
+  for (class = 0; class < MAX_CLASSES; class++)
   {
     if ((class_level = CLASS_LEVEL(ch, class)) > 0)
     {
@@ -994,7 +994,6 @@ void affect_total_plus(struct char_data *ch, int at_armor)
   if (!IS_NPC(ch))
   {
     ch->points.max_psp += get_perk_spell_points_bonus(ch);
-    ch->points.armor += get_perk_ac_bonus(ch);
 
     /* Add save bonuses */
     for (i = 0; i < NUM_OF_SAVING_THROWS; i++)
@@ -1113,9 +1112,8 @@ void update_msdp_affects(struct char_data *ch)
                spell_name(af->spell), (char)MSDP_VAR, "LOCATION", (char)MSDP_VAL,
                apply_types[(int)af->location], (char)MSDP_VAR, "MODIFIER", (char)MSDP_VAL,
                af->modifier, (char)MSDP_VAR, "TYPE", (char)MSDP_VAL, bonus_type_name,
-               (char)MSDP_VAR, "BONUS_TYPE", (char)MSDP_VAL, bonus_type_name,
-               (char)MSDP_VAR, "DURATION", (char)MSDP_VAL, af->duration,
-               (char)MSDP_TABLE_CLOSE);
+               (char)MSDP_VAR, "BONUS_TYPE", (char)MSDP_VAL, bonus_type_name, (char)MSDP_VAR,
+               "DURATION", (char)MSDP_VAL, af->duration, (char)MSDP_TABLE_CLOSE);
     }
     else
     {
@@ -1131,8 +1129,7 @@ void update_msdp_affects(struct char_data *ch)
                spell_name(af->spell), (char)MSDP_VAR, "LOCATION", (char)MSDP_VAL,
                apply_types[(int)af->location], (char)MSDP_VAR, "MODIFIER", (char)MSDP_VAL,
                af->modifier, (char)MSDP_VAR, "TYPE", (char)MSDP_VAL, bonus_type_name,
-               (char)MSDP_VAR, "DURATION", (char)MSDP_VAL, af->duration,
-               (char)MSDP_TABLE_CLOSE);
+               (char)MSDP_VAR, "DURATION", (char)MSDP_VAL, af->duration, (char)MSDP_TABLE_CLOSE);
     }
     strlcat(msdp_buffer, buf, sizeof(msdp_buffer));
   }
@@ -1304,8 +1301,7 @@ void affect_remove(struct char_data *ch, struct affected_type *af)
   free_affect(af);
 
   if ((removed_spell == SPELL_DISGUISE_SELF || removed_spell == SPELL_ALTER_SELF) &&
-      !affected_by_spell(ch, SPELL_DISGUISE_SELF) &&
-      !affected_by_spell(ch, SPELL_ALTER_SELF))
+      !affected_by_spell(ch, SPELL_DISGUISE_SELF) && !affected_by_spell(ch, SPELL_ALTER_SELF))
   {
     GET_DISGUISE_RACE(ch) = 0;
   }
@@ -1582,10 +1578,10 @@ void char_to_coords(struct char_data *ch, int x, int y, int wilderness)
   }
 
   X_LOC(ch) = x;
-  
-        /* Reset master tracker proximity flag when leaving a room */
-        if (!IS_NPC(ch))
-          GET_INQ_MASTER_TRACKER_ALERT(ch) = false;
+
+  /* Reset master tracker proximity flag when leaving a room */
+  if (!IS_NPC(ch))
+    GET_INQ_MASTER_TRACKER_ALERT(ch) = false;
   Y_LOC(ch) = y;
 
   char_to_room(ch, room);
@@ -1608,11 +1604,11 @@ static bool master_tracker_quarry_near(struct char_data *tracker, struct char_da
   {
     int max_distance = 50 + (compute_ability(tracker, ABILITY_SURVIVAL) * 10);
     int actual_distance = count_rooms_between(IN_ROOM(tracker), IN_ROOM(quarry));
-    
+
     /* If distance can't be calculated (no path), return false */
     if (actual_distance < 0)
       return false;
-    
+
     return actual_distance <= max_distance;
   }
 
@@ -2652,8 +2648,8 @@ void update_char_objects(struct char_data *ch)
               equip_char(ch, replacement_light, WEAR_LIGHT);
               act("You quickly replace your burned-out light with $p.", FALSE, ch,
                   replacement_light, 0, TO_CHAR);
-              act("$n quickly replaces a burned-out light with $p.", FALSE, ch,
-                  replacement_light, 0, TO_ROOM);
+              act("$n quickly replaces a burned-out light with $p.", FALSE, ch, replacement_light,
+                  0, TO_ROOM);
             }
           }
           else

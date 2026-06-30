@@ -401,8 +401,9 @@ static int perform_feral_mutagen_attack(struct char_data *ch, int mode, int phas
 
   if (mode == 2)
   {
-    send_to_char(ch, "%s (Feral Mutagen), Attack Bonus:  %d; Damage Dice: varies by size; STR "
-                     "bonus: full\r\n",
+    send_to_char(ch,
+                 "%s (Feral Mutagen), Attack Bonus:  %d; Damage Dice: varies by size; STR "
+                 "bonus: full\r\n",
                  attack_types[attack_type], compute_attack_bonus(ch, ch, attack_type));
   }
 
@@ -897,7 +898,8 @@ bool is_flanked(struct char_data *attacker, struct char_data *ch)
     struct char_data *ally;
     for (ally = world[IN_ROOM(ch)].people; ally; ally = ally->next_in_room)
     {
-      if (ally != ch && !IS_NPC(ally) && are_grouped(ch, ally) && has_inquisitor_master_tactician(ally))
+      if (ally != ch && !IS_NPC(ally) && are_grouped(ch, ally) &&
+          has_inquisitor_master_tactician(ally))
         return FALSE;
     }
   }
@@ -1084,8 +1086,7 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
     /* Blood of Dragons: dragon disciple levels stack with sorcerer levels for
        draconic bloodline powers. */
     int draconic_level = get_effective_draconic_bloodline_level(ch);
-    bonuses[BONUS_TYPE_NATURALARMOR] +=
-        (draconic_level >= 15 ? 4 : (draconic_level >= 9 ? 2 : 1));
+    bonuses[BONUS_TYPE_NATURALARMOR] += (draconic_level >= 15 ? 4 : (draconic_level >= 9 ? 2 : 1));
   }
   // vampires
   if (HAS_FEAT(ch, FEAT_VAMPIRE_NATURAL_ARMOR) && CAN_USE_VAMPIRE_ABILITY(ch))
@@ -1184,6 +1185,9 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
       bonuses[BONUS_TYPE_ARMOR] += armor_of_shadows;
     }
   }
+
+  bonuses[BONUS_TYPE_ARMOR] += get_perk_ac_bonus(ch);
+
   /**/
 
   /* bonus type shield (usually equipment) */
@@ -2417,11 +2421,14 @@ static void make_corpse(struct char_data *ch)
   SET_BIT_AR(GET_OBJ_EXTRA(corpse), ITEM_NODONATE);
   GET_OBJ_VAL(corpse, 0) = 0; /* You can't store stuff in a corpse */
   GET_OBJ_VAL(corpse, 8) = IS_NPC(ch) ? GET_NPC_RACE(ch) : 0; /* race type/family */
-  GET_OBJ_VAL(corpse, 9) = GET_SIZE(ch); /* size */
-  GET_OBJ_VAL(corpse, 3) = 1; /* corpse identifier */
-  GET_OBJ_VAL(corpse, 4) = IS_NPC(ch) ? 0 : GET_IDNUM(ch); /* player ID if PC, 0 if NPC */
-  GET_OBJ_VAL(corpse, 6) = IS_NPC(ch) ? GET_LEVEL(ch) : 0; /* mob level */
-  GET_OBJ_VAL(corpse, 7) = (IS_NPC(ch) && AFF_FLAGGED(ch, AFF_CHARM) && ch->master && !IS_NPC(ch->master)) ? 1 : 0; /* player charmed */
+  GET_OBJ_VAL(corpse, 9) = GET_SIZE(ch);                      /* size */
+  GET_OBJ_VAL(corpse, 3) = 1;                                 /* corpse identifier */
+  GET_OBJ_VAL(corpse, 4) = IS_NPC(ch) ? 0 : GET_IDNUM(ch);    /* player ID if PC, 0 if NPC */
+  GET_OBJ_VAL(corpse, 6) = IS_NPC(ch) ? GET_LEVEL(ch) : 0;    /* mob level */
+  GET_OBJ_VAL(corpse, 7) =
+      (IS_NPC(ch) && AFF_FLAGGED(ch, AFF_CHARM) && ch->master && !IS_NPC(ch->master))
+          ? 1
+          : 0; /* player charmed */
   GET_OBJ_WEIGHT(corpse) = GET_WEIGHT(ch) + IS_CARRYING_W(ch);
   GET_OBJ_RENT(corpse) = 100000;
   if (IS_NPC(ch))
@@ -3172,15 +3179,15 @@ static void group_gain(struct char_data *ch, struct char_data *victim)
     tot_gain = MIN(CONFIG_MAX_EXP_LOSS * 2 / 3, tot_gain);
 
   /* base: split the xp between the individuals in the party */
-  // Divides based on number of players in the party. 
-  // 1 = 100%, 2 = 90%, 3 = 80%, 4 = 70%, 5 = 60%, 6+ = 50% of normal exp gain. 
+  // Divides based on number of players in the party.
+  // 1 = 100%, 2 = 90%, 3 = 80%, 4 = 70%, 5 = 60%, 6+ = 50% of normal exp gain.
   // Charmies don't count against this.
   if (tot_members >= 1)
     base = tot_gain * (100 - MIN(50, (tot_members - 1) * 10)) / 100;
   else
     base = 0;
 
-    /* if mob isn't within X levels, don't give xp -zusuk */
+  /* if mob isn't within X levels, don't give xp -zusuk */
 #if !defined(CAMPAIGN_DL)
   if ((GET_LEVEL(victim) + CONFIG_EXP_LEVEL_DIFFERENCE) < party_level)
     base = 1;
@@ -5144,17 +5151,6 @@ int compute_damage_reduction_full(struct char_data *ch, int dam_type, bool displ
       send_to_char(ch, "%-30s: %d\r\n", "Raging Defender (Doubled)", raging_defender_bonus);
   }
 
-  // damage reduction cap is 20 for players
-  if (!IS_NPC(ch))
-  {
-    if (damage_reduction > MAX_DAM_REDUC)
-    {
-      damage_reduction = MIN(MAX_DAM_REDUC, damage_reduction);
-      if (display)
-        send_to_char(ch, "%-30s: %d\r\n", "Damage Reduction Capped At", MAX_DAM_REDUC);
-    }
-  }
-
   /* Summon Resilience: Summoned creatures gain DR 5/- per rank */
   if (IS_NPC(ch) && ch->master && !IS_NPC(ch->master))
   {
@@ -5166,6 +5162,100 @@ int compute_damage_reduction_full(struct char_data *ch, int dam_type, bool displ
         send_to_char(ch, "%-30s: %d\r\n", "Summon Resilience", summon_resilience_dr);
     }
   }
+
+  /* ---------------------------------------- */
+
+  int damage_reduction_bonuses_nonstacking[NUM_BONUS_TYPES];
+  int damage_reduction_bonuses_stacking[NUM_BONUS_TYPES];
+  int total_bonus = 0;
+  int i = 0, j = 0, k = 0;
+  struct obj_data *obj = NULL;
+
+  for (i = 0; i < NUM_BONUS_TYPES; i++)
+  {
+    damage_reduction_bonuses_nonstacking[i] = 0;
+    damage_reduction_bonuses_stacking[i] = 0;
+  }
+
+  for (i = 0; i < NUM_BONUS_TYPES; i++)
+  {
+    for (j = 0; j < NUM_WEARS; j++)
+    {
+      if ((obj = GET_EQ(ch, j)))
+      {
+        for (k = 0; k < MAX_OBJ_AFFECT; k++)
+        {
+          if (obj->affected[k].location == APPLY_DR && obj->affected[k].bonus_type == i)
+          {
+            if (i != BONUS_TYPE_UNIVERSAL && obj->affected[k].modifier > 0 &&
+                obj->affected[k].modifier > damage_reduction_bonuses_nonstacking[i])
+              damage_reduction_bonuses_nonstacking[i] = obj->affected[k].modifier;
+            else
+              damage_reduction_bonuses_stacking[i] += obj->affected[k].modifier;
+          }
+        }
+      }
+    }
+  }
+
+  for (i = 0; i < NUM_BONUS_TYPES; i++)
+  {
+    total_bonus += damage_reduction_bonuses_nonstacking[i];
+    total_bonus += damage_reduction_bonuses_stacking[i];
+  }
+
+  damage_reduction += total_bonus;
+  if (display)
+    send_to_char(ch, "%-30s: %d\r\n", "Worn Equipment", total_bonus);
+
+  /* ---------------------------------------- */
+
+  struct affected_type *aff;
+
+  for (i = 0; i < NUM_BONUS_TYPES; i++)
+  {
+    damage_reduction_bonuses_nonstacking[i] = 0;
+    damage_reduction_bonuses_stacking[i] = 0;
+  }
+
+  total_bonus = 0;
+
+  for (i = 0; i < NUM_BONUS_TYPES; i++)
+  {
+    for (aff = ch->affected; aff; aff = aff->next)
+    {
+      if (aff->location == APPLY_DR && aff->bonus_type == i)
+      {
+        if (i != BONUS_TYPE_UNIVERSAL && aff->modifier > 0 &&
+            aff->modifier > damage_reduction_bonuses_nonstacking[i])
+          damage_reduction_bonuses_nonstacking[i] = aff->modifier;
+        else
+          damage_reduction_bonuses_stacking[i] += aff->modifier;
+      }
+    }
+  }
+
+  for (i = 0; i < NUM_BONUS_TYPES; i++)
+  {
+    total_bonus += damage_reduction_bonuses_nonstacking[i];
+    total_bonus += damage_reduction_bonuses_stacking[i];
+  }
+
+  damage_reduction += total_bonus;
+  if (display)
+    send_to_char(ch, "%-30s: %d\r\n", "Misc Affects", total_bonus);
+
+  // damage reduction cap is 25 for players
+  if (!IS_NPC(ch))
+  {
+    if (damage_reduction > MAX_DAM_REDUC)
+    {
+      damage_reduction = MIN(MAX_DAM_REDUC, damage_reduction);
+      if (display)
+        send_to_char(ch, "%-30s: %d\r\n", "Damage Reduction Capped At", MAX_DAM_REDUC);
+    }
+  }
+
 
   if (display)
   {
@@ -5799,7 +5889,8 @@ int damage_handling(struct char_data *ch, struct char_data *victim, int dam, int
     }
 
     /* inertial barrier - damage absorption using psp */
-    if (AFF_FLAGGED(victim, AFF_INERTIAL_BARRIER) && dam && !rand_number(0, 1) && can_dam_be_resisted(dam_type))
+    if (AFF_FLAGGED(victim, AFF_INERTIAL_BARRIER) && dam && !rand_number(0, 1) &&
+        can_dam_be_resisted(dam_type))
     {
       send_to_char(ch, "\twYour attack is absorbed by some manner of invisible barrier.\tn\r\n");
       GET_PSP(victim) -= (1 + (dam / 5));
@@ -6035,8 +6126,9 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
         do_get(ch->master, "all.coin corpse", 0, 0);
         do_split(ch->master, local_buf, 0, 0);
       }
-      else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
-          PRF_FLAGGED(ch->master->master, PRF_AUTOSPLIT))
+      else if (IS_NPC(ch->master) && ch->master->master &&
+               (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) &&
+               !IS_NPC(ch->master->master) && PRF_FLAGGED(ch->master->master, PRF_AUTOSPLIT))
       {
         do_get(ch->master->master, "all.coin corpse", 0, 0);
         do_split(ch->master->master, local_buf, 0, 0);
@@ -6055,8 +6147,9 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
       do_get(ch->master, "all.coin corpse", 0, 0);
       do_get(ch->master, "all.coin", 0, 0); // added for incorporeal - no corpse -zusuk
     }
-    else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
-        PRF_FLAGGED(ch->master->master, PRF_AUTOGOLD))
+    else if (IS_NPC(ch->master) && ch->master->master &&
+             (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
+             PRF_FLAGGED(ch->master->master, PRF_AUTOGOLD))
     {
       do_get(ch->master->master, "all.coin corpse", 0, 0);
       do_get(ch->master->master, "all.coin", 0, 0); // added for incorporeal - no corpse -zusuk
@@ -6084,8 +6177,9 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
     {
       if (!IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOLOOT))
         do_get(ch->master, "all corpse", 0, 0);
-      else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
-          PRF_FLAGGED(ch->master->master, PRF_AUTOLOOT))
+      else if (IS_NPC(ch->master) && ch->master->master &&
+               (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) &&
+               !IS_NPC(ch->master->master) && PRF_FLAGGED(ch->master->master, PRF_AUTOLOOT))
         do_get(ch->master->master, "all corpse", 0, 0);
     }
   }
@@ -6099,8 +6193,9 @@ int dam_killed_vict(struct char_data *ch, struct char_data *victim)
   {
     if (!IS_NPC(ch->master) && PRF_FLAGGED(ch->master, PRF_AUTOSAC))
       do_sac(ch->master, "corpse", 0, 0);
-    else if (IS_NPC(ch->master) && ch->master->master && (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
-        PRF_FLAGGED(ch->master->master, PRF_AUTOSAC))
+    else if (IS_NPC(ch->master) && ch->master->master &&
+             (IN_ROOM(ch->master) == IN_ROOM(ch->master->master)) && !IS_NPC(ch->master->master) &&
+             PRF_FLAGGED(ch->master->master, PRF_AUTOSAC))
       do_sac(ch->master, "corpse", 0, 0);
   }
 
@@ -6584,9 +6679,9 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
       send_to_char(best_artificer,
                    "Aegis Protocol flares around %s, granting %d temporary hit points.\r\n",
                    GET_NAME(victim), shield);
-      send_to_char(victim,
-                   "%s's Aegis Protocol cushions the spell impact with %d temporary hit points.\r\n",
-                   GET_NAME(best_artificer), shield);
+      send_to_char(
+          victim, "%s's Aegis Protocol cushions the spell impact with %d temporary hit points.\r\n",
+          GET_NAME(best_artificer), shield);
     }
   }
 
@@ -6611,7 +6706,7 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
       int invention_idx = -1;
       int support_idx = -1;
       int inv_i = 0;
-      char invention_name[MAX_INVENTION_SHORTDESC] = { '\0' };
+      char invention_name[MAX_INVENTION_SHORTDESC] = {'\0'};
 
       for (inv_i = 0; inv_i < victim->player_specials->saved.num_inventions; inv_i++)
       {
@@ -6651,30 +6746,33 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
         snprintf(invention_name, sizeof(invention_name), "%s",
                  victim->player_specials->saved.inventions[invention_idx].short_description);
 
-        for (inv_i = invention_idx; inv_i < victim->player_specials->saved.num_inventions - 1; inv_i++)
+        for (inv_i = invention_idx; inv_i < victim->player_specials->saved.num_inventions - 1;
+             inv_i++)
         {
           victim->player_specials->saved.inventions[inv_i] =
-            victim->player_specials->saved.inventions[inv_i + 1];
+              victim->player_specials->saved.inventions[inv_i + 1];
         }
-        memset(&victim->player_specials->saved.inventions[
-                 victim->player_specials->saved.num_inventions - 1],
+        memset(&victim->player_specials->saved
+                    .inventions[victim->player_specials->saved.num_inventions - 1],
                0, sizeof(struct player_invention));
         victim->player_specials->saved.num_inventions--;
         victim->player_specials->saved.soulbound_infusion_cooldown = time(0) + (15 * 60);
         GET_HIT(victim) = 1;
         update_pos(victim);
 
-        send_to_char(victim,
-                     "One of your bound infusions burns out as Soulbound Infusion keeps you standing at 1 HP.\r\n");
+        send_to_char(victim, "One of your bound infusions burns out as Soulbound Infusion keeps "
+                             "you standing at 1 HP.\r\n");
         if (*invention_name)
           send_to_char(victim, "%s is consumed in the process.\r\n", invention_name);
         if (ch && ch != victim)
         {
-          send_to_char(ch,
-                       "%s refuses to fall as a soulbound infusion detonates into a defensive surge!\r\n",
-                       GET_NAME(victim));
+          send_to_char(
+              ch,
+              "%s refuses to fall as a soulbound infusion detonates into a defensive surge!\r\n",
+              GET_NAME(victim));
         }
-        act("$n staggers but refuses to fall as a bound invention burns away in a flash of protective energy.",
+        act("$n staggers but refuses to fall as a bound invention burns away in a flash of "
+            "protective energy.",
             FALSE, victim, 0, 0, TO_ROOM);
       }
     }
@@ -6695,27 +6793,32 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   }
 
   /* Warlock: One with Patron - Dark One's Blessing triggers at 50% HP threshold */
-  if (!IS_NPC(victim) && CLASS_LEVEL(victim, CLASS_WARLOCK) > 0 && has_warlock_one_with_patron(victim) && dam > 0 && GET_HIT(victim) > 0)
+  if (!IS_NPC(victim) && CLASS_LEVEL(victim, CLASS_WARLOCK) > 0 &&
+      has_warlock_one_with_patron(victim) && dam > 0 && GET_HIT(victim) > 0)
   {
     int hp_pct = (GET_HIT(victim) * 100) / MAX(1, GET_MAX_HIT(victim));
     if (hp_pct <= 50 && !char_has_mud_event(victim, eWARLOCK_ONE_WITH_PATRON))
     {
       int blessing_rank_1 = get_warlock_dark_ones_blessing_1_bonus(victim);
       int blessing_rank_2 = get_warlock_dark_ones_blessing_2_bonus(victim);
-      
+
       if (blessing_rank_1 > 0 || blessing_rank_2 > 0)
       {
         int temp_hp = (GET_CHA_BONUS(victim) + (GET_WARLOCK_LEVEL(victim) / 2)) * blessing_rank_1;
         temp_hp += blessing_rank_2;
         temp_hp += get_warlock_one_with_patron_temp_hp(victim); /* +5 bonus from One with Patron */
-        
+
         if (temp_hp > 0)
         {
           GET_HIT(victim) = MIN(GET_MAX_HIT(victim) + 50, GET_HIT(victim) + temp_hp);
-          send_to_char(victim, "\tY[Your patron's blessing at half strength grants you +%d temporary HP!]\tn\r\n", temp_hp);
-          
+          send_to_char(
+              victim,
+              "\tY[Your patron's blessing at half strength grants you +%d temporary HP!]\tn\r\n",
+              temp_hp);
+
           /* Set a 1 minute cooldown */
-          attach_mud_event(new_mud_event(eWARLOCK_ONE_WITH_PATRON, victim, NULL), 60 * PASSES_PER_SEC);
+          attach_mud_event(new_mud_event(eWARLOCK_ONE_WITH_PATRON, victim, NULL),
+                           60 * PASSES_PER_SEC);
         }
       }
     }
@@ -6728,8 +6831,8 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
   }
 
   /* Energy Retort (Perk): reflect level-based energy damage on melee hits while psychokinesis affect active */
-  if (dam > 0 && has_energy_retort_perk(victim) && !is_ranged &&
-      !original_self_damage && w_type != PSIONIC_ENERGY_RETORT)
+  if (dam > 0 && has_energy_retort_perk(victim) && !is_ranged && !original_self_damage &&
+      w_type != PSIONIC_ENERGY_RETORT)
   {
     if (affected_by_spell(victim, PSIONIC_FORCE_SCREEN) ||
         affected_by_spell(victim, PSIONIC_INERTIAL_ARMOR) ||
@@ -7072,17 +7175,17 @@ int damage(struct char_data *ch, struct char_data *victim, int dam, int w_type, 
     {
       int blessing_rank_1 = get_warlock_dark_ones_blessing_1_bonus(ch);
       int blessing_rank_2 = get_warlock_dark_ones_blessing_2_bonus(ch);
-      
+
       if (blessing_rank_1 > 0 || blessing_rank_2 > 0)
       {
         int temp_hp = (GET_CHA_BONUS(ch) + (GET_WARLOCK_LEVEL(ch) / 2)) * blessing_rank_1;
         temp_hp += blessing_rank_2;
-        
+
         if (temp_hp > 0)
         {
           /* Award temporary HP (capped at max HP + 50) */
           GET_HIT(ch) = MIN(GET_MAX_HIT(ch) + 50, GET_HIT(ch) + temp_hp);
-          
+
           send_to_char(ch, "\tY[Dark One's Blessing grants you +%d temporary HP!]\tn\r\n", temp_hp);
         }
       }
@@ -9527,8 +9630,8 @@ int compute_hit_damage(struct char_data *ch, struct char_data *victim, int w_typ
           affect_to_char(ch, &af);
 
           send_to_char(ch, "\tRYour blood frenzy explodes into a burst of speed!\tn\r\n");
-          act("\tR$n flies into a blood frenzy, moving with terrifying speed!\tn", FALSE, ch, 0,
-              0, TO_ROOM);
+          act("\tR$n flies into a blood frenzy, moving with terrifying speed!\tn", FALSE, ch, 0, 0,
+              TO_ROOM);
         }
 
         /* Carnage perk - splash damage on crits */
@@ -9739,12 +9842,12 @@ int compute_hit_damage(struct char_data *ch, struct char_data *victim, int w_typ
 
       if (victim)
       {
-        act("\tY[\tRDEATH FROM ABOVE\tY]\tn You crash into $N with bone-rattling force!", FALSE,
-            ch, 0, victim, TO_CHAR);
-        act("\tY[\tRDEATH FROM ABOVE\tY]\tn $n crashes into you with bone-rattling force!",
-            FALSE, ch, 0, victim, TO_VICT);
-        act("\tY[\tRDEATH FROM ABOVE\tY]\tn $n crashes into $N with bone-rattling force!",
-            FALSE, ch, 0, victim, TO_NOTVICT);
+        act("\tY[\tRDEATH FROM ABOVE\tY]\tn You crash into $N with bone-rattling force!", FALSE, ch,
+            0, victim, TO_CHAR);
+        act("\tY[\tRDEATH FROM ABOVE\tY]\tn $n crashes into you with bone-rattling force!", FALSE,
+            ch, 0, victim, TO_VICT);
+        act("\tY[\tRDEATH FROM ABOVE\tY]\tn $n crashes into $N with bone-rattling force!", FALSE,
+            ch, 0, victim, TO_NOTVICT);
       }
     }
 
@@ -9969,24 +10072,31 @@ int compute_hit_damage(struct char_data *ch, struct char_data *victim, int w_typ
   }
 
   /* Inquisitor Instant Death: 3% proc chance on hit vs studied target */
-  if (mode == MODE_NORMAL_HIT && !IS_NPC(ch) && victim &&
-      has_inquisitor_instant_death(ch) && is_inquisitor_studied_target(ch, victim))
+  if (mode == MODE_NORMAL_HIT && !IS_NPC(ch) && victim && has_inquisitor_instant_death(ch) &&
+      is_inquisitor_studied_target(ch, victim))
   {
     if (rand_number(1, 100) <= 3) /* 3% chance */
     {
       /* Fort save DC = 10 + half level + Wis modifier */
       int dc = 10 + (GET_LEVEL(ch) / 2) + GET_WIS_BONUS(ch);
       char buf[200];
-      if (!savingthrow(ch, victim, SAVING_FORT, dc, CAST_INNATE, CLASS_LEVEL(ch, CLASS_INQUISITOR), NOSCHOOL))
+      if (!savingthrow(ch, victim, SAVING_FORT, dc, CAST_INNATE, CLASS_LEVEL(ch, CLASS_INQUISITOR),
+                       NOSCHOOL))
       {
         /* Failed save: +15d6 damage */
         int extra_dice = dice(15, 6);
         dam += extra_dice;
-        snprintf(buf, sizeof(buf), "\tWYou deliver a grevious strike on $N with perfect precision! [+%d damage]\tn", extra_dice);
+        snprintf(buf, sizeof(buf),
+                 "\tWYou deliver a grevious strike on $N with perfect precision! [+%d damage]\tn",
+                 extra_dice);
         act(buf, FALSE, ch, NULL, victim, TO_CHAR);
-        snprintf(buf, sizeof(buf), "\tW$n delivers a grevious strike on you perfect precision! [+%d damage]\tn", extra_dice);
+        snprintf(buf, sizeof(buf),
+                 "\tW$n delivers a grevious strike on you perfect precision! [+%d damage]\tn",
+                 extra_dice);
         act(buf, FALSE, ch, NULL, victim, TO_VICT | TO_SLEEP);
-        snprintf(buf, sizeof(buf), "\tW$n delivers a grevious strike on $N with perfect precision! [+%d damage]\tn", extra_dice);
+        snprintf(buf, sizeof(buf),
+                 "\tW$n delivers a grevious strike on $N with perfect precision! [+%d damage]\tn",
+                 extra_dice);
         act(buf, FALSE, ch, 0, victim, TO_NOTVICT);
       }
       else
@@ -9994,11 +10104,17 @@ int compute_hit_damage(struct char_data *ch, struct char_data *victim, int w_typ
         /* Successful save: +8d6 damage */
         int extra_dice = dice(8, 6);
         dam += extra_dice;
-        snprintf(buf, sizeof(buf), "\tW$N resists your precision strike but takes damage anyway [+%d damage]\tn", extra_dice);
+        snprintf(buf, sizeof(buf),
+                 "\tW$N resists your precision strike but takes damage anyway [+%d damage]\tn",
+                 extra_dice);
         act(buf, FALSE, ch, NULL, victim, TO_CHAR);
-        snprintf(buf, sizeof(buf), "\tWYou resist $n's precision strike but take damage anyway [+%d damage]\tn", extra_dice);
+        snprintf(buf, sizeof(buf),
+                 "\tWYou resist $n's precision strike but take damage anyway [+%d damage]\tn",
+                 extra_dice);
         act(buf, FALSE, ch, NULL, victim, TO_VICT | TO_SLEEP);
-        snprintf(buf, sizeof(buf), "\tW$N resists $n's precision strike but takes damage anyway [+%d damage]\tn", extra_dice);
+        snprintf(buf, sizeof(buf),
+                 "\tW$N resists $n's precision strike but takes damage anyway [+%d damage]\tn",
+                 extra_dice);
         act(buf, FALSE, ch, 0, victim, TO_NOTVICT);
       }
     }
@@ -10865,8 +10981,7 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
       if (display)
         send_to_char(ch, "%2d: %-50s\r\n", GET_DEX_BONUS(ch), "Weapon Finesse Dex");
     }
-    else if (!wielded && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
-             GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
+    else if (!wielded && HAS_FEAT(ch, FEAT_WEAPON_FINESSE) && GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
     {
       /* Unarmed strikes count as light weapons, so Weapon Finesse applies to
          them for any character with the feat - no monk unarmed-strike class
@@ -10925,8 +11040,7 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
     /* Unarmed strikes count as light weapons, so Weapon Finesse applies to them
        for any character with the feat - no monk unarmed-strike class ability is
        required. */
-    if (HAS_FEAT(ch, FEAT_WEAPON_FINESSE) &&
-        GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
+    if (HAS_FEAT(ch, FEAT_WEAPON_FINESSE) && GET_DEX_BONUS(ch) > GET_STR_BONUS(ch))
     {
       calc_bab += GET_DEX_BONUS(ch); /* superior bonus is used */
       if (display)
@@ -13912,7 +14026,8 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
       {
         // int dc = 10 + (GET_LEVEL(ch) / 2) + GET_DEX_BONUS(ch);
         // (void)dc; /* DC computed for future use or debugging */
-        int save_result = savingthrow(ch, victim, SAVING_FORT, 0, CAST_INNATE, GET_LEVEL(ch), NOSCHOOL);
+        int save_result =
+            savingthrow(ch, victim, SAVING_FORT, 0, CAST_INNATE, GET_LEVEL(ch), NOSCHOOL);
 
         if (save_result == FALSE)
         {
@@ -13940,7 +14055,8 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
       {
         // int dc = 10 + (GET_LEVEL(ch) / 2) + GET_DEX_BONUS(ch);
         // (void)dc; /* DC computed for future use or debugging */
-        int save_result = savingthrow(ch, victim, SAVING_FORT, 0, CAST_INNATE, GET_LEVEL(ch), NOSCHOOL);
+        int save_result =
+            savingthrow(ch, victim, SAVING_FORT, 0, CAST_INNATE, GET_LEVEL(ch), NOSCHOOL);
 
         if (save_result == FALSE)
         {
@@ -13971,7 +14087,8 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
         {
           // int dc = 10 + (MONK_TYPE(ch) / 2) + GET_WIS_BONUS(ch);
           // (void)dc; /* DC computed for future use or debugging */
-          int save_result = savingthrow(ch, victim, SAVING_FORT, 0, CAST_INNATE, MONK_TYPE(ch), NOSCHOOL);
+          int save_result =
+              savingthrow(ch, victim, SAVING_FORT, 0, CAST_INNATE, MONK_TYPE(ch), NOSCHOOL);
 
           if (save_result == FALSE)
           {
@@ -14286,7 +14403,8 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
         if (trigger)
         {
           trigger_relentless_assault(ch);
-          if (relentless_target && IN_ROOM(ch) == IN_ROOM(relentless_target) && GET_POS(ch) > POS_DEAD)
+          if (relentless_target && IN_ROOM(ch) == IN_ROOM(relentless_target) &&
+              GET_POS(ch) > POS_DEAD)
           {
             /* Immediate bonus attack */
             hit(ch, relentless_target, TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, FALSE);
@@ -15601,10 +15719,8 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
       debuff.bonus_type = BONUS_TYPE_UNDEFINED;
       affect_to_char(victim, &debuff);
 
-      act("\tRYour relentless assault tears away $N's defenses!\tn", FALSE, ch, 0, victim,
-          TO_CHAR);
-      act("\tR$n's relentless assault tears away your defenses!\tn", FALSE, ch, 0, victim,
-          TO_VICT);
+      act("\tRYour relentless assault tears away $N's defenses!\tn", FALSE, ch, 0, victim, TO_CHAR);
+      act("\tR$n's relentless assault tears away your defenses!\tn", FALSE, ch, 0, victim, TO_VICT);
       act("\tR$n's relentless assault tears away $N's defenses!\tn", FALSE, ch, 0, victim,
           TO_NOTVICT);
     }
@@ -16195,9 +16311,9 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
   /* Process Melee Attacks -------------------------------------------------- */
   // melee: now lets determine base attack(s) and resulting possible penalty
   dual = is_dual_wielding(ch) && !VITAL_STRIKING(ch); // trelux or has off-hander equipped
-  dragon_disciple_natural_routine =
-      HAS_FEAT(ch, FEAT_CLAWS_AND_BITE) && !GET_EQ(ch, WEAR_WIELD_1) &&
-      !GET_EQ(ch, WEAR_WIELD_2H) && !GET_EQ(ch, WEAR_WIELD_OFFHAND);
+  dragon_disciple_natural_routine = HAS_FEAT(ch, FEAT_CLAWS_AND_BITE) &&
+                                    !GET_EQ(ch, WEAR_WIELD_1) && !GET_EQ(ch, WEAR_WIELD_2H) &&
+                                    !GET_EQ(ch, WEAR_WIELD_OFFHAND);
 
   /* we are going to exit melee combat if we are somehow wielding a ranged
              weapon here */
@@ -16335,7 +16451,8 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
         CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 6)
     {
       damage(ch, FIGHTING(ch), dice(1, 6), SPELL_DRACONIC_BLOODLINE_BREATHWEAPON,
-             draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)], ATTACK_TYPE_PRIMARY_EVO_BITE);
+             draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)],
+             ATTACK_TYPE_PRIMARY_EVO_BITE);
     }
   }
   if (has_feral_mutagen_active(ch))
