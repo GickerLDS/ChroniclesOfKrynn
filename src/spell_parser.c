@@ -888,41 +888,41 @@ int call_magic(struct char_data *caster, struct char_data *cvict, struct obj_dat
       break;
     }
 
-  // attach event for epic spells, increase skill
+  if (caster && !IS_NPC(caster) && IS_EPIC_SPELL(spellnum))
+  {
+    if (!can_cast_epic_spell(caster, TRUE))
+      return 0;
+    use_epic_spell_cast(caster);
+  }
+
+  // increase epic spell skill
   switch (spellnum)
   {
   case SPELL_MUMMY_DUST:
-    attach_mud_event(new_mud_event(eMUMMYDUST, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_MUMMY_DUST);
     break;
   case SPELL_SUMMON_SOLAR:
-    attach_mud_event(new_mud_event(eSUMMONSOLAR, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_SUMMON_SOLAR);
     break;
   case SPELL_DRAGON_KNIGHT:
-    attach_mud_event(new_mud_event(eDRAGONKNIGHT, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_DRAGON_KNIGHT);
     break;
   case SPELL_GREATER_RUIN:
-    attach_mud_event(new_mud_event(eGREATERRUIN, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_GREATER_RUIN);
     break;
   case SPELL_HELLBALL:
-    attach_mud_event(new_mud_event(eHELLBALL, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_HELLBALL);
     break;
   case SPELL_EPIC_MAGE_ARMOR:
-    attach_mud_event(new_mud_event(eEPICMAGEARMOR, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_EPIC_MAGE_ARMOR);
     break;
   case SPELL_EPIC_WARDING:
-    attach_mud_event(new_mud_event(eEPICWARDING, caster, NULL), 9 * SECS_PER_MUD_DAY);
     if (!IS_NPC(caster))
       increase_skill(caster, SKILL_EPIC_WARDING);
     break;
@@ -2648,32 +2648,8 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
       return 0;
     }
   }
-  // epic spell cooldown
-  if (char_has_mud_event(ch, eMUMMYDUST) && spellnum == SPELL_MUMMY_DUST)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
+  if (!IS_NPC(ch) && IS_EPIC_SPELL(spellnum) && !can_cast_epic_spell(ch, TRUE))
     return 0;
-  }
-  if (char_has_mud_event(ch, eSUMMONSOLAR) && spellnum == SPELL_SUMMON_SOLAR)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
-    return 0;
-  }
-  if (char_has_mud_event(ch, eDRAGONKNIGHT) && spellnum == SPELL_DRAGON_KNIGHT)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
-    return 0;
-  }
-  if (char_has_mud_event(ch, eGREATERRUIN) && spellnum == SPELL_GREATER_RUIN)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
-    return 0;
-  }
-  if (char_has_mud_event(ch, eHELLBALL) && spellnum == SPELL_HELLBALL)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
-    return 0;
-  }
   // cosmic awareness cooldown (10 minutes = 100 ticks)
   if (spellnum == PSIONIC_COSMIC_AWARENESS && GET_COSMIC_AWARENESS_COOLDOWN(ch) > 0)
   {
@@ -2825,17 +2801,6 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
             seconds, (seconds != 1 ? "s" : ""));
       return 0;
     }
-  }
-
-  if (char_has_mud_event(ch, eEPICMAGEARMOR) && spellnum == SPELL_EPIC_MAGE_ARMOR)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
-    return 0;
-  }
-  if (char_has_mud_event(ch, eEPICWARDING) && spellnum == SPELL_EPIC_WARDING)
-  {
-    send_to_char(ch, "You must wait longer before you can use this spell again.\r\n");
-    return 0;
   }
 
   /* position check */

@@ -50,6 +50,9 @@ void set_vampire_spawn_feats(struct char_data *mob);
 bool can_add_solar_follower(struct char_data *ch);
 bool can_add_mummy_dust_follower(struct char_data *ch);
 
+#define EPIC_SPELL_DAMAGE_MULTIPLIER_PERCENT 150
+#define SUMMON_SPELL_DURATION_MULTIPLIER 3
+
 /* local file scope function prototypes */
 static int mag_materials(struct char_data *ch, IDXTYPE item0, IDXTYPE item1, IDXTYPE item2,
                          int extract, int verbose);
@@ -3840,6 +3843,9 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
       }
     }
   }
+
+  if (dam > 0 && IS_EPIC_SPELL(spellnum))
+    dam = (dam * EPIC_SPELL_DAMAGE_MULTIPLIER_PERCENT) / 100;
 
   if (!element) // want to make sure all spells have some sort of damage category
     log("SYSERR: %d is lacking DAM_", spellnum);
@@ -12191,6 +12197,8 @@ void mag_summons(int level, struct char_data *ch, struct obj_data *obj, int spel
   /* Eternal Swarm: +50% duration */
   if (has_summoner_eternal_swarm(ch))
     summon_duration += (summon_duration * 50) / 100;
+
+  summon_duration *= SUMMON_SPELL_DURATION_MULTIPLIER;
 
   efficient_summoning_rank = get_summoner_efficient_summoning_rank(ch);
 

@@ -1912,6 +1912,8 @@ void update_player_misc(void)
       }
     }
 
+    regenerate_epic_spell_cast(ch);
+
     if (GET_WARLOCK_BOOK_COOLDOWN(ch, 0) > 0)
     {
       GET_WARLOCK_BOOK_COOLDOWN(ch, 0)--;

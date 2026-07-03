@@ -340,6 +340,11 @@ int file_tail(FILE *file, char *buf, size_t bufsize, int lines_to_read);
 size_t file_sizeof(FILE *file);
 int file_numlines(FILE *file);
 int leadership_exp_multiplier(struct char_data *ch);
+int get_epic_spell_casts_max(struct char_data *ch);
+void normalize_epic_spell_casts(struct char_data *ch);
+bool can_cast_epic_spell(struct char_data *ch, bool display);
+void use_epic_spell_cast(struct char_data *ch);
+void regenerate_epic_spell_cast(struct char_data *ch);
 void clear_misc_cooldowns(struct char_data *ch);
 IDXTYPE atoidx(const char *str_to_conv);
 char *strfrmt(char *str, int w, int h, int justify, int hpad, int vpad);
@@ -1316,6 +1321,7 @@ void char_from_furniture(struct char_data *ch);
 #define TOTAL_DEFENSE(ch) ((ch)->char_specials.totalDefense)
 #define MOUNTED_BLOCKS_LEFT(ch) ((ch)->char_specials.mounted_blocks_left)
 #define DEFLECT_ARROWS_LEFT(ch) ((ch)->char_specials.deflect_arrows_left)
+#define GET_ATTACKS_THIS_ROUND(ch) ((ch)->char_specials.attacks_this_round)
 #define GET_SALVATION_NAME(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->salvation_name))
 #define GET_SALVATION_ROOM(ch) CHECK_PLAYER_SPECIAL((ch), ((ch)->player_specials->salvation_room))
 
@@ -3003,6 +3009,10 @@ bool has_reach(struct char_data *ch);
 #define GET_SPELL_RECALL_COOLDOWN(ch) (ch->player_specials->saved.spell_recall_cooldown)
 #define GET_DEATHLESS_FRENZY_TIMER(ch) (ch->player_specials->saved.deathless_frenzy_timer)
 #define GET_COSMIC_AWARENESS_COOLDOWN(ch) (ch->player_specials->saved.cosmic_awareness_cooldown)
+#define GET_EPIC_SPELL_CASTS(ch) (ch->player_specials->saved.epic_spell_casts)
+#define GET_EPIC_SPELL_REGEN_TIMER(ch) (ch->player_specials->saved.epic_spell_regen_timer)
+#define EPIC_SPELL_CAST_REGEN_TICKS 30
+#define EPIC_SPELL_CAST_MAX 10
 
 /* Bonus spell slot tracking for Domain Master perks */
 #define GET_BONUS_DOMAIN_SLOTS_USED(ch) (ch->player_specials->saved.bonus_domain_slots_used)

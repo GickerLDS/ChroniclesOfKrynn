@@ -14598,8 +14598,9 @@ int handle_successful_attack(struct char_data *ch, struct char_data *victim,
     damage(ch, victim, dice(2, 6), TYPE_SPECAB_FLAMING, DAM_FIRE, FALSE);
 
   /* Wilderness Warrior: Whirling Steel - 5% chance per hit for extra attack when dual wielding */
-  if (!IS_NPC(ch) && !victim_is_dead && has_perk(ch, PERK_RANGER_WHIRLING_STEEL) &&
-      is_dual_wielding(ch) && dice(1, 100) <= 5)
+  if (!IS_NPC(ch) && !victim_is_dead && !AFF_FLAGGED(ch, AFF_STAGGERED) &&
+      has_perk(ch, PERK_RANGER_WHIRLING_STEEL) && is_dual_wielding(ch) &&
+      dice(1, 100) <= 5)
   {
     send_to_char(ch, "\tW[WHIRLING STEEL!]\tn\r\n");
     hit(ch, victim, TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, ATTACK_TYPE_PRIMARY);
@@ -14840,6 +14841,11 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
 
   if (!ch || !victim)
     return (HIT_MISS); /* ch and victim exist? */
+
+  if (AFF_FLAGGED(ch, AFF_STAGGERED) && GET_ATTACKS_THIS_ROUND(ch) >= 1)
+    return (HIT_MISS);
+
+  GET_ATTACKS_THIS_ROUND(ch)++;
 
   // each hit we want to reset the preserve organs proc.  This is to prevent double dipping
   // from sneak attacks and crits
@@ -15879,6 +15885,122 @@ int valid_fight_cond(struct char_data *ch, bool strict)
 #define PHASE_1 1
 #define PHASE_2 2
 #define PHASE_3 3
+static int perform_staggered_attack(struct char_data *ch, int mode, int phase)
+{
+  int penalty = 0;
+  int wpn_reload_status = 0;
+  struct obj_data *wielded = NULL;
+
+  if (mode == RETURN_NUM_ATTACKS)
+    return 1;
+
+  if (mode == DISPLAY_ROUTINE_POTENTIAL)
+  {
+    send_to_char(ch, "Staggered: limited to one attack per round.\r\n");
+
+    if (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_AUTOBLAST) && HAS_FEAT(ch, FEAT_ELDRITCH_BLAST) &&
+        GET_ELDRITCH_SHAPE(ch) != WARLOCK_HIDEOUS_BLOW)
+    {
+      if (is_tanking(ch))
+        penalty -= 4;
+      if (RIDING(ch) && !HAS_FEAT(ch, FEAT_MOUNTED_ARCHERY))
+        penalty -= 4;
+
+      send_to_char(ch, "Eldritch Blast, Attack Bonus: %d; Damage: %dd6\r\n",
+                   compute_attack_bonus(ch, ch, ATTACK_TYPE_RANGED) + penalty,
+                   HAS_FEAT(ch, FEAT_ELDRITCH_BLAST) + HAS_FEAT(ch, FEAT_EPIC_ELDRITCH_BLAST));
+    }
+    else if (is_using_ranged_weapon(ch, TRUE))
+    {
+      send_to_char(ch, "Ranged Attack Bonus:  %d; ",
+                   compute_attack_bonus(ch, ch, ATTACK_TYPE_RANGED));
+      compute_hit_damage(ch, ch, TYPE_UNDEFINED_WTYPE, NO_DICEROLL, MODE_DISPLAY_RANGED,
+                         FALSE, ATTACK_TYPE_RANGED, 0);
+    }
+    else
+    {
+      send_to_char(ch, "Mainhand, Attack Bonus:  %d; ",
+                   compute_attack_bonus(ch, ch, ATTACK_TYPE_PRIMARY));
+      compute_hit_damage(ch, ch, TYPE_UNDEFINED_WTYPE, NO_DICEROLL, MODE_DISPLAY_PRIMARY,
+                         FALSE, ATTACK_TYPE_PRIMARY, 0);
+    }
+
+    return 1;
+  }
+
+  if (mode != NORMAL_ATTACK_ROUTINE)
+    return 0;
+
+  if (phase != PHASE_0 && phase != PHASE_1)
+    return 0;
+
+  if (GET_ATTACKS_THIS_ROUND(ch) >= 1 || !FIGHTING(ch) || !valid_fight_cond(ch, FALSE))
+    return 0;
+
+  if (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_AUTOBLAST) && HAS_FEAT(ch, FEAT_ELDRITCH_BLAST) &&
+      GET_ELDRITCH_SHAPE(ch) != WARLOCK_HIDEOUS_BLOW)
+  {
+    GET_ATTACKS_THIS_ROUND(ch)++;
+    call_magic(ch, FIGHTING(ch), NULL, WARLOCK_ELDRITCH_BLAST, 0, GET_WARLOCK_LEVEL(ch),
+               CAST_INNATE);
+    return 0;
+  }
+
+  if (can_fire_ammo(ch, TRUE) && FIRING(ch))
+  {
+    if (is_tanking(ch) && !IS_NPC(ch) && !HAS_FEAT(ch, FEAT_POINT_BLANK_SHOT))
+    {
+      send_to_char(ch, "You are too close to use your ranged weapon.\r\n");
+      stop_fighting(ch);
+      FIRING(ch) = FALSE;
+      return 0;
+    }
+
+    if (is_tanking(ch))
+    {
+      if (!IS_NPC(ch) && HAS_FEAT(ch, FEAT_IMPROVED_PRECISE_SHOT))
+        penalty += 4;
+      else if (!IS_NPC(ch) && HAS_FEAT(ch, FEAT_PRECISE_SHOT))
+        ;  /* no penalty/bonus */
+      else
+        penalty -= 4;
+    }
+
+    if (RIDING(ch) && !IS_NPC(ch) && !HAS_FEAT(ch, FEAT_MOUNTED_ARCHERY))
+      penalty -= 4;
+
+    wpn_reload_status =
+        hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, penalty, ATTACK_TYPE_RANGED);
+
+    if (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_AUTORELOAD))
+      auto_reload_weapon(ch, TRUE);
+
+    if (wpn_reload_status != HIT_NEED_RELOAD && !can_fire_ammo(ch, FALSE))
+    {
+      stop_fighting(ch);
+      FIRING(ch) = FALSE;
+    }
+
+    return 0;
+  }
+
+  wielded = is_using_ranged_weapon(ch, TRUE);
+  if (wielded)
+  {
+    send_to_char(ch, "You can not use a ranged weapon in melee combat: ");
+    can_fire_ammo(ch, FALSE);
+
+    if (is_reloading_weapon(ch, wielded, TRUE) && !weapon_is_loaded(ch, wielded, FALSE) &&
+        !IS_NPC(ch) && PRF_FLAGGED(ch, PRF_AUTORELOAD))
+      auto_reload_weapon(ch, TRUE);
+
+    return 0;
+  }
+
+  hit(ch, FIGHTING(ch), TYPE_UNDEFINED, DAM_RESERVED_DBC, 0, ATTACK_TYPE_PRIMARY);
+  return 0;
+}
+
 int perform_attacks(struct char_data *ch, int mode, int phase)
 {
   int i = 0, penalty = 0, numAttacks = 0, bonus_mainhand_attacks = 0;
@@ -15907,6 +16029,9 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
     return (0);
 
   guard_check(ch, FIGHTING(ch)); /* this is the guard skill check */
+
+  if (AFF_FLAGGED(ch, AFF_STAGGERED))
+    return perform_staggered_attack(ch, mode, phase);
 
   /** BEGIN PROCESS OF COUNTING ATTACKS AND PENALTIES FOR SUCCESSIVE ATTACKS  **/
 
@@ -15983,7 +16108,8 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
     attacks_at_max_bab++;
   }
 
-  if (mode == NORMAL_ATTACK_ROUTINE && phase == PHASE_1 && !IS_NPC(ch) &&
+  if (mode == NORMAL_ATTACK_ROUTINE && phase == PHASE_1 && !AFF_FLAGGED(ch, AFF_STAGGERED) &&
+      !IS_NPC(ch) &&
       has_bard_supreme_style(ch) && is_affected_by_supreme_style(ch) &&
       !char_has_mud_event(ch, eSUPREME_STYLE_ATTACK))
   {
@@ -16222,7 +16348,8 @@ int perform_attacks(struct char_data *ch, int mode, int phase)
           if (wpn_reload_status != HIT_NEED_RELOAD)
           {
             int qd_chance = get_ranger_quick_draw_proc_chance(ch);
-            if (qd_chance > 0 && rand_number(1, 100) <= qd_chance && can_fire_ammo(ch, TRUE))
+            if (!AFF_FLAGGED(ch, AFF_STAGGERED) && qd_chance > 0 &&
+                rand_number(1, 100) <= qd_chance && can_fire_ammo(ch, TRUE))
             {
               send_to_char(ch, "Your Quick Draw lets you snap off an extra shot!\r\n");
               act("$n snaps off an extra shot with lightning speed!", FALSE, ch, 0, 0, TO_ROOM);
@@ -17013,6 +17140,7 @@ EVENTFUNC(event_combat_round)
 {
   struct char_data *ch = NULL;
   struct mud_event_data *pMudEvent = NULL;
+  int phase = 0;
 
   /*  This is just a dummy check, but we'll do it anyway */
   if (event_obj == NULL)
@@ -17022,6 +17150,9 @@ EVENTFUNC(event_combat_round)
    * referenced pointers */
   pMudEvent = (struct mud_event_data *)event_obj;
   ch = (struct char_data *)pMudEvent->pStruct;
+  phase = (pMudEvent->sVariables != NULL && is_number(pMudEvent->sVariables)
+               ? atoi(pMudEvent->sVariables)
+               : 0);
 
   /* Safety check: Validate character state before processing combat */
   if (!ch || IN_ROOM(ch) == NOWHERE || GET_POS(ch) <= POS_DEAD)
@@ -17062,12 +17193,13 @@ EVENTFUNC(event_combat_round)
     return 0;
   }
 
+  if (phase == 1)
+    GET_ATTACKS_THIS_ROUND(ch) = 0;
+
   /* action queue system */
   execute_next_action(ch);
   /* execute phase */
-  perform_violence(ch, (pMudEvent->sVariables != NULL && is_number(pMudEvent->sVariables)
-                            ? atoi(pMudEvent->sVariables)
-                            : 0));
+  perform_violence(ch, phase);
 
   /* Alchemist: Unstable Mutagen backlash (10% chance per round while mutagen active)
    * Perfect Mutagen capstone grants immunity to this backlash. */
@@ -17098,6 +17230,8 @@ void handle_cleave(struct char_data *ch)
 
   /* find target */
   if (!ch || IN_ROOM(ch) == NOWHERE || !FIGHTING(ch))
+    return;
+  if (AFF_FLAGGED(ch, AFF_STAGGERED))
     return;
 
   for (tch = world[IN_ROOM(ch)].people; tch; tch = tch->next_in_room)
@@ -17188,6 +17322,8 @@ void perform_violence(struct char_data *ch, int phase)
 
   /* Reset combat data */
   GET_TOTAL_AOO(ch) = 0;
+  if (phase == 0)
+    GET_ATTACKS_THIS_ROUND(ch) = 0;
   HAS_PERFORMED_DEMORALIZING_STRIKE(ch) = FALSE;
   REMOVE_BIT_AR(AFF_FLAGS(ch), AFF_FLAT_FOOTED);
 

@@ -7008,6 +7008,8 @@ void init_char(struct char_data *ch)
   /* Initialize inquisitor perk tracking */
   ch->player_specials->saved.inq_favored_terrain = -1;
   ch->player_specials->saved.inq_favored_terrain_reset = 0;
+  ch->player_specials->saved.epic_spell_casts = -1;
+  ch->player_specials->saved.epic_spell_regen_timer = 0;
 
   /* Initialize favored terrains array */
   for (i = 0; i < MAX_ENEMIES; i++)

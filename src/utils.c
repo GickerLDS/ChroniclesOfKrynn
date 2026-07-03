@@ -9815,6 +9815,137 @@ int get_vampire_cloak_bonus(int level, int type)
   return 0;
 }
 
+int get_epic_spell_casts_max(struct char_data *ch)
+{
+  int max_casts = 0;
+
+  if (!ch || IS_NPC(ch) || !ch->player_specials)
+    return 0;
+
+  max_casts = GET_ABILITY(ch, ABILITY_SPELLCRAFT) / 5;
+  return MIN(max_casts, EPIC_SPELL_CAST_MAX);
+}
+
+void normalize_epic_spell_casts(struct char_data *ch)
+{
+  int max_casts = 0;
+
+  if (!ch || IS_NPC(ch) || !ch->player_specials)
+    return;
+
+  max_casts = get_epic_spell_casts_max(ch);
+
+  if (max_casts <= 0)
+  {
+    GET_EPIC_SPELL_CASTS(ch) = 0;
+    GET_EPIC_SPELL_REGEN_TIMER(ch) = 0;
+    return;
+  }
+
+  if (GET_EPIC_SPELL_CASTS(ch) < 0)
+    GET_EPIC_SPELL_CASTS(ch) = max_casts;
+
+  if (GET_EPIC_SPELL_CASTS(ch) > max_casts)
+    GET_EPIC_SPELL_CASTS(ch) = max_casts;
+
+  if (GET_EPIC_SPELL_CASTS(ch) >= max_casts)
+    GET_EPIC_SPELL_REGEN_TIMER(ch) = 0;
+  else if (GET_EPIC_SPELL_REGEN_TIMER(ch) < 0)
+    GET_EPIC_SPELL_REGEN_TIMER(ch) = 0;
+}
+
+bool can_cast_epic_spell(struct char_data *ch, bool display)
+{
+  int max_casts = 0;
+  int ticks_left = 0;
+  int seconds_left = 0;
+  int minutes = 0;
+  int seconds = 0;
+
+  if (!ch || IS_NPC(ch))
+    return true;
+
+  normalize_epic_spell_casts(ch);
+  max_casts = get_epic_spell_casts_max(ch);
+
+  if (max_casts <= 0)
+  {
+    if (display)
+      send_to_char(ch, "You need more Spellcraft to cast epic spells.\r\n");
+    return false;
+  }
+
+  if (GET_EPIC_SPELL_CASTS(ch) > 0)
+    return true;
+
+  if (display)
+  {
+    ticks_left = EPIC_SPELL_CAST_REGEN_TICKS - GET_EPIC_SPELL_REGEN_TIMER(ch);
+    ticks_left = MAX(1, ticks_left);
+    seconds_left = ticks_left * 6;
+    minutes = seconds_left / 60;
+    seconds = seconds_left % 60;
+
+    if (minutes > 0)
+      send_to_char(ch,
+                   "You have no epic spell casts available. You will recover one in %d minute%s and "
+                   "%d second%s.\r\n",
+                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+    else
+      send_to_char(ch,
+                   "You have no epic spell casts available. You will recover one in %d second%s.\r\n",
+                   seconds, (seconds != 1 ? "s" : ""));
+  }
+
+  return false;
+}
+
+void use_epic_spell_cast(struct char_data *ch)
+{
+  int max_casts = 0;
+
+  if (!ch || IS_NPC(ch))
+    return;
+
+  normalize_epic_spell_casts(ch);
+  max_casts = get_epic_spell_casts_max(ch);
+
+  if (max_casts <= 0 || GET_EPIC_SPELL_CASTS(ch) <= 0)
+    return;
+
+  GET_EPIC_SPELL_CASTS(ch)--;
+
+  send_to_char(ch, "Epic spell casts remaining: %d/%d.\r\n", GET_EPIC_SPELL_CASTS(ch), max_casts);
+}
+
+void regenerate_epic_spell_cast(struct char_data *ch)
+{
+  int max_casts = 0;
+
+  if (!ch || IS_NPC(ch))
+    return;
+
+  normalize_epic_spell_casts(ch);
+  max_casts = get_epic_spell_casts_max(ch);
+
+  if (max_casts <= 0 || GET_EPIC_SPELL_CASTS(ch) >= max_casts)
+    return;
+
+  GET_EPIC_SPELL_REGEN_TIMER(ch)++;
+
+  while (GET_EPIC_SPELL_REGEN_TIMER(ch) >= EPIC_SPELL_CAST_REGEN_TICKS &&
+         GET_EPIC_SPELL_CASTS(ch) < max_casts)
+  {
+    GET_EPIC_SPELL_CASTS(ch)++;
+    GET_EPIC_SPELL_REGEN_TIMER(ch) -= EPIC_SPELL_CAST_REGEN_TICKS;
+    send_to_char(ch, "You recover an epic spell cast. Epic spell casts: %d/%d.\r\n",
+                 GET_EPIC_SPELL_CASTS(ch), max_casts);
+  }
+
+  if (GET_EPIC_SPELL_CASTS(ch) >= max_casts)
+    GET_EPIC_SPELL_REGEN_TIMER(ch) = 0;
+}
+
 void clear_misc_cooldowns(struct char_data *ch)
 {
   if (!ch || IS_NPC(ch))
@@ -9834,6 +9965,8 @@ void clear_misc_cooldowns(struct char_data *ch)
   GET_FORAGE_COOLDOWN(ch) = 0;
   GET_SCROUNGE_COOLDOWN(ch) = 0;
   GET_COSMIC_AWARENESS_COOLDOWN(ch) = 0;
+  GET_EPIC_SPELL_CASTS(ch) = get_epic_spell_casts_max(ch);
+  GET_EPIC_SPELL_REGEN_TIMER(ch) = 0;
 }
 
 bool can_mastermind_power(struct char_data *ch, int spellnum)

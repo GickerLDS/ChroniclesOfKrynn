@@ -2333,6 +2333,10 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
 {
   struct mud_event_data *pMudEvent = NULL;
   time_t now = time(NULL);
+  int epic_spell_casts_max = 0;
+  int epic_spell_seconds_left = 0;
+  int epic_spell_minutes = 0;
+  int epic_spell_seconds = 0;
 
   send_to_char(ch, "\tC");
   text_line(ch, "\tYCooldowns\tC", 80, '-', '-');
@@ -2347,6 +2351,27 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
     send_to_char(
         ch, "Survey Exp Cooldown: You can gain survey exp again in %d minute%s %d second%s.\r\n",
         minutes_left, (minutes_left == 1) ? "" : "s", seconds_left, (seconds_left == 1) ? "" : "s");
+  }
+
+  if (!IS_NPC(k))
+  {
+    normalize_epic_spell_casts(k);
+    epic_spell_casts_max = get_epic_spell_casts_max(k);
+    if (epic_spell_casts_max > 0)
+    {
+      send_to_char(ch, "Epic Spell Casts: %d/%d available.\r\n", GET_EPIC_SPELL_CASTS(k),
+                   epic_spell_casts_max);
+      if (GET_EPIC_SPELL_CASTS(k) < epic_spell_casts_max)
+      {
+        epic_spell_seconds_left =
+            MAX(1, EPIC_SPELL_CAST_REGEN_TICKS - GET_EPIC_SPELL_REGEN_TIMER(k)) * 6;
+        epic_spell_minutes = epic_spell_seconds_left / 60;
+        epic_spell_seconds = epic_spell_seconds_left % 60;
+        send_to_char(ch, "Next epic spell cast recovers in %d minute%s %d second%s.\r\n",
+                     epic_spell_minutes, (epic_spell_minutes == 1) ? "" : "s",
+                     epic_spell_seconds, (epic_spell_seconds == 1) ? "" : "s");
+      }
+    }
   }
 
   // Device creation cooldown (global for artificer)
@@ -2441,27 +2466,6 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
                  (int)(event_time(pMudEvent->pEvent) / 10));
   if ((pMudEvent = char_has_mud_event(k, eEMPTYBODY)))
     send_to_char(ch, "Empty Body Cooldown - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eMUMMYDUST)))
-    send_to_char(ch, "Epic Spell Cooldown :  Mummy Dust - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eSUMMONSOLAR)))
-    send_to_char(ch, "Epic Spell Cooldown :  Summon Solar - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eDRAGONKNIGHT)))
-    send_to_char(ch, "Epic Spell Cooldown :  Dragon Knight - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eGREATERRUIN)))
-    send_to_char(ch, "Epic Spell Cooldown :  Greater Ruin - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eHELLBALL)))
-    send_to_char(ch, "Epic Spell Cooldown :  Hellball - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eEPICMAGEARMOR)))
-    send_to_char(ch, "Epic Spell Cooldown :  Epic Mage Armor - Duration: %d seconds\r\n",
-                 (int)(event_time(pMudEvent->pEvent) / 10));
-  if ((pMudEvent = char_has_mud_event(k, eEPICWARDING)))
-    send_to_char(ch, "Epic Spell Cooldown :  Epic Warding - Duration: %d seconds\r\n",
                  (int)(event_time(pMudEvent->pEvent) / 10));
   if ((pMudEvent = char_has_mud_event(k, eANIMATEDEAD)))
     send_to_char(ch, "Animate Dead Cooldown  - Duration: %d seconds\r\n",

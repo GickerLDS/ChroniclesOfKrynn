@@ -501,6 +501,8 @@ int load_char(const char *name, struct char_data *ch)
     GET_QUICK_CAST_COOLDOWN(ch) = 0;
     GET_SPELL_RECALL_COOLDOWN(ch) = 0;
     GET_COSMIC_AWARENESS_COOLDOWN(ch) = 0;
+    GET_EPIC_SPELL_CASTS(ch) = -1;
+    GET_EPIC_SPELL_REGEN_TIMER(ch) = 0;
     GET_BONUS_DOMAIN_SLOTS_USED(ch) = 0;
     GET_BONUS_DOMAIN_REGEN_TIMER(ch) = 0;
     GET_BONUS_SLOTS_USED(ch) = 0;
@@ -1077,6 +1079,10 @@ int load_char(const char *name, struct char_data *ch)
           load_epic_class_feat_points(fl, ch);
         else if (!strcmp(tag, "Efpt"))
           GET_EPIC_FEAT_POINTS(ch) = atoi(line);
+        else if (!strcmp(tag, "EpCs"))
+          GET_EPIC_SPELL_CASTS(ch) = atoi(line);
+        else if (!strcmp(tag, "EpRg"))
+          GET_EPIC_SPELL_REGEN_TIMER(ch) = atoi(line);
         else if (!strcmp(tag, "EidB"))
           GET_EIDOLON_BASE_FORM(ch) = atoi(line);
         else if (!strcmp(tag, "EidC"))
@@ -2750,6 +2756,16 @@ void save_char(struct char_data *ch, int mode)
     BUFFER_WRITE("SpRc: %d\n", GET_SPELL_RECALL_COOLDOWN(ch));
   if (GET_COSMIC_AWARENESS_COOLDOWN(ch) != 0)
     BUFFER_WRITE("CoAw: %d\n", GET_COSMIC_AWARENESS_COOLDOWN(ch));
+  if (get_epic_spell_casts_max(ch) > 0 || GET_EPIC_SPELL_CASTS(ch) >= 0)
+  {
+    int epic_spell_casts_max = get_epic_spell_casts_max(ch);
+    normalize_epic_spell_casts(ch);
+    if (GET_EPIC_SPELL_CASTS(ch) != epic_spell_casts_max ||
+        GET_EPIC_SPELL_REGEN_TIMER(ch) != 0)
+      BUFFER_WRITE("EpCs: %d\n", GET_EPIC_SPELL_CASTS(ch));
+    if (GET_EPIC_SPELL_REGEN_TIMER(ch) != 0)
+      BUFFER_WRITE("EpRg: %d\n", GET_EPIC_SPELL_REGEN_TIMER(ch));
+  }
   if (GET_RETAINER_COOLDOWN(ch) != 0)
     BUFFER_WRITE("RetC: %d\n", GET_RETAINER_COOLDOWN(ch));
   if (GET_BONUS_DOMAIN_SLOTS_USED(ch) != 0)
@@ -3734,20 +3750,6 @@ void save_char(struct char_data *ch, int mode)
                    get_daily_uses(ch, FEAT_RP_RENEWED_VIGOR) -
                        daily_uses_remaining(ch, FEAT_RP_RENEWED_VIGOR));
     if ((pMudEvent = char_has_mud_event(ch, eTREATINJURY)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eMUMMYDUST)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eSUMMONSOLAR)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eDRAGONKNIGHT)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eGREATERRUIN)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eHELLBALL)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eEPICMAGEARMOR)))
-      BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
-    if ((pMudEvent = char_has_mud_event(ch, eEPICWARDING)))
       BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));
     if ((pMudEvent = char_has_mud_event(ch, eDEATHARROW)))
       BUFFER_WRITE("%d %ld\n", pMudEvent->iId, event_time(pMudEvent->pEvent));

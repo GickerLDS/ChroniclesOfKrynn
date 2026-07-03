@@ -6654,6 +6654,7 @@ struct char_special_data
      * the timing needs to be perfect - They should be reset in accordance with the
      * initiation of auto-attacks in each round. */
   int attacks_of_opportunity; /* The number of AOO performed this round. */
+  int attacks_this_round;     /* The number of attacks attempted this round. */
 
   /* furniture */
   struct obj_data *furniture;          /**< Object being sat on/in; else NULL */
@@ -7149,6 +7150,8 @@ struct player_special_data_saved
   int spell_recall_cooldown;  // Versatile Caster perk: daily cooldown for restoring a spell slot
   int deathless_frenzy_timer; // Berserker Occult Slayer perk: 5 minute cooldown for Deathless Frenzy
   int cosmic_awareness_cooldown; // Cosmic Awareness psionic power: 10 minute cooldown
+  int epic_spell_casts;          // Shared epic spell cast pool (-1 means uninitialized)
+  int epic_spell_regen_timer;    // Ticks toward regenerating one epic spell cast
 
   /* Domain Master perk bonus spell slot tracking */
   int bonus_domain_slots_used;  // Tracks used bonus domain spell slots
