@@ -13103,11 +13103,9 @@ int can_sneak_attack(struct char_data *ch, struct char_data *victim)
   if (!ch || !victim) /*dumdum*/
     return FALSE;
 
-  if (get_monk_deadly_precision_dice(ch) > 0)
-    return TRUE;
-
-  /* base level here! */
-  if (!HAS_FEAT(ch, FEAT_SNEAK_ATTACK))
+  /* base level here!  Monk Deadly Precision supplies sneak attack dice, but
+   * it still has to satisfy the normal sneak attack conditions below. */
+  if (!HAS_FEAT(ch, FEAT_SNEAK_ATTACK) && get_monk_deadly_precision_dice(ch) <= 0)
     return FALSE;
 
   if (HAS_REAL_FEAT(victim, FEAT_ESSENCE_OF_UNDEATH))
