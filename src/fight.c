@@ -9254,10 +9254,10 @@ int is_critical_hit(struct char_data *ch, struct obj_data *wielded, int diceroll
   /* new code to help really powerful beings overcome checks here */
   if (IS_POWERFUL_BEING(ch))
   {
-    /* base 20% chance of overcoming defense */
-    powerful_being = 20;
-    /* every level above 30 gives another 10% */
-    powerful_being += (GET_LEVEL(ch) - (LVL_IMMORT - 1)) * 10;
+    /* base 5% chance of overcoming defense */
+    powerful_being = 5;
+    /* every level above 30 gives another 2% */
+    powerful_being += (GET_LEVEL(ch) - (LVL_IMMORT - 1)) * 2;
   }
 
   if (FIGHTING(ch) && CLASS_LEVEL(ch, CLASS_INQUISITOR) >= 10 &&
@@ -9291,7 +9291,7 @@ int is_critical_hit(struct char_data *ch, struct obj_data *wielded, int diceroll
     {
       return FALSE;
     }
-    if (rand_number(1, 100) > powerful_being)
+    if (rand_number(1, 100) <= powerful_being)
     {
       return FALSE;
     }
@@ -14818,12 +14818,13 @@ int damage_shield_check(struct char_data *ch, struct char_data *victim, int atta
 int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, int penalty,
         int attack_type)
 {
-  int w_type = 0,         /* Weapon type? */
-      victim_ac = 0,      /* Target's AC, from compute_ac(). */
-      calc_bab = penalty, /* ch's base attack bonus for the attack. */
-      diceroll = 0,       /* ch's attack roll. */
-      can_hit = 0,        /* ch successfully hit? */
-      dam = 0;            /* Damage for the attack, with mods. */
+  int w_type = 0,                             /* Weapon type? */
+      victim_ac = 0,                          /* Target's AC, from compute_ac(). */
+      calc_bab = penalty,                     /* ch's base attack bonus for the attack. */
+      diceroll = 0,                           /* Natural d20 attack roll. */
+      modified_diceroll = 0,                  /* d20 plus roll-stage attack bonuses. */
+      weapon_training_bonus = 0, can_hit = 0, /* ch successfully hit? */
+      dam = 0;                                /* Damage for the attack, with mods. */
 
   struct affected_type af = {0};
 
@@ -15129,10 +15130,10 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
     send_combat_roll_info(victim, "\tW[\tRAOO\tW]\tn");
   }
 
-  if (HAS_FEAT(ch, FEAT_WEAPON_TRAINING))
-    diceroll = d20(ch) + HAS_FEAT(ch, FEAT_WEAPON_TRAINING);
-  else
-    diceroll = d20(ch);
+  diceroll = d20(ch);
+  weapon_training_bonus = HAS_FEAT(ch, FEAT_WEAPON_TRAINING);
+  modified_diceroll = diceroll + weapon_training_bonus;
+
   if (is_critical_hit(ch, wielded, diceroll, calc_bab, victim_ac, victim) &&
       !IS_IMMUNE_CRITS(ch, victim))
   {
@@ -15158,17 +15159,23 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
   }
   else
   {
-    can_hit = ((calc_bab + diceroll) >= victim_ac);
+    can_hit = ((calc_bab + modified_diceroll) >= victim_ac);
   }
   if (show_combat_roll(ch))
   {
-    snprintf(buf1, sizeof(buf1), "\tW[R:%2d]\tn", diceroll);
+    if (weapon_training_bonus)
+      snprintf(buf1, sizeof(buf1), "\tW[R:%2d+%d]\tn", diceroll, weapon_training_bonus);
+    else
+      snprintf(buf1, sizeof(buf1), "\tW[R:%2d]\tn", diceroll);
     snprintf(buf, sizeof(buf), "%7s", buf1);
     send_combat_roll_info(ch, "%s", buf);
   }
   if (show_combat_roll(victim))
   {
-    snprintf(buf1, sizeof(buf1), "\tR[R:%2d]\tn", diceroll);
+    if (weapon_training_bonus)
+      snprintf(buf1, sizeof(buf1), "\tR[R:%2d+%d]\tn", diceroll, weapon_training_bonus);
+    else
+      snprintf(buf1, sizeof(buf1), "\tR[R:%2d]\tn", diceroll);
     snprintf(buf, sizeof(buf), "%7s", buf1);
     send_combat_roll_info(victim, "%s", buf);
   }
@@ -15176,7 +15183,10 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
   if (DEBUGMODE)
   {
     send_to_char(ch, "\tc{T:%d+", calc_bab);
-    send_to_char(ch, "D:%d>=", diceroll);
+    send_to_char(ch, "D:%d", diceroll);
+    if (weapon_training_bonus)
+      send_to_char(ch, "+WT:%d", weapon_training_bonus);
+    send_to_char(ch, ">=");
     send_to_char(ch, "AC:%d}\tn", victim_ac);
   }
 
@@ -15184,7 +15194,7 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
    * This only applies if the victim is in totaldefense mode and is based on
    * the totaldefense 'skill'.  You can not totaldefense if you are casting and you have
    * a number of totaldefense attempts equal to the attacks granted by your BAB. */
-  int total_defense_DC = calc_bab + diceroll;
+  int total_defense_DC = calc_bab + modified_diceroll;
   int total_defense_attempt = 0;
   if (!IS_NPC(victim) && compute_ability(victim, ABILITY_TOTAL_DEFENSE) && TOTAL_DEFENSE(victim) &&
       AFF_FLAGGED(victim, AFF_TOTAL_DEFENSE) && !IS_CASTING(victim) &&
@@ -15264,7 +15274,7 @@ int hit(struct char_data *ch, struct char_data *victim, int type, int dam_type, 
    * your Ride check result is greater than the opponent's attack roll.*/
   if (RIDING(victim) && HAS_FEAT(victim, FEAT_MOUNTED_COMBAT) && MOUNTED_BLOCKS_LEFT(victim) > 0)
   {
-    int mounted_block_dc = calc_bab + diceroll;
+    int mounted_block_dc = calc_bab + modified_diceroll;
     int mounted_block_bonus = compute_ability(victim, ABILITY_RIDE) + d20(victim);
     if (mounted_block_dc <= mounted_block_bonus)
     {

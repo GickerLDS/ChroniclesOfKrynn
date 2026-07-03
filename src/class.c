@@ -760,8 +760,9 @@ bool display_class_prereqs(struct char_data *ch, const char *classname)
     send_to_char(ch, "\tn%sNondragon race\tn - %s\r\n",
                  race_list[GET_REAL_RACE(ch)].family != RACE_TYPE_DRAGON ? "\tn" : "\tr",
                  race_list[GET_REAL_RACE(ch)].family != RACE_TYPE_DRAGON ? "\tWFulfilled!\tn"
-                                                                          : "\trMissing\tn");
-    send_to_char(ch, "\tn%sLanguage: Draconic\tn - %s\r\n", CAN_SPEAK(ch, LANG_DRACONIC) ? "\tn" : "\tr",
+                                                                         : "\trMissing\tn");
+    send_to_char(ch, "\tn%sLanguage: Draconic\tn - %s\r\n",
+                 CAN_SPEAK(ch, LANG_DRACONIC) ? "\tn" : "\tr",
                  CAN_SPEAK(ch, LANG_DRACONIC) ? "\tWFulfilled!\tn" : "\trMissing\tn");
     if (CLASS_LEVEL(ch, CLASS_SORCERER) > 0)
       send_to_char(ch, "\tn%sSorcerer draconic bloodline\tn - %s\r\n",
@@ -3317,8 +3318,7 @@ void process_conditional_class_level_feats(struct char_data *ch, int class)
     //  Mostly Bloodlines
     if (HAS_FEAT(ch, FEAT_SORCERER_BLOODLINE_DRACONIC))
     {
-      if (draconic_level >= 9 &&
-          !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON))
+      if (draconic_level >= 9 && !HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON))
       {
         SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_BREATHWEAPON, 1);
         send_to_char(ch, "You have gained the %s feat!\r\n",
@@ -3330,8 +3330,7 @@ void process_conditional_class_level_feats(struct char_data *ch, int class)
         send_to_char(ch, "You have gained the %s feat!\r\n",
                      feat_list[FEAT_DRACONIC_HERITAGE_CLAWS].name);
       }
-      if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES) &&
-          draconic_level >= 3)
+      if (!HAS_REAL_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES) && draconic_level >= 3)
       {
         SET_FEAT(ch, FEAT_DRACONIC_HERITAGE_DRAGON_RESISTANCES, 1);
         send_to_char(ch, "You have gained the %s feat!\r\n",
@@ -3685,9 +3684,9 @@ void advance_level(struct char_data *ch, int class)
     class_feats++;
   }
 
-  if (class == CLASS_DRAGON_DISCIPLE && (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 2 ||
-                                         CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 5 ||
-                                         CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 8))
+  if (class == CLASS_DRAGON_DISCIPLE &&
+      (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 2 || CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 5 ||
+       CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) == 8))
   {
     class_feats++; // Dragon Disciples get a bloodline bonus feat at levels 2, 5, and 8
   }
@@ -3961,7 +3960,7 @@ void init_spell_levels(void)
     }
   }
 
-  for (class = CLASS_WIZARD; class < NUM_CLASSES; class ++)
+  for (class = CLASS_WIZARD; class < NUM_CLASSES; class++)
   {
     if (class_list[class].spellassign_list != NULL)
     {
@@ -5040,6 +5039,7 @@ void load_class_list(void)
   feat_assignment(CLASS_WARRIOR, FEAT_IMPROVED_SHIELD_PUNCH, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_WARRIOR, FEAT_KNOCKDOWN, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_WARRIOR, FEAT_SHIELD_CHARGE, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_WARRIOR, FEAT_POWER_CRTICAL, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_WARRIOR, FEAT_SHIELD_SLAM, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_WARRIOR, FEAT_IMPROVED_SUNDER, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_WARRIOR, FEAT_IMPROVED_TRIP, Y, NOASSIGN_FEAT, N);
@@ -7170,6 +7170,7 @@ void load_class_list(void)
   feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_GREATER_WEAPON_SPECIALIZATION, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_IMPROVED_BULL_RUSH, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_IMPROVED_CRITICAL, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_POWER_CRITICAL, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_IMPROVED_DISARM, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_IMPROVED_FEINT, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_ELDRITCH_KNIGHT, FEAT_IMPROVED_GRAPPLE, Y, NOASSIGN_FEAT, N);
@@ -7323,6 +7324,7 @@ void load_class_list(void)
   feat_assignment(CLASS_SPELLSWORD, FEAT_GREATER_WEAPON_SPECIALIZATION, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_SPELLSWORD, FEAT_IMPROVED_BULL_RUSH, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_SPELLSWORD, FEAT_IMPROVED_CRITICAL, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_SPELLSWORD, FEAT_POWER_CRITICAL, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_SPELLSWORD, FEAT_IMPROVED_DISARM, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_SPELLSWORD, FEAT_IMPROVED_FEINT, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_SPELLSWORD, FEAT_IMPROVED_GRAPPLE, Y, NOASSIGN_FEAT, N);
@@ -7716,6 +7718,7 @@ void load_class_list(void)
                   N);
   feat_assignment(CLASS_KNIGHT_OF_SOLAMNIA, FEAT_IMPROVED_BULL_RUSH, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_SOLAMNIA, FEAT_IMPROVED_CRITICAL, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_KNIGHT_OF_SOLAMNIA, FEAT_POWER_CRITICAL, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_SOLAMNIA, FEAT_IMPROVED_DISARM, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_SOLAMNIA, FEAT_IMPROVED_FEINT, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_SOLAMNIA, FEAT_IMPROVED_GRAPPLE, Y, NOASSIGN_FEAT, N);
@@ -7901,6 +7904,7 @@ void load_class_list(void)
                   N);
   feat_assignment(CLASS_KNIGHT_OF_THE_LILY, FEAT_IMPROVED_BULL_RUSH, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_THE_LILY, FEAT_IMPROVED_CRITICAL, Y, NOASSIGN_FEAT, N);
+  feat_assignment(CLASS_KNIGHT_OF_THE_LILY, FEAT_POWER_CRITICAL, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_THE_LILY, FEAT_IMPROVED_DISARM, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_THE_LILY, FEAT_IMPROVED_FEINT, Y, NOASSIGN_FEAT, N);
   feat_assignment(CLASS_KNIGHT_OF_THE_LILY, FEAT_IMPROVED_GRAPPLE, Y, NOASSIGN_FEAT, N);
@@ -9603,17 +9607,10 @@ void load_class_list(void)
                      /*survival,swim,use_magic_device,perform*/
                      CC, CC, CC, CC);
   assign_class_titles(CLASS_DRAGON_DISCIPLE, /* class number */
-                      "",
-                      "the Dragon Disciple",
-                      "the Dragon Disciple",
-                      "the Dragon Disciple",
-                      "the Dragon Disciple",
-                      "the Dragon Disciple",
-                      "the Dragon Disciple",
-                      "the Immortal Dragon Disciple",
-                      "the Limitless Dragon Disciple",
-                      "the God of Dragon Disciples",
-                      "the Dragon Disciple");
+                      "", "the Dragon Disciple", "the Dragon Disciple", "the Dragon Disciple",
+                      "the Dragon Disciple", "the Dragon Disciple", "the Dragon Disciple",
+                      "the Immortal Dragon Disciple", "the Limitless Dragon Disciple",
+                      "the God of Dragon Disciples", "the Dragon Disciple");
   /* feat assignment */
   /*              class num             feat                              cfeat lvl stack */
   /* 1st: blood of dragons, natural armor increase (+1) */
@@ -9654,8 +9651,7 @@ void load_class_list(void)
   feat_assignment(CLASS_DRAGON_DISCIPLE, FEAT_GREAT_INTELLIGENCE, Y, NOASSIGN_FEAT, N);
   /* class prerequisites */
   class_prereq_ability(CLASS_DRAGON_DISCIPLE, ABILITY_ARCANA, 5);
-  class_prereq_spellcasting(CLASS_DRAGON_DISCIPLE, CASTING_TYPE_ARCANE, PREP_TYPE_SPONTANEOUS,
-                            1);
+  class_prereq_spellcasting(CLASS_DRAGON_DISCIPLE, CASTING_TYPE_ARCANE, PREP_TYPE_SPONTANEOUS, 1);
 
   classo(CLASS_PLACEHOLDER_2, "placeholder 2", "PL2", "\tCPL2\tn", "v) \tCPlaceholder 2\tn", 20, Y,
          N, M, 6, 0, 1, 5, N, 0, 3, "", "", "");
