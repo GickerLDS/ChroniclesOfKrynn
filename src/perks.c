@@ -49,6 +49,7 @@ static void get_award_perk_classes(struct char_data *ch, int award_class, int *p
 void define_artificer_perks(void);
 
 #define PERK_RESPEC_GOLD_PER_LEVEL 1000
+#define PERK_GLOBAL_COST_INCREASE 1
 #define PERK_TIER_2_MIN_LEVEL 6
 #define PERK_TIER_3_MIN_LEVEL 12
 #define PERK_TIER_4_MIN_LEVEL 18
@@ -488,6 +489,17 @@ static const char *get_perk_class_display_name(int requested_class, int perk_cla
 /* Forward declarations for perk definition functions */
 void define_bard_perks(void);
 
+static void apply_global_perk_cost_increase(void)
+{
+  int i;
+
+  for (i = 0; i < NUM_PERKS; i++)
+  {
+    if (perk_list[i].id != PERK_UNDEFINED)
+      perk_list[i].cost += PERK_GLOBAL_COST_INCREASE;
+  }
+}
+
 /* Initialize the perk system - called at boot */
 void init_perks(void)
 {
@@ -568,6 +580,8 @@ void init_perks(void)
 
   /* Define Artificer Perks */
   define_artificer_perks();
+
+  apply_global_perk_cost_increase();
 
   log("Perks system initialized with %d defined perks.", count_defined_perks());
 }
