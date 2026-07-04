@@ -520,7 +520,8 @@
 #define CLASS_ARTIFICER 35
 #define CLASS_DRAGON_DISCIPLE 36
 #define CLASS_DRAGONDISCIPLE CLASS_DRAGON_DISCIPLE
-#define CLASS_PLACEHOLDER_2 37
+#define CLASS_LOREMASTER 37
+#define CLASS_PLACEHOLDER_2 CLASS_LOREMASTER
 //#define CLASS_PSYCHIC_WARRIOR   17
 //#define CLASS_PSY_WARR CLASS_PSYCHIC_WARRIOR
 //#define CLASS_SOULKNIFE         18
@@ -530,6 +531,20 @@
    class_names[] - we are dependent on that for loading the feat-list */
 /** Total number of available PC Classes */
 #define NUM_CLASSES 38
+
+#define MAX_LOREMASTER_LEVELS 10
+#define LOREMASTER_SECRET_UNDEFINED 0
+#define LOREMASTER_SECRET_INSTANT_MASTERY 1
+#define LOREMASTER_SECRET_HEALTH 2
+#define LOREMASTER_SECRET_INNER_STRENGTH 3
+#define LOREMASTER_SECRET_TRUE_STAMINA 4
+#define LOREMASTER_SECRET_AVOIDANCE 5
+#define LOREMASTER_SECRET_WEAPON_TRICK 6
+#define LOREMASTER_SECRET_DODGE_TRICK 7
+#define LOREMASTER_SECRET_APPLICABLE_KNOWLEDGE 8
+#define LOREMASTER_SECRET_NEWFOUND_ARCANA 9
+#define LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA 10
+#define NUM_LOREMASTER_SECRETS 11
 
 // related to pc (classes, etc)
 /* note that max_classes was established to reign in some of the
@@ -3094,10 +3109,18 @@
 #define FEAT_BLOOD_OF_DRAGONS 1259
 #define FEAT_DRAGON_DISCIPLE_DRAGON_FORM 1265
 
+/* loremaster prestige class */
+#define FEAT_LORE 1266
+#define FEAT_GREATER_LORE 1267
+#define FEAT_TRUE_LORE 1268
+#define FEAT_LOREMASTER_NEWFOUND_ARCANA 1269
+#define FEAT_LOREMASTER_MORE_NEWFOUND_ARCANA 1270
+#define FEAT_LOREMASTER_SECRET_HEALTH 1271
+
 /** reserved above feat# + 1**/
-#define FEAT_LAST_FEAT 1266
+#define FEAT_LAST_FEAT 1272
 /** FEAT_LAST_FEAT + 1 ***/
-#define NUM_FEATS 1267
+#define NUM_FEATS 1273
 /** absolute cap **/
 #define MAX_FEATS 1500
 /*****/
@@ -7017,6 +7040,13 @@ struct player_special_data_saved
 
   int sorcerer_bloodline_subtype; // if the sorcerer bloodline has a subtype (ie. draconic)
   int new_arcana_circles[4];
+  int loremaster_entry_classes[NUM_CLASSES];
+  int loremaster_caster_class[MAX_LOREMASTER_LEVELS];
+  int loremaster_secrets[NUM_LOREMASTER_SECRETS];
+  int loremaster_instant_mastery_skill;
+  int loremaster_applicable_knowledge_feat;
+  int loremaster_newfound_class;
+  int loremaster_more_newfound_class;
   int mail_days;
 
   /* alchemists */
@@ -7599,6 +7629,13 @@ struct level_data
   int discoveries[NUM_ALC_DISCOVERIES];
   int tempDiscovery;
   int grand_discovery;
+  int loremaster_entry_classes[NUM_CLASSES];
+  int loremaster_caster_class[MAX_LOREMASTER_LEVELS];
+  int loremaster_secrets[NUM_LOREMASTER_SECRETS];
+  int loremaster_instant_mastery_skill;
+  int loremaster_applicable_knowledge_feat;
+  int loremaster_newfound_class;
+  int loremaster_more_newfound_class;
   int skills[MAX_SKILLS + 1];
   int paladin_mercies[NUM_PALADIN_MERCIES];
   int tempMercy;

@@ -109,6 +109,7 @@ static void load_scrolls(FILE *fl, struct char_data *ch);
 static void load_wands(FILE *fl, struct char_data *ch);
 static void load_staves(FILE *fl, struct char_data *ch);
 static void load_discoveries(FILE *fl, struct char_data *ch);
+static void load_loremaster_int_array(FILE *fl, int *array, int max);
 void load_temp_evolutions(FILE *fl, struct char_data *ch);
 void save_char_pets(struct char_data *ch);
 static void load_mercies(FILE *fl, struct char_data *ch);
@@ -652,6 +653,16 @@ int load_char(const char *name, struct char_data *ch)
     GET_BLOODLINE_SUBTYPE(ch) = PFDEF_SORC_BLOODLINE_SUBTYPE;
     NEW_ARCANA_SLOT(ch, 0) = NEW_ARCANA_SLOT(ch, 1) = NEW_ARCANA_SLOT(ch, 2) =
         NEW_ARCANA_SLOT(ch, 3) = 0;
+    for (i = 0; i < NUM_CLASSES; i++)
+      GET_LOREMASTER_ENTRY_CLASS(ch, i) = 0;
+    for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+      GET_LOREMASTER_CASTER_CLASS(ch, i) = CLASS_UNDEFINED;
+    for (i = 0; i < NUM_LOREMASTER_SECRETS; i++)
+      KNOWS_LOREMASTER_SECRET(ch, i) = 0;
+    GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch) = -1;
+    GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) = FEAT_UNDEFINED;
+    GET_LOREMASTER_NEWFOUND_CLASS(ch) = CLASS_UNDEFINED;
+    GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = CLASS_UNDEFINED;
     GET_DRAGONBORN_ANCESTRY(ch) = 0;
     HIGH_ELF_CANTRIP(ch) = 0;
     for (i = 0; i < AF_ARRAY_MAX; i++)
@@ -1240,6 +1251,23 @@ int load_char(const char *name, struct char_data *ch)
           GET_LEVEL(ch) = atoi(line);
         else if (!strcmp(tag, "Lmot"))
           GET_LAST_MOTD(ch) = atoi(line);
+        else if (!strcmp(tag, "LrEn"))
+          load_loremaster_int_array(fl, ch->player_specials->saved.loremaster_entry_classes,
+                                    NUM_CLASSES);
+        else if (!strcmp(tag, "LrAd"))
+          load_loremaster_int_array(fl, ch->player_specials->saved.loremaster_caster_class,
+                                    MAX_LOREMASTER_LEVELS);
+        else if (!strcmp(tag, "LrSc"))
+          load_loremaster_int_array(fl, ch->player_specials->saved.loremaster_secrets,
+                                    NUM_LOREMASTER_SECRETS);
+        else if (!strcmp(tag, "LrIM"))
+          GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch) = atoi(line);
+        else if (!strcmp(tag, "LrAK"))
+          GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) = atoi(line);
+        else if (!strcmp(tag, "LrNf"))
+          GET_LOREMASTER_NEWFOUND_CLASS(ch) = atoi(line);
+        else if (!strcmp(tag, "LrMn"))
+          GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = atoi(line);
         else if (!strcmp(tag, "Lnew"))
           GET_LAST_NEWS(ch) = atoi(line);
         else if (!strcmp(tag, "LTCT"))
@@ -3248,6 +3276,23 @@ void save_char(struct char_data *ch, int mode)
   BUFFER_WRITE("-1\n");
   BUFFER_WRITE("GrDs: %d\n", GET_GRAND_DISCOVERY(ch));
 
+  BUFFER_WRITE("LrEn:\n");
+  for (i = 0; i < NUM_CLASSES; i++)
+    BUFFER_WRITE("%d\n", GET_LOREMASTER_ENTRY_CLASS(ch, i));
+  BUFFER_WRITE("-1\n");
+  BUFFER_WRITE("LrAd:\n");
+  for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+    BUFFER_WRITE("%d\n", GET_LOREMASTER_CASTER_CLASS(ch, i));
+  BUFFER_WRITE("-1\n");
+  BUFFER_WRITE("LrSc:\n");
+  for (i = 0; i < NUM_LOREMASTER_SECRETS; i++)
+    BUFFER_WRITE("%d\n", KNOWS_LOREMASTER_SECRET(ch, i));
+  BUFFER_WRITE("-1\n");
+  BUFFER_WRITE("LrIM: %d\n", GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch));
+  BUFFER_WRITE("LrAK: %d\n", GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch));
+  BUFFER_WRITE("LrNf: %d\n", GET_LOREMASTER_NEWFOUND_CLASS(ch));
+  BUFFER_WRITE("LrMn: %d\n", GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch));
+
   BUFFER_WRITE("Mrcy:\n");
   for (i = 0; i < NUM_PALADIN_MERCIES; i++)
     BUFFER_WRITE("%d\n", KNOWS_MERCY(ch, i));
@@ -3922,6 +3967,9 @@ void save_char(struct char_data *ch, int mode)
       BUFFER_WRITE("%d %ld %d\n", pMudEvent->iId, event_time(pMudEvent->pEvent),
                    get_daily_uses(ch, FEAT_DESTRUCTIVE_SMITE) -
                        daily_uses_remaining(ch, FEAT_DESTRUCTIVE_SMITE));
+    if ((pMudEvent = char_has_mud_event(ch, eTRUE_LORE)))
+      BUFFER_WRITE("%d %ld %d\n", pMudEvent->iId, event_time(pMudEvent->pEvent),
+                   get_daily_uses(ch, FEAT_TRUE_LORE) - daily_uses_remaining(ch, FEAT_TRUE_LORE));
 
     BUFFER_WRITE("-1 -1\n");
   }
@@ -4832,6 +4880,24 @@ static void load_discoveries(FILE *fl, struct char_data *ch)
     if (num != -1)
     {
       KNOWS_DISCOVERY(ch, i) = num;
+      i++;
+    }
+  } while (num != -1);
+}
+
+static void load_loremaster_int_array(FILE *fl, int *array, int max)
+{
+  int num = 0, i = 0;
+  char line[MAX_INPUT_LENGTH + 1];
+
+  do
+  {
+    get_line(fl, line);
+    sscanf(line, "%d", &num);
+    if (num != -1)
+    {
+      if (i < max)
+        array[i] = num;
       i++;
     }
   } while (num != -1);

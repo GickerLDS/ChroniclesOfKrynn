@@ -456,6 +456,12 @@ bool ensure_dir_exists(const char *path);
 
 /* Feats */
 int get_feat_value(struct char_data *ch, int featnum);
+bool is_loremaster_advancement_class(int class);
+bool is_loremaster_spontaneous_class(int class);
+void ensure_loremaster_entry_snapshot(struct char_data *ch);
+int loremaster_levels_advancing_class(struct char_data *ch, int class);
+int loremaster_staged_caster_class(struct char_data *ch);
+int has_loremaster_secret(struct char_data *ch, int secret);
 
 /* Public functions made available form weather.c */
 void weather_and_time(int mode);
@@ -2187,6 +2193,34 @@ int ACTUAL_BAB(struct char_data *ch);
 #define NEW_ARCANA_SLOT(ch, i)                                                                     \
   CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.new_arcana_circles[i]))
 #define APOTHEOSIS_SLOTS(ch) ((ch)->player_specials->arcane_apotheosis_slots)
+
+#define GET_LOREMASTER_ENTRY_CLASS(ch, i)                                                          \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_entry_classes[i]))
+#define GET_LOREMASTER_CASTER_CLASS(ch, i)                                                         \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_caster_class[i]))
+#define KNOWS_LOREMASTER_SECRET(ch, i)                                                             \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_secrets[i]))
+#define GET_LOREMASTER_SECRET(ch, i) KNOWS_LOREMASTER_SECRET(ch, i)
+#define GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch)                                                   \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_instant_mastery_skill))
+#define GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch)                                               \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_applicable_knowledge_feat))
+#define GET_LOREMASTER_NEWFOUND_CLASS(ch)                                                          \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_newfound_class))
+#define GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch)                                                     \
+  CHECK_PLAYER_SPECIAL(ch, (ch->player_specials->saved.loremaster_more_newfound_class))
+
+#define GET_LEVELUP_LOREMASTER_ENTRY_CLASS(ch, i) (LEVELUP(ch)->loremaster_entry_classes[i])
+#define GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, i) (LEVELUP(ch)->loremaster_caster_class[i])
+#define KNOWS_LEVELUP_LOREMASTER_SECRET(ch, i) (LEVELUP(ch)->loremaster_secrets[i])
+#define GET_LEVELUP_LOREMASTER_SECRET(ch, i) KNOWS_LEVELUP_LOREMASTER_SECRET(ch, i)
+#define GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch)                                           \
+  (LEVELUP(ch)->loremaster_instant_mastery_skill)
+#define GET_LEVELUP_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch)                                       \
+  (LEVELUP(ch)->loremaster_applicable_knowledge_feat)
+#define GET_LEVELUP_LOREMASTER_NEWFOUND_CLASS(ch) (LEVELUP(ch)->loremaster_newfound_class)
+#define GET_LEVELUP_LOREMASTER_MORE_NEWFOUND_CLASS(ch)                                             \
+  (LEVELUP(ch)->loremaster_more_newfound_class)
 
 /** Return the class abbreviation for ch. */
 #define CLASS_ABBR(ch) (CLSLIST_ABBRV((int)GET_CLASS(ch)))

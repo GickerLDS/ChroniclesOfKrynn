@@ -1377,6 +1377,11 @@ int compute_armor_class(struct char_data *attacker, struct char_data *ch, int is
       bonuses[BONUS_TYPE_DODGE] += 1;
     }
 
+    if (!IS_NPC(ch) && has_loremaster_secret(ch, LOREMASTER_SECRET_DODGE_TRICK))
+    {
+      bonuses[BONUS_TYPE_DODGE] += 1;
+    }
+
     if (HAS_FEAT(ch, FEAT_TABAXI_FELINE_AGILITY))
     {
       bonuses[BONUS_TYPE_DODGE] += 1;
@@ -12027,6 +12032,13 @@ int compute_attack_bonus_full(struct char_data *ch,     /* Attacker */
       if (display)
         send_to_char(ch, "%2d: %-50s\r\n", favored_enemy_tohit, "Favored Enemy Enhancement");
     }
+  }
+
+  if (!IS_NPC(ch) && has_loremaster_secret(ch, LOREMASTER_SECRET_WEAPON_TRICK))
+  {
+    bonuses[BONUS_TYPE_UNDEFINED] += 1;
+    if (display)
+      send_to_char(ch, " 1: %-50s\r\n", "Loremaster Weapon Trick");
   }
 
   /* Add up all the bonuses */

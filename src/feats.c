@@ -5635,6 +5635,35 @@ void assign_feats(void)
         "At 7th level a dragon disciple can assume the form of a dragon (as form of the dragon I) "
         "once per day; at 10th level this functions as form of the dragon II and can be used twice "
         "per day. The assumed dragon must match the disciple's bloodline type.");
+
+  /* loremaster */
+  feato(FEAT_LORE, "lore", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
+        "add half your loremaster level to Knowledge checks and use them untrained",
+        "A loremaster adds half her loremaster level to Lore (Arcana), History, Religion, and "
+        "Nature (Survival) checks and can use lore abilities even without ranks.");
+  feato(FEAT_GREATER_LORE, "greater lore", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
+        "use Spellcraft +10 when it is better for identifying magic item properties",
+        "A loremaster can identify magic item properties using the better of her normal lore "
+        "knowledge and Spellcraft +10.");
+  feato(FEAT_TRUE_LORE, "true lore", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
+        "once per day, reveal complete lore about an item, creature, or subject",
+        "A loremaster can use truelore once per day to reveal complete lore about an item, "
+        "creature, or named subject.");
+  feato(FEAT_LOREMASTER_NEWFOUND_ARCANA, "newfound arcana", TRUE, FALSE, FALSE,
+        FEAT_TYPE_CLASS_ABILITY,
+        "gain one selected bonus 1st-circle spell slot from a loremaster secret",
+        "A loremaster secret grants one bonus 1st-circle spell slot for the selected eligible "
+        "spellcasting class.");
+  feato(FEAT_LOREMASTER_MORE_NEWFOUND_ARCANA, "more newfound arcana", TRUE, FALSE, FALSE,
+        FEAT_TYPE_CLASS_ABILITY,
+        "gain one selected bonus 2nd-circle spell slot from a loremaster secret",
+        "A loremaster secret grants one bonus 2nd-circle spell slot for the selected eligible "
+        "spellcasting class.");
+  feato(FEAT_LOREMASTER_SECRET_HEALTH, "secret health", TRUE, FALSE, FALSE,
+        FEAT_TYPE_CLASS_ABILITY,
+        "loremaster Toughness bonus feat granting at least 3 hit points",
+        "Secret Health grants a Pathfinder-style Toughness bonus feat, increasing maximum hit "
+        "points by the greater of 3 or character level.");
   feato(FEAT_DRAGON_APOTHEOSIS, "dragon apotheosis", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "ask staff", "ask staff");
   feato(FEAT_ELEMENTAL_IMMUNITY, "elemental immunity", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
@@ -6228,6 +6257,7 @@ void assign_feats(void)
   dailyfeat(FEAT_EFREETI_MAGIC, eEFREETIMAGIC);
   dailyfeat(FEAT_DRAGON_MAGIC, eDRAGONMAGIC);
   dailyfeat(FEAT_DRAGON_DISCIPLE_DRAGON_FORM, eDRAGON_DISCIPLE_FORM);
+  dailyfeat(FEAT_TRUE_LORE, eTRUE_LORE);
   dailyfeat(FEAT_CHANNEL_SPELL, eCHANNELSPELL);
   dailyfeat(FEAT_PSIONIC_FOCUS, ePSIONICFOCUS);
   dailyfeat(FEAT_DOUBLE_MANIFEST, eDOUBLEMANIFEST);
