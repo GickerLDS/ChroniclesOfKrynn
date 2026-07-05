@@ -3335,7 +3335,7 @@
 
 /* TREE 4: VERSATILE CASTER - Tier 4 Capstones (158-159) */
 #define PERK_WIZARD_ARCHMAGES_POWER 158  /* +5% free spell, -1 metamagic cost */
-#define PERK_WIZARD_ARCANE_SUPREMACY 159 /* +2 spell DCs, +2 caster level, +2 spell damage */
+#define PERK_WIZARD_ARCANE_SUPREMACY 159 /* +2 spell DCs, +2 arcane caster level, +2 spell damage */
 
 /* ============================================================================
  * CLERIC PERKS (200-299)

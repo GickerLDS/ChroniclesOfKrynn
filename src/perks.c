@@ -8509,7 +8509,7 @@ void define_wizard_versatile_caster_perks(void)
   perk = &perk_list[PERK_WIZARD_ARCANE_SUPREMACY];
   perk->id = PERK_WIZARD_ARCANE_SUPREMACY;
   perk->name = strdup("Arcane Supremacy");
-  perk->description = strdup("+2 spell DCs, +2 caster level, +2 spell damage");
+  perk->description = strdup("+2 spell DCs, +2 caster level for arcane spells, +2 spell damage");
   perk->associated_class = CLASS_WIZARD;
   perk->perk_category = PERK_CATEGORY_VERSATILE_CASTER;
   perk->cost = 5;
@@ -8520,7 +8520,7 @@ void define_wizard_versatile_caster_perks(void)
   perk->effect_value = 2; /* +2 to various stats */
   perk->special_description =
       strdup("Requires Arcane Knowledge I (max) and Metamagic Master II. Gain +2 to all spell DCs, "
-             "+2 effective caster level, and +2 spell damage.");
+             "+2 effective caster level for arcane spells you cast, and +2 spell damage.");
 }
 
 /* Define Cleric Perks */

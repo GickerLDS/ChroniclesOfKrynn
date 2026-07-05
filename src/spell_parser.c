@@ -97,6 +97,38 @@ static struct syllable syls[] = {
     {"1", "echad"},  {"2", "shtayim"}, {"3", "shelosh"},     {"4", "arba"},     {"5", "chamesh"},
     {"6", "sheish"}, {"7", "shevah"},  {"8", "shmoneh"},     {"9", "teisha"},   {"0", "efes"}};
 
+static bool is_arcane_spellcasting_class_for_supremacy(int class_id)
+{
+  switch (class_id)
+  {
+  case CLASS_WIZARD:
+  case CLASS_SORCERER:
+  case CLASS_BARD:
+  case CLASS_SUMMONER:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+static int apply_arcane_supremacy_caster_level(struct char_data *caster, int spellnum,
+                                               int casttype, int level)
+{
+  if (!caster || IS_NPC(caster))
+    return level;
+
+  if (casttype != CAST_SPELL)
+    return level;
+
+  if (spellnum <= SPELL_RESERVED_DBC || spellnum >= NUM_SPELLS)
+    return level;
+
+  if (!is_arcane_spellcasting_class_for_supremacy(CASTING_CLASS(caster)))
+    return level;
+
+  return level + get_arcane_supremacy_caster_level_bonus(caster);
+}
+
 /* may use this for mobs to control their casting
 static int mag_pspcost(struct char_data *ch, int spellnum)
 {
@@ -695,6 +727,8 @@ int call_magic(struct char_data *caster, struct char_data *cvict, struct obj_dat
 
   if (spellnum < 1 || spellnum > TOP_SPELL_DEFINE)
     return (0);
+
+  level = apply_arcane_supremacy_caster_level(caster, spellnum, casttype, level);
 
   // Message for debugging
   // send_to_char(caster, "Caster: %s, Victim: %s, Object: %s, Spell: %s, Metamagic: %d, Level: %d, Cast Type: %d\r\n", GET_NAME(caster),
@@ -3223,8 +3257,11 @@ will be using for casting this spell */
             ch_class = spell_prep_gen_extract(ch, slot_spellnum, slot_metamagic);
           if (treat_as_at_will)
           {
-            ch_class = CLASS_WIZARD;
+            ch_class = GET_CASTING_CLASS(ch);
+            if (ch_class < 0 || ch_class >= NUM_CLASSES)
+              ch_class = CLASS_WIZARD;
             clevel = GET_LEVEL(ch);
+            CASTING_CLASS(ch) = ch_class;
           }
           else
           {
