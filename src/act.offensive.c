@@ -8379,6 +8379,168 @@ ACMD(do_irresistablemagic)
   act("\tM$n weaves an unstoppable pattern of arcane energy!\tn", FALSE, ch, NULL, NULL, TO_ROOM);
 }
 
+static void send_time_left_line(struct char_data *ch, const char *prefix, int seconds_left)
+{
+  int minutes = 0;
+  int seconds = 0;
+
+  seconds_left = MAX(0, seconds_left);
+  minutes = seconds_left / 60;
+  seconds = seconds_left % 60;
+
+  if (minutes > 0)
+    send_to_char(ch, "%s%d minute%s and %d second%s.\r\n", prefix, minutes,
+                 (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+  else
+    send_to_char(ch, "%s%d second%s.\r\n", prefix, seconds, (seconds != 1 ? "s" : ""));
+}
+
+static void show_metamagic_perk_status(struct char_data *ch)
+{
+  int pending = PENDING_FREE_METAMAGIC(ch);
+
+  send_to_char(ch, "Free metamagic status:\r\n");
+
+  if (pending == 0)
+    send_to_char(ch, "  Pending: none\r\n");
+  else if (IS_SET(pending, METAMAGIC_MAXIMIZE) && IS_SET(pending, METAMAGIC_EMPOWER))
+    send_to_char(ch, "  Pending: maximize empower\r\n");
+  else if (IS_SET(pending, METAMAGIC_MAXIMIZE))
+    send_to_char(ch, "  Pending: maximize\r\n");
+  else
+    send_to_char(ch, "  Pending: empower\r\n");
+
+  if (has_perk(ch, PERK_WIZARD_MAXIMIZE_SPELL))
+  {
+    if (can_use_maximize_spell_perk(ch))
+      send_to_char(ch, "  Maximize Spell: ready\r\n");
+    else
+      send_time_left_line(ch, "  Maximize Spell: ready in ",
+                          (int)(ch->player_specials->saved.maximize_spell_cooldown - time(0)));
+  }
+
+  if (has_perk(ch, PERK_WIZARD_EMPOWER_SPELL))
+  {
+    can_use_empower_spell_perk(ch);
+    send_to_char(ch, "  Empower Spell: %d/2 charges",
+                 ch->player_specials->saved.empower_spell_uses);
+    if (ch->player_specials->saved.empower_spell_uses < 2 &&
+        ch->player_specials->saved.empower_spell_cooldown > time(0))
+      send_time_left_line(ch, ", next charge in ",
+                          (int)(ch->player_specials->saved.empower_spell_cooldown - time(0)));
+    else
+      send_to_char(ch, "\r\n");
+  }
+}
+
+static void set_metamagic_perk_pending(struct char_data *ch, int metamagic)
+{
+  if (metamagic == METAMAGIC_MAXIMIZE)
+  {
+    if (!has_perk(ch, PERK_WIZARD_MAXIMIZE_SPELL))
+    {
+      send_to_char(ch, "You don't have the Maximize Spell perk.\r\n");
+      return;
+    }
+
+    if (IS_SET(PENDING_FREE_METAMAGIC(ch), METAMAGIC_MAXIMIZE))
+    {
+      send_to_char(ch, "Your next spell is already set to use free Maximize Spell.\r\n");
+      return;
+    }
+
+    if (!can_use_maximize_spell_perk(ch))
+    {
+      send_time_left_line(ch, "You can use Maximize Spell again in ",
+                          (int)(ch->player_specials->saved.maximize_spell_cooldown - time(0)));
+      return;
+    }
+
+    SET_BIT(PENDING_FREE_METAMAGIC(ch), METAMAGIC_MAXIMIZE);
+    send_to_char(ch,
+                 "\tMYour next spell will be maximized without increasing its circle.\tn\r\n");
+    return;
+  }
+
+  if (metamagic == METAMAGIC_EMPOWER)
+  {
+    if (!has_perk(ch, PERK_WIZARD_EMPOWER_SPELL))
+    {
+      send_to_char(ch, "You don't have the Empower Spell perk.\r\n");
+      return;
+    }
+
+    if (IS_SET(PENDING_FREE_METAMAGIC(ch), METAMAGIC_EMPOWER))
+    {
+      send_to_char(ch, "Your next spell is already set to use free Empower Spell.\r\n");
+      return;
+    }
+
+    if (!can_use_empower_spell_perk(ch))
+    {
+      if (ch->player_specials->saved.empower_spell_cooldown > time(0))
+        send_time_left_line(ch, "Your next Empower Spell charge returns in ",
+                            (int)(ch->player_specials->saved.empower_spell_cooldown - time(0)));
+      else
+        send_to_char(ch, "You do not have an Empower Spell charge available.\r\n");
+      return;
+    }
+
+    SET_BIT(PENDING_FREE_METAMAGIC(ch), METAMAGIC_EMPOWER);
+    send_to_char(ch,
+                 "\tYYour next eligible spell will be empowered without increasing its circle.\tn\r\n");
+  }
+}
+
+ACMD(do_metamagic_perk)
+{
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  int metamagic = 0;
+
+  PREREQ_NOT_NPC();
+
+  if (subcmd == SCMD_FREE_METAMAGIC_MAXIMIZE)
+    metamagic = METAMAGIC_MAXIMIZE;
+  else if (subcmd == SCMD_FREE_METAMAGIC_EMPOWER)
+    metamagic = METAMAGIC_EMPOWER;
+  else
+  {
+    one_argument(argument, arg, sizeof(arg));
+
+    if (!*arg || is_abbrev(arg, "status"))
+    {
+      if (!has_perk(ch, PERK_WIZARD_MAXIMIZE_SPELL) &&
+          !has_perk(ch, PERK_WIZARD_EMPOWER_SPELL))
+      {
+        send_to_char(ch, "You don't have any free metamagic perks.\r\n");
+        return;
+      }
+
+      show_metamagic_perk_status(ch);
+      return;
+    }
+
+    if (is_abbrev(arg, "clear") || is_abbrev(arg, "cancel"))
+    {
+      PENDING_FREE_METAMAGIC(ch) = 0;
+      send_to_char(ch, "You clear your pending free metamagic.\r\n");
+      return;
+    }
+
+    if (is_abbrev(arg, "maximize") || is_abbrev(arg, "maximized"))
+      metamagic = METAMAGIC_MAXIMIZE;
+    else if (is_abbrev(arg, "empower") || is_abbrev(arg, "empowered"))
+      metamagic = METAMAGIC_EMPOWER;
+    else
+    {
+      send_to_char(ch, "Usage: metamagic <status | maximize | empower | clear>\r\n");
+      return;
+    }
+  }
+
+  set_metamagic_perk_pending(ch, metamagic);
+}
+
 ACMDCHECK(can_spellrecall)
 {
   if (IS_NPC(ch))

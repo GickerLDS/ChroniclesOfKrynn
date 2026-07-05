@@ -1253,6 +1253,8 @@ void char_from_furniture(struct char_data *ch);
 #define CASTING_TOBJ(ch) ((ch)->char_specials.castingTOBJ)
 #define CASTING_SPELLNUM(ch) ((ch)->char_specials.castingSpellnum)
 #define CASTING_METAMAGIC(ch) ((ch)->char_specials.castingMetamagic)
+#define CASTING_FREE_METAMAGIC(ch) ((ch)->char_specials.castingFreeMetamagic)
+#define PENDING_FREE_METAMAGIC(ch) ((ch)->char_specials.pendingFreeMetamagic)
 #define CASTING_CLASS(ch) ((ch)->char_specials.castingClass)
 #define CASTING_CASTTYPE(ch) ((ch)->char_specials.castingCasttype)
 #define MOB_COMBAT_SPELL_TURN(ch) ((ch)->char_specials.mobCombatSpellTurn)

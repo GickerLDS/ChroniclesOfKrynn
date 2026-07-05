@@ -425,6 +425,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"echo", "ec", POS_SLEEPING, do_echo, LVL_IMMORT, SCMD_ECHO, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"efreetimagic", "efreetimagic", POS_FIGHTING, do_efreetimagic, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_efreetimagic},
     {"eidolon", "eidolon", POS_RECLINING, do_eidolon, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"empowerspell", "empowerspell", POS_SITTING, do_metamagic_perk, 1, SCMD_FREE_METAMAGIC_EMPOWER, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"blast", "blast", POS_FIGHTING, do_blast, 1, 0, FALSE, ACTION_STANDARD, {0, 0}, can_eldritch_blast},
     {"eldritch", "eldritch", POS_FIGHTING, do_eldritch, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"eldritchsight", "eldritchsight", POS_RESTING, do_eldritch_sight_perk, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
@@ -690,8 +691,10 @@ cpp_extern const struct command_info cmd_info[] = {
 
     {"masscurewounds", "masscurewounds", POS_STANDING, do_masscurewounds, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"maxhp", "maxhp", POS_DEAD, do_maxhp, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"maximizespell", "maximizespell", POS_SITTING, do_metamagic_perk, 1, SCMD_FREE_METAMAGIC_MAXIMIZE, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"medit", "med", POS_DEAD, do_oasis_medit, LVL_BUILDER, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"meditate", "meditate", POS_RESTING, do_gen_preparation, 0, SCMD_MEDITATE, FALSE, ACTION_NONE, {0, 0}, NULL},
+    {"metamagic", "metamagic", POS_SITTING, do_metamagic_perk, 1, SCMD_FREE_METAMAGIC, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"mercies", "mercies", POS_DEAD, do_mercies, 1, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
 #if !defined(CAMPAIGN_FR) && !defined(CAMPAIGN_DL)
     {"mine", "mine", POS_STANDING, do_wilderness_mine, 0, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},

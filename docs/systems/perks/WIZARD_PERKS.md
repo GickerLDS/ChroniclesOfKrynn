@@ -77,7 +77,7 @@ Wizards are masters of arcane magic, wielding devastating spells and controlling
 11. **Maximize Spell**
     - Cost: 2 points
     - Max Rank: 1
-    - Effect: Can cast spells at +2 spell point cost for maximum damage
+    - Effect: Use `metamagic maximize` to make your next spell deal maximum damage without increasing its circle
     - Prerequisite: Spell Power I (max)
 
 ### Tier 3 Perks (3-4 points each)
@@ -103,7 +103,7 @@ Wizards are masters of arcane magic, wielding devastating spells and controlling
 15. **Empower Spell**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: Can cast spells at +3 spell point cost for +50% damage
+    - Effect: Use `metamagic empower` to make your next eligible spell deal +50% damage without increasing its circle
     - Prerequisite: Maximize Spell
 
 16. **Spell Penetration II**

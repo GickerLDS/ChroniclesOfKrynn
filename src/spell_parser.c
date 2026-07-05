@@ -58,6 +58,9 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
                                          int casttype, int slot_class, int slot_spellnum,
                                          int slot_metamagic);
 static int get_cleric_spontaneous_replacement(struct char_data *ch, int spellnum, int metamagic);
+static int get_applicable_free_metamagic(struct char_data *ch, int spellnum, int metamagic,
+                                         int subcmd);
+static void consume_free_metamagic_perks(struct char_data *ch, int free_metamagic);
 void spello(int spl, const char *name, int max_psp, int min_psp, int psp_change, int minpos,
             int targets, int violent, int routines, const char *wearoff, int time, int memtime,
             int school, bool quest);
@@ -1732,6 +1735,8 @@ void resetCastingData(struct char_data *ch)
   CASTING_TIME(ch) = 0;
   CASTING_TIME_MAX(ch) = 0;
   CASTING_SPELLNUM(ch) = 0;
+  CASTING_METAMAGIC(ch) = 0;
+  CASTING_FREE_METAMAGIC(ch) = 0;
   CASTING_CASTTYPE(ch) = CAST_UNDEFINED;
   CASTING_TCH(ch) = NULL;
   CASTING_TOBJ(ch) = NULL;
@@ -1971,7 +1976,7 @@ void finishCasting(struct char_data *ch)
   }
 
   /* Consume metamagic reduction use if applicable */
-  if (!IS_NPC(ch) && CASTING_METAMAGIC(ch) != 0)
+  if (!IS_NPC(ch) && (CASTING_METAMAGIC(ch) & ~CASTING_FREE_METAMAGIC(ch)) != 0)
   {
     use_metamagic_reduction(ch);
   }
@@ -2091,8 +2096,9 @@ void finishCasting(struct char_data *ch)
       cast_level += 2;
     }
 
-    call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic, cast_level,
-               final_casttype);
+    if (call_magic(ch, CASTING_TCH(ch), CASTING_TOBJ(ch), spellnum, final_metamagic, cast_level,
+                   final_casttype) > 0)
+      consume_free_metamagic_perks(ch, CASTING_FREE_METAMAGIC(ch));
 
     /* Set cosmic awareness cooldown after successful manifestation */
     if (!IS_NPC(ch) && spellnum == PSIONIC_COSMIC_AWARENESS)
@@ -2600,6 +2606,8 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
   int clevel = 0;
   bool treat_as_at_will = FALSE;
   bool perfect_fabricator_active = FALSE; /* Track Perfect Fabricator usage across this cast */
+  int free_metamagic =
+      metamagic & ~slot_metamagic & (METAMAGIC_MAXIMIZE | METAMAGIC_EMPOWER);
 
   /* Pull through Perfect Fabricator state from do_gen_cast (if any) */
   if (perfect_fabricator_flag)
@@ -2675,7 +2683,7 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
     int fallback_class = CLASS_UNDEFINED;
 
     if (!IS_NPC(ch))
-      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+      fallback_class = spell_prep_gen_check(ch, spellnum, slot_metamagic);
 
     if (fallback_class != CLASS_UNDEFINED)
     {
@@ -2709,7 +2717,7 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
     int fallback_class = CLASS_UNDEFINED;
 
     if (!IS_NPC(ch))
-      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+      fallback_class = spell_prep_gen_check(ch, spellnum, slot_metamagic);
 
     if (fallback_class != CLASS_UNDEFINED)
     {
@@ -2743,7 +2751,7 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
     int fallback_class = CLASS_UNDEFINED;
 
     if (!IS_NPC(ch))
-      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+      fallback_class = spell_prep_gen_check(ch, spellnum, slot_metamagic);
 
     if (fallback_class != CLASS_UNDEFINED)
     {
@@ -2776,7 +2784,7 @@ static int cast_spell_with_type_and_slot(struct char_data *ch, struct char_data 
     int fallback_class = CLASS_UNDEFINED;
 
     if (!IS_NPC(ch))
-      fallback_class = spell_prep_gen_check(ch, spellnum, metamagic);
+      fallback_class = spell_prep_gen_check(ch, spellnum, slot_metamagic);
 
     if (fallback_class != CLASS_UNDEFINED)
     {
@@ -3212,7 +3220,7 @@ will be using for casting this spell */
             ch_class =
                 spell_prep_gen_extract_by_class(ch, slot_class, slot_spellnum, slot_metamagic);
           else
-            ch_class = spell_prep_gen_extract(ch, spellnum, metamagic);
+            ch_class = spell_prep_gen_extract(ch, slot_spellnum, slot_metamagic);
           if (treat_as_at_will)
           {
             ch_class = CLASS_WIZARD;
@@ -3274,6 +3282,7 @@ will be using for casting this spell */
       CASTING_TOBJ(ch) = tobj;
       CASTING_SPELLNUM(ch) = spellnum;
       CASTING_METAMAGIC(ch) = metamagic;
+      CASTING_FREE_METAMAGIC(ch) = free_metamagic;
       CASTING_CASTTYPE(ch) = casttype;
     }
     else
@@ -3305,6 +3314,10 @@ will be using for casting this spell */
         perform_attacks(ch, NORMAL_ATTACK_ROUTINE, 0);
 #undef NORMAL_ATTACK_ROUTINE
       }
+
+      if (result && !IS_NPC(ch))
+        consume_free_metamagic_perks(ch, CASTING_FREE_METAMAGIC(ch));
+      CASTING_FREE_METAMAGIC(ch) = 0;
 
       return result;
     }
@@ -3342,6 +3355,7 @@ will be using for casting this spell */
     CASTING_TOBJ(ch) = tobj;
     CASTING_SPELLNUM(ch) = spellnum;
     CASTING_METAMAGIC(ch) = metamagic;
+    CASTING_FREE_METAMAGIC(ch) = free_metamagic;
     CASTING_CASTTYPE(ch) = casttype;
 
     if (IS_NPC(ch))
@@ -3361,6 +3375,53 @@ will be using for casting this spell */
   }
   // this return value has to be checked -zusuk
   return (1);
+}
+
+static int get_applicable_free_metamagic(struct char_data *ch, int spellnum, int metamagic,
+                                         int subcmd)
+{
+  int free_metamagic = 0;
+
+  if (!ch || IS_NPC(ch) || subcmd != SCMD_CAST_SPELL)
+    return 0;
+
+  free_metamagic = PENDING_FREE_METAMAGIC(ch) & (METAMAGIC_MAXIMIZE | METAMAGIC_EMPOWER);
+
+  if (free_metamagic == 0)
+    return 0;
+
+  if (IS_SET(free_metamagic, METAMAGIC_EMPOWER) && !can_spell_be_empowered(spellnum))
+  {
+    send_to_char(ch, "Your pending Empower Spell cannot affect that spell. Use 'metamagic clear' "
+                     "to cancel it.\r\n");
+    return -1;
+  }
+
+  if (IS_SET(free_metamagic, METAMAGIC_MAXIMIZE) && IS_SET(metamagic, METAMAGIC_MAXIMIZE))
+    REMOVE_BIT(free_metamagic, METAMAGIC_MAXIMIZE);
+
+  if (IS_SET(free_metamagic, METAMAGIC_EMPOWER) && IS_SET(metamagic, METAMAGIC_EMPOWER))
+    REMOVE_BIT(free_metamagic, METAMAGIC_EMPOWER);
+
+  return free_metamagic;
+}
+
+static void consume_free_metamagic_perks(struct char_data *ch, int free_metamagic)
+{
+  if (!ch || IS_NPC(ch) || free_metamagic == 0)
+    return;
+
+  if (IS_SET(free_metamagic, METAMAGIC_MAXIMIZE))
+  {
+    use_maximize_spell_perk(ch);
+    REMOVE_BIT(PENDING_FREE_METAMAGIC(ch), METAMAGIC_MAXIMIZE);
+  }
+
+  if (IS_SET(free_metamagic, METAMAGIC_EMPOWER))
+  {
+    use_empower_spell_perk(ch);
+    REMOVE_BIT(PENDING_FREE_METAMAGIC(ch), METAMAGIC_EMPOWER);
+  }
 }
 
 /* manifest_power is the entry point for NPC psionic power manifestation.
@@ -3409,6 +3470,7 @@ ACMDU(do_gen_cast)
   char *spell_arg = NULL, *target_arg = NULL, *metamagic_arg = NULL;
   int number = 0, spellnum = 0, i = 0, target = 0, metamagic = 0;
   int slot_class = CLASS_UNDEFINED, slot_spellnum = 0, slot_metamagic = 0;
+  int free_metamagic = 0;
   int spontaneous_replacement = 0;
   struct affected_type af;
   int class_num = CLASS_UNDEFINED;
@@ -3651,7 +3713,12 @@ ACMDU(do_gen_cast)
       compute_spells_circle(ch, GET_CASTING_CLASS(ch), spellnum, metamagic, 0) <= 3)
     SET_BIT(metamagic, METAMAGIC_STILL);
 
+  free_metamagic = get_applicable_free_metamagic(ch, spellnum, metamagic, subcmd);
+  if (free_metamagic < 0)
+    return;
+
   slot_metamagic = metamagic;
+  SET_BIT(metamagic, free_metamagic);
   if (subcmd == SCMD_CAST_SPELL)
   {
     spontaneous_replacement = get_cleric_spontaneous_replacement(ch, slot_spellnum, slot_metamagic);
@@ -4068,7 +4135,8 @@ return;
       {
         class_num = CLASS_CLERIC;
       }
-      else if ((class_num = spell_prep_gen_check(ch, spellnum, metamagic)) == CLASS_UNDEFINED)
+      else if ((class_num = spell_prep_gen_check(ch, spellnum, slot_metamagic)) ==
+               CLASS_UNDEFINED)
       {
         send_to_char(ch,
                      "You are not ready to %s that %s... (help preparation, or the meta-magic "
@@ -4422,7 +4490,7 @@ return;
     int checked_spellnum = cleric_spontaneous_casting ? slot_spellnum : spellnum;
     int checked_metamagic = cleric_spontaneous_casting
                                 ? get_cleric_collection_metamagic(ch, slot_spellnum, slot_metamagic)
-                                : metamagic;
+                                : slot_metamagic;
     int available_class = CLASS_UNDEFINED;
 
     if (cleric_spontaneous_casting)

@@ -6674,6 +6674,8 @@ struct char_special_data
   int castingTimeMax;           // original casting time (for progress calc)
   int castingSpellnum;          // spell casting
   int castingMetamagic;         // spell metamagic
+  int castingFreeMetamagic;     // metamagic applied without spending an adjusted slot
+  int pendingFreeMetamagic;     // free metamagic queued for the next spell
   int castingClass;             // spell casting class
   int castingCasttype;          // spell cast type (CAST_SPELL, CAST_INNATE, etc.)
   struct char_data *castingTCH; // target char of spell

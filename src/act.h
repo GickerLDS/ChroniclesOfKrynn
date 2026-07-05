@@ -538,6 +538,9 @@ bool perform_lichtouch(struct char_data *ch, struct char_data *vict);
 /* do_hit */
 ACMD_DECL(do_hit);
 #define SCMD_HIT 0
+#define SCMD_FREE_METAMAGIC 0
+#define SCMD_FREE_METAMAGIC_MAXIMIZE 1
+#define SCMD_FREE_METAMAGIC_EMPOWER 2
 ACMD_DECL(do_process_attack);
 ACMD_DECL(do_fey_magic);
 ACMDCHECK(can_fey_magic);
@@ -734,6 +737,7 @@ ACMD_DECL(do_perfectadaptation_perk);
 ACMD_DECL(do_supremacy_perk);
 ACMD_DECL(do_irresistablemagic);
 ACMDCHECK(can_irresistablemagic);
+ACMD_DECL(do_metamagic_perk);
 ACMD_DECL(do_spellrecall);
 ACMDCHECK(can_spellrecall);
 ACMD_DECL(do_arcanerecovery);
