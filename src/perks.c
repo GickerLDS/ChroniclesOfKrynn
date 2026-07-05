@@ -23239,6 +23239,90 @@ void display_perk_details(struct char_data *ch, struct perk_data *perk,
   }
 }
 
+static int find_perk_num_by_name(const char *name)
+{
+  int index = 0;
+  int ok = 0;
+  const char *temp = NULL, *temp2 = NULL;
+  char first[256], first2[256];
+
+  if (!name || !*name)
+    return -1;
+
+  if (!strn_cmp(name, "perk ", 5))
+  {
+    name += 5;
+    skip_spaces_c(&name);
+  }
+
+  if (is_number(name))
+  {
+    int perk_id = atoi(name);
+    if (get_perk_by_id(perk_id))
+      return perk_id;
+  }
+
+  for (index = 1; index < NUM_PERKS; index++)
+  {
+    struct perk_data *perk = get_perk_by_id(index);
+    if (perk && !strcasecmp(name, perk->name))
+      return index;
+  }
+
+  for (index = 1; index < NUM_PERKS; index++)
+  {
+    struct perk_data *perk = get_perk_by_id(index);
+    if (!perk)
+      continue;
+
+    ok = TRUE;
+    temp = any_one_arg_c(perk->name, first, sizeof(first));
+    temp2 = any_one_arg_c(name, first2, sizeof(first2));
+    while (*first && *first2 && ok)
+    {
+      if (!is_abbrev(first2, first))
+        ok = FALSE;
+      temp = any_one_arg_c(temp, first, sizeof(first));
+      temp2 = any_one_arg_c(temp2, first2, sizeof(first2));
+    }
+
+    if (ok && !*first2 && !*first)
+      return index;
+  }
+
+  for (index = 1; index < NUM_PERKS; index++)
+  {
+    struct perk_data *perk = get_perk_by_id(index);
+    if (perk && is_abbrev(name, perk->name))
+      return index;
+  }
+
+  return -1;
+}
+
+bool display_perk_info(struct char_data *ch, const char *perkname)
+{
+  struct perk_data *perk = NULL;
+  struct char_perk_data *char_perk = NULL;
+  int perk_id = -1;
+
+  if (!CONFIG_PERK_SYSTEM)
+    return FALSE;
+
+  skip_spaces_c(&perkname);
+  perk_id = find_perk_num_by_name(perkname);
+  if (perk_id < 0)
+    return FALSE;
+
+  perk = get_perk_by_id(perk_id);
+  if (!perk)
+    return FALSE;
+
+  char_perk = find_char_perk(ch, perk_id, perk->associated_class);
+  display_perk_details(ch, perk, char_perk);
+  return TRUE;
+}
+
 /**
  * Comparison function for sorting perks alphabetically by name.
  */

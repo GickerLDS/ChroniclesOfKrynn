@@ -102,6 +102,8 @@ int handle_discovery_types_help(struct char_data *ch, const char *argument,
                                 const char *raw_argument, struct help_context *ctx);
 int handle_feat_help(struct char_data *ch, const char *argument, const char *raw_argument,
                      struct help_context *ctx);
+int handle_perk_help(struct char_data *ch, const char *argument, const char *raw_argument,
+                     struct help_context *ctx);
 int handle_evolution_help(struct char_data *ch, const char *argument, const char *raw_argument,
                           struct help_context *ctx);
 int handle_weapon_help(struct char_data *ch, const char *argument, const char *raw_argument,

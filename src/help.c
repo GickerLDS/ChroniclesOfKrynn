@@ -25,6 +25,7 @@
 #include "act.h"
 #include "evolutions.h"
 #include "backgrounds.h"
+#include "perks.h"
 
 /* Help cache system - stores recent help queries to reduce database load */
 #define HELP_CACHE_SIZE 50 /* Number of cached help entries */
@@ -907,6 +908,7 @@ void init_help_handlers(void)
 
   /* Game mechanic handlers - frequently accessed */
   register_help_handler("feat", handle_feat_help);
+  register_help_handler("perk", handle_perk_help);
   register_help_handler("class", handle_class_help);
   register_help_handler("race", handle_race_help);
   register_help_handler("weapon", handle_weapon_help);
@@ -929,7 +931,7 @@ void init_help_handlers(void)
   /* Fallback - soundex suggestions (always last) */
   register_help_handler("soundex", handle_soundex_suggestions);
 
-  log("Help handler chain initialized with %d handlers", 16);
+  log("Help handler chain initialized with %d handlers", 17);
 }
 
 /**
@@ -1357,6 +1359,19 @@ int handle_feat_help(struct char_data *ch, const char *argument, const char *raw
     return 1; /* Handled */
   }
   return 0; /* Not a feat */
+}
+
+/**
+ * Handler for perk information.
+ */
+int handle_perk_help(struct char_data *ch, const char *argument, const char *raw_argument,
+                     struct help_context *ctx)
+{
+  if (display_perk_info(ch, raw_argument))
+  {
+    return 1; /* Handled */
+  }
+  return 0; /* Not a perk */
 }
 
 /**

@@ -359,6 +359,7 @@ bool perk_exists(int perk_id);
 const char *get_perk_name(int perk_id);
 const char *get_perk_description(int perk_id);
 const char *get_perk_category_name(int perk_category);
+bool display_perk_info(struct char_data *ch, const char *perkname);
 
 /* Stage progression functions (step 3) */
 /* Stage-based progression functions */
