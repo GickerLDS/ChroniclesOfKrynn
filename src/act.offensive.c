@@ -4788,7 +4788,7 @@ ACMD(do_hit)
           continue;
         if (mob->master && mob->master == ch)
           continue;
-        if (!CAN_SEE(ch, mob))
+        if (!CAN_SEE(ch, mob) && !can_blindsense_creature(ch, mob))
           continue;
 
         // ok we found one
@@ -11475,7 +11475,7 @@ ACMD(do_guard)
     return;
   }
 
-  if (AFF_FLAGGED(ch, AFF_BLIND))
+  if (AFF_FLAGGED(ch, AFF_BLIND) && !has_blindsight(ch))
   {
     send_to_char(ch, "You can't see well enough to guard anyone!.\r\n");
     return;
@@ -14987,6 +14987,13 @@ ACMDU(do_vampiric_dominate)
   if (!IS_SENTIENT(vict))
   {
     send_to_char(ch, "You can only dominate sentient beings.\r\n");
+    return;
+  }
+
+  if (has_blindsight(vict))
+  {
+    act("$N does not meet your gaze.", FALSE, ch, 0, vict, TO_CHAR);
+    act("You perceive $n's gaze without looking into it.", FALSE, ch, 0, vict, TO_VICT);
     return;
   }
 

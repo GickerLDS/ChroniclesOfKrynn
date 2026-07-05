@@ -3172,7 +3172,7 @@ struct char_data *get_char_room_vis(struct char_data *ch, char *name, int *numbe
     /* First try to match by actual name */
     if (isname(name, i->player.name))
     {
-      if (CAN_SEE(ch, i) || CAN_INFRA(ch, i))
+      if (CAN_SEE(ch, i) || CAN_INFRA(ch, i) || can_blindsense_creature(ch, i))
       {
         if (--(*number) == 0)
         {
@@ -3186,7 +3186,7 @@ struct char_data *get_char_room_vis(struct char_data *ch, char *name, int *numbe
       char *short_desc = which_desc(ch, i);
       if (short_desc && isname(name, short_desc))
       {
-        if (CAN_SEE(ch, i) || CAN_INFRA(ch, i))
+        if (CAN_SEE(ch, i) || CAN_INFRA(ch, i) || can_blindsense_creature(ch, i))
         {
           if (--(*number) == 0)
           {
@@ -3606,6 +3606,12 @@ int generic_find(const char *arg_in, bitvector_t bitvector, struct char_data *ch
   if (!(number = get_number(&name)))
     return (0);
 
+  if (IS_SET(bitvector, FIND_OBJ_INV))
+  {
+    if ((*tar_obj = get_obj_in_list_vis(ch, name, &number, ch->carrying)) != NULL)
+      return (FIND_OBJ_INV);
+  }
+
   if (IS_SET(bitvector, FIND_CHAR_ROOM))
   { /* Find person in room */
     if ((*tar_ch = get_char_room_vis(ch, name, &number)) != NULL)
@@ -3628,12 +3634,6 @@ int generic_find(const char *arg_in, bitvector_t bitvector, struct char_data *ch
       }
     if (found)
       return (FIND_OBJ_EQUIP);
-  }
-
-  if (IS_SET(bitvector, FIND_OBJ_INV))
-  {
-    if ((*tar_obj = get_obj_in_list_vis(ch, name, &number, ch->carrying)) != NULL)
-      return (FIND_OBJ_INV);
   }
 
   if (IS_SET(bitvector, FIND_OBJ_ROOM))

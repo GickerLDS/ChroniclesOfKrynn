@@ -732,7 +732,7 @@ ACMD(do_map)
     send_to_char(ch, "A magical force prevents you from seeing beyond this room.\r\n");
     return;
   }
-  if (IS_DARK(IN_ROOM(ch)) && !CAN_SEE_IN_DARK(ch))
+  if (IS_DARK(IN_ROOM(ch)) && !CAN_SEE_IN_DARK(ch) && !has_blindsense(ch))
   {
     send_to_char(ch, "It is too dark to see the map.\r\n");
     return;

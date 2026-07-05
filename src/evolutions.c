@@ -359,8 +359,9 @@ void assign_evolutions(void)
              "appears as an undead they are still treated as an outsider.");
   evolutiono(EVOLUTION_BLINDSIGHT, "blindsight", 4, false, 1, true, 0, 0, 0, 0, 0, 0,
              EVOLUTION_REQ_TYPE_NONE,
-             "The eidolon's gains blindsense, allowing them to be able to 'see' even if blinded, "
-             "in darkness, or if the entity is invisible.");
+             "The eidolon gains blindsight, allowing it to perceive creatures precisely even if "
+             "blinded, in darkness, or if the target is invisible. Blindsight cannot be used to "
+             "read or distinguish visual detail, and it does not reveal ethereal creatures.");
   evolutiono(EVOLUTION_CELESTIAL_APPEARANCE, "celestial appearance", 3, false, 1, false,
              EVOLUTION_UNDEAD_APPEARANCE, EVOLUTION_FIENDISH_APPEARANCE, 0, 0, 0, 0,
              EVOLUTION_REQ_TYPE_UNIQUE,

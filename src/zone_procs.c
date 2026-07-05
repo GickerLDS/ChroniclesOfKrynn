@@ -1147,6 +1147,9 @@ SPECIAL(tia_rapier)
 
     if (!rand_number(0, 50))
     {
+      if (has_blindsight(vict))
+        return 0;
+
       weapons_spells(
           "\tWSuddenly your \tn$p\tW is enveloped by \tbsheer \tLdarkness, \tWleaving only a pair "
           "of \tn\r\n"
@@ -1784,6 +1787,9 @@ SPECIAL(prisoner_dracolich)
   {
     /* find random target, and num targets */
     if (!(vict = npc_find_target(ch, &use_aoe)))
+      return 0;
+
+    if (has_blindsight(vict))
       return 0;
 
     act("\tLThe Prisoner cackles with glee at the fray, enjoying every second of the battle\r\n"

@@ -1386,6 +1386,8 @@ static void list_char_to_char(struct char_data *list, struct char_data *ch)
         send_to_char(ch, "\tnYou see the \trred\tn outline of someone or something.\r\n");
       else if (IS_DARK(IN_ROOM(ch)) && !CAN_SEE_IN_DARK(ch) && char_has_infra(i) && INVIS_OK(ch, i))
         send_to_char(ch, "You see a pair of glowing red eyes looking your way.\r\n");
+      else if (can_blindsense_creature(ch, i))
+        send_to_char(ch, "You sense someone nearby.\r\n");
       else if ((!IS_DARK(IN_ROOM(ch)) || CAN_SEE_IN_DARK(ch)) && AFF_FLAGGED(ch, AFF_SENSE_LIFE))
         send_to_char(ch, "You sense a life-form.\r\n");
       send_to_char(ch, "%s", CCNRM(ch, C_NRM));
@@ -1455,7 +1457,7 @@ void look_at_room_number(struct char_data *ch, int ignore_brief, long room_numbe
     list_char_to_char(world[room_number].people, ch);
     return;
   }
-  else if (AFF_FLAGGED(ch, AFF_BLIND) && !has_blindsense(ch))
+  else if (AFF_FLAGGED(ch, AFF_BLIND) && !has_blindsight(ch))
   {
     send_to_char(ch, "You're blind, you can't see anything!\r\n");
     if (AFF_FLAGGED(ch, AFF_SENSE_LIFE))
@@ -1634,7 +1636,7 @@ void look_at_room(struct char_data *ch, int ignore_brief)
     send_to_char(ch, "It is pitch black...\r\n");
     return;
   }
-  else if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsense(ch))
+  else if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsight(ch))
   {
     send_to_char(ch, "You see nothing but infinite darkness...\r\n");
     return;
@@ -3516,7 +3518,7 @@ ACMD(do_look)
 
   if (GET_POS(ch) < POS_SLEEPING)
     send_to_char(ch, "You can't see anything but stars!\r\n");
-  else if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsense(ch))
+  else if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsight(ch))
     send_to_char(ch, "You can't see a damned thing, you're blind!\r\n");
   else if (IS_DARK(IN_ROOM(ch)) && !CAN_SEE_IN_DARK(ch) && !CAN_INFRA_IN_DARK(ch))
   {
@@ -9557,7 +9559,7 @@ ACMD(do_scan)
     return;
   }
 
-  if (IS_AFFECTED(ch, AFF_BLIND) && !has_blindsense(ch))
+  if (IS_AFFECTED(ch, AFF_BLIND) && !has_blindsight(ch))
   {
     send_to_char(ch, "You can't see a damned thing, you're blind!\r\n");
     return;
@@ -9716,7 +9718,7 @@ ACMD(do_survey)
     return;
   }
 
-  if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsense(ch))
+  if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsight(ch))
   {
     send_to_char(ch, "You can't see a damned thing, you're blind!\r\n");
     return;
@@ -10133,7 +10135,7 @@ ACMD(do_exits)
 {
   int door, len = 0;
 
-  if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsense(ch))
+  if (AFF_FLAGGED(ch, AFF_BLIND) && GET_LEVEL(ch) < LVL_IMMORT && !has_blindsight(ch))
   {
     send_to_char(ch, "You can't see a damned thing, you're blind!\r\n");
     return;

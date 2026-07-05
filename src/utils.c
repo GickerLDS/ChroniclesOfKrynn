@@ -2092,7 +2092,7 @@ bool can_hear_sneaking(struct char_data *ch, struct char_data *sneaker)
 bool can_see_hidden(struct char_data *ch, struct char_data *hider)
 {
   /* free passes */
-  if (!AFF_FLAGGED(hider, AFF_HIDE) || has_true_sight(ch))
+  if (!AFF_FLAGGED(hider, AFF_HIDE) || has_true_sight(ch) || has_blindsight(ch))
     return TRUE;
 
   /* do spot check here */
@@ -8155,16 +8155,45 @@ bool push_attempt(struct char_data *ch, struct char_data *vict, bool display)
   return true;
 }
 
-// returns true if they have blindsense, which allows
-// seeing in the dark and if blinded.
-bool has_blindsense(struct char_data *ch)
+// returns true if they have precise non-visual perception.
+bool has_blindsight(struct char_data *ch)
 {
-  if (HAS_FEAT(ch, FEAT_BLINDSENSE))
-    return true;
+  if (!ch)
+    return false;
+
   if (HAS_EVOLUTION(ch, EVOLUTION_BLINDSIGHT))
     return true;
 
   return false;
+}
+
+// returns true if they can locate creatures non-visually.  Blindsight counts
+// as blindsense, but blindsense by itself is not precise sight.
+bool has_blindsense(struct char_data *ch)
+{
+  if (!ch)
+    return false;
+
+  if (has_blindsight(ch))
+    return true;
+  if (HAS_FEAT(ch, FEAT_BLINDSENSE))
+    return true;
+
+  return false;
+}
+
+bool can_blindsense_creature(struct char_data *ch, struct char_data *target)
+{
+  if (!ch || !target || ch == target)
+    return false;
+  if (!has_blindsense(ch))
+    return false;
+  if (IN_ROOM(ch) == NOWHERE || IN_ROOM(target) == NOWHERE)
+    return false;
+  if (IN_ROOM(ch) != IN_ROOM(target))
+    return false;
+
+  return true;
 }
 
 // returns true if the target doesn't have immunity to poison

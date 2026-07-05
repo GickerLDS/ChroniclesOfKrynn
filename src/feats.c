@@ -5668,7 +5668,8 @@ void assign_feats(void)
         "+1 for each rank of this feat. These bonuses stack with other natural armor.");
   feato(FEAT_BLINDSENSE, "blindsense", TRUE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,
         "draconic bloodline, sorcerer level 20",
-        "Allows full vision even when there is no light or the character is blinded.");
+        "Allows the character to notice and locate nearby creatures without sight. Opponents the "
+        "character cannot actually see still have total concealment.");
 
   /* dragon rider */
   feato(FEAT_DRAGON_MOUNT_BOOST, "dragon mount boost", FALSE, FALSE, FALSE, FEAT_TYPE_CLASS_ABILITY,

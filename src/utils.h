@@ -142,7 +142,9 @@ const char *get_crafting_tool_desc(struct obj_data *obj);
 bool is_caster_class(int class);
 bool has_aura_of_terror(struct char_data *ch);
 int get_random_chest_dc(int level);
+bool has_blindsight(struct char_data *ch);
 bool has_blindsense(struct char_data *ch);
+bool can_blindsense_creature(struct char_data *ch, struct char_data *target);
 int number_of_chests_per_zone(int num_zone_rooms);
 void place_random_chest(room_rnum rrnum, int level, int search_dc, int pick_dc, int trap_chance);
 bool can_place_random_chest_in_room(room_rnum rrnum, int num_zone_rooms, int num_chests);
@@ -2020,9 +2022,10 @@ int ACTUAL_BAB(struct char_data *ch);
 #define ULTRA_BLIND(ch, room) (ultra_blind(ch, room))
 
 // moved this here for connection between vision macros -zusuk
-#define CAN_SEE_IN_DARK(ch)                                                                        \
-  (char_has_ultra(ch) || has_blindsense(ch) || (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_HOLYLIGHT)) ||  \
+#define CAN_SEE_VISUALLY_IN_DARK(ch)                                                               \
+  (char_has_ultra(ch) || (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_HOLYLIGHT)) ||                        \
    (char_has_infra(ch) && OUTSIDE(ch)))
+#define CAN_SEE_IN_DARK(ch) (CAN_SEE_VISUALLY_IN_DARK(ch) || has_blindsight(ch))
 #define CAN_INFRA_IN_DARK(ch)                                                                      \
   (char_has_infra(ch) || (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_HOLYLIGHT)))
 
@@ -2031,7 +2034,7 @@ int ACTUAL_BAB(struct char_data *ch);
 
 /** Defines if there is enough light for sub to see in. */
 #define LIGHT_OK(sub)                                                                              \
-  ((!AFF_FLAGGED(sub, AFF_BLIND) || has_blindsense(sub)) &&                                        \
+  ((!AFF_FLAGGED(sub, AFF_BLIND) || has_blindsight(sub)) &&                                        \
    (IS_LIGHT(IN_ROOM(sub)) || CAN_SEE_IN_DARK(sub) || GET_LEVEL(sub) >= LVL_IMMORT))
 #define INFRA_OK(sub)                                                                              \
   (!AFF_FLAGGED(sub, AFF_BLIND) &&                                                                 \
@@ -2043,7 +2046,7 @@ int ACTUAL_BAB(struct char_data *ch);
  */
 #define INVIS_OK(sub, obj)                                                                         \
   ((!AFF_FLAGGED((obj), AFF_INVISIBLE) ||                                                          \
-    (AFF_FLAGGED(sub, AFF_DETECT_INVIS) || has_true_sight(sub))) &&                                \
+    (AFF_FLAGGED(sub, AFF_DETECT_INVIS) || has_true_sight(sub) || has_blindsight(sub))) &&         \
    (can_see_hidden(sub, obj)))
 
 /** Defines if sub character can see obj character, assuming mortal only

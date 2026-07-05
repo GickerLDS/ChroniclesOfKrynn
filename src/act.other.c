@@ -5740,9 +5740,10 @@ ACMD(do_lore)
 
   one_argument(argument, arg, sizeof(arg));
 
-  // target = generic_find(arg, FIND_CHAR_ROOM | FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tch, &tobj);
+  target = generic_find(arg, FIND_CHAR_ROOM | FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch,
+                        &tch, &tobj);
 
-  target = generic_find(arg, FIND_OBJ_INV | FIND_CHAR_ROOM, ch, &tch, &tobj);
+  // target = generic_find(arg, FIND_OBJ_INV | FIND_CHAR_ROOM, ch, &tch, &tobj);
 
   if (*arg)
   {

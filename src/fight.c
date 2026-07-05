@@ -510,7 +510,7 @@ void guard_check(struct char_data *ch, struct char_data *vict)
       continue;
     if (GET_POS(tch) < POS_FIGHTING)
       continue;
-    if (AFF_FLAGGED(tch, AFF_BLIND))
+    if (AFF_FLAGGED(tch, AFF_BLIND) && !has_blindsight(tch))
       continue;
     /*  Require full round action availability to guard.  */
     if (!is_action_available(tch, atSTANDARD, FALSE) || !is_action_available(tch, atMOVE, FALSE))
@@ -5275,6 +5275,25 @@ int compute_concealment(struct char_data *ch, struct char_data *attacker)
 {
   int concealment = 0;
   int concealment_cap = 0; /* vanish can push you over */
+
+  if (attacker && has_blindsight(attacker))
+  {
+    if (AFF_FLAGGED(ch, AFF_BLINKING))
+    {
+      int blink_concealment = 50;
+      bool can_see_invis = can_see_invisible_creatures(attacker);
+      bool can_strike_ethereal = can_strike_ethereal_creatures(attacker);
+
+      if (can_see_invis && can_strike_ethereal)
+        blink_concealment = 0;
+      else if (can_see_invis || can_strike_ethereal)
+        blink_concealment = 20;
+
+      return MIN(MAX_CONCEAL, blink_concealment);
+    }
+
+    return 0;
+  }
 
   if (attacker && !CAN_SEE(attacker, ch))
     concealment += 50;

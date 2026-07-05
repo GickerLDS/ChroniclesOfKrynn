@@ -4392,6 +4392,9 @@ SPECIAL(dracolich_mob)
     if (!(vict = npc_find_target(ch, &use_aoe)))
       return 0;
 
+    if (has_blindsight(vict))
+      return 0;
+
     act("\tWWith a grin, you whisper, 'die' while touching $N, who keels over and falls over in "
         "excruciating pain!\tn",
         TRUE, ch, 0, vict, TO_CHAR);
@@ -5449,6 +5452,9 @@ int perform_lichdrain(struct char_data *ch)
   }
 
   if (!vict)
+    return FALSE;
+
+  if (has_blindsight(vict))
     return FALSE;
 
   act("\tn$n\tL looks deep into your soul with $s horrid gaze.\tn\r\n"

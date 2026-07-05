@@ -158,7 +158,7 @@ bool spellbook_ok(struct char_data *ch, int spellnum, int class, bool check_scro
   if (GET_LEVEL(ch) >= LVL_IMMORT)
     return TRUE;
 
-  if (IS_DARK(IN_ROOM(ch)) && !CAN_SEE_IN_DARK(ch))
+  if (IS_DARK(IN_ROOM(ch)) && !CAN_SEE_IN_DARK(ch) && !has_blindsense(ch))
   {
     send_to_char(ch, "It is too dark to study!\r\n");
     return FALSE;
