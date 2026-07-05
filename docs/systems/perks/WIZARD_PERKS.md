@@ -311,7 +311,7 @@ Wizards are masters of arcane magic, wielding devastating spells and controlling
 45. **Spell Recall**
     - Cost: 2 points
     - Max Rank: 1
-    - Effect: Once per day, regain spell points equal to your level
+    - Effect: Once every 2 minutes, restore one spell slot or prepared spell
     - Prerequisite: Spell Point Reserve I (at least 3 ranks)
 
 46. **Metamagic Master I**
@@ -349,7 +349,7 @@ Wizards are masters of arcane magic, wielding devastating spells and controlling
 51. **Arcane Recovery**
     - Cost: 3 points
     - Max Rank: 1
-    - Effect: Regain 5% of max spell points every 10 seconds in combat
+    - Effect: Once every 10 minutes, halve current spell preparation timers; spontaneous casters halve the next 5 recovering spell slots
     - Prerequisite: Spell Recall
 
 52. **Spell Shield**
@@ -383,7 +383,7 @@ Some perks work especially well together across trees:
 - **Arcane Annihilation + Empower Spell + Spell Critical II**: Maximum single-target damage
 - **Master Enchanter + Persistent Spell + Spell Mastery**: Nearly impossible to resist enchantments
 - **Efficient Casting III + Metamagic Master II**: Extremely cheap metamagic usage
-- **Spell Point Reserve III + Arcane Recovery**: Massive spell point pool with regeneration
+- **Spell Recall + Arcane Recovery**: Faster recovery from expended prepared spells or spontaneous slots
 - **All three capstones**: The ultimate archmage (requires 105 points - not possible, must choose)
 
 ---
@@ -465,8 +465,8 @@ Some perks require special code:
 - **Persistent Spell**: Double save check system
 - **Split Enchantment**: Multi-target spell modification
 - **Quick Cast II**: Instant spell casting system
-- **Spell Recall**: Spell point restoration
-- **Arcane Recovery**: Spell point regeneration in combat
+- **Spell Recall**: Spell or slot restoration
+- **Arcane Recovery**: Spell preparation and slot recovery timer reduction
 - **Spell Shield**: Automatic reactive casting
 
 ### Effect Type Mapping

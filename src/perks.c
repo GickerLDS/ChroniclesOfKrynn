@@ -8371,7 +8371,7 @@ void define_wizard_versatile_caster_perks(void)
   perk = &perk_list[PERK_WIZARD_SPELL_RECALL];
   perk->id = PERK_WIZARD_SPELL_RECALL;
   perk->name = strdup("Spell Recall");
-  perk->description = strdup("Restore a spell slot once per day");
+  perk->description = strdup("Restore one spell slot or prepared spell every 2 minutes");
   perk->associated_class = CLASS_WIZARD;
   perk->perk_category = PERK_CATEGORY_VERSATILE_CASTER;
   perk->cost = 2;
@@ -8381,9 +8381,10 @@ void define_wizard_versatile_caster_perks(void)
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 0;
   perk->special_description =
-      strdup("Requires Spell Focus I (at least 3 ranks). Once per day, use the 'spellrecall' "
-             "command to restore a spell slot. For spontaneous casters, restores a random slot. "
-             "For preparation casters, randomly advances a spell currently being memorized.");
+      strdup("Requires Spell Focus I (at least 3 ranks). Once every 2 minutes, use the "
+             "'spellrecall' command to restore one spell slot. For spontaneous casters, restores "
+             "a random slot. For preparation casters, randomly advances one spell currently being "
+             "memorized.");
 
   /* Metamagic Master I */
   perk = &perk_list[PERK_WIZARD_METAMAGIC_MASTER_I];
@@ -8456,7 +8457,7 @@ void define_wizard_versatile_caster_perks(void)
   perk = &perk_list[PERK_WIZARD_ARCANE_RECOVERY];
   perk->id = PERK_WIZARD_ARCANE_RECOVERY;
   perk->name = strdup("Arcane Recovery");
-  perk->description = strdup("Reduce spell preparation time");
+  perk->description = strdup("Reduce spell preparation and slot recovery time");
   perk->associated_class = CLASS_WIZARD;
   perk->perk_category = PERK_CATEGORY_VERSATILE_CASTER;
   perk->cost = 3;
@@ -8466,8 +8467,9 @@ void define_wizard_versatile_caster_perks(void)
   perk->effect_type = PERK_EFFECT_SPECIAL;
   perk->effect_value = 0;
   perk->special_description =
-      strdup("Requires Spell Recall. Once per day, reduce spell preparation/slot recovery time by "
-             "50%. Use 'arcane-recovery' command.");
+      strdup("Requires Spell Recall. Once every 10 minutes, halve current spell preparation "
+             "timers. Spontaneous casters halve the next 5 recovering spell slots. Use "
+             "'arcanerecovery' command.");
 
   perk = &perk_list[PERK_WIZARD_SPELL_SHIELD];
   perk->id = PERK_WIZARD_SPELL_SHIELD;
@@ -25011,7 +25013,7 @@ bool can_use_spell_recall(struct char_data *ch)
   if (!has_perk(ch, PERK_WIZARD_SPELL_RECALL))
     return FALSE;
 
-  /* Check daily cooldown */
+  /* Check active cooldown */
   if (GET_SPELL_RECALL_COOLDOWN(ch) > 0)
     return FALSE;
 

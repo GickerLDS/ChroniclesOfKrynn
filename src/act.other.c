@@ -5277,7 +5277,7 @@ ACMD(do_masterofelements)
     return;
   }
 
-  if (!HAS_FEAT(ch, PERK_WIZARD_MASTER_OF_ELEMENTS))
+  if (!has_perk(ch, PERK_WIZARD_MASTER_OF_ELEMENTS))
   {
     send_to_char(ch, "You need the Master of Elements perk to use this command.\r\n");
     return;

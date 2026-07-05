@@ -736,6 +736,8 @@ ACMD_DECL(do_irresistablemagic);
 ACMDCHECK(can_irresistablemagic);
 ACMD_DECL(do_spellrecall);
 ACMDCHECK(can_spellrecall);
+ACMD_DECL(do_arcanerecovery);
+ACMDCHECK(can_arcanerecovery);
 ACMD_DECL(do_avatarofwar);
 ACMDCHECK(can_avatarofwar);
 ACMD_DECL(do_avatarofelements);

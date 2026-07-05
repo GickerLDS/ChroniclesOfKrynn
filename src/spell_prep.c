@@ -404,11 +404,12 @@ void save_prep_queue_by_class(FILE *fl, struct char_data *ch, int class)
   for (; current; current = next)
   {
     next = current->next;
-    fprintf(fl, "%d %d %d %d %d\n", class, /* Class number */
-            current->spell,                /* Spell number being prepared */
-            current->metamagic,            /* Metamagic flags as bitmask */
-            current->prep_time,            /* Seconds remaining to prepare */
-            current->domain);              /* Domain (for clerics) or 0 */
+    fprintf(fl, "%d %d %d %d %d %d\n", class, /* Class number */
+            current->spell,                   /* Spell number being prepared */
+            current->metamagic,               /* Metamagic flags as bitmask */
+            current->prep_time,               /* Seconds remaining to prepare */
+            current->domain,                  /* Domain (for clerics) or 0 */
+            current->arcane_recovery_reduced ? 1 : 0);
   }
 }
 
@@ -431,11 +432,12 @@ void save_innate_magic_by_class(FILE *fl, struct char_data *ch, int class)
   for (; current; current = next)
   {
     next = current->next;
-    fprintf(fl, "%d %d %d %d %d\n", class, /* Class number */
-            current->circle,               /* Spell circle (1-9) */
-            current->metamagic,            /* Pre-applied metamagic (rare) */
-            current->prep_time,            /* Time until slot is ready */
-            current->domain);              /* Domain (usually 0 for innate) */
+    fprintf(fl, "%d %d %d %d %d %d\n", class, /* Class number */
+            current->circle,                  /* Spell circle (1-9) */
+            current->metamagic,               /* Pre-applied metamagic (rare) */
+            current->prep_time,               /* Time until slot is ready */
+            current->domain,                  /* Domain (usually 0 for innate) */
+            current->arcane_recovery_reduced ? 1 : 0);
   }
 }
 
@@ -940,6 +942,7 @@ void prep_queue_add(struct char_data *ch, int ch_class, int spellnum, int metama
   entry->metamagic = metamagic;
   entry->prep_time = prep_time;
   entry->domain = domain;
+  entry->arcane_recovery_reduced = FALSE;
 
   /* Add to head of list */
   entry->next = SPELL_PREP_QUEUE(ch, ch_class);
@@ -995,6 +998,7 @@ void innate_magic_add(struct char_data *ch, int ch_class, int circle, int metama
   entry->metamagic = metamagic;
   entry->prep_time = prep_time;
   entry->domain = domain;
+  entry->arcane_recovery_reduced = FALSE;
 
   /* Add to head of list */
   entry->next = INNATE_MAGIC(ch, ch_class);
@@ -1053,6 +1057,7 @@ void collection_add(struct char_data *ch, int ch_class, int spellnum, int metama
   entry->metamagic = metamagic;
   entry->prep_time = prep_time; /* Usually 0 for ready spells */
   entry->domain = domain;
+  entry->arcane_recovery_reduced = FALSE;
 
   /* Add to head of collection */
   entry->next = SPELL_COLLECTION(ch, ch_class);
@@ -1201,7 +1206,8 @@ bool known_spells_add(struct char_data *ch, int ch_class, int spellnum, bool loa
  */
 void load_spell_prep_queue(FILE *fl, struct char_data *ch)
 {
-  int spell_num, ch_class, metamagic, prep_time, domain, counter = 0;
+  int spell_num, ch_class, metamagic, prep_time, domain, arcane_recovery_reduced, counter = 0;
+  int parsed_values = 0;
   char line[MAX_INPUT_LENGTH + 1];
 
   /* Read entries until sentinel or limit reached */
@@ -1213,11 +1219,14 @@ void load_spell_prep_queue(FILE *fl, struct char_data *ch)
     metamagic = 0;
     prep_time = 0;
     domain = 0;
+    arcane_recovery_reduced = 0;
 
     /* Read next line from file */
     get_line(fl, line);
-    /* Validate that all 5 values were successfully read */
-    if (sscanf(line, "%d %d %d %d %d", &ch_class, &spell_num, &metamagic, &prep_time, &domain) != 5)
+    /* Accept legacy 5-value rows and new rows with the Arcane Recovery marker. */
+    parsed_values = sscanf(line, "%d %d %d %d %d %d", &ch_class, &spell_num, &metamagic,
+                           &prep_time, &domain, &arcane_recovery_reduced);
+    if (parsed_values < 5)
     {
       log("SYSERR: Invalid spell prep queue data in player file: %s", line);
       continue; /* Skip malformed line */
@@ -1230,6 +1239,9 @@ void load_spell_prep_queue(FILE *fl, struct char_data *ch)
       if (counter < MAX_PREP_QUEUE_SIZE)
       {
         prep_queue_add(ch, ch_class, spell_num, metamagic, prep_time, domain);
+        if (SPELL_PREP_QUEUE(ch, ch_class))
+          SPELL_PREP_QUEUE(ch, ch_class)->arcane_recovery_reduced =
+              (arcane_recovery_reduced != 0);
       }
       else
       {
@@ -1256,7 +1268,8 @@ void load_spell_prep_queue(FILE *fl, struct char_data *ch)
  */
 void load_innate_magic_queue(FILE *fl, struct char_data *ch)
 {
-  int circle, ch_class, metamagic, prep_time, domain, counter = 0;
+  int circle, ch_class, metamagic, prep_time, domain, arcane_recovery_reduced, counter = 0;
+  int parsed_values = 0;
   char line[MAX_INPUT_LENGTH + 1];
 
   /* Read entries until sentinel or limit */
@@ -1268,11 +1281,14 @@ void load_innate_magic_queue(FILE *fl, struct char_data *ch)
     metamagic = 0;
     prep_time = 0;
     domain = 0;
+    arcane_recovery_reduced = 0;
 
     /* Read next line */
     get_line(fl, line);
-    /* Validate that all 5 values were successfully read */
-    if (sscanf(line, "%d %d %d %d %d", &ch_class, &circle, &metamagic, &prep_time, &domain) != 5)
+    /* Accept legacy 5-value rows and new rows with the Arcane Recovery marker. */
+    parsed_values = sscanf(line, "%d %d %d %d %d %d", &ch_class, &circle, &metamagic, &prep_time,
+                           &domain, &arcane_recovery_reduced);
+    if (parsed_values < 5)
     {
       log("SYSERR: Invalid innate magic queue data in player file: %s", line);
       continue; /* Skip malformed line */
@@ -1285,6 +1301,9 @@ void load_innate_magic_queue(FILE *fl, struct char_data *ch)
       if (counter < MAX_INNATE_QUEUE_SIZE)
       {
         innate_magic_add(ch, ch_class, circle, metamagic, prep_time, domain);
+        if (INNATE_MAGIC(ch, ch_class))
+          INNATE_MAGIC(ch, ch_class)->arcane_recovery_reduced =
+              (arcane_recovery_reduced != 0);
       }
       else
       {
@@ -2201,7 +2220,6 @@ static int level_to_circle_conversion(int min_level, int caster_type)
  */
 static int check_campaign_spell_override(int spellnum)
 {
-
 #ifdef CAMPAIGN_FR
   switch (spellnum)
   {
@@ -2734,7 +2752,8 @@ bool ready_to_prep_spells(struct char_data *ch, int class)
     if (SPELL_PREP_QUEUE(ch, class))
       if (!spellbook_ok(ch, SPELL_PREP_QUEUE(ch, class)->spell, CLASS_WIZARD, FALSE))
       {
-        send_to_char(ch, "You may not have a spellbook in your inventory, or the spells you've memorized are not in your spellbook.\r\n");
+        send_to_char(ch, "You may not have a spellbook in your inventory, or the spells you've "
+                         "memorized are not in your spellbook.\r\n");
         return FALSE;
       }
     break;
@@ -2855,7 +2874,7 @@ void stop_prep_event(struct char_data *ch, int class)
 void stop_all_preparations(struct char_data *ch)
 {
   int class = 0;
-  for (class = 0; class < NUM_CLASSES; class ++)
+  for (class = 0; class < NUM_CLASSES; class++)
     stop_prep_event(ch, class);
 }
 
@@ -3204,8 +3223,7 @@ void assign_feat_spell_slots(int ch_class)
  *
  * Returns: ch_class on success, CLASS_UNDEFINED if the spell was unavailable.
  */
-int spell_prep_gen_extract_by_class(struct char_data *ch, int ch_class, int spellnum,
-                                    int metamagic)
+int spell_prep_gen_extract_by_class(struct char_data *ch, int ch_class, int spellnum, int metamagic)
 {
   int check_metamagic = metamagic;
   int prep_time = INVALID_PREP_TIME;
@@ -3217,11 +3235,10 @@ int spell_prep_gen_extract_by_class(struct char_data *ch, int ch_class, int spel
 
   if (CLASS_LEVEL(ch, ch_class) > 0)
   {
-    int spell_circle =
-        compute_spells_circle(ch, ch_class, spellnum, METAMAGIC_NONE,
-                              (ch_class == CLASS_CLERIC || ch_class == CLASS_INQUISITOR)
-                                  ? GET_1ST_DOMAIN(ch)
-                                  : DOMAIN_UNDEFINED);
+    int spell_circle = compute_spells_circle(
+        ch, ch_class, spellnum, METAMAGIC_NONE,
+        (ch_class == CLASS_CLERIC || ch_class == CLASS_INQUISITOR) ? GET_1ST_DOMAIN(ch)
+                                                                   : DOMAIN_UNDEFINED);
 
     if (spell_circle <= 3)
     {
@@ -3347,17 +3364,18 @@ int spell_prep_gen_extract(struct char_data *ch, int spellnum, int metamagic)
   for (ch_class = 0; ch_class < NUM_CLASSES; ch_class++)
   {
     int check_metamagic = metamagic;
-    
+
     /* Strip automatic metamagic flags when checking for prepared spells
      * because automatic metamagic feats apply at cast time, not prep time.
      * This prevents extraction failures when a caster has AUTOMATIC_SILENT_SPELL
      * or AUTOMATIC_STILL_SPELL and tries to cast a level 3 or lower spell. */
     if (CLASS_LEVEL(ch, ch_class) > 0)
     {
-      int spell_circle = compute_spells_circle(ch, ch_class, spellnum, METAMAGIC_NONE, 
-                                                (ch_class == CLASS_CLERIC || ch_class == CLASS_INQUISITOR) ? 
-                                                GET_1ST_DOMAIN(ch) : DOMAIN_UNDEFINED);
-      
+      int spell_circle = compute_spells_circle(
+          ch, ch_class, spellnum, METAMAGIC_NONE,
+          (ch_class == CLASS_CLERIC || ch_class == CLASS_INQUISITOR) ? GET_1ST_DOMAIN(ch)
+                                                                     : DOMAIN_UNDEFINED);
+
       if (spell_circle <= 3)
       {
         if (HAS_FEAT(ch, FEAT_AUTOMATIC_SILENT_SPELL))
@@ -3366,7 +3384,7 @@ int spell_prep_gen_extract(struct char_data *ch, int spellnum, int metamagic)
           REMOVE_BIT(check_metamagic, METAMAGIC_STILL);
       }
     }
-    
+
     if (is_spell_in_collection(ch, ch_class, spellnum, check_metamagic))
     {
       if (ch_class == CLASS_INQUISITOR && has_inquisitor_supreme_spellcasting(ch) &&
@@ -3506,7 +3524,7 @@ int spell_prep_gen_check(struct char_data *ch, int spellnum, int metamagic)
   /* Cantrips are always available if the character's class list grants them */
   if (spell_is_cantrip(spellnum))
   {
-    for (class = 0; class < NUM_CLASSES; class ++)
+    for (class = 0; class < NUM_CLASSES; class++)
     {
       int required_level = LVL_IMMORT + 1;
 
@@ -3532,10 +3550,10 @@ int spell_prep_gen_check(struct char_data *ch, int spellnum, int metamagic)
   }
 
   /* FIRST: Check all prepared spell collections */
-  for (class = 0; class < NUM_CLASSES; class ++)
+  for (class = 0; class < NUM_CLASSES; class++)
   {
     int check_metamagic = metamagic;
-    
+
     /* Strip automatic metamagic flags when checking for prepared spells
      * because automatic metamagic feats apply at cast time, not prep time.
      * This prevents "You are not ready to cast that Spell" errors when a
@@ -3543,10 +3561,11 @@ int spell_prep_gen_check(struct char_data *ch, int spellnum, int metamagic)
      * to cast a level 3 or lower spell that was prepared without those flags. */
     if (CLASS_LEVEL(ch, class) > 0)
     {
-      int spell_circle = compute_spells_circle(ch, class, spellnum, METAMAGIC_NONE, 
-                                                (class == CLASS_CLERIC || class == CLASS_INQUISITOR) ? 
-                                                GET_1ST_DOMAIN(ch) : DOMAIN_UNDEFINED);
-      
+      int spell_circle = compute_spells_circle(ch, class, spellnum, METAMAGIC_NONE,
+                                               (class == CLASS_CLERIC || class == CLASS_INQUISITOR)
+                                                   ? GET_1ST_DOMAIN(ch)
+                                                   : DOMAIN_UNDEFINED);
+
       if (spell_circle <= 3)
       {
         if (HAS_FEAT(ch, FEAT_AUTOMATIC_SILENT_SPELL))
@@ -3555,14 +3574,14 @@ int spell_prep_gen_check(struct char_data *ch, int spellnum, int metamagic)
           REMOVE_BIT(check_metamagic, METAMAGIC_STILL);
       }
     }
-    
+
     if (is_spell_in_collection(ch, class, spellnum, check_metamagic))
       return class;
   }
 
   /* SECOND: Check spontaneous casting ability */
   int circle_of_this_spell = TOP_CIRCLE + 1;
-  for (class = 0; class < NUM_CLASSES; class ++)
+  for (class = 0; class < NUM_CLASSES; class++)
   {
     /* Calculate effective circle (including metamagic adjustments) */
     if (CLASS_LEVEL(ch, CLASS_INQUISITOR) && class == CLASS_INQUISITOR)
@@ -4015,7 +4034,8 @@ void display_available_slots(struct char_data *ch, int class)
     send_to_char(ch, "\tn\r\n");
 
   if (bonus_domain_slots_available > 0)
-    send_to_char(ch, "\tYBonus domain spell slots available: \tn%d\r\n", bonus_domain_slots_available);
+    send_to_char(ch, "\tYBonus domain spell slots available: \tn%d\r\n",
+                 bonus_domain_slots_available);
 
   if (APOTHEOSIS_SLOTS(ch) > 0)
     send_to_char(ch, "\tYStored apotheosis charges: \tn%d\r\n", APOTHEOSIS_SLOTS(ch));
@@ -4419,12 +4439,18 @@ void reset_preparation_time(struct char_data *ch, int class)
   case CLASS_SUMMONER:
     if (!INNATE_MAGIC(ch, class))
       return;
+    if (INNATE_MAGIC(ch, class)->arcane_recovery_reduced &&
+        INNATE_MAGIC(ch, class)->prep_time > 0)
+      return;
     preparation_time = compute_spells_prep_time(ch, class, INNATE_MAGIC(ch, class)->circle,
                                                 INNATE_MAGIC(ch, class)->domain);
     INNATE_MAGIC(ch, class)->prep_time = preparation_time;
     break;
   default:
     if (!SPELL_PREP_QUEUE(ch, class))
+      return;
+    if (SPELL_PREP_QUEUE(ch, class)->arcane_recovery_reduced &&
+        SPELL_PREP_QUEUE(ch, class)->prep_time > 0)
       return;
     preparation_time = compute_spells_prep_time(
         ch, class,
@@ -4455,7 +4481,7 @@ int free_arcana_slots(struct char_data *ch)
 #define PROC_NUM 5
 #define MAX_EMPTY_ITERATIONS 10 /* Exit early if no spells found */
 
-/* this is a custom function we wrote that will, on firing, randomly restore spells from the queue -zusuk */
+/* this is a custom function we wrote that will, on firing, randomly restore spells from the queue - zusuk */
 // if num_times is 0, there is no limit to how many spells can be restored. Otherwise it will limit it to
 // the num_times spell slots
 int star_circlet_proc(struct char_data *ch, int num_times)
@@ -4483,7 +4509,7 @@ int star_circlet_proc(struct char_data *ch, int num_times)
     return 0;
 
   /* First, check if any class has spells in queue - early exit if none */
-  for (class = CLASS_WIZARD; class < NUM_CLASSES; class ++)
+  for (class = CLASS_WIZARD; class < NUM_CLASSES; class++)
   {
     if (CLASS_LEVEL(ch, class) > 0)
     {
@@ -4532,7 +4558,7 @@ int star_circlet_proc(struct char_data *ch, int num_times)
 
     /* Find the nth class with levels */
     int class_counter = 0;
-    for (class = CLASS_WIZARD; class < NUM_CLASSES; class ++)
+    for (class = CLASS_WIZARD; class < NUM_CLASSES; class++)
     {
       if (CLASS_LEVEL(ch, class) > 0)
       {

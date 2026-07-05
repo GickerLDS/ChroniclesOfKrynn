@@ -3323,14 +3323,14 @@
 /* TREE 4: VERSATILE CASTER - Tier 2 Perks (149-153) */
 #define PERK_WIZARD_SPELL_FOCUS_II 149     /* Additional 2% chance per rank, max 3 ranks */
 #define PERK_WIZARD_QUICK_CAST_II 150      /* Free quicken once per combat */
-#define PERK_WIZARD_SPELL_RECALL 151       /* Restore a spell slot once per day */
+#define PERK_WIZARD_SPELL_RECALL 151       /* Restore a spell slot once every 2 minutes */
 #define PERK_WIZARD_METAMAGIC_MASTER_I 152 /* Randomly reduce metamagic circle increase by 1 */
 #define PERK_WIZARD_DEFENSIVE_CASTING 153  /* +4 AC when casting */
 
 /* TREE 4: VERSATILE CASTER - Tier 3 Perks (154-158) */
 #define PERK_WIZARD_SPELL_FOCUS_III 154 /* Additional 2% chance per rank, max 2 ranks (total 16%) */
 #define PERK_WIZARD_METAMAGIC_MASTER_II 155 /* Metamagic circle increase reduced by 1 */
-#define PERK_WIZARD_ARCANE_RECOVERY 156     /* Reduce spell prep time once per day */
+#define PERK_WIZARD_ARCANE_RECOVERY 156     /* Reduce spell prep time once per 10 minutes */
 #define PERK_WIZARD_SPELL_SHIELD 157        /* 10 DR + 4 AC when attacked first */
 
 /* TREE 4: VERSATILE CASTER - Tier 4 Capstones (158-159) */
@@ -6819,6 +6819,7 @@ struct prep_collection_spell_data
   int metamagic; /* Bitvector of metamagic affecting this spell. */
   int prep_time; /* Remaining time for preparing this spell. */
   int domain;    /* domain info */
+  bool arcane_recovery_reduced; /* Arcane Recovery already reduced this entry's timer. */
 
   struct prep_collection_spell_data *next; /*linked-list*/
 };
@@ -6830,6 +6831,7 @@ struct innate_magic_data
   int metamagic; /* Bitvector of metamagic affecting this spell. */
   int prep_time; /* Remaining time for preparing this spell. */
   int domain;    /* domain info */
+  bool arcane_recovery_reduced; /* Arcane Recovery already reduced this slot's timer. */
 
   struct innate_magic_data *next; /*linked-list*/
 };
@@ -7147,7 +7149,7 @@ struct player_special_data_saved
   int spiritual_weapon_cooldown; // Battle Cleric perk: 5 minute cooldown for free spiritual weapon casting
   int irresistible_magic_cooldown; // Wizard Controller perk: 5 minute cooldown for auto-success spell
   int quick_cast_cooldown;    // Versatile Caster perk: 5 minute cooldown for free quicken metamagic
-  int spell_recall_cooldown;  // Versatile Caster perk: daily cooldown for restoring a spell slot
+  int spell_recall_cooldown;  // Versatile Caster perk: cooldown for restoring a spell slot
   int deathless_frenzy_timer; // Berserker Occult Slayer perk: 5 minute cooldown for Deathless Frenzy
   int cosmic_awareness_cooldown; // Cosmic Awareness psionic power: 10 minute cooldown
   int epic_spell_casts;          // Shared epic spell cast pool (-1 means uninitialized)

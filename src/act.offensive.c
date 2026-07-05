@@ -19,6 +19,7 @@
 #include "handler.h"
 #include "db.h"
 #include "spells.h"
+#include "spell_prep.h"
 #include "psionics.h"
 #include "act.h"
 #include "fight.h"
@@ -5506,8 +5507,7 @@ int perform_intimidate(struct char_data *ch, struct char_data *vict)
       af.duration = 4;
       SET_BIT_AR(af.bitvector, AFF_SHAKEN);
       affect_join(vict, &af, FALSE, FALSE, FALSE, FALSE);
-      act("$N recoils from the nightmare written across your face!", FALSE, ch, 0, vict,
-          TO_CHAR);
+      act("$N recoils from the nightmare written across your face!", FALSE, ch, 0, vict, TO_CHAR);
       act("$n's nightmare visage leaves you shaken!", FALSE, ch, 0, vict, TO_VICT);
     }
     /* Blackguard Tier 2: Terror Tactics splash */
@@ -7062,7 +7062,8 @@ void perform_black_dragon_magic(struct char_data *ch, const char *argument)
   }
   else if (is_abbrev(arg2, "stinking-cloud"))
   {
-    call_magic(ch, vict, NULL, SPELL_STINKING_CLOUD, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch), CAST_INNATE);
+    call_magic(ch, vict, NULL, SPELL_STINKING_CLOUD, 0, GET_SHIFTER_ABILITY_CAST_LEVEL(ch),
+               CAST_INNATE);
   }
   else if (is_abbrev(arg2, "shield"))
   {
@@ -8051,10 +8052,12 @@ ACMD(do_sorcerer_claw_attack)
     int bite_dam;
 
     send_to_char(ch, "You snap forward with a draconic bite.\r\n");
-    bite_dam = perform_natural_attack(ch, MODE_NORMAL_HIT, 0, ATTACK_TYPE_PRIMARY_EVO_BITE, 1, FALSE);
+    bite_dam =
+        perform_natural_attack(ch, MODE_NORMAL_HIT, 0, ATTACK_TYPE_PRIMARY_EVO_BITE, 1, FALSE);
     if (bite_dam > 0 && FIGHTING(ch) && CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 6)
       damage(ch, FIGHTING(ch), dice(1, 6), SPELL_DRACONIC_BLOODLINE_BREATHWEAPON,
-             draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)], ATTACK_TYPE_PRIMARY_EVO_BITE);
+             draconic_heritage_energy_types[GET_BLOODLINE_SUBTYPE(ch)],
+             ATTACK_TYPE_PRIMARY_EVO_BITE);
   }
 
   affect_from_char(ch, SKILL_DRHRT_CLAWS);
@@ -8378,8 +8381,214 @@ ACMD(do_irresistablemagic)
 
 ACMDCHECK(can_spellrecall)
 {
-  ACMDCHECK_PREREQ_HASFEAT(PERK_WIZARD_SPELL_RECALL, "You don't have the Spell Recall perk.\r\n");
+  if (IS_NPC(ch))
+    return CANT_CMD_PERM;
+
+  ACMDCHECK_PERMFAIL_IF(!has_perk(ch, PERK_WIZARD_SPELL_RECALL),
+                        "You don't have the Spell Recall perk.\r\n");
+
+  if (GET_SPELL_RECALL_COOLDOWN(ch) > 0)
+  {
+    int seconds_left = GET_SPELL_RECALL_COOLDOWN(ch) * 6;
+    int hours = seconds_left / 3600;
+    int minutes = (seconds_left % 3600) / 60;
+    int seconds = seconds_left % 60;
+
+    if (show_error)
+    {
+      if (hours > 0)
+        send_to_char(ch,
+                     "You must wait %d hour%s, %d minute%s, and %d second%s before using spell "
+                     "recall again.\r\n",
+                     hours, (hours != 1 ? "s" : ""), minutes, (minutes != 1 ? "s" : ""), seconds,
+                     (seconds != 1 ? "s" : ""));
+      else if (minutes > 0)
+        send_to_char(ch,
+                     "You must wait %d minute%s and %d second%s before using spell recall again.\r\n",
+                     minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+      else
+        send_to_char(ch, "You must wait %d second%s before using spell recall again.\r\n", seconds,
+                     (seconds != 1 ? "s" : ""));
+    }
+
+    return CANT_CMD_TEMP;
+  }
+
   return CAN_CMD;
+}
+
+#define SPELL_RECALL_COOLDOWN_TICKS (2 * 10)
+#define ARCANE_RECOVERY_COOLDOWN_SECS (10 * 60)
+#define ARCANE_RECOVERY_SPONTANEOUS_SLOTS 5
+
+static bool is_arcane_recovery_spontaneous_class(int ch_class)
+{
+  switch (ch_class)
+  {
+  case CLASS_BARD:
+  case CLASS_SORCERER:
+  case CLASS_INQUISITOR:
+  case CLASS_SUMMONER:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+static bool spell_recall_class_has_entry(struct char_data *ch, int ch_class)
+{
+  if (!ch || IS_NPC(ch) || ch_class < 0 || ch_class >= NUM_CLASSES || CLASS_LEVEL(ch, ch_class) <= 0)
+    return FALSE;
+
+  if (is_arcane_recovery_spontaneous_class(ch_class))
+    return (INNATE_MAGIC(ch, ch_class) != NULL);
+
+  return (SPELL_PREP_QUEUE(ch, ch_class) != NULL);
+}
+
+static bool spell_recall_restore_class_entry(struct char_data *ch, int ch_class)
+{
+  if (!spell_recall_class_has_entry(ch, ch_class))
+    return FALSE;
+
+  if (is_arcane_recovery_spontaneous_class(ch_class))
+  {
+    int circle = INNATE_MAGIC(ch, ch_class)->circle;
+    int metamagic = INNATE_MAGIC(ch, ch_class)->metamagic;
+
+    send_to_char(
+        ch, "You finish %s for %s%s%s%s%s%s%d circle slot.\r\n", spell_prep_dict[ch_class][1],
+        (IS_SET(metamagic, METAMAGIC_QUICKEN) ? "quickened " : ""),
+        (IS_SET(metamagic, METAMAGIC_EMPOWER) ? "empowered " : ""),
+        (IS_SET(metamagic, METAMAGIC_MAXIMIZE) ? "maximized " : ""),
+        (IS_SET(metamagic, METAMAGIC_EXTEND) ? "extended " : ""),
+        (IS_SET(metamagic, METAMAGIC_SILENT) ? "silent " : ""),
+        (IS_SET(metamagic, METAMAGIC_STILL) ? "still " : ""), circle);
+
+    return innate_magic_remove_by_class(ch, ch_class, circle, metamagic);
+  }
+
+  int spell = SPELL_PREP_QUEUE(ch, ch_class)->spell;
+  int metamagic = SPELL_PREP_QUEUE(ch, ch_class)->metamagic;
+  int prep_time = SPELL_PREP_QUEUE(ch, ch_class)->prep_time;
+  int domain = SPELL_PREP_QUEUE(ch, ch_class)->domain;
+
+  send_to_char(
+      ch, "You finish %s for %s%s%s%s%s%s%s.\r\n", spell_prep_dict[ch_class][1],
+      (IS_SET(metamagic, METAMAGIC_QUICKEN) ? "quickened " : ""),
+      (IS_SET(metamagic, METAMAGIC_EMPOWER) ? "empowered " : ""),
+      (IS_SET(metamagic, METAMAGIC_MAXIMIZE) ? "maximized " : ""),
+      (IS_SET(metamagic, METAMAGIC_EXTEND) ? "extended " : ""),
+      (IS_SET(metamagic, METAMAGIC_SILENT) ? "silent " : ""),
+      (IS_SET(metamagic, METAMAGIC_STILL) ? "still " : ""), spell_info[spell].name);
+
+  collection_add(ch, ch_class, spell, metamagic, prep_time, domain);
+  return prep_queue_remove_by_class(ch, ch_class, spell, metamagic);
+}
+
+static bool spell_recall_restore_one_entry(struct char_data *ch)
+{
+  int ch_class = 0;
+  int candidate_count = 0;
+  int selected_candidate = 0;
+
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  for (ch_class = CLASS_WIZARD; ch_class < NUM_CLASSES; ch_class++)
+    if (spell_recall_class_has_entry(ch, ch_class))
+      candidate_count++;
+
+  if (candidate_count <= 0)
+    return FALSE;
+
+  selected_candidate = dice(1, candidate_count);
+
+  for (ch_class = CLASS_WIZARD; ch_class < NUM_CLASSES; ch_class++)
+  {
+    if (!spell_recall_class_has_entry(ch, ch_class))
+      continue;
+
+    selected_candidate--;
+    if (selected_candidate == 0)
+      return spell_recall_restore_class_entry(ch, ch_class);
+  }
+
+  return FALSE;
+}
+
+static int reduce_arcane_recovery_time(int prep_time)
+{
+  if (prep_time <= 0)
+    return prep_time;
+
+  return MAX(1, (prep_time + 1) / 2);
+}
+
+static int reduce_prepared_spell_queue_times(struct char_data *ch, int ch_class)
+{
+  struct prep_collection_spell_data *current = NULL;
+  int adjusted = 0;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  for (current = SPELL_PREP_QUEUE(ch, ch_class); current; current = current->next)
+  {
+    if (current->prep_time <= 0)
+      continue;
+
+    current->prep_time = reduce_arcane_recovery_time(current->prep_time);
+    current->arcane_recovery_reduced = TRUE;
+    adjusted++;
+  }
+
+  return adjusted;
+}
+
+static int reduce_spontaneous_slot_recovery_times(struct char_data *ch, int ch_class,
+                                                  int *slots_remaining)
+{
+  struct innate_magic_data *current = NULL;
+  int adjusted = 0;
+
+  if (!ch || IS_NPC(ch) || !slots_remaining || *slots_remaining <= 0)
+    return 0;
+
+  for (current = INNATE_MAGIC(ch, ch_class); current && *slots_remaining > 0;
+       current = current->next)
+  {
+    if (current->prep_time <= 0)
+      continue;
+
+    current->prep_time = reduce_arcane_recovery_time(current->prep_time);
+    current->arcane_recovery_reduced = TRUE;
+    (*slots_remaining)--;
+    adjusted++;
+  }
+
+  return adjusted;
+}
+
+static int reduce_queued_preparation_time(struct char_data *ch)
+{
+  int ch_class = 0;
+  int adjusted = 0;
+  int spontaneous_slots_remaining = ARCANE_RECOVERY_SPONTANEOUS_SLOTS;
+
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  for (ch_class = 0; ch_class < NUM_CLASSES; ch_class++)
+  {
+    if (is_arcane_recovery_spontaneous_class(ch_class))
+      adjusted +=
+          reduce_spontaneous_slot_recovery_times(ch, ch_class, &spontaneous_slots_remaining);
+    else
+      adjusted += reduce_prepared_spell_queue_times(ch, ch_class);
+  }
+
+  return adjusted;
 }
 
 ACMD(do_spellrecall)
@@ -8387,49 +8596,83 @@ ACMD(do_spellrecall)
   PREREQ_NOT_NPC();
   PREREQ_CHECK(can_spellrecall);
 
-  /* Check if perk is available */
-  if (!can_use_spell_recall(ch))
+  if (!spell_recall_restore_one_entry(ch))
   {
-    if (!has_perk(ch, PERK_WIZARD_SPELL_RECALL))
-    {
-      send_to_char(ch, "You don't have the Spell Recall perk.\r\n");
-      return;
-    }
+    send_to_char(ch, "You have no expended spell slots or prepared spells to recall.\r\n");
+    return;
+  }
 
-    /* Must be on cooldown */
-    int seconds_left = GET_SPELL_RECALL_COOLDOWN(ch) * 6;
+  send_to_char(ch, "\tCYou focus your will and recall your arcane knowledge!\tn\r\n"
+                   "One of your magical reserves is restored.\r\n");
+  act("\tC$n focuses deeply, recalling arcane knowledge!\tn", FALSE, ch, NULL, NULL, TO_ROOM);
+
+  GET_SPELL_RECALL_COOLDOWN(ch) = SPELL_RECALL_COOLDOWN_TICKS;
+}
+
+ACMDCHECK(can_arcanerecovery)
+{
+  if (IS_NPC(ch))
+    return CANT_CMD_PERM;
+
+  ACMDCHECK_PERMFAIL_IF(!has_perk(ch, PERK_WIZARD_ARCANE_RECOVERY),
+                        "You don't have the Arcane Recovery perk.\r\n");
+
+  if (GET_ARCANE_RECOVERY_COOLDOWN(ch) > time(0))
+  {
+    int seconds_left = (int)(GET_ARCANE_RECOVERY_COOLDOWN(ch) - time(0));
     int hours = seconds_left / 3600;
     int minutes = (seconds_left % 3600) / 60;
     int seconds = seconds_left % 60;
 
-    if (hours > 0)
-      send_to_char(ch,
-                   "You must wait %d hour%s, %d minute%s, and %d second%s before using spell "
-                   "recall again.\r\n",
-                   hours, (hours != 1 ? "s" : ""), minutes, (minutes != 1 ? "s" : ""), seconds,
-                   (seconds != 1 ? "s" : ""));
-    else if (minutes > 0)
-      send_to_char(ch,
-                   "You must wait %d minute%s and %d second%s before using spell recall again.\r\n",
-                   minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
-    else
-      send_to_char(ch, "You must wait %d second%s before using spell recall again.\r\n", seconds,
-                   (seconds != 1 ? "s" : ""));
+    if (show_error)
+    {
+      if (hours > 0)
+        send_to_char(ch,
+                     "You must wait %d hour%s, %d minute%s, and %d second%s before using arcane "
+                     "recovery again.\r\n",
+                     hours, (hours != 1 ? "s" : ""), minutes, (minutes != 1 ? "s" : ""), seconds,
+                     (seconds != 1 ? "s" : ""));
+      else if (minutes > 0)
+        send_to_char(ch,
+                     "You must wait %d minute%s and %d second%s before using arcane recovery "
+                     "again.\r\n",
+                     minutes, (minutes != 1 ? "s" : ""), seconds, (seconds != 1 ? "s" : ""));
+      else
+        send_to_char(ch, "You must wait %d second%s before using arcane recovery again.\r\n",
+                     seconds, (seconds != 1 ? "s" : ""));
+    }
+
+    return CANT_CMD_TEMP;
+  }
+
+  return CAN_CMD;
+}
+
+ACMD(do_arcanerecovery)
+{
+  int adjusted = 0;
+
+  PREREQ_NOT_NPC();
+  PREREQ_CHECK(can_arcanerecovery);
+
+  adjusted = reduce_queued_preparation_time(ch);
+  if (adjusted <= 0)
+  {
+    send_to_char(ch, "You are not currently preparing any spells or recovering any spell slots.\r\n");
     return;
   }
 
-  /* Simplified implementation - just display message and set cooldown */
-  /* The actual spell slot restoration will be implemented later with proper spell system integration */
-  send_to_char(
-      ch, "\tCYou focus your will and recall your arcane knowledge!\tn\r\n"
-          "Your magical reserves are temporarily restored.\r\n"
-          "\tY(This perk's full functionality will be implemented in a future update.)\tn\r\n");
+  GET_ARCANE_RECOVERY_COOLDOWN(ch) = time(0) + ARCANE_RECOVERY_COOLDOWN_SECS;
 
-  act("\tC$n focuses deeply, recalling arcane knowledge!\tn", FALSE, ch, NULL, NULL, TO_ROOM);
-
-  /* Set daily cooldown - 24 hours = 10 ticks per minute * 60 minutes * 24 hours = 14400 ticks */
-  GET_SPELL_RECALL_COOLDOWN(ch) = 14400;
+  send_to_char(ch, "\tCYou draw on your arcane reserves, cutting your remaining preparation and "
+                   "recovery time in half.\tn\r\n");
+  act("\tC$n draws on deep arcane reserves, quickening $s magical preparations.\tn", FALSE, ch,
+      NULL, NULL, TO_ROOM);
 }
+
+#undef ARCANE_RECOVERY_COOLDOWN_SECS
+#undef ARCANE_RECOVERY_SPONTANEOUS_SLOTS
+#undef SPELL_RECALL_COOLDOWN_TICKS
 
 ACMDCHECK(can_avatarofwar)
 {
@@ -9767,8 +10010,7 @@ ACMD(do_summonerpreference)
   GET_SUMMONER_PREFERRED_ELEMENT(ch) = element_type;
   send_to_char(ch, "\tCYou attune yourself to the element of %s.\tn\r\n",
                element_names[element_type]);
-  send_to_char(ch,
-               "\tCYour Elemental Mastery bonuses will now apply to %s elementals.\tn\r\n",
+  send_to_char(ch, "\tCYour Elemental Mastery bonuses will now apply to %s elementals.\tn\r\n",
                element_names[element_type]);
 }
 
@@ -10489,7 +10731,8 @@ int perform_dragonbite(struct char_data *ch, struct char_data *vict)
   if (combat_maneuver_check(ch, vict, COMBAT_MANEUVER_TYPE_KICK, 50) > 0)
   {
     /* damagee! */
-    damage(ch, vict, dice(diceOne, diceTwo) + GET_STR(ch) + 4, SKILL_DRAGON_BITE, DAM_PIERCING, FALSE);
+    damage(ch, vict, dice(diceOne, diceTwo) + GET_STR(ch) + 4, SKILL_DRAGON_BITE, DAM_PIERCING,
+           FALSE);
 
     act("Your flesh is rended by a bite from $N!", FALSE, vict, 0, ch, TO_CHAR);
     act("$e is rended by your bite at $m!", FALSE, vict, 0, ch, TO_VICT);
@@ -12073,7 +12316,8 @@ int perform_feint(struct char_data *ch, struct char_data *vict)
   }
 
   /* calculate our final bluff skill check (feint attempt) */
-  bluff_skill_check = d20(ch) + compute_ability(ch, ABILITY_BLUFF) + (HAS_FEAT(ch, FEAT_IMPROVED_FEINT) ? 4 : 0);
+  bluff_skill_check =
+      d20(ch) + compute_ability(ch, ABILITY_BLUFF) + (HAS_FEAT(ch, FEAT_IMPROVED_FEINT) ? 4 : 0);
   if (IS_NPC(vict) && GET_NPC_RACE(vict) != RACE_TYPE_HUMANOID)
   {
     if (HAS_FEAT(ch, FEAT_IMPROVED_FEINT))
@@ -13481,7 +13725,6 @@ ACMD(do_detectmagic)
   call_magic(ch, ch, NULL, SPELL_DETECT_MAGIC, 0, CLASS_LEVEL(ch, CLASS_INQUISITOR), CAST_INNATE);
   send_to_char(ch, "Your heightened senses attune to magical auras.\r\n");
 }
-
 
 
 /* Hunter's Mark: Rangers mark a target. After 5 rounds, gain +2 to hit and +1d6 damage versus the marked target. */

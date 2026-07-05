@@ -153,6 +153,7 @@ cpp_extern const struct command_info cmd_info[] = {
     //  { "acconvert", "acconvert", POS_DEAD, do_acconvert, LVL_IMPL, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"account", "account", POS_DEAD, do_account, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"arcanemark", "arcanem", POS_DEAD, do_arcanemark, 0, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
+    {"arcanerecovery", "arcanerecovery", POS_RECLINING, do_arcanerecovery, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_arcanerecovery},
     {"activate", "activate", POS_FIGHTING, do_activate, 0, 0, TRUE, ACTION_SWIFT, {0, 0}, NULL},
     {"at", "at", POS_DEAD, do_at, LVL_IMMORT, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
     {"advance", "adv", POS_DEAD, do_advance, LVL_GRSTAFF, 0, TRUE, ACTION_NONE, {0, 0}, NULL},
