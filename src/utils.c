@@ -834,6 +834,10 @@ room_vnum get_direction_vnum(room_rnum room_origin, int direction)
       // Bad direction for wilderness travel (up/down)
       return NOWHERE;
     }
+
+    if (!wilderness_coordinates_valid(x_coordinate, y_coordinate))
+      return NOWHERE;
+
     exit_rnum = find_room_by_coordinates(x_coordinate, y_coordinate);
     if (exit_rnum == NOWHERE)
     {
@@ -844,7 +848,8 @@ room_vnum get_direction_vnum(room_rnum room_origin, int direction)
         return NOWHERE;
       }
       /* Must set the coords, etc in the exit room. */
-      assign_wilderness_room(exit_rnum, x_coordinate, y_coordinate);
+      if (!assign_wilderness_room(exit_rnum, x_coordinate, y_coordinate))
+        return NOWHERE;
     }
     exit_vnum = GET_ROOM_VNUM(exit_rnum);
     /* what should we do if it's a wilderness room? */

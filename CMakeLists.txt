@@ -860,6 +860,21 @@ endif()
 # Enable with -DBUILD_TESTS=ON only if you've added proper mock implementations.
 option(BUILD_TESTS "Build unit tests (disabled - use Makefile instead)" OFF)
 
+# Keep test source inventory synchronized with Makefile.am even though the
+# production-linked test executable is currently built through Autotools.
+set(CUTEST_TEST_SOURCES
+    unittests/CuTest/test_alignment.c
+    unittests/CuTest/test_bounds_checking.c
+    unittests/CuTest/test_char_cache.c
+    unittests/CuTest/test_char_skills.c
+    unittests/CuTest/test_faerun_wilderness.c
+    unittests/CuTest/test_random.c
+    unittests/CuTest/test_treasure.c
+    unittests/CuTest/test_utils.c
+    unittests/CuTest/test.helpers.c
+    unittests/CuTest/test.interpreter.c
+)
+
 # ========== Installation ==========
 install(TARGETS circle DESTINATION ${BIN_OUTPUT_DIR})
 if (BUILD_UTILS)

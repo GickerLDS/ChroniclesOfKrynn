@@ -792,6 +792,12 @@ void wild_mobile_loader(int mobile_vnum, int x_coord, int y_coord)
   if (!mob)
     return;
 
+  if (!wilderness_coordinates_valid(x_coord, y_coord))
+  {
+    extract_char(mob);
+    return;
+  }
+
   /*
    * Wilderness Room Management:
    * Try to find an existing room at the target coordinates.
@@ -809,6 +815,7 @@ void wild_mobile_loader(int mobile_vnum, int x_coord, int y_coord)
        * Failed to allocate wilderness room - this should rarely happen
        * unless the wilderness system is at capacity or misconfigured
        */
+      extract_char(mob);
       return; /* Abort mobile loading - no valid placement location */
     }
     else
@@ -817,7 +824,11 @@ void wild_mobile_loader(int mobile_vnum, int x_coord, int y_coord)
        * Successfully allocated wilderness room - now assign it
        * the target coordinates and configure it for wilderness use
        */
-      assign_wilderness_room(location, x_coord, y_coord);
+      if (!assign_wilderness_room(location, x_coord, y_coord))
+      {
+        extract_char(mob);
+        return;
+      }
     }
   }
 

@@ -565,7 +565,11 @@ static room_rnum get_or_allocate_wilderness_room(int x, int y)
   room_rnum room;
 
   /* Validate coordinates are within wilderness bounds */
+#ifdef CAMPAIGN_FR
+  if (!wilderness_coordinates_valid(x, y))
+#else
   if (x < -1024 || x > 1024 || y < -1024 || y > 1024)
+#endif
   {
     log("SYSERR: get_or_allocate_wilderness_room: Coordinates out of bounds (%d, %d)", x, y);
     return NOWHERE;
@@ -585,7 +589,8 @@ static room_rnum get_or_allocate_wilderness_room(int x, int y)
     }
 
     /* Configure the room for these coordinates */
-    assign_wilderness_room(room, x, y);
+    if (!assign_wilderness_room(room, x, y))
+      return NOWHERE;
   }
 
   return room;

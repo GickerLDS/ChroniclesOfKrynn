@@ -16,6 +16,9 @@
 #define MAP_ON 1
 #define MAP_IMM_ONLY 2
 
+#define MAX_MAP_RADIUS 100
+#define MAP_COMMAND_COOLDOWN 10
+
 /* Exported function prototypes */
 bool show_worldmap(struct char_data *ch);
 void perform_map(struct char_data *ch, const char *argument, bool worldmap);

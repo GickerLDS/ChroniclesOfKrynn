@@ -590,43 +590,43 @@ void select_hunt_coords(int which_hunt)
 
 void select_hunt_coords(int which_hunt)
 {
+  int attempt;
+  int height;
+  int terrain = SECT_INSIDE;
+  int width;
+  int x = 0;
+  int y = 0;
+
   if (which_hunt >= 5)
     which_hunt = 4;
   else if (which_hunt < 0)
     which_hunt = 0;
 
-  int x = 0, y = 0, start = 0;
-  int terrain = 0;
-  room_rnum room = NOWHERE;
-  int room_vnum = 0;
-
-  start = dice(1, NUM_GOTO_ZONES) - 1;
-
-  y = dice(1, 21) - 10;
-  x = dice(1, 21) - 10;
-
-  room_vnum = get_hunt_room(atoi(goto_zones[start][1]), x, y);
-  room = real_room(room_vnum);
-
-  terrain = world[room].sector_type;
-
-  switch (terrain)
-  {
-  case SECT_OCEAN:
-  case SECT_UD_NOSWIM:
-  case SECT_UD_WATER:
-  case SECT_UNDERWATER:
-  case SECT_WATER_NOSWIM:
-  case SECT_WATER_SWIM:
-  case SECT_INSIDE:
-  case SECT_INSIDE_ROOM:
-  case SECT_RIVER:
-    select_hunt_coords(which_hunt);
+  width = get_faerun_wilderness_width();
+  height = get_faerun_wilderness_height();
+  if (width <= 0 || height <= 0)
     return;
+
+  for (attempt = 0; attempt < 1024; attempt++)
+  {
+    x = rand_number(0, width - 1);
+    y = rand_number(0, height - 1);
+    if (!get_faerun_wilderness_sector(x, y, &terrain))
+      continue;
+
+    if (terrain != SECT_OCEAN && terrain != SECT_WATER_NOSWIM &&
+        terrain != SECT_WATER_SWIM && terrain != SECT_UNDERWATER && terrain != SECT_RIVER &&
+        terrain != SECT_INSIDE && terrain != SECT_INSIDE_ROOM)
+      break;
   }
 
-  active_hunts[which_hunt][1] = room_vnum;
-  active_hunts[which_hunt][2] = start;
+  if (attempt == 1024)
+    return;
+
+  active_hunts[which_hunt][1] = MAX(0, MIN(width - 1, x + rand_number(-5, 5)));
+  active_hunts[which_hunt][2] = MAX(0, MIN(height - 1, y + rand_number(-5, 5)));
+  active_hunts[which_hunt][3] = x;
+  active_hunts[which_hunt][4] = y;
 }
 #else
 

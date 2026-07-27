@@ -25,6 +25,8 @@
 #include "protocol.h"
 #include "modify.h" /* strip_colors */
 
+#include <stdint.h>
+
 /******************************************************************************
  * Begin Local (File Scope) Defines and Global Variables
  *****************************************************************************/
@@ -519,6 +521,196 @@ static const char *CompactStringMap(int centre, int size)
   return strmap;
 }
 
+struct expanded_map_room
+{
+  room_rnum room;
+  int x;
+  int y;
+};
+
+static struct room_direction_data *expanded_map_exit(struct char_data *ch, room_rnum room,
+                                                     int direction)
+{
+  struct room_direction_data *exit;
+
+  if (!ch || !VALID_ROOM_RNUM(room) || direction < 0 || direction >= DIR_COUNT)
+    return NULL;
+
+  exit = world[room].dir_option[direction];
+  if (!exit || exit->to_room == NOWHERE || !VALID_ROOM_RNUM(exit->to_room))
+    return NULL;
+  if (EXIT_FLAGGED(exit, EX_CLOSED))
+    return NULL;
+  if (EXIT_FLAGGED(exit, EX_HIDDEN) && !PRF_FLAGGED(ch, PRF_HOLYLIGHT))
+    return NULL;
+
+  return exit;
+}
+
+static char *build_expanded_room_map(struct char_data *ch, int radius)
+{
+  static const int map_directions[] = {NORTH, EAST, SOUTH, WEST, NORTHWEST,
+                                       NORTHEAST, SOUTHEAST, SOUTHWEST};
+  static const int map_offsets[][2] = {{0, 1},  {1, 0},  {0, -1}, {-1, 0},
+                                       {-1, 1}, {1, 1}, {1, -1}, {-1, -1}};
+  struct expanded_map_room *rooms;
+  struct room_direction_data *exit;
+  bool *visited;
+  int *tiles;
+  char *output;
+  char *write_position;
+  const char *symbol;
+  size_t output_size;
+  size_t symbol_length;
+  size_t tile_count;
+  int direction_index;
+  int room_count;
+  int room_index;
+  int tile_index;
+  int next_x;
+  int next_y;
+  int side;
+  int x;
+  int y;
+
+  if (!ch || !VALID_ROOM_RNUM(IN_ROOM(ch)))
+    return NULL;
+
+  radius = URANGE(1, radius, MAX_MAP_RADIUS);
+  side = radius * 2 + 1;
+  tile_count = (size_t)side * (size_t)side;
+
+  rooms = calloc(tile_count, sizeof(*rooms));
+  tiles = malloc(tile_count * sizeof(*tiles));
+  visited = calloc((size_t)top_of_world + 1, sizeof(*visited));
+  if (!rooms || !tiles || !visited)
+  {
+    free(rooms);
+    free(tiles);
+    free(visited);
+    return NULL;
+  }
+
+  for (tile_index = 0; tile_index < (int)tile_count; tile_index++)
+    tiles[tile_index] = SECT_EMPTY;
+
+  rooms[0].room = IN_ROOM(ch);
+  rooms[0].x = 0;
+  rooms[0].y = 0;
+  room_count = 1;
+  visited[IN_ROOM(ch)] = TRUE;
+  tiles[radius * side + radius] = SECT_HERE;
+
+  for (room_index = 0; room_index < room_count; room_index++)
+  {
+    for (direction_index = 0;
+         direction_index < (int)(sizeof(map_directions) / sizeof(map_directions[0]));
+         direction_index++)
+    {
+      exit = expanded_map_exit(ch, rooms[room_index].room, map_directions[direction_index]);
+      if (!exit || visited[exit->to_room])
+        continue;
+
+      next_x = rooms[room_index].x + map_offsets[direction_index][0];
+      next_y = rooms[room_index].y + map_offsets[direction_index][1];
+      if (abs(next_x) > radius || abs(next_y) > radius)
+        continue;
+
+      tile_index = (radius - next_y) * side + radius + next_x;
+      if (tiles[tile_index] != SECT_EMPTY)
+        continue;
+
+      if (room_count >= (int)tile_count)
+        break;
+
+      rooms[room_count].room = exit->to_room;
+      rooms[room_count].x = next_x;
+      rooms[room_count].y = next_y;
+      room_count++;
+      visited[exit->to_room] = TRUE;
+
+      if (SECT(exit->to_room) >= 0 && SECT(exit->to_room) < NUM_ROOM_SECTORS)
+        tiles[tile_index] = SECT(exit->to_room);
+      else
+        tiles[tile_index] = SECT_STRANGE;
+    }
+  }
+
+  output_size = 64;
+  for (tile_index = 0; tile_index < (int)tile_count; tile_index++)
+  {
+    symbol = world_map_info[tiles[tile_index]].disp;
+    symbol_length = strlen(symbol);
+    if (output_size > SIZE_MAX - symbol_length - 2)
+    {
+      free(rooms);
+      free(tiles);
+      free(visited);
+      return NULL;
+    }
+    output_size += symbol_length;
+  }
+  output_size += (size_t)side * 2;
+
+  output = malloc(output_size);
+  if (!output)
+  {
+    free(rooms);
+    free(tiles);
+    free(visited);
+    return NULL;
+  }
+
+  write_position = output;
+  write_position += snprintf(write_position, output_size, "Map range: %d room%s\r\n", radius,
+                             radius == 1 ? "" : "s");
+  for (y = 0; y < side; y++)
+  {
+    for (x = 0; x < side; x++)
+    {
+      symbol = world_map_info[tiles[y * side + x]].disp;
+      symbol_length = strlen(symbol);
+      memcpy(write_position, symbol, symbol_length);
+      write_position += symbol_length;
+    }
+    memcpy(write_position, "\r\n", 2);
+    write_position += 2;
+  }
+  *write_position = '\0';
+
+  free(rooms);
+  free(tiles);
+  free(visited);
+  return output;
+}
+
+static bool display_expanded_map(struct char_data *ch, int radius)
+{
+  char *map_text;
+  int diameter;
+
+  if (ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_WILDERNESS))
+  {
+    diameter = radius * 2 + 1;
+    map_text = gen_ascii_wilderness_map(diameter, X_LOC(ch), Y_LOC(ch), MAP_TYPE_WEATHER);
+  }
+  else
+  {
+    map_text = build_expanded_room_map(ch, radius);
+  }
+
+  if (!map_text)
+  {
+    send_to_char(ch, "The surrounding area is too difficult to map right now.\r\n");
+    return FALSE;
+  }
+
+  if (ch->desc)
+    page_string(ch->desc, map_text, TRUE);
+  free(map_text);
+  return TRUE;
+}
+
 /* Display a nicely formatted map with a legend */
 void perform_map(struct char_data *ch, const char *argument, bool worldmap)
 {
@@ -722,6 +914,15 @@ bool show_worldmap(struct char_data *ch)
 
 ACMD(do_map)
 {
+  char radius_argument[MAX_INPUT_LENGTH] = {'\0'};
+  char extra_argument[MAX_INPUT_LENGTH] = {'\0'};
+  char *endptr;
+  time_t current_time;
+  long requested_radius;
+  long remaining;
+  int radius;
+  bool mortal;
+
   if (!can_see_map(ch))
   {
     send_to_char(ch, "Sorry, the map is disabled!\r\n");
@@ -749,11 +950,57 @@ ACMD(do_map)
         "THe fog in this room prevents you from seeing beyond your immediate surroundings!\r\n");
     return;
   }
-  if (ZONE_FLAGGED(GET_ROOM_ZONE(IN_ROOM(ch)), ZONE_WILDERNESS))
-    send_to_char(ch, "%s\r\n",
-                 gen_ascii_wilderness_map(30, X_LOC(ch), Y_LOC(ch), MAP_TYPE_WEATHER));
+
+  mortal = GET_LEVEL(ch) < LVL_IMMORT;
+  current_time = time(NULL);
+
+  if (mortal)
+  {
+    if (ch->char_specials.map_cooldown > current_time)
+    {
+      remaining = (long)(ch->char_specials.map_cooldown - current_time);
+      send_to_char(ch, "You must wait %ld more second%s before surveying the area again.\r\n",
+                   remaining, remaining == 1 ? "" : "s");
+      return;
+    }
+
+    radius = URANGE(1, skill_roll(ch, ABILITY_SURVIVAL), MAX_MAP_RADIUS);
+    send_to_char(ch, "Your Survival check reveals %d room%s in every direction.\r\n", radius,
+                 radius == 1 ? "" : "s");
+  }
   else
-    perform_map(ch, argument, show_worldmap(ch));
+  {
+    two_arguments(argument, radius_argument, sizeof(radius_argument), extra_argument,
+                  sizeof(extra_argument));
+    if (*extra_argument && !is_abbrev(extra_argument, "normal") &&
+        !is_abbrev(extra_argument, "world"))
+    {
+      send_to_char(ch, "Usage: map [range] [normal | world] (maximum %d)\r\n",
+                   MAX_MAP_RADIUS);
+      return;
+    }
+
+    if (!*radius_argument)
+    {
+      radius = URANGE(1, DEFAULT_MAP_SIZE, MAX_MAP_RADIUS);
+    }
+    else
+    {
+      errno = 0;
+      endptr = NULL;
+      requested_radius = strtol(radius_argument, &endptr, 10);
+      if (errno != 0 || !endptr || *endptr != '\0' || requested_radius < 1 ||
+          requested_radius > MAX_MAP_RADIUS)
+      {
+        send_to_char(ch, "Map range must be a number from 1 to %d.\r\n", MAX_MAP_RADIUS);
+        return;
+      }
+      radius = (int)requested_radius;
+    }
+  }
+
+  if (display_expanded_map(ch, radius) && mortal)
+    ch->char_specials.map_cooldown = current_time + MAP_COMMAND_COOLDOWN;
 }
 
 /*EOF*/

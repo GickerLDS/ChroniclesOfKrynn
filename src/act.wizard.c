@@ -625,7 +625,7 @@ ACMD(do_goto)
                        "goto (room vnum)          eg. goto 200\r\n"
                        "goto (mob or player name) eg. goto gicker or goto cave-troll\r\n"
                        "goto (zone name)          eg. goto lusken\r\n"
-#if !defined(CAMPAIGN_DL) && !defined(CAMPAIGN_FR)
+#if !defined(CAMPAIGN_DL)
                        "goto (x y coordinates)    eg. goto 1 3\r\n"
 #endif
       );
@@ -634,11 +634,20 @@ ACMD(do_goto)
     if ((location = find_target_room(ch, argument)) == NOWHERE)
       return;
   }
-#if !defined(CAMPAIGN_DL) && !defined(CAMPAIGN_FR)
+#if !defined(CAMPAIGN_DL)
   else
   {
+    int x = atoi(arg);
+    int y = atoi(arg2);
+
+    if (!wilderness_coordinates_valid(x, y))
+    {
+      send_to_char(ch, "Those coordinates are outside the wilderness map.\r\n");
+      return;
+    }
+
     /* Have two args, that means coordinates (potentially) */
-    if ((location = find_room_by_coordinates(atoi(arg), atoi(arg2))) == NOWHERE)
+    if ((location = find_room_by_coordinates(x, y)) == NOWHERE)
     {
       if ((location = find_available_wilderness_room()) == NOWHERE)
       {
@@ -651,7 +660,8 @@ ACMD(do_goto)
          * with safe dynamic allocation for region/path overrides.
          * No memory leaks or crashes from this call.
          */
-        assign_wilderness_room(location, atoi(arg), atoi(arg2));
+        if (!assign_wilderness_room(location, x, y))
+          return;
       }
     }
   }

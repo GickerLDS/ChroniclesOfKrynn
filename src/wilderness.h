@@ -19,18 +19,22 @@
 #define WILD_DYNAMIC_ROOM_VNUM_START 1004000 /* The start of the vnums for the dynamic room pool. */
 #define WILD_DYNAMIC_ROOM_VNUM_END 1009999   /* The end of the vnums for the dynamic room pool. */
 
+#ifndef FAERUN_WILDERNESS_MAP_FILE
+#define FAERUN_WILDERNESS_MAP_FILE "../frmaps/faerunmap.jpg"
+#endif
+
+#ifndef FAERUN_WILDERNESS_LEGEND_FILE
+#define FAERUN_WILDERNESS_LEGEND_FILE "../frmaps/legend.txt"
+#endif
+
 #define IS_WILDERNESS_VNUM(room_vnum)                                                              \
   ((room_vnum >= WILD_ROOM_VNUM_START && room_vnum <= WILD_ROOM_VNUM_END) ||                       \
    (room_vnum >= WILD_DYNAMIC_ROOM_VNUM_START && room_vnum <= WILD_DYNAMIC_ROOM_VNUM_END))
 
 /* Utility macros */
-#ifdef CAMPAIGN_FR
-#define IS_DYNAMIC(rnum) (FALSE)
-#else
 #define IS_DYNAMIC(rnum)                                                                           \
   ((world[rnum].number >= WILD_DYNAMIC_ROOM_VNUM_START) &&                                         \
    (world[rnum].number <= WILD_DYNAMIC_ROOM_VNUM_END))
-#endif
 
 /* Map Types */
 #define MAP_TYPE_NORMAL 0
@@ -226,6 +230,8 @@ struct wild_map_tile
 
 void get_map(int xsize, int ysize, int center_x, int center_y, struct wild_map_tile **map);
 int get_elevation(int map, int x, int y);
+int get_moisture(int map, int x, int y);
+int get_temperature(int map, int x, int y);
 int get_comprehensive_elevation(int x, int y, zone_rnum zone);
 int get_modified_elevation(int x, int y);
 float get_elevation_relative_sea_level(int x, int y);
@@ -238,6 +244,17 @@ char *gen_ascii_wilderness_map(int size, int x, int y, int map_type);
 void generate_river(struct char_data *ch, int dir, region_vnum vnum, const char *name);
 int get_modified_sector_type(zone_rnum zone, int x, int y);
 
+/* Faerun image-backed wilderness. World Y increases northward, so image row
+ * zero maps to world Y (height - 1). */
+int load_faerun_wilderness_map(const char *image_filename, const char *legend_filename);
+int initialize_faerun_wilderness(void);
+int prepare_faerun_dynamic_room_pool(void);
+void destroy_faerun_wilderness_map(void);
+int get_faerun_wilderness_width(void);
+int get_faerun_wilderness_height(void);
+int get_faerun_wilderness_sector(int x, int y, int *sector_type);
+int wilderness_coordinates_valid(int x, int y);
+
 /* World Knowledge Base Generation */
 void generate_wilderness_knowledge_base(const char *output_filename);
 
@@ -247,7 +264,7 @@ void initialize_wilderness_lists();
 room_rnum find_available_wilderness_room();       /* Get the next empty room in the pool. */
 room_rnum find_room_by_coordinates(int x, int y); /* Get the room at coordinates (x,y) */
 room_rnum find_static_room_by_coordinates(int x, int y);
-void assign_wilderness_room(
+int assign_wilderness_room(
     room_rnum room, int x,
     int y); /* Assign the room to the provided coordinates, adjusting descriptions, etc. */
 

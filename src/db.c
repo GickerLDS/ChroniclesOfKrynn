@@ -792,7 +792,14 @@ void boot_world(void)
   init_perlin(NOISE_STONE, NOISE_STONE_SEED);
   init_perlin(NOISE_CRYSTAL, NOISE_CRYSTAL_SEED);
 
-#if !defined(CAMPAIGN_FR) && !defined(CAMPAIGN_DL)
+#ifdef CAMPAIGN_FR
+  log("Loading image-backed Faerun wilderness.");
+  if (!initialize_faerun_wilderness())
+  {
+    log("SYSERR: Unable to initialize the Faerun wilderness; aborting boot.");
+    exit(1);
+  }
+#elif !defined(CAMPAIGN_DL)
   log("Indexing wilderness rooms.");
   initialize_wilderness_lists();
 
@@ -940,6 +947,7 @@ void destroy_db(void)
   }
   free(world);
   top_of_world = 0;
+  destroy_faerun_wilderness_map();
 
   /* Objects */
   for (cnt = 0; cnt <= top_of_objt; cnt++)

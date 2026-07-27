@@ -1556,25 +1556,35 @@ void char_to_coords(struct char_data *ch, int x, int y, int wilderness)
 {
   room_rnum room = NOWHERE;
 
+  (void)wilderness;
+
   if (ch == NULL)
-    log("SYSERR: Illegal value(s) passed to char_to_coords. ((x, y): (%d,%d) Ch: %p)", x, y, ch);
-  else
   {
-    room = find_room_by_coordinates(x, y);
+    log("SYSERR: Illegal value(s) passed to char_to_coords. ((x, y): (%d,%d) Ch: %p)", x, y, ch);
+    return;
+  }
+
+  if (!wilderness_coordinates_valid(x, y))
+  {
+    log("SYSERR: Coordinates (%d, %d) are outside the wilderness map", x, y);
+    return;
+  }
+
+  room = find_room_by_coordinates(x, y);
+  if (room == NOWHERE)
+  {
+    room = find_available_wilderness_room();
     if (room == NOWHERE)
     {
-      room = find_available_wilderness_room();
-      if (room == NOWHERE)
-      {
-        return;
-      }
-      /* MEMORY MANAGEMENT: assign_wilderness_room() safely handles room strings
-       * Room name/description will be set to static strings by default,
-       * with safe dynamic allocation for region/path overrides.
-       * No memory leaks or crashes from this call.
-       */
-      assign_wilderness_room(room, x, y);
+      return;
     }
+    /* MEMORY MANAGEMENT: assign_wilderness_room() safely handles room strings
+     * Room name/description will be set to static strings by default,
+     * with safe dynamic allocation for region/path overrides.
+     * No memory leaks or crashes from this call.
+     */
+    if (!assign_wilderness_room(room, x, y))
+      return;
   }
 
   X_LOC(ch) = x;
@@ -1670,7 +1680,8 @@ void char_to_room(struct char_data *ch, room_rnum room)
             return;
           }
           /* Must set the coords, etc in the going_to room. */
-          assign_wilderness_room(room, X_LOC(ch), Y_LOC(ch));
+          if (!assign_wilderness_room(room, X_LOC(ch), Y_LOC(ch)))
+            return;
         }
       }
       /* MEMORY MANAGEMENT: Set occupied flag for dynamic wilderness rooms

@@ -235,6 +235,7 @@ cutest_SOURCES = \
 	unittests/CuTest/test_bounds_checking.c \
 	unittests/CuTest/test_char_cache.c \
 	unittests/CuTest/test_char_skills.c \
+	unittests/CuTest/test_faerun_wilderness.c \
 	unittests/CuTest/test_random.c \
 	unittests/CuTest/test_treasure.c \
 	unittests/CuTest/test_utils.c \
@@ -246,9 +247,21 @@ cutest_SOURCES = \
 cutest_CFLAGS = $(AM_CFLAGS) -DLUMINARI_CUTEST
 cutest_LDADD = $(circle_LDADD)
 
+cutest_test_files = \
+	unittests/CuTest/test_alignment.c \
+	unittests/CuTest/test_bounds_checking.c \
+	unittests/CuTest/test_char_cache.c \
+	unittests/CuTest/test_char_skills.c \
+	unittests/CuTest/test_faerun_wilderness.c \
+	unittests/CuTest/test_random.c \
+	unittests/CuTest/test_treasure.c \
+	unittests/CuTest/test_utils.c \
+	unittests/CuTest/test.helpers.c \
+	unittests/CuTest/test.interpreter.c
+
 # Generate AllTests.c before building cutest
-unittests/CuTest/AllTests.c: $(filter-out unittests/CuTest/AllTests.c,$(wildcard unittests/CuTest/*.c))
-	unittests/CuTest/make-tests.sh unittests/CuTest/*.c > $@
+unittests/CuTest/AllTests.c: $(cutest_test_files) unittests/CuTest/make-tests.sh
+	unittests/CuTest/make-tests.sh $(cutest_test_files) > $@
 
 BUILT_SOURCES = unittests/CuTest/AllTests.c
 
@@ -269,6 +282,8 @@ src/constants.c: $(filter-out src/constants.c,$(circle_SOURCES))
 # Extra files to distribute
 EXTRA_DIST = \
 	unittests/CuTest/make-tests.sh \
+	frmaps/faerunmap.jpg \
+	frmaps/legend.txt \
 	README.md \
 	CHANGELOG.md \
 	LICENSE

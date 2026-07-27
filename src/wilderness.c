@@ -24,6 +24,7 @@
  */
 
 #include <math.h>
+#include <stdint.h>
 #include <gd.h>
 
 #include "perlin.h"
@@ -46,6 +47,576 @@ void insert_path(struct path_data *path);
 struct kdtree *kd_wilderness_rooms = NULL;
 
 int wild_waterline = 128;
+
+#define FAERUN_TERRAIN_COLOR_COUNT 12
+#define FAERUN_ROAD_TERRAIN_INDEX 9
+
+struct faerun_terrain_color
+{
+  const char *name;
+  int sector_type;
+  int red;
+  int green;
+  int blue;
+};
+
+struct faerun_wilderness_map_data
+{
+  unsigned char *sectors;
+  int width;
+  int height;
+};
+
+static struct faerun_wilderness_map_data faerun_wilderness_map = {NULL, 0, 0};
+
+static const struct
+{
+  const char *name;
+} faerun_terrain_types[FAERUN_TERRAIN_COLOR_COUNT] = {
+    {"Ocean"},
+    {"Grassland"},
+    {"Forest"},
+    {"Hills"},
+    {"Mountains"},
+    {"Desert"},
+    {"Rivers & Lakes"},
+    {"Swamps / Marshes"},
+    {"Tundra"},
+    {"Roads"},
+    {"Jungle"},
+    {"Beach"},
+};
+
+static const struct
+{
+  const char *name;
+  int sector_type;
+} faerun_sector_types[] = {
+    {"SECT_OCEAN", SECT_OCEAN},
+    {"SECT_FIELD", SECT_FIELD},
+    {"SECT_FOREST", SECT_FOREST},
+    {"SECT_HILLS", SECT_HILLS},
+    {"SECT_MOUNTAIN", SECT_MOUNTAIN},
+    {"SECT_DESERT", SECT_DESERT},
+    {"SECT_WATER_SWIM", SECT_WATER_SWIM},
+    {"SECT_MARSHLAND", SECT_MARSHLAND},
+    {"SECT_TUNDRA", SECT_TUNDRA},
+    {"SECT_ROAD_EW", SECT_ROAD_EW},
+    {"SECT_ROAD_NS", SECT_ROAD_NS},
+    {"SECT_ROAD_INT", SECT_ROAD_INT},
+    {"SECT_JUNGLE", SECT_JUNGLE},
+    {"SECT_BEACH", SECT_BEACH},
+};
+
+static char *trim_faerun_legend_field(char *field)
+{
+  char *end;
+
+  while (*field && isspace((unsigned char)*field))
+    field++;
+
+  end = field + strlen(field);
+  while (end > field && isspace((unsigned char)*(end - 1)))
+    end--;
+  *end = '\0';
+
+  return field;
+}
+
+static int faerun_terrain_type_index(const char *name)
+{
+  int i;
+
+  for (i = 0; i < FAERUN_TERRAIN_COLOR_COUNT; i++)
+  {
+    if (!strcasecmp(name, faerun_terrain_types[i].name))
+      return i;
+  }
+
+  return -1;
+}
+
+static int faerun_sector_type(const char *name)
+{
+  size_t i;
+
+  for (i = 0; i < sizeof(faerun_sector_types) / sizeof(faerun_sector_types[0]); i++)
+  {
+    if (!strcasecmp(name, faerun_sector_types[i].name))
+      return faerun_sector_types[i].sector_type;
+  }
+
+  return -1;
+}
+
+static int load_faerun_terrain_legend(const char *filename,
+                                      struct faerun_terrain_color *colors,
+                                      int *road_sector_types)
+{
+  FILE *legend_file;
+  char line[READ_SIZE];
+  bool found[FAERUN_TERRAIN_COLOR_COUNT] = {false};
+  bool found_road_sectors[3] = {false};
+  int found_count = 0;
+
+  if (!filename || !colors || !road_sector_types)
+    return FALSE;
+
+  legend_file = fopen(filename, "r");
+  if (!legend_file)
+  {
+    log("SYSERR: Unable to open Faerun wilderness legend '%s': %s", filename, strerror(errno));
+    return FALSE;
+  }
+
+  while (fgets(line, sizeof(line), legend_file))
+  {
+    static const char *road_directions[] = {"east-west", "north-south", "intersection"};
+    static const char *road_sector_names[] = {"SECT_ROAD_EW", "SECT_ROAD_NS", "SECT_ROAD_INT"};
+    char hex_field[7];
+    char *fields[4];
+    char *hex_start;
+    char *separator;
+    char *sector_name;
+    char *terrain_name;
+    char *endptr;
+    char legend_direction[32];
+    char legend_sector[32];
+    unsigned long rgb;
+    int field_count = 1;
+    int hex_index;
+    int road_index;
+    int terrain_index;
+
+    if (sscanf(line, "%31s %31s", legend_direction, legend_sector) == 2)
+    {
+      for (road_index = 0; road_index < 3; road_index++)
+      {
+        if (strcasecmp(legend_direction, road_directions[road_index]))
+          continue;
+
+        road_sector_types[road_index] = faerun_sector_type(legend_sector);
+        if (road_sector_types[road_index] < 0)
+        {
+          log("SYSERR: Faerun wilderness legend '%s' maps %s roads to unknown sector '%s'",
+              filename, legend_direction, legend_sector);
+          fclose(legend_file);
+          return FALSE;
+        }
+
+        if (strcasecmp(legend_sector, road_sector_names[road_index]))
+          log("Faerun wilderness legend maps %s roads to %s.", legend_direction,
+              legend_sector);
+
+        found_road_sectors[road_index] = true;
+        break;
+      }
+    }
+
+    fields[0] = line;
+    while (field_count < (int)(sizeof(fields) / sizeof(fields[0])) &&
+           (separator = strchr(fields[field_count - 1], '|')) != NULL)
+    {
+      *separator = '\0';
+      fields[field_count++] = separator + 1;
+    }
+
+    if (field_count < 3)
+      continue;
+
+    hex_start = strchr(fields[field_count - 1], '#');
+    if (!hex_start)
+      continue;
+
+    if (field_count != 4)
+    {
+      log("SYSERR: Faerun wilderness legend '%s' must use four columns", filename);
+      fclose(legend_file);
+      return FALSE;
+    }
+    hex_start++;
+
+    for (hex_index = 0; hex_index < 6; hex_index++)
+    {
+      if (!isxdigit((unsigned char)hex_start[hex_index]))
+        break;
+      hex_field[hex_index] = hex_start[hex_index];
+    }
+    if (hex_index != 6)
+      continue;
+    hex_field[6] = '\0';
+
+    sector_name = trim_faerun_legend_field(fields[0]);
+    terrain_name = trim_faerun_legend_field(fields[1]);
+    terrain_index = faerun_terrain_type_index(terrain_name);
+
+    if (terrain_index < 0)
+    {
+      log("SYSERR: Faerun wilderness legend '%s' contains a color without a supported terrain",
+          filename);
+      fclose(legend_file);
+      return FALSE;
+    }
+
+    if (terrain_index == FAERUN_ROAD_TERRAIN_INDEX)
+    {
+      if (strcasecmp(sector_name, "(See Below)"))
+      {
+        log("SYSERR: Faerun roads must use the direction-specific mappings below the table");
+        fclose(legend_file);
+        return FALSE;
+      }
+      colors[terrain_index].sector_type = SECT_ROAD_INT;
+    }
+    else
+    {
+      colors[terrain_index].sector_type = faerun_sector_type(sector_name);
+      if (colors[terrain_index].sector_type < 0)
+      {
+        log("SYSERR: Faerun terrain '%s' maps to unknown sector '%s'", terrain_name,
+            sector_name);
+        fclose(legend_file);
+        return FALSE;
+      }
+    }
+
+    if (found[terrain_index])
+    {
+      log("SYSERR: Duplicate Faerun wilderness terrain '%s' in '%s'", terrain_name, filename);
+      fclose(legend_file);
+      return FALSE;
+    }
+
+    errno = 0;
+    rgb = strtoul(hex_field, &endptr, 16);
+    if (errno || *endptr != '\0')
+    {
+      log("SYSERR: Invalid color '#%s' for Faerun terrain '%s'", hex_field, terrain_name);
+      fclose(legend_file);
+      return FALSE;
+    }
+
+    colors[terrain_index].name = faerun_terrain_types[terrain_index].name;
+    colors[terrain_index].red = (rgb >> 16) & 0xff;
+    colors[terrain_index].green = (rgb >> 8) & 0xff;
+    colors[terrain_index].blue = rgb & 0xff;
+    found[terrain_index] = true;
+    found_count++;
+  }
+
+  fclose(legend_file);
+
+  if (found_count != FAERUN_TERRAIN_COLOR_COUNT)
+  {
+    int i;
+
+    for (i = 0; i < FAERUN_TERRAIN_COLOR_COUNT; i++)
+    {
+      if (!found[i])
+        log("SYSERR: Faerun wilderness legend '%s' is missing terrain '%s'", filename,
+            faerun_terrain_types[i].name);
+    }
+    return FALSE;
+  }
+
+  if (!found_road_sectors[0] || !found_road_sectors[1] || !found_road_sectors[2])
+  {
+    log("SYSERR: Faerun wilderness legend '%s' must define east-west, north-south, and "
+        "intersection road sectors",
+        filename);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static int nearest_faerun_terrain(const struct faerun_terrain_color *colors, int red,
+                                  int green, int blue, int *distance)
+{
+  int closest = 0;
+  int closest_distance = INT_MAX;
+  int i;
+
+  for (i = 0; i < FAERUN_TERRAIN_COLOR_COUNT; i++)
+  {
+    int red_delta = red - colors[i].red;
+    int green_delta = green - colors[i].green;
+    int blue_delta = blue - colors[i].blue;
+    int color_distance =
+        red_delta * red_delta + green_delta * green_delta + blue_delta * blue_delta;
+
+    if (color_distance < closest_distance)
+    {
+      closest = i;
+      closest_distance = color_distance;
+    }
+  }
+
+  if (distance)
+    *distance = closest_distance;
+
+  return closest;
+}
+
+static int get_faerun_road_sector(const unsigned char *terrain_indices, int width, int height,
+                                  int x, int y, const int *road_sector_types)
+{
+  const int radius = 6;
+  int64_t count = 0;
+  int64_t sum_x = 0;
+  int64_t sum_y = 0;
+  int64_t sum_xx = 0;
+  int64_t sum_xy = 0;
+  int64_t sum_yy = 0;
+  int64_t covariance_xx;
+  int64_t covariance_xy;
+  int64_t covariance_yy;
+  int scan_x;
+  int scan_y;
+  double discriminant;
+  double trace;
+
+  for (scan_y = MAX(0, y - radius); scan_y <= MIN(height - 1, y + radius); scan_y++)
+  {
+    for (scan_x = MAX(0, x - radius); scan_x <= MIN(width - 1, x + radius); scan_x++)
+    {
+      int delta_x;
+      int delta_y;
+
+      if (terrain_indices[(size_t)scan_y * (size_t)width + (size_t)scan_x] !=
+          FAERUN_ROAD_TERRAIN_INDEX)
+        continue;
+
+      delta_x = scan_x - x;
+      delta_y = scan_y - y;
+      count++;
+      sum_x += delta_x;
+      sum_y += delta_y;
+      sum_xx += delta_x * delta_x;
+      sum_xy += delta_x * delta_y;
+      sum_yy += delta_y * delta_y;
+    }
+  }
+
+  if (count <= 1)
+    return road_sector_types[2];
+
+  covariance_xx = count * sum_xx - sum_x * sum_x;
+  covariance_xy = count * sum_xy - sum_x * sum_y;
+  covariance_yy = count * sum_yy - sum_y * sum_y;
+  trace = (double)covariance_xx + (double)covariance_yy;
+  discriminant = sqrt((double)(covariance_xx - covariance_yy) *
+                          (double)(covariance_xx - covariance_yy) +
+                      4.0 * (double)covariance_xy * (double)covariance_xy);
+
+  /* A crossing has similar spread on both axes. A diagonal road has similar
+   * X/Y variance too, but its covariance keeps the discriminant large. */
+  if (trace <= 0.0 || discriminant <= trace * 0.30)
+    return road_sector_types[2];
+
+  if (covariance_xx > covariance_yy)
+    return road_sector_types[0];
+  if (covariance_yy > covariance_xx)
+    return road_sector_types[1];
+
+  if ((x > 0 && terrain_indices[(size_t)y * (size_t)width + (size_t)x - 1] ==
+                    FAERUN_ROAD_TERRAIN_INDEX) ||
+      (x + 1 < width && terrain_indices[(size_t)y * (size_t)width + (size_t)x + 1] ==
+                            FAERUN_ROAD_TERRAIN_INDEX))
+    return road_sector_types[0];
+
+  return road_sector_types[1];
+}
+
+int load_faerun_wilderness_map(const char *image_filename, const char *legend_filename)
+{
+  struct faerun_terrain_color colors[FAERUN_TERRAIN_COLOR_COUNT];
+  size_t terrain_counts[FAERUN_TERRAIN_COLOR_COUNT] = {0};
+  size_t road_sector_counts[3] = {0};
+  int road_sector_types[3] = {-1, -1, -1};
+  unsigned char *terrain_indices;
+  unsigned char *sectors;
+  gdImagePtr image;
+  FILE *image_file;
+  size_t pixel_count;
+  int width;
+  int height;
+  int maximum_color_distance = 0;
+  int x;
+  int image_y;
+
+  if (!image_filename || !legend_filename)
+    return FALSE;
+
+  memset(colors, 0, sizeof(colors));
+  if (!load_faerun_terrain_legend(legend_filename, colors, road_sector_types))
+    return FALSE;
+
+  image_file = fopen(image_filename, "rb");
+  if (!image_file)
+  {
+    log("SYSERR: Unable to open Faerun wilderness map '%s': %s", image_filename,
+        strerror(errno));
+    return FALSE;
+  }
+
+  image = gdImageCreateFromJpeg(image_file);
+  fclose(image_file);
+  if (!image)
+  {
+    log("SYSERR: Unable to decode Faerun wilderness map '%s' as JPEG", image_filename);
+    return FALSE;
+  }
+
+  width = gdImageSX(image);
+  height = gdImageSY(image);
+  if (width <= 0 || height <= 0 || (size_t)width > SIZE_MAX / (size_t)height)
+  {
+    log("SYSERR: Faerun wilderness map '%s' has invalid dimensions %dx%d", image_filename,
+        width, height);
+    gdImageDestroy(image);
+    return FALSE;
+  }
+
+  pixel_count = (size_t)width * (size_t)height;
+  sectors = malloc(pixel_count * sizeof(*sectors));
+  terrain_indices = malloc(pixel_count * sizeof(*terrain_indices));
+  if (!sectors || !terrain_indices)
+  {
+    log("SYSERR: Unable to allocate %zu bytes for the Faerun wilderness map",
+        pixel_count * 2);
+    free(sectors);
+    free(terrain_indices);
+    gdImageDestroy(image);
+    return FALSE;
+  }
+
+  for (image_y = 0; image_y < height; image_y++)
+  {
+    int world_y = height - image_y - 1;
+
+    for (x = 0; x < width; x++)
+    {
+      int pixel = gdImageGetPixel(image, x, image_y);
+      int color_distance;
+      int terrain_index = nearest_faerun_terrain(colors, gdImageRed(image, pixel),
+                                                 gdImageGreen(image, pixel),
+                                                 gdImageBlue(image, pixel), &color_distance);
+
+      terrain_indices[(size_t)world_y * (size_t)width + (size_t)x] =
+          (unsigned char)terrain_index;
+      terrain_counts[terrain_index]++;
+      maximum_color_distance = MAX(maximum_color_distance, color_distance);
+    }
+  }
+
+  gdImageDestroy(image);
+
+  for (image_y = 0; image_y < height; image_y++)
+  {
+    for (x = 0; x < width; x++)
+    {
+      size_t offset = (size_t)image_y * (size_t)width + (size_t)x;
+      int terrain_index = terrain_indices[offset];
+
+      if (terrain_index != FAERUN_ROAD_TERRAIN_INDEX)
+      {
+        sectors[offset] = (unsigned char)colors[terrain_index].sector_type;
+      }
+      else
+      {
+        int road_sector = get_faerun_road_sector(terrain_indices, width, height, x,
+                                                 image_y, road_sector_types);
+
+        sectors[offset] = (unsigned char)road_sector;
+        if (road_sector == road_sector_types[0])
+          road_sector_counts[0]++;
+        else if (road_sector == road_sector_types[1])
+          road_sector_counts[1]++;
+        else
+          road_sector_counts[2]++;
+      }
+    }
+  }
+
+  free(terrain_indices);
+  free(faerun_wilderness_map.sectors);
+  faerun_wilderness_map.sectors = sectors;
+  faerun_wilderness_map.width = width;
+  faerun_wilderness_map.height = height;
+
+  log("Loaded Faerun wilderness map '%s': %dx%d pixels, %zu possible rooms, maximum "
+      "JPEG color distance %d.",
+      image_filename, width, height, pixel_count, maximum_color_distance);
+  for (x = 0; x < FAERUN_TERRAIN_COLOR_COUNT; x++)
+  {
+    if (x != FAERUN_ROAD_TERRAIN_INDEX)
+      log("  Faerun terrain %-18s -> %-18s (%zu pixels)", colors[x].name,
+          sector_types[colors[x].sector_type], terrain_counts[x]);
+  }
+  log("  Faerun terrain Roads              -> E-W %zu, N-S %zu, intersections %zu pixels",
+      road_sector_counts[0], road_sector_counts[1], road_sector_counts[2]);
+
+  return TRUE;
+}
+
+void destroy_faerun_wilderness_map(void)
+{
+  free(faerun_wilderness_map.sectors);
+  faerun_wilderness_map.sectors = NULL;
+  faerun_wilderness_map.width = 0;
+  faerun_wilderness_map.height = 0;
+}
+
+int get_faerun_wilderness_width(void)
+{
+  return faerun_wilderness_map.width;
+}
+
+int get_faerun_wilderness_height(void)
+{
+  return faerun_wilderness_map.height;
+}
+
+int get_faerun_wilderness_sector(int x, int y, int *sector_type)
+{
+  if (!sector_type || !faerun_wilderness_map.sectors || x < 0 || y < 0 ||
+      x >= faerun_wilderness_map.width || y >= faerun_wilderness_map.height)
+    return FALSE;
+
+  *sector_type = faerun_wilderness_map.sectors[(size_t)y * (size_t)faerun_wilderness_map.width +
+                                               (size_t)x];
+  return TRUE;
+}
+
+int wilderness_coordinates_valid(int x, int y)
+{
+#ifdef CAMPAIGN_FR
+  int sector_type;
+
+  return get_faerun_wilderness_sector(x, y, &sector_type);
+#else
+  (void)x;
+  (void)y;
+  return TRUE;
+#endif
+}
+
+static int get_base_wilderness_sector(int x, int y)
+{
+#ifdef CAMPAIGN_FR
+  int sector_type;
+
+  if (get_faerun_wilderness_sector(x, y, &sector_type))
+    return sector_type;
+
+  return SECT_INSIDE;
+#else
+  return get_sector_type(get_elevation(NOISE_MATERIAL_PLANE_ELEV, x, y),
+                         get_temperature(NOISE_MATERIAL_PLANE_ELEV, x, y),
+                         get_moisture(NOISE_MATERIAL_PLANE_MOISTURE, x, y));
+#endif
+}
 
 /* \t= changes a color to be BACKGROUND. */
 struct wild_map_info_type wild_map_info[] = {
@@ -131,15 +702,89 @@ struct wild_map_info_type wild_map_info[] = {
     {-1, "", "", {NULL}, {NULL}}, /* RESERVED, NUM_ROOM_SECTORS */
 };
 
+int prepare_faerun_dynamic_room_pool(void)
+{
+#ifndef CAMPAIGN_FR
+  return TRUE;
+#else
+  static const int wilderness_directions[] = {NORTH, EAST, SOUTH, WEST};
+  room_rnum link_room;
+  room_rnum room;
+  room_vnum room_vnum;
+  zone_rnum room_zone;
+  int direction_index;
+  int room_count = 0;
+
+  link_room = real_room(WILD_ROOM_VNUM_START);
+  if (link_room == NOWHERE)
+  {
+    log("SYSERR: Faerun wilderness link room %d does not exist", WILD_ROOM_VNUM_START);
+    return FALSE;
+  }
+
+  for (room_vnum = WILD_DYNAMIC_ROOM_VNUM_START;
+       room_vnum <= WILD_DYNAMIC_ROOM_VNUM_END; room_vnum++)
+  {
+    room = real_room(room_vnum);
+    if (room == NOWHERE)
+      continue;
+
+    room_zone = GET_ROOM_ZONE(room);
+    if (room_zone == NOWHERE || room_zone > top_of_zone_table)
+    {
+      log("SYSERR: Faerun dynamic wilderness room %d has an invalid zone", room_vnum);
+      return FALSE;
+    }
+
+    /* Older Faerun world data marks zone 10000 as a world-map zone but not as
+     * a wilderness zone. Dynamic movement, room occupancy, maps, and other
+     * Luminari wilderness services all key off ZONE_WILDERNESS, so enable it
+     * in memory for whichever zone owns the configured virtual-room pool. */
+    if (!ZONE_FLAGGED(room_zone, ZONE_WILDERNESS))
+    {
+      SET_BIT_AR(zone_table[room_zone].zone_flags, ZONE_WILDERNESS);
+      log("Enabled wilderness services for Faerun virtual-room zone %d.",
+          zone_table[room_zone].number);
+    }
+
+    for (direction_index = 0;
+         direction_index < (int)(sizeof(wilderness_directions) / sizeof(wilderness_directions[0]));
+         direction_index++)
+    {
+      int direction = wilderness_directions[direction_index];
+
+      if (!world[room].dir_option[direction])
+        CREATE(world[room].dir_option[direction], struct room_direction_data, 1);
+      world[room].dir_option[direction]->to_room = link_room;
+    }
+
+    REMOVE_BIT_AR(ROOM_FLAGS(room), ROOM_OCCUPIED);
+    room_count++;
+  }
+
+  if (room_count == 0)
+  {
+    log("SYSERR: No Faerun dynamic wilderness rooms exist in vnum range %d-%d",
+        WILD_DYNAMIC_ROOM_VNUM_START, WILD_DYNAMIC_ROOM_VNUM_END);
+    return FALSE;
+  }
+
+  log("Prepared %d Faerun dynamic wilderness rooms for on-demand allocation.", room_count);
+  return TRUE;
+#endif
+}
+
 /* Initialize the kd-tree that indexes the static rooms of the wilderness.
  * This procedure can be used to do whatever initialization is needed,
  * but be aware that it is run whenever a room is added or deleted from
  * the wilderness zone. */
 void initialize_wilderness_lists()
 {
+#ifndef CAMPAIGN_FR
   int i;
   double loc[2];
   room_vnum *rm;
+#endif
 
   if (kd_wilderness_rooms != NULL)
     kd_free(kd_wilderness_rooms);
@@ -149,6 +794,7 @@ void initialize_wilderness_lists()
   /* Set destructor to free the room_rnum pointers when the tree is destroyed */
   kd_data_destructor(kd_wilderness_rooms, free);
 
+#ifndef CAMPAIGN_FR
   /* The +1 for the initializer is so that the 'magic' room is not
    * included in the index. */
   for (i = WILD_ROOM_VNUM_START + 1; i < WILD_DYNAMIC_ROOM_VNUM_START; i++)
@@ -163,6 +809,27 @@ void initialize_wilderness_lists()
       kd_insert(kd_wilderness_rooms, loc, rm);
     }
   }
+#endif
+}
+
+int initialize_faerun_wilderness(void)
+{
+#ifndef CAMPAIGN_FR
+  return TRUE;
+#else
+  if (!load_faerun_wilderness_map(FAERUN_WILDERNESS_MAP_FILE,
+                                  FAERUN_WILDERNESS_LEGEND_FILE))
+    return FALSE;
+
+  if (!prepare_faerun_dynamic_room_pool())
+  {
+    destroy_faerun_wilderness_map();
+    return FALSE;
+  }
+
+  initialize_wilderness_lists();
+  return TRUE;
+#endif
 }
 
 /* Get the value of the radial/box gradient at the specified (x,y) coordinate. */
@@ -513,14 +1180,14 @@ void get_map(int xsize, int ysize, int center_x, int center_y, struct wild_map_t
     for (x = 0; x < xsize; x++)
     {
       map[x][y].vis = 0;
-      map[x][y].sector_type =
-          get_sector_type(get_elevation(NOISE_MATERIAL_PLANE_ELEV, x + x_offset, y + y_offset),
-                          get_temperature(NOISE_MATERIAL_PLANE_ELEV, x + x_offset, y + y_offset),
-                          get_moisture(NOISE_MATERIAL_PLANE_MOISTURE, x + x_offset, y + y_offset));
+      map[x][y].sector_type = get_base_wilderness_sector(x + x_offset, y + y_offset);
       map[x][y].glyph = NULL;
       map[x][y].num_regions = 0;
       map[x][y].weather = get_weather(x + x_offset, y + y_offset);
 
+      /* The Faerun image already contains its roads and terrain. Avoid two
+       * spatial database queries per pixel when rendering its larger maps. */
+#ifndef CAMPAIGN_FR
       /* Map should reflect changes from regions */
       struct region_list *regions = NULL;
       struct region_list *curr_region = NULL;
@@ -600,33 +1267,37 @@ void get_map(int xsize, int ysize, int center_x, int center_y, struct wild_map_t
       /* Free the region and path lists after use */
       free_region_list(regions);
       free_path_list(paths);
+#endif
     }
   }
 
   /* use the kd_wilderness_rooms kd-tree index to look up the nearby rooms */
-  loc[0] = center_x;
-  loc[1] = center_y;
-  set = kd_nearest_range(kd_wilderness_rooms, loc, ((xsize - 1) / 2) + 1);
-
-  while (!kd_res_end(set))
+  if (kd_wilderness_rooms)
   {
-    room = (room_rnum *)kd_res_item(set, pos);
+    loc[0] = center_x;
+    loc[1] = center_y;
+    set = kd_nearest_range(kd_wilderness_rooms, loc, ((xsize - 1) / 2) + 1);
 
-    /* Sanity check. */
-    trans_x = MAX(0, MIN((int)pos[0] - x_offset, xsize));
-    trans_y = MAX(0, MIN((int)pos[1] - y_offset, ysize));
-
-    if ((trans_x < xsize) && (trans_y < ysize))
+    while (!kd_res_end(set))
     {
-      // log ("Altering room (%f, %f) based on kd-tree index!\r\n", pos[0], pos[1]);
-      map[trans_x][trans_y].sector_type = world[*room].sector_type;
-      map[trans_x][trans_y].glyph = NULL;
-    }
-    /* go to the next entry */
-    kd_res_next(set);
-  }
+      room = (room_rnum *)kd_res_item(set, pos);
 
-  kd_res_free(set);
+      /* Sanity check. */
+      trans_x = MAX(0, MIN((int)pos[0] - x_offset, xsize));
+      trans_y = MAX(0, MIN((int)pos[1] - y_offset, ysize));
+
+      if ((trans_x < xsize) && (trans_y < ysize))
+      {
+        // log ("Altering room (%f, %f) based on kd-tree index!\r\n", pos[0], pos[1]);
+        map[trans_x][trans_y].sector_type = world[*room].sector_type;
+        map[trans_x][trans_y].glyph = NULL;
+      }
+      /* go to the next entry */
+      kd_res_next(set);
+    }
+
+    kd_res_free(set);
+  }
 }
 
 /* Get the sector type based on the three variables -
@@ -706,18 +1377,22 @@ int get_modified_sector_type(zone_rnum zone, int x, int y)
   struct path_list *paths = NULL;
   struct path_list *curr_path = NULL;
   int sector_type;
+#ifndef CAMPAIGN_FR
   int elev, temp, mois;
+#endif
 
   /* Get the enclosing regions. */
   regions = get_enclosing_regions(zone, x, y);
   /* Get the enclosing paths. */
   paths = get_enclosing_paths(zone, x, y);
 
+  sector_type = get_base_wilderness_sector(x, y);
+
+#ifndef CAMPAIGN_FR
   elev = get_elevation(NOISE_MATERIAL_PLANE_ELEV, x, y);
   temp = get_temperature(NOISE_MATERIAL_PLANE_ELEV, x, y);
   mois = get_moisture(NOISE_MATERIAL_PLANE_ELEV, x, y);
-
-  sector_type = get_sector_type(elev, temp, mois);
+#endif
 
   /* Override default values with region-based values. */
   for (curr_region = regions; curr_region != NULL; curr_region = curr_region->next)
@@ -740,10 +1415,12 @@ int get_modified_sector_type(zone_rnum zone, int x, int y)
           region_table[curr_region->rnum].region_props);
       break;
     case REGION_SECTOR_TRANSFORM:
+#ifndef CAMPAIGN_FR
       elev += region_table[curr_region->rnum].region_props;
       log("  -> Adjusting elevation at (%d, %d) by : %d", x, y,
           region_table[curr_region->rnum].region_props);
       sector_type = get_sector_type(elev, temp, mois);
+#endif
       break;
     case REGION_ENCOUNTER:
       break;
@@ -784,6 +1461,9 @@ room_rnum find_static_room_by_coordinates(int x, int y)
   void *set;
   room_rnum *room;
 
+  if (!kd_wilderness_rooms)
+    return NOWHERE;
+
   /* use the kd_wilderness_rooms kd-tree index to look up the room at (x, y) */
   loc[0] = (double)x;
   loc[1] = (double)y;
@@ -804,26 +1484,28 @@ room_rnum find_static_room_by_coordinates(int x, int y)
  * vector and a pointer to struct room_data (the actual room!). */
 room_rnum find_room_by_coordinates(int x, int y)
 {
-#ifdef CAMPAIGN_FR
-  return NOWHERE;
-#endif
-
-  int i = 0;
+  room_vnum i;
   room_rnum room = NOWHERE;
+
+  if (!wilderness_coordinates_valid(x, y))
+    return NOWHERE;
 
   if ((room = find_static_room_by_coordinates(x, y)) != NOWHERE)
   {
     return room;
   }
   /* Check the dynamic rooms. */
-  for (i = WILD_DYNAMIC_ROOM_VNUM_START;
-       (i <= WILD_DYNAMIC_ROOM_VNUM_END) && (real_room(i) != NOWHERE); i++)
+  for (i = WILD_DYNAMIC_ROOM_VNUM_START; i <= WILD_DYNAMIC_ROOM_VNUM_END; i++)
   {
-    if ((ROOM_FLAGGED(real_room(i), ROOM_OCCUPIED)) && (world[real_room(i)].coords[X_COORD] == x) &&
-        (world[real_room(i)].coords[Y_COORD] == y))
+    room = real_room(i);
+    if (room == NOWHERE)
+      continue;
+
+    if (ROOM_FLAGGED(room, ROOM_OCCUPIED) && world[room].coords[X_COORD] == x &&
+        world[room].coords[Y_COORD] == y)
     {
       /* Match */
-      return real_room(i);
+      return room;
     }
   }
 
@@ -833,7 +1515,7 @@ room_rnum find_room_by_coordinates(int x, int y)
 
   //  assign_wilderness_room(room, x, y);
 
-  return room;
+  return NOWHERE;
 }
 
 room_rnum find_available_wilderness_room()
@@ -871,7 +1553,7 @@ room_rnum find_available_wilderness_room()
  * This pattern prevents both memory leaks and double-free crashes.
  * Future modifications must maintain these safety checks.
  */
-void assign_wilderness_room(room_rnum room, int x, int y)
+int assign_wilderness_room(room_rnum room, int x, int y)
 {
   /* Set defaults */
 
@@ -884,18 +1566,31 @@ void assign_wilderness_room(room_rnum room, int x, int y)
    * CRITICAL: Always check against these pointers before calling free()
    * to prevent crashes from attempting to free static memory.
    */
+#ifdef CAMPAIGN_FR
+  static char wilderness_name[] = "The Wilderness of Faerun";
+  static char wilderness_desc[] = "The wild lands of Faerun extend in all directions.";
+#else
   static char wilderness_name[] = "The Wilderness of Luminari";
   static char wilderness_desc[] = "The wilderness extends in all directions.";
+#endif
 
   struct region_list *regions = NULL;
   struct region_list *curr_region = NULL;
   struct path_list *paths = NULL;
   struct path_list *curr_path = NULL;
 
-  if (room == NOWHERE)
+  if (!VALID_ROOM_RNUM(room))
   { /* This is not a room! */
-    log("SYSERR: Attempted to assign NOWHERE as a new wilderness location at (%d, %d)", x, y);
-    return;
+    log("SYSERR: Attempted to assign invalid room %d as a wilderness location at (%d, %d)",
+        room, x, y);
+    return FALSE;
+  }
+
+  if (!wilderness_coordinates_valid(x, y))
+  {
+    log("SYSERR: Attempted to assign wilderness room %d outside the map at (%d, %d)",
+        world[room].number, x, y);
+    return FALSE;
   }
 
   /* Here we will set the coordinates, build the descriptions, set the exits, sector type, etc. */
@@ -922,9 +1617,7 @@ void assign_wilderness_room(room_rnum room, int x, int y)
    * regions or paths override them below.
    */
   world[room].name = wilderness_name;
-  world[room].sector_type = get_sector_type(get_elevation(NOISE_MATERIAL_PLANE_ELEV, x, y),
-                                            get_temperature(NOISE_MATERIAL_PLANE_ELEV, x, y),
-                                            get_moisture(NOISE_MATERIAL_PLANE_MOISTURE, x, y));
+  world[room].sector_type = get_base_wilderness_sector(x, y);
 
   /* Override default values with region-based values. */
   for (curr_region = regions; curr_region != NULL; curr_region = curr_region->next)
@@ -999,6 +1692,8 @@ void assign_wilderness_room(room_rnum room, int x, int y)
   /* Free the region and path lists after use */
   free_region_list(regions);
   free_path_list(paths);
+
+  return TRUE;
 }
 
 void line_vis(struct wild_map_tile **map, int x, int y, int x2, int y2)
@@ -1203,10 +1898,59 @@ static char *get_ascii_wilderness_symbol(int sector_type)
   return ascii_buffer;
 }
 
+struct wilderness_map_string_buffer
+{
+  char *data;
+  size_t length;
+  size_t capacity;
+};
+
+static bool append_wilderness_map_text(struct wilderness_map_string_buffer *buffer,
+                                       const char *text)
+{
+  char *resized_data;
+  size_t needed;
+  size_t text_length;
+  size_t new_capacity;
+
+  if (!buffer || !text)
+    return FALSE;
+
+  text_length = strlen(text);
+  if (buffer->length > SIZE_MAX - text_length - 1)
+    return FALSE;
+  needed = buffer->length + text_length + 1;
+
+  if (needed > buffer->capacity)
+  {
+    new_capacity = buffer->capacity ? buffer->capacity : 1024;
+    while (new_capacity < needed)
+    {
+      if (new_capacity > SIZE_MAX / 2)
+      {
+        new_capacity = needed;
+        break;
+      }
+      new_capacity *= 2;
+    }
+
+    resized_data = realloc(buffer->data, new_capacity);
+    if (!resized_data)
+      return FALSE;
+    buffer->data = resized_data;
+    buffer->capacity = new_capacity;
+  }
+
+  memcpy(buffer->data + buffer->length, text, text_length);
+  buffer->length += text_length;
+  buffer->data[buffer->length] = '\0';
+  return TRUE;
+}
+
 static char *wilderness_map_to_string(struct wild_map_tile **map, int size, int shape, int map_type)
 {
-  static char strmap[32768];
-  char *mp = strmap;
+  struct wilderness_map_string_buffer buffer = {NULL, 0, 0};
+  const char *symbol_to_use;
   int x, y, i;
   bool region_colored = FALSE;
   int centerx = ((size - 1) / 2);
@@ -1226,8 +1970,8 @@ static char *wilderness_map_to_string(struct wild_map_tile **map, int size, int 
         if ((x == centerx) && (y == centery))
         {
           /* Force ASCII-only for player marker to maintain alignment */
-          strcpy(mp, "\tM*\tn");
-          mp += strlen("\tM*\tn");
+          if (!append_wilderness_map_text(&buffer, "\tM*\tn"))
+            goto map_error;
         }
         else
         {
@@ -1239,8 +1983,8 @@ static char *wilderness_map_to_string(struct wild_map_tile **map, int size, int 
             {
               /* Geographic region */
               /* Pick a color */
-              strcpy(mp, "\033[1;46m");
-              mp += strlen("\033[1;46m");
+              if (!append_wilderness_map_text(&buffer, "\033[1;46m"))
+                goto map_error;
               region_colored = TRUE;
               break;
             }
@@ -1249,7 +1993,6 @@ static char *wilderness_map_to_string(struct wild_map_tile **map, int size, int 
               (map_type == MAP_TYPE_WEATHER && map[x][y].weather < 178))
           {
             /* Force ASCII-only for wilderness maps to guarantee alignment */
-            const char *symbol_to_use;
             if (map[x][y].vis == 0)
             {
               symbol_to_use = " ";
@@ -1263,8 +2006,8 @@ static char *wilderness_map_to_string(struct wild_map_tile **map, int size, int 
               /* Get ASCII-only symbol to avoid UTF-8 alignment issues */
               symbol_to_use = get_ascii_wilderness_symbol(map[x][y].sector_type);
             }
-            strcpy(mp, symbol_to_use);
-            mp += strlen(symbol_to_use);
+            if (!append_wilderness_map_text(&buffer, symbol_to_use))
+              goto map_error;
           }
 
           /* Check the map_type - if this is a weather map then overlay weather glyphs on the map */
@@ -1273,42 +2016,45 @@ static char *wilderness_map_to_string(struct wild_map_tile **map, int size, int 
             weather_value = map[x][y].weather;
             if (weather_value >= 225)
             {
-              strcpy(mp, "\tYL\tn");
-              mp += strlen("\tYL\tn");
+              if (!append_wilderness_map_text(&buffer, "\tYL\tn"))
+                goto map_error;
             }
             else if (weather_value >= 200)
             {
-              strcpy(mp, "\tBR\tn");
-              mp += strlen("\tBR\tn");
+              if (!append_wilderness_map_text(&buffer, "\tBR\tn"))
+                goto map_error;
             }
             else if (weather_value >= 178)
             {
-              strcpy(mp, "\tbR\tn");
-              mp += strlen("\tbR\tn");
+              if (!append_wilderness_map_text(&buffer, "\tbR\tn"))
+                goto map_error;
             }
           }
 
           if (region_colored == TRUE)
           {
             /* Set the background color back */
-            strcpy(mp, "\033[1;40m");
-            mp += strlen("\033[1;40m");
+            if (!append_wilderness_map_text(&buffer, "\033[1;40m"))
+              goto map_error;
             region_colored = FALSE;
           }
         }
       }
       else
       {
-        strcpy(mp, " ");
-        mp += 1;
+        if (!append_wilderness_map_text(&buffer, " "))
+          goto map_error;
       }
     }
-    strcpy(mp, "\r\n");
-    mp += 2;
+    if (!append_wilderness_map_text(&buffer, "\r\n"))
+      goto map_error;
   }
 
-  *mp = '\0';
-  return strmap;
+  return buffer.data;
+
+map_error:
+  free(buffer.data);
+  return NULL;
 }
 
 /* Print a map with size 'size', centered on (x,y) */
@@ -1318,6 +2064,7 @@ void show_wilderness_map(struct char_data *ch, int size, int x, int y)
   int i;
   //int j;
   char *generated_desc = NULL;
+  char *map_text = NULL;
 
   int xsize = size;
   int ysize = size;
@@ -1346,7 +2093,14 @@ void show_wilderness_map(struct char_data *ch, int size, int x, int y)
     line_vis(map, centerx, centery, xsize - 1, i);
   }
 
-  //  send_to_char(ch, "%s", wilderness_map_to_string(map, size));
+  map_text = wilderness_map_to_string(map, size, WILD_MAP_SHAPE_CIRCLE, MAP_TYPE_NORMAL);
+  if (!map_text)
+  {
+    free(map[0]);
+    free(map);
+    send_to_char(ch, "The surrounding area is too difficult to map right now.\r\n");
+    return;
+  }
 
   if (!IS_NPC(ch))
     if (IS_SET_AR(ROOM_FLAGS(IN_ROOM(ch)), ROOM_GENDESC) || IS_DYNAMIC(IN_ROOM(ch)))
@@ -1360,14 +2114,13 @@ void show_wilderness_map(struct char_data *ch, int size, int x, int y)
                      "%s"
                      "</WILDERNESS_MAP>\n"
                      "\tn%s\tn\n",
-                     wilderness_map_to_string(map, size, WILD_MAP_SHAPE_CIRCLE, MAP_TYPE_NORMAL),
-                     generated_desc);
+                     map_text, generated_desc);
       }
       else
       {
         send_to_char(
             ch, "%s",
-            strpaste(wilderness_map_to_string(map, size, WILD_MAP_SHAPE_CIRCLE, MAP_TYPE_NORMAL),
+            strpaste(map_text,
                      strfrmt(generated_desc, GET_SCREEN_WIDTH(ch) - size, size, FALSE, TRUE, TRUE),
                      " \tn"));
       }
@@ -1383,14 +2136,13 @@ void show_wilderness_map(struct char_data *ch, int size, int x, int y)
                      "%s"
                      "</WILDERNESS_MAP>\n"
                      "\tn%s\tn\n",
-                     wilderness_map_to_string(map, size, WILD_MAP_SHAPE_CIRCLE, MAP_TYPE_NORMAL),
-                     world[IN_ROOM(ch)].description);
+                     map_text, world[IN_ROOM(ch)].description);
       }
       else
       {
         send_to_char(
             ch, "%s",
-            strpaste(wilderness_map_to_string(map, size, WILD_MAP_SHAPE_CIRCLE, MAP_TYPE_NORMAL),
+            strpaste(map_text,
                      strfrmt(world[IN_ROOM(ch)].description, GET_SCREEN_WIDTH(ch) - size, size,
                              FALSE, TRUE, TRUE),
                      " \tn"));
@@ -1399,9 +2151,10 @@ void show_wilderness_map(struct char_data *ch, int size, int x, int y)
   else
     send_to_char(
         ch, "%s",
-        strpaste(wilderness_map_to_string(map, size, WILD_MAP_SHAPE_CIRCLE, MAP_TYPE_NORMAL),
-                 strfrmt(world[IN_ROOM(ch)].description, 80 - size, size, FALSE, TRUE, TRUE),
+        strpaste(map_text, strfrmt(world[IN_ROOM(ch)].description, 80 - size, size, FALSE, TRUE, TRUE),
                  " \tn"));
+
+  free(map_text);
 
   send_to_char(ch,
                " Current Location  : (\tC%d\tn, \tC%d\tn)\r\n"
@@ -1484,19 +2237,28 @@ EVENTFUNC(event_check_occupied)
 char *gen_ascii_wilderness_map(int size, int x, int y, int map_type)
 {
   struct wild_map_tile **map;
+  struct wild_map_tile *data;
+  char *mapstring = NULL;
+  size_t tile_count;
   int i;
   int j;
-
   int xsize = size;
   int ysize = size;
-  //int centerx = ((xsize - 1) / 2);
-  //int centery = ((ysize - 1) / 2);
+  int x_offset;
+  int y_offset;
 
-  char *mapstring = NULL;
+  if (size <= 0 || (size_t)xsize > SIZE_MAX / (size_t)ysize)
+    return NULL;
 
-  struct wild_map_tile *data = malloc(sizeof(struct wild_map_tile) * xsize * ysize);
-
-  map = malloc(sizeof(struct wild_map_tile *) * xsize);
+  tile_count = (size_t)xsize * (size_t)ysize;
+  data = malloc(sizeof(*data) * tile_count);
+  map = malloc(sizeof(*map) * (size_t)xsize);
+  if (!data || !map)
+  {
+    free(data);
+    free(map);
+    return NULL;
+  }
 
   for (i = 0; i < xsize; i++)
   {
@@ -1505,9 +2267,11 @@ char *gen_ascii_wilderness_map(int size, int x, int y, int map_type)
 
   get_map(xsize, ysize, x, y, map);
 
+  x_offset = x - ((xsize - 1) / 2);
+  y_offset = y - ((ysize - 1) / 2);
   for (i = 0; i < xsize; i++)
     for (j = 0; j < ysize; j++)
-      map[i][j].vis = 10;
+      map[i][j].vis = wilderness_coordinates_valid(i + x_offset, j + y_offset) ? 10 : 0;
 
   mapstring = wilderness_map_to_string(map, size, WILD_MAP_SHAPE_RECT, map_type);
 

@@ -22,6 +22,11 @@ depend
 # Exception: Keep minimal world .obj files (needed for deployment)
 !lib/world/minimal/*.obj
 
+# Keep only the image-backed Faerun wilderness inputs under version control.
+frmaps/*
+!frmaps/faerunmap.jpg
+!frmaps/legend.txt
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -327,6 +332,7 @@ lib/text/help/*
 ####################
 /unittests/obj
 /unittests/CuTest/AllTests.c
+/cutest
 
 ####################
 # Keep Directory Structure
