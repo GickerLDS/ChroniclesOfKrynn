@@ -4448,6 +4448,15 @@ void assign_feats(void)
 
   /* feat-number | name | in game? | learnable? | stackable? | feat-type | short-descrip | long descrip */
 
+  /* Must be defined before any feat that references it as a prerequisite, since
+   * feat_prereq_feat() captures the prerequisite feat's name at call time. */
+  feato(FEAT_PSIONIC_FOCUS, "psionic focus", TRUE, FALSE, FALSE, FEAT_TYPE_PSIONIC,
+        "When activated (with the psionicfocus command) power manifestation time is reduced, "
+        "damage is increased by 10% and dcs are increased by +2.",
+        "When activated (with the psionicfocus command) power manifestation time is reduced, "
+        "damage is increased by 10% and dcs are increased by +1. It can also activate benefits "
+        "from other feats that depend on psionic focus being active.");
+
   feato(FEAT_CRITICAL_FOCUS, "critical focus", TRUE, TRUE, FALSE, FEAT_TYPE_PSIONIC,
         "When psionic focus is active, your critical hits land more often and for more damage.",
         "When psionic focus is active, your critical threat range increases by one and critical "
@@ -4525,12 +4534,6 @@ void assign_feats(void)
         "intelligence bonus to the roll.",
         "While psionic focus is active, most d20 rolls have a 10 percent chance to add your "
         "intelligence bonus to the roll.");
-  feato(FEAT_PSIONIC_FOCUS, "psionic focus", TRUE, FALSE, FALSE, FEAT_TYPE_PSIONIC,
-        "When activated (with the psionicfocus command) power manifestation time is reduced, "
-        "damage is increased by 10% and dcs are increased by +2.",
-        "When activated (with the psionicfocus command) power manifestation time is reduced, "
-        "damage is increased by 10% and dcs are increased by +1. It can also activate benefits "
-        "from other feats that depend on psionic focus being active.");
 
   feato(FEAT_QUICK_MIND, "quick mind", TRUE, TRUE, FALSE, FEAT_TYPE_PSIONIC,
         "Reduces power manifestation time.", "Reduces power manifestation time.");
