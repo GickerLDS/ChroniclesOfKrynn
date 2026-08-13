@@ -1,0 +1,21 @@
+Faerun MUD Wilderness Terrain Legend
+
+Sector Type     | Terrain Type      | Color Name  | Hex Code
+------------------------------------------------
+SECT_OCEAN      | Ocean             | Deep Blue   | #1357A6
+SECT_FIELD      | Grassland         | Light Green | #A8D070
+SECT_FOREST     | Forest            | Dark Green  | #1B5E20
+SECT_HILLS      | Hills             | Tan         | #C2A56A
+SECT_MOUNTAIN   | Mountains         | Gray        | #808080
+SECT_DESERT     | Desert            | Yellow      | #F7D774
+SECT_WATER_SWIM | Rivers & Lakes    | Light Blue  | #4FA8E8
+SECT_MARSHLAND  | Swamps / Marshes  | Teal        | #2C7F7B
+SECT_TUNDRA     | Tundra            | White       | #F2F2F2
+(See Below)     | Roads             | Dark Red    | #B22222
+SECT_JUNGLE     | Jungle            | Purple      | #6A38A1
+SECT_BEACH      | Beach             | Orange      | #FFA500
+
+For roads, it depends on what direction the road is travelling:
+east-west   SECT_ROAD_EW
+north-south SECT_ROAD_NS
+intersection SECT_ROAD_INT

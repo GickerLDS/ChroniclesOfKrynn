@@ -1430,8 +1430,12 @@ int vehicle_can_move(struct vehicle_data *vehicle, int direction)
   new_y = vehicle->y_coord + dy;
 
   /* Check wilderness bounds */
+#ifdef CAMPAIGN_FR
+  if (!wilderness_coordinates_valid(new_x, new_y))
+#else
   if (new_x < VEHICLE_WILDERNESS_MIN_X || new_x > VEHICLE_WILDERNESS_MAX_X ||
       new_y < VEHICLE_WILDERNESS_MIN_Y || new_y > VEHICLE_WILDERNESS_MAX_Y)
+#endif
   {
     return 0;
   }
@@ -1507,6 +1511,9 @@ int move_vehicle(struct vehicle_data *vehicle, int direction)
   new_x = vehicle->x_coord + dx;
   new_y = vehicle->y_coord + dy;
 
+  if (!wilderness_coordinates_valid(new_x, new_y))
+    return 0;
+
   /* Get or allocate destination room */
   dest_room = find_room_by_coordinates(new_x, new_y);
   if (dest_room == NOWHERE)
@@ -1517,7 +1524,8 @@ int move_vehicle(struct vehicle_data *vehicle, int direction)
       log("SYSERR: move_vehicle - room pool exhausted for vehicle #%d", vehicle->id);
       return 0;
     }
-    assign_wilderness_room(dest_room, new_x, new_y);
+    if (!assign_wilderness_room(dest_room, new_x, new_y))
+      return 0;
   }
 
   /* Get sector type at destination */

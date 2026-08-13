@@ -75,6 +75,8 @@
 // Forgotten Realms: Keep existing crafting system, basic wilderness materials only
 #define ENABLE_WILDERNESS_MATERIALS 0
 #define WILDERNESS_MATERIAL_THEME "forgotten_realms"
+#define FAERUN_WILDERNESS_MAP_FILE "../frmaps/faerunmap.jpg"
+#define FAERUN_WILDERNESS_LEGEND_FILE "../frmaps/legend.txt"
 // #define ENABLE_WILDERNESS_CRAFTING_INTEGRATION 0  // Disabled for FR
 
 #else

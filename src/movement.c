@@ -237,6 +237,13 @@ int do_simple_move(struct char_data *ch, int dir, int need_specials_check)
       /* Bad direction for wilderness travel.*/
       return 0;
     }
+
+    if (!wilderness_coordinates_valid(new_x, new_y))
+    {
+      send_to_char(ch, "The wilderness does not extend any farther in that direction.\r\n");
+      return 0;
+    }
+
     going_to = find_room_by_coordinates(new_x, new_y);
     if (going_to == NOWHERE)
     {
@@ -249,7 +256,8 @@ int do_simple_move(struct char_data *ch, int dir, int need_specials_check)
       }
       /* Must set the coords, etc in the going_to room. */
 
-      assign_wilderness_room(going_to, new_x, new_y);
+      if (!assign_wilderness_room(going_to, new_x, new_y))
+        return 0;
     }
   }
   else if (world[IN_ROOM(ch)].dir_option[dir])

@@ -6700,6 +6700,7 @@ struct char_special_data
   byte position;                    /**< Standing, fighting, sleeping, etc. */
   int timer;                        /**< Timer for update */
   time_t linkdead_at;               /**< Real time when a player lost link, 0 if connected. */
+  time_t map_cooldown;              /**< Real time when a mortal may next use the map command. */
 
   int weather; /**< The current weather this player is affected by. */
 
