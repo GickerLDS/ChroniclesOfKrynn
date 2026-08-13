@@ -124,6 +124,7 @@ ACMD_DECL(do_epicfeats);
 #define CLASS_PREREQ_ALIGN 10
 #define FEAT_PREREQ_NOFEAT 11
 #define CLASS_PREREQ_NOFEAT 11
+#define CLASS_PREREQ_LOREMASTER 12
 
 /* prereq system, ability scores */
 #define AB_NONE 0

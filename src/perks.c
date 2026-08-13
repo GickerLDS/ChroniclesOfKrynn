@@ -343,6 +343,90 @@ static int normalize_perk_class_id(int class_id)
   return class_id;
 }
 
+static bool is_loremaster_perk_candidate_class(int class_id)
+{
+  switch (class_id)
+  {
+  case CLASS_WIZARD:
+  case CLASS_SORCERER:
+  case CLASS_BARD:
+  case CLASS_SUMMONER:
+  case CLASS_CLERIC:
+  case CLASS_DRUID:
+  case CLASS_RANGER:
+  case CLASS_PALADIN:
+  case CLASS_INQUISITOR:
+    return true;
+  default:
+    return false;
+  }
+}
+
+static int get_loremaster_advancement_count(struct char_data *ch, int class_id)
+{
+  int i = 0;
+  int count = 0;
+
+#ifdef GET_LOREMASTER_CASTER_CLASS
+  if (!ch || IS_NPC(ch) || !is_loremaster_perk_candidate_class(class_id))
+    return 0;
+
+  for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+  {
+    if (GET_LOREMASTER_CASTER_CLASS(ch, i) == class_id)
+      count++;
+  }
+#else
+  (void)ch;
+  (void)class_id;
+  (void)i;
+#endif
+
+  return count;
+}
+
+static int get_loremaster_perk_award_class(struct char_data *ch)
+{
+  static const int candidate_classes[] = {CLASS_WIZARD,    CLASS_SORCERER, CLASS_BARD,
+                                          CLASS_SUMMONER,  CLASS_CLERIC,   CLASS_DRUID,
+                                          CLASS_RANGER,    CLASS_PALADIN,  CLASS_INQUISITOR,
+                                          CLASS_UNDEFINED};
+  int i = 0;
+  int class_id = CLASS_UNDEFINED;
+  int best_class = CLASS_UNDEFINED;
+  int advancement_count = 0;
+  int class_level = 0;
+  int best_advancement_count = -1;
+  int best_class_level = -1;
+
+  if (!ch || IS_NPC(ch))
+    return CLASS_UNDEFINED;
+
+  for (i = 0; candidate_classes[i] != CLASS_UNDEFINED; i++)
+  {
+    class_id = candidate_classes[i];
+    if (!is_loremaster_perk_candidate_class(class_id))
+      continue;
+
+    advancement_count = get_loremaster_advancement_count(ch, class_id);
+    class_level = CLASS_LEVEL(ch, class_id);
+    if (advancement_count <= 0 && class_level <= 0)
+      continue;
+
+    if (best_class == CLASS_UNDEFINED || advancement_count > best_advancement_count ||
+        (advancement_count == best_advancement_count && class_level > best_class_level) ||
+        (advancement_count == best_advancement_count && class_level == best_class_level &&
+         class_id < best_class))
+    {
+      best_class = class_id;
+      best_advancement_count = advancement_count;
+      best_class_level = class_level;
+    }
+  }
+
+  return best_class;
+}
+
 static void migrate_sorcerer_perk_points_to_wizard(struct char_data *ch)
 {
   int sorcerer_points;
@@ -18481,6 +18565,7 @@ static void get_award_perk_classes(struct char_data *ch, int award_class, int *p
                                    int *perk_class_2)
 {
   int i;
+  int loremaster_award_class = CLASS_UNDEFINED;
   int best_class = -1, second_class = -1;
   int best_level = 0, second_level = 0;
 
@@ -18489,7 +18574,22 @@ static void get_award_perk_classes(struct char_data *ch, int award_class, int *p
   if (perk_class_2)
     *perk_class_2 = -1;
 
-  /* Non-Dragon-Disciple classes use the static mapping. */
+  /* Loremaster routes both points to the spellcasting class it has advanced most.
+     Ties are deterministic: advancement count, then base class level, then lowest class id. */
+  if (ch && award_class == CLASS_LOREMASTER)
+  {
+    loremaster_award_class = get_loremaster_perk_award_class(ch);
+    if (loremaster_award_class != CLASS_UNDEFINED)
+    {
+      if (perk_class_1)
+        *perk_class_1 = normalize_perk_class_id(loremaster_award_class);
+      if (perk_class_2)
+        *perk_class_2 = normalize_perk_class_id(loremaster_award_class);
+      return;
+    }
+  }
+
+  /* Classes without dynamic routing use the static mapping. */
   if (!ch || award_class != CLASS_DRAGON_DISCIPLE)
   {
     if (perk_class_1)
@@ -30602,6 +30702,8 @@ int class_to_perk_class(int class_type, int which_perk)
   case CLASS_ARTIFICER:
     return CLASS_ARTIFICER;
   case CLASS_DRAGON_DISCIPLE:
+    return CLASS_WIZARD;
+  case CLASS_LOREMASTER:
     return CLASS_WIZARD;
   }
   return -1;

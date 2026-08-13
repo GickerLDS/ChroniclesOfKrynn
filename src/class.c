@@ -66,6 +66,16 @@
 /* here is our class_list declare */
 struct class_table class_list[NUM_CLASSES];
 
+#define NUM_LOREMASTER_KNOWLEDGE_ABILITIES 4
+#define NUM_LOREMASTER_ENTRY_CASTERS 9
+
+static const int loremaster_knowledge_abilities[NUM_LOREMASTER_KNOWLEDGE_ABILITIES] = {
+    ABILITY_ARCANA, ABILITY_HISTORY, ABILITY_RELIGION, ABILITY_SURVIVAL};
+
+static const int loremaster_entry_casters[NUM_LOREMASTER_ENTRY_CASTERS] = {
+    CLASS_WIZARD, CLASS_SORCERER, CLASS_BARD,      CLASS_SUMMONER, CLASS_CLERIC,
+    CLASS_DRUID,  CLASS_RANGER,   CLASS_PALADIN,  CLASS_INQUISITOR};
+
 /* SET OF UTILITY FUNCTIONS for the purpose of class prereqs */
 
 /* create/allocate memory for a pre-req struct, then assign the prereqs */
@@ -260,6 +270,283 @@ void class_prereq_weapon_proficiency(int class_num)
   /*  Link it up */
   prereq->next = class_list[class_num].prereq_list;
   class_list[class_num].prereq_list = prereq;
+}
+
+void class_prereq_loremaster(int class_num)
+{
+  struct class_prerequisite *prereq = NULL;
+
+  prereq = create_prereq(CLASS_PREREQ_LOREMASTER, 0, 0, 0);
+  prereq->description = strdup("Loremaster special prerequisites");
+
+  prereq->next = class_list[class_num].prereq_list;
+  class_list[class_num].prereq_list = prereq;
+}
+
+static bool loremaster_is_item_creation_feat(int featnum)
+{
+  switch (featnum)
+  {
+  case FEAT_BREW_POTION:
+  case FEAT_CRAFT_MAGICAL_ARMS_AND_ARMOR:
+  case FEAT_CRAFT_ROD:
+  case FEAT_CRAFT_STAFF:
+  case FEAT_CRAFT_WAND:
+  case FEAT_CRAFT_WONDEROUS_ITEM:
+  case FEAT_FORGE_RING:
+  case FEAT_SCRIBE_SCROLL:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+static int loremaster_count_knowledge_ranks(struct char_data *ch)
+{
+  int i = 0, count = 0;
+
+  for (i = 0; i < NUM_LOREMASTER_KNOWLEDGE_ABILITIES; i++)
+  {
+    if (GET_ABILITY(ch, loremaster_knowledge_abilities[i]) >= 7)
+      count++;
+  }
+
+  return count;
+}
+
+static bool loremaster_has_knowledge_skill_focus(struct char_data *ch)
+{
+  int i = 0;
+
+  for (i = 0; i < NUM_LOREMASTER_KNOWLEDGE_ABILITIES; i++)
+  {
+    if (HAS_SKILL_FEAT(ch, loremaster_knowledge_abilities[i],
+                       feat_to_skfeat(FEAT_SKILL_FOCUS)))
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+static int loremaster_count_qualifying_feats(struct char_data *ch)
+{
+  int i = 0, count = 0;
+
+  for (i = 1; i < FEAT_LAST_FEAT; i++)
+  {
+    if (has_feat_requirement_check(ch, i) <= 0)
+      continue;
+    if (feat_list[i].feat_type == FEAT_TYPE_METAMAGIC || loremaster_is_item_creation_feat(i))
+      count++;
+  }
+
+  return count;
+}
+
+static bool loremaster_is_entry_caster(int class)
+{
+  int i = 0;
+
+  for (i = 0; i < NUM_LOREMASTER_ENTRY_CASTERS; i++)
+  {
+    if (loremaster_entry_casters[i] == class)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+static bool loremaster_wizard_has_spell(struct char_data *ch, int spellnum)
+{
+  struct obj_data *obj = NULL;
+  int i = 0;
+
+  for (obj = ch->carrying; obj; obj = obj->next_content)
+  {
+    if (GET_OBJ_TYPE(obj) == ITEM_SPELLBOOK && spell_in_book(obj, spellnum))
+      return TRUE;
+  }
+
+  for (i = 0; i < NUM_WEARS; i++)
+  {
+    obj = GET_EQ(ch, i);
+    if (obj && GET_OBJ_TYPE(obj) == ITEM_SPELLBOOK && spell_in_book(obj, spellnum))
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+static int loremaster_min_spell_level(struct char_data *ch, int class, int spellnum)
+{
+  int min_level = LVL_IMMORT;
+  int domain = DOMAIN_UNDEFINED;
+
+  if (spell_info[spellnum].min_level[class] < min_level)
+    min_level = spell_info[spellnum].min_level[class];
+
+  if (class == CLASS_CLERIC || class == CLASS_INQUISITOR)
+  {
+    domain = GET_1ST_DOMAIN(ch);
+    if (spell_info[spellnum].domain[domain] < min_level)
+      min_level = spell_info[spellnum].domain[domain];
+    domain = GET_2ND_DOMAIN(ch);
+    if (spell_info[spellnum].domain[domain] < min_level)
+      min_level = spell_info[spellnum].domain[domain];
+  }
+
+  return min_level;
+}
+
+static int loremaster_spell_circle(struct char_data *ch, int class, int spellnum)
+{
+  int circle = NUM_CIRCLES + 1;
+  int domain_circle = NUM_CIRCLES + 1;
+
+  circle = compute_spells_circle(ch, class, spellnum, METAMAGIC_NONE, DOMAIN_UNDEFINED);
+
+  if (class == CLASS_CLERIC || class == CLASS_INQUISITOR)
+  {
+    domain_circle = compute_spells_circle(ch, class, spellnum, METAMAGIC_NONE, GET_1ST_DOMAIN(ch));
+    if (domain_circle < circle)
+      circle = domain_circle;
+    domain_circle = compute_spells_circle(ch, class, spellnum, METAMAGIC_NONE, GET_2ND_DOMAIN(ch));
+    if (domain_circle < circle)
+      circle = domain_circle;
+  }
+
+  return circle;
+}
+
+static bool loremaster_spell_known_for_class(struct char_data *ch, int class, int spellnum)
+{
+  switch (class)
+  {
+  case CLASS_WIZARD:
+    return loremaster_wizard_has_spell(ch, spellnum);
+  case CLASS_SORCERER:
+  case CLASS_BARD:
+  case CLASS_SUMMONER:
+  case CLASS_INQUISITOR:
+    if (is_a_known_spell(ch, class, spellnum))
+      return TRUE;
+    return (spell_is_cantrip(spellnum) &&
+            spell_info[spellnum].min_level[class] == 0 &&
+            CLASS_LEVEL(ch, class) > 0);
+  case CLASS_CLERIC:
+  case CLASS_DRUID:
+  case CLASS_RANGER:
+  case CLASS_PALADIN:
+    return loremaster_min_spell_level(ch, class, spellnum) < LVL_IMMORT;
+  default:
+    return FALSE;
+  }
+}
+
+static bool loremaster_can_cast_spell_as_class(struct char_data *ch, int class, int spellnum,
+                                               int *circle_out)
+{
+  int min_level = 0, class_level = 0, circle = 0;
+
+  if (!loremaster_is_entry_caster(class) || CLASS_LEVEL(ch, class) <= 0)
+    return FALSE;
+  if (spellnum <= SPELL_RESERVED_DBC || spellnum >= NUM_SPELLS)
+    return FALSE;
+  if (spell_info[spellnum].schoolOfMagic != DIVINATION)
+    return FALSE;
+
+  min_level = loremaster_min_spell_level(ch, class, spellnum);
+  if (min_level >= LVL_IMMORT)
+    return FALSE;
+
+  class_level = CLASS_LEVEL(ch, class) + BONUS_CASTER_LEVEL(ch, class);
+  if (!spell_is_cantrip(spellnum) && class_level < min_level)
+    return FALSE;
+
+  circle = loremaster_spell_circle(ch, class, spellnum);
+  if (circle < 0 || circle > TOP_CIRCLE)
+    return FALSE;
+  if (circle > 0 && compute_slots_by_circle(ch, class, circle) <= 0)
+    return FALSE;
+  if (!loremaster_spell_known_for_class(ch, class, spellnum))
+    return FALSE;
+
+  if (circle_out)
+    *circle_out = circle;
+  return TRUE;
+}
+
+static int loremaster_count_divinations(struct char_data *ch, bool *has_third_or_higher)
+{
+  bool seen[TOP_SPELL_DEFINE + 1];
+  int class_index = 0, spellnum = 0, class = CLASS_UNDEFINED, circle = 0, count = 0;
+
+  memset(seen, 0, sizeof(seen));
+  if (has_third_or_higher)
+    *has_third_or_higher = FALSE;
+
+  for (class_index = 0; class_index < NUM_LOREMASTER_ENTRY_CASTERS; class_index++)
+  {
+    class = loremaster_entry_casters[class_index];
+    for (spellnum = 1; spellnum < NUM_SPELLS && spellnum <= TOP_SPELL_DEFINE; spellnum++)
+    {
+      if (!loremaster_can_cast_spell_as_class(ch, class, spellnum, &circle))
+        continue;
+      if (!seen[spellnum])
+      {
+        seen[spellnum] = TRUE;
+        count++;
+      }
+      if (circle >= 3 && has_third_or_higher)
+        *has_third_or_higher = TRUE;
+    }
+  }
+
+  return count;
+}
+
+static bool loremaster_meets_prereqs(struct char_data *ch)
+{
+  bool has_third_or_higher = FALSE;
+
+  if (loremaster_count_knowledge_ranks(ch) < 2)
+    return FALSE;
+  if (!loremaster_has_knowledge_skill_focus(ch))
+    return FALSE;
+  if (loremaster_count_qualifying_feats(ch) < 3)
+    return FALSE;
+  if (loremaster_count_divinations(ch, &has_third_or_higher) < 7)
+    return FALSE;
+  if (!has_third_or_higher)
+    return FALSE;
+
+  return TRUE;
+}
+
+static void display_loremaster_prereq_details(struct char_data *ch)
+{
+  int knowledge_count = 0, feat_count = 0, divination_count = 0;
+  bool has_focus = FALSE, has_third_or_higher = FALSE;
+
+  knowledge_count = loremaster_count_knowledge_ranks(ch);
+  has_focus = loremaster_has_knowledge_skill_focus(ch);
+  feat_count = loremaster_count_qualifying_feats(ch);
+  divination_count = loremaster_count_divinations(ch, &has_third_or_higher);
+
+  send_to_char(ch, "\tn%sKnowledge skills at 7+ ranks: %d/2\tn - %s\r\n",
+               knowledge_count >= 2 ? "\tn" : "\tr", knowledge_count,
+               knowledge_count >= 2 ? "\tWFulfilled!\tn" : "\trMissing\tn");
+  send_to_char(ch, "\tn%sSkill Focus in a Knowledge skill\tn - %s\r\n",
+               has_focus ? "\tn" : "\tr", has_focus ? "\tWFulfilled!\tn" : "\trMissing\tn");
+  send_to_char(ch, "\tn%sMetamagic or item creation feats: %d/3\tn - %s\r\n",
+               feat_count >= 3 ? "\tn" : "\tr", feat_count,
+               feat_count >= 3 ? "\tWFulfilled!\tn" : "\trMissing\tn");
+  send_to_char(ch, "\tn%sDistinct divination spells castable: %d/7\tn - %s\r\n",
+               divination_count >= 7 ? "\tn" : "\tr", divination_count,
+               divination_count >= 7 ? "\tWFulfilled!\tn" : "\trMissing\tn");
+  send_to_char(ch, "\tn%sAt least one castable 3rd-circle divination\tn - %s\r\n",
+               has_third_or_higher ? "\tn" : "\tr",
+               has_third_or_higher ? "\tWFulfilled!\tn" : "\trMissing\tn");
 }
 
 /* our little mini struct series for assigning spells to a class and to assigning
@@ -690,6 +977,11 @@ bool meets_class_prerequisite(struct char_data *ch, struct class_prerequisite *p
       return FALSE;
     break;
 
+  case CLASS_PREREQ_LOREMASTER:
+    if (!loremaster_meets_prereqs(ch))
+      return FALSE;
+    break;
+
   default:
     log("SYSERR: meets_class_prerequisite() - Bad prerequisite type %d", prereq->prerequisite_type);
     return FALSE;
@@ -746,6 +1038,12 @@ bool display_class_prereqs(struct char_data *ch, const char *classname)
     meets_prereqs = FALSE;
     if (meets_class_prerequisite(ch, prereq, NO_IARG))
       meets_prereqs = TRUE;
+    if (prereq->prerequisite_type == CLASS_PREREQ_LOREMASTER)
+    {
+      display_loremaster_prereq_details(ch);
+      found = TRUE;
+      continue;
+    }
     snprintf(buf, sizeof(buf), "\tn%s%s%s - %s\r\n", (meets_prereqs ? "\tn" : "\tr"),
              prereq->description, "\tn", (meets_prereqs ? "\tWFulfilled!\tn" : "\trMissing\tn"));
     send_to_char(ch, "%s", buf);
@@ -1495,6 +1793,7 @@ int valid_align_by_class(int alignment, int class)
   case CLASS_WARLOCK:
   case CLASS_ARTIFICER:
   case CLASS_DRAGON_DISCIPLE:
+  case CLASS_LOREMASTER:
     return TRUE;
   }
   /* shouldn't get here if we got all classes listed above */
@@ -1572,6 +1871,8 @@ int parse_class(char arg)
     return CLASS_WARLOCK;
   case '3':
     return CLASS_NECROMANCER;
+  case '4':
+    return CLASS_LOREMASTER;
     /* empty letters */
     /* empty letters */
     /* empty letters */
@@ -1726,6 +2027,10 @@ int parse_class_long(const char *arg_in)
     return CLASS_WARLOCK;
   if (is_abbrev(arg, "summoner"))
     return CLASS_SUMMONER;
+  if (is_abbrev(arg, "loremaster"))
+    return CLASS_LOREMASTER;
+  if (is_abbrev(arg, "lore-master"))
+    return CLASS_LOREMASTER;
 
   return CLASS_UNDEFINED;
 }
@@ -1851,6 +2156,12 @@ byte saving_throws(struct char_data *ch, int type)
   }
 
   save = (int)counter;
+  if (type == SAVING_WILL && has_loremaster_secret(ch, LOREMASTER_SECRET_INNER_STRENGTH))
+    save += 2;
+  if (type == SAVING_FORT && has_loremaster_secret(ch, LOREMASTER_SECRET_TRUE_STAMINA))
+    save += 2;
+  if (type == SAVING_REFL && has_loremaster_secret(ch, LOREMASTER_SECRET_AVOIDANCE))
+    save += 2;
   return save;
 }
 
@@ -2953,6 +3264,16 @@ void init_start_char(struct char_data *ch)
 
   for (i = 0; i < 3; i++)
     NEW_ARCANA_SLOT(ch, i) = 0;
+  for (i = 0; i < NUM_CLASSES; i++)
+    GET_LOREMASTER_ENTRY_CLASS(ch, i) = 0;
+  for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+    GET_LOREMASTER_CASTER_CLASS(ch, i) = CLASS_UNDEFINED;
+  for (i = 0; i < NUM_LOREMASTER_SECRETS; i++)
+    KNOWS_LOREMASTER_SECRET(ch, i) = 0;
+  GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch) = -1;
+  GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) = FEAT_UNDEFINED;
+  GET_LOREMASTER_NEWFOUND_CLASS(ch) = CLASS_UNDEFINED;
+  GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = CLASS_UNDEFINED;
 
   /* a bit silly, but go ahead make sure no stone-skin like spells */
   for (i = 0; i < MAX_WARDING; i++)
@@ -9697,8 +10018,48 @@ void load_class_list(void)
   class_prereq_ability(CLASS_DRAGON_DISCIPLE, ABILITY_ARCANA, 5);
   class_prereq_spellcasting(CLASS_DRAGON_DISCIPLE, CASTING_TYPE_ARCANE, PREP_TYPE_SPONTANEOUS, 1);
 
-  classo(CLASS_PLACEHOLDER_2, "placeholder 2", "PL2", "\tCPL2\tn", "v) \tCPlaceholder 2\tn", 20, Y,
-         N, M, 6, 0, 1, 5, N, 0, 3, "", "", "");
+  /****************************************************************************/
+  /*     class-number          name          abrv   clr-abrv     menu-name*/
+  classo(CLASS_LOREMASTER, "loremaster", "Lor", "\tYLor\tn", "4) \tYLoremaster\tn",
+         /* max-lvl lock? prestige? BAB HD psp move trains in-game? unlkCst, eFeatp */
+         10, Y, Y, L, 6, 0, 1, 4, Y, 5000, 0,
+         /* prestige spell progression */
+         "Advances one eligible existing spellcasting class at each Loremaster level",
+         /* primary attributes */
+         "Intelligence for skills and lore, plus the spellcasting attribute of the advanced class",
+         /* descrip */
+         "Loremasters are spellcasters who pursue secrets hidden in ancient texts, obscure "
+         "traditions, and forgotten places.  Their study unlocks broad knowledge, powerful "
+         "insight, and continued advancement in a spellcasting tradition they already possess.");
+  /* class-number then saves: fortitude, reflex, will, poison, death */
+  assign_class_saves(CLASS_LOREMASTER, B, B, G, B, B);
+  assign_class_abils(CLASS_LOREMASTER, /* class number */
+                     /*acrobatics,stealth,perception,heal,intimidate,concentration, spellcraft*/
+                     CC, CC, CC, CA, CC, CC, CA,
+                     /*appraise,discipline,total_defense,lore,ride,climb,sleight_of_hand,bluff*/
+                     CA, CC, CC, CA, CC, CC, CC, CC,
+                     /*diplomacy,disable_device,disguise,escape_artist,handle_animal,sense_motive*/
+                     CA, CC, CC, CC, CA, CC,
+                     /*survival,swim,use_magic_device,perform*/
+                     CA, CC, CA, CA);
+  assign_class_titles(CLASS_LOREMASTER, /* class number */
+                      "",
+                      "the Loremaster",
+                      "the Loremaster",
+                      "the Loremaster",
+                      "the Loremaster",
+                      "the Loremaster",
+                      "the Loremaster",
+                      "the Immortal Loremaster",
+                      "the Keeper of Secrets",
+                      "the God of Lore",
+                      "the Loremaster");
+  /* feat assignment */
+  feat_assignment(CLASS_LOREMASTER, FEAT_LORE, Y, 2, N);
+  feat_assignment(CLASS_LOREMASTER, FEAT_GREATER_LORE, Y, 6, N);
+  feat_assignment(CLASS_LOREMASTER, FEAT_TRUE_LORE, Y, 10, N);
+  /* class prerequisites */
+  class_prereq_loremaster(CLASS_LOREMASTER);
 }
 
 /* This will check a character to see if the object reference has any anti-class
@@ -10092,16 +10453,28 @@ int num_languages_learned(struct char_data *ch)
   return num;
 }
 
+int loremaster_bonus_languages(struct char_data *ch)
+{
+  if (!ch || IS_NPC(ch))
+    return 0;
+
+  return (CLASS_LEVEL(ch, CLASS_LOREMASTER) >= 4) + (CLASS_LEVEL(ch, CLASS_LOREMASTER) >= 8);
+}
+
 bool has_unchosen_languages(struct char_data *ch)
 {
+  int num_avail = 0;
+  int num_chosen = 0;
+
   if (!ch)
     return false;
 
   if (IS_NPC(ch))
     return false;
 
-  int num_avail = MAX(0, GET_REAL_INT_BONUS(ch)) + MAX(0, GET_ABILITY(ch, ABILITY_LINGUISTICS));
-  int num_chosen = num_languages_learned(ch);
+  num_avail = MAX(0, GET_REAL_INT_BONUS(ch)) + MAX(0, GET_ABILITY(ch, ABILITY_LINGUISTICS)) +
+              loremaster_bonus_languages(ch);
+  num_chosen = num_languages_learned(ch);
   /*
   send_to_char(ch, "\r\nAVAIL: %d, KNOWN: %d\r\n", num_avail, num_chosen);
   send_to_char(ch, "Int: %d\r\n", MAX(0, GET_REAL_INT_BONUS(ch)));

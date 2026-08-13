@@ -675,8 +675,8 @@ static const char *class_casting_styles[NUM_CLASSES] = {
     /* CLASS_DRAGON_DISCIPLE (36) - draconic bloodline arcane */
     "\tc$n \tRchannels the raw power of dragon blood\tc as ancient magic awakens,\tn",
 
-    /* CLASS_PLACEHOLDER_2 (37) */
-    NULL};
+    /* CLASS_LOREMASTER (37) - scholarly keeper of hidden lore */
+    "\tc$n \tYconsults hidden lore\tc as layered symbols gather,\tn"};
 
 /*
  * School-specific flavor additions for class+school combinations.

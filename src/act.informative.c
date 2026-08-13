@@ -63,6 +63,8 @@
 #include "perks.h"
 #include "moon_bonus_spells.h"
 
+#define LORE_APP_MAX_INDEX 172
+
 /* Phase 7: Cascade system integration */
 #ifdef WILDERNESS_RESOURCE_DEPLETION_SYSTEM
 /* #include "resource_cascade.h" */ /* Phase 7: Ecological cascade system - disabled for simple implementation */
@@ -10960,6 +10962,8 @@ SPECIAL(eqstats)
   GET_GOLD(ch) -= cost;
 
   int i, k, lore_bonus = 0;
+  int lore_total = 0, lore_index = 0;
+  int greater_lore_total = 0;
   int found = false;
   struct obj_data *obj = NULL;
   char buf2[300], bitbuf[300];
@@ -10975,6 +10979,7 @@ SPECIAL(eqstats)
       {
         send_to_char(ch, "%-30s", wear_where[i]);
 
+        lore_bonus = 0;
         if (HAS_FEAT(ch, FEAT_KNOWLEDGE))
         {
           lore_bonus += 4;
@@ -10987,8 +10992,15 @@ SPECIAL(eqstats)
         }
 
         /* good enough lore for object? */
-        if (GET_EQ(ch, i) && GET_OBJ_COST(GET_EQ(ch, i)) >
-                                 lore_app[(compute_ability(ch, ABILITY_LORE) + lore_bonus)])
+        lore_total = compute_ability(ch, ABILITY_LORE) + lore_bonus;
+        if (HAS_FEAT(ch, FEAT_GREATER_LORE))
+        {
+          greater_lore_total = compute_ability(ch, ABILITY_SPELLCRAFT) + 10;
+          if (greater_lore_total > lore_total)
+            lore_total = greater_lore_total;
+        }
+        lore_index = MAX(0, MIN(lore_total, LORE_APP_MAX_INDEX));
+        if (GET_EQ(ch, i) && GET_OBJ_COST(GET_EQ(ch, i)) > lore_app[lore_index])
         {
           send_to_char(ch, " (couldn't identify)\r\n");
           continue;

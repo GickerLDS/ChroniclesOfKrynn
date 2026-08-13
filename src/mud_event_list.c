@@ -525,6 +525,9 @@ struct mud_event_list mud_event_index[] = {
      "You are ready to perform a defensive strike again.", NULL, FEAT_UNDEFINED, 0},
     {"Bastion Cooldown", event_countdown, EVENT_CHAR,
      "You are ready to invoke bastion of defense again.", NULL, FEAT_UNDEFINED, 0},
+    /* eTRUE_LORE */
+    {"True Lore", event_daily_use_cooldown, EVENT_CHAR, "Your true lore is ready again.",
+     "Your true lore is ready again.", FEAT_TRUE_LORE, 0},
 };
 
 /* Expose registry count for validation */

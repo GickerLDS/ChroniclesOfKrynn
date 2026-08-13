@@ -263,6 +263,7 @@ typedef enum
   eDRAGON_DISCIPLE_FORM,         // dragon disciple dragon form daily use
   eDEFENSIVE_STRIKE_COOLDOWN,    // paladin Sacred Defender perk: Defensive Strike 2-minute cooldown
   eBASTION_COOLDOWN,             // paladin Sacred Defender perk: Bastion of Defense 5-minute cooldown
+  eTRUE_LORE,                    // loremaster True Lore daily use
 } event_id;
 
 /* probably a smart place to mention to not forget to update:

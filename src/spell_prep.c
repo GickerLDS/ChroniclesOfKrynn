@@ -3034,6 +3034,14 @@ int compute_slots_by_circle(struct char_data *ch, int class, int circle)
   }
 
   spell_slots += get_bonus_spells_by_circle_and_class(ch, class, circle);
+  if (!IS_NPC(ch) && circle == 1 && class == GET_LOREMASTER_NEWFOUND_CLASS(ch) &&
+      (HAS_FEAT(ch, FEAT_LOREMASTER_NEWFOUND_ARCANA) ||
+       has_loremaster_secret(ch, LOREMASTER_SECRET_NEWFOUND_ARCANA)))
+    spell_slots++;
+  if (!IS_NPC(ch) && circle == 2 && class == GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch) &&
+      (HAS_FEAT(ch, FEAT_LOREMASTER_MORE_NEWFOUND_ARCANA) ||
+       has_loremaster_secret(ch, LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA)))
+    spell_slots++;
 
   if (spell_slots <= 0)
     return FALSE;

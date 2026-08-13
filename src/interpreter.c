@@ -996,6 +996,7 @@ cpp_extern const struct command_info cmd_info[] = {
     {"spellrecall", "spellrecall", POS_RECLINING, do_spellrecall, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_spellrecall},
     {"spiritualweapon", "spiritualweapon", POS_FIGHTING, do_spiritualweapon, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_spiritualweapon},
     {"trueseeing", "trueseeing", POS_FIGHTING, do_trueseeing_perk, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
+    {"truelore", "truelore", POS_RESTING, do_truelore, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, can_truelore},
     {"aurareading", "aurareading", POS_FIGHTING, do_aurareading_perk, 1, 0, FALSE, ACTION_STANDARD, {6, 0}, NULL},
     {"split", "split", POS_SITTING, do_split, 1, 0, FALSE, ACTION_NONE, {0, 0}, NULL},
     {"splitenchantment", "splitenchantment", POS_RESTING, do_splitenchantment, 0, 0, FALSE, ACTION_NONE, {0, 0}, NULL},

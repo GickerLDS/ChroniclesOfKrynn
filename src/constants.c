@@ -531,7 +531,7 @@ const char *class_names[] = {"Wizard", // 0
                              "Knight of the Pale Throne",      // (Skull)
                              "Knight of the Howling Moon",     // 33 (Lily)
 #endif
-                             "Dragon Rider", "Artificer", "Dragon Disciple", "Placeholder 2",
+                             "Dragon Rider", "Artificer", "Dragon Disciple", "Loremaster",
                              //  "unfinished",
                              //  "unfinished",
                              //  "unfinished",
@@ -4182,7 +4182,7 @@ const char *spell_prep_dict[][4] = {
     {"", "", "", ""},                                        // dragonrider 34
     {"", "", "", ""},                                        // artificer 35
     {"", "", "", ""},                                        // dragon disciple 36
-    {"", "", "", ""},                                        // placeholder
+    {"", "", "", ""},                                        // loremaster 37
     //  {"",         "",           "",          ""            }, /* psion */
     //  {"",         "",           "",          ""            }, /* psy warr */
     //  {"",         "",           "",          ""            }, /* soul knife */
@@ -4231,7 +4231,7 @@ const char *spell_consign_dict[][4] = {
     {"", "", "", ""},                                            // dragonrider 34
     {"", "", "", ""},                                            // artificer 35
     {"", "", "", ""},                                            // dragon disciple 36
-    {"", "", "", ""},                                            // placeholder
+    {"", "", "", ""},                                            // loremaster 37
     //  {"",          "",            "",           ""            }, /* psion 18 */
     //  {"",          "",            "",           ""            }, /* psy warr 19 */
     //  {"",          "",            "",           ""            }, /* soul knife 20 */
@@ -4477,7 +4477,8 @@ const char *class_short_descriptions[] = {
     "protection and more.", // artificer
     "A spontaneous arcane caster whose draconic blood transforms "
     "them into a more powerful dragon-like being.", // dragon disciple
-    "",                                             // placeholder
+    "A scholar of ancient secrets who advances existing spellcasting "
+    "through deep study and lore.", // loremaster
     ""};
 CHECK_TABLE_SIZE(class_short_descriptions, NUM_CLASSES + 1);
 

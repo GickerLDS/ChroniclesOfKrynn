@@ -5638,6 +5638,8 @@ int can_lore_target(struct char_data *ch, struct char_data *target_ch, struct ob
   bool knowledge = FALSE;
   int lore_bonus = 0, lore_skill;
   int skill, dc, roll;
+  int spellcraft_skill = 0;
+  const char *skill_name = NULL;
 
   // if the object was already identified, it can always be identified again
   if (target_obj && OBJ_FLAGGED(target_obj, ITEM_IDENTIFIED))
@@ -5668,10 +5670,20 @@ int can_lore_target(struct char_data *ch, struct char_data *target_ch, struct ob
   if (target_obj)
   {
     skill = (compute_ability(ch, lore_skill) + lore_bonus);
+    skill_name = ability_names[lore_skill];
+    if (HAS_FEAT(ch, FEAT_GREATER_LORE))
+    {
+      spellcraft_skill = compute_ability(ch, ABILITY_SPELLCRAFT) + 10;
+      if (spellcraft_skill > skill)
+      {
+        skill = spellcraft_skill;
+        skill_name = "Spellcraft with Greater Lore";
+      }
+    }
     dc = (int)(GET_OBJ_LEVEL(target_obj) * 1.5);
     send_to_char(
         ch, "Using '%s' skill with d20 roll of %d + %d ranks, for total of %d against dc %d.\r\n",
-        ability_names[lore_skill], roll, skill, skill + roll, dc);
+        skill_name, roll, skill, skill + roll, dc);
     if ((skill + roll) >= dc)
       knowledge = TRUE;
 
@@ -5732,7 +5744,7 @@ ACMD(do_lore)
   if (IS_NPC(ch))
     return;
 
-  if (!IS_NPC(ch) && !GET_ABILITY(ch, lore_skill))
+  if (!IS_NPC(ch) && !GET_ABILITY(ch, lore_skill) && !HAS_FEAT(ch, FEAT_LORE))
   {
     send_to_char(ch, "You have no ability to do that!\r\n");
     return;
@@ -5812,7 +5824,7 @@ ACMD(do_glore)
   if (IS_NPC(ch))
     return;
 
-  if (!IS_NPC(ch) && !GET_ABILITY(ch, ABILITY_LORE))
+  if (!IS_NPC(ch) && !GET_ABILITY(ch, ABILITY_LORE) && !HAS_FEAT(ch, FEAT_LORE))
   {
     send_to_char(ch, "You have no ability to do that!\r\n");
     return;
@@ -5868,6 +5880,92 @@ ACMD(do_glore)
       do_stat_object(ch, i, ITEM_STAT_MODE_G_LORE);
     }
   }
+}
+
+ACMDCHECK(can_truelore)
+{
+  int uses_remaining = 0;
+
+  ACMDCHECK_PERMFAIL_IF(IS_NPC(ch), "Only player characters can invoke true lore.\r\n");
+  ACMDCHECK_PERMFAIL_IF(CLASS_LEVEL(ch, CLASS_LOREMASTER) < 10,
+                        "Only a true Loremaster can invoke true lore.\r\n");
+  ACMDCHECK_PREREQ_HASFEAT(FEAT_TRUE_LORE, "You have not unlocked True Lore.\r\n");
+
+  uses_remaining = daily_uses_remaining(ch, FEAT_TRUE_LORE);
+  ACMDCHECK_PERMFAIL_IF(uses_remaining < 0, "True Lore is not prepared correctly.\r\n");
+  ACMDCHECK_TEMPFAIL_IF(uses_remaining == 0, "You have already invoked true lore today.\r\n");
+
+  return CAN_CMD;
+}
+
+ACMD(do_truelore)
+{
+  char arg[MAX_INPUT_LENGTH] = {'\0'};
+  struct char_data *tch = NULL;
+  struct obj_data *tobj = NULL;
+  int target = 0;
+  bool legend_mode = FALSE;
+  const char *legend_subject = NULL;
+
+  PREREQ_CHECK(can_truelore);
+
+  legend_subject = one_argument(argument, arg, sizeof(arg));
+  skip_spaces_c(&legend_subject);
+
+  if (!*arg)
+  {
+    send_to_char(ch, "Usage: truelore <item|creature|subject> or truelore legend <subject>\r\n");
+    return;
+  }
+
+  if (is_abbrev(arg, "legend"))
+  {
+    legend_mode = TRUE;
+    if (!*legend_subject)
+    {
+      send_to_char(ch, "What subject do you wish to research with true lore?\r\n");
+      return;
+    }
+  }
+
+  if (!legend_mode)
+  {
+    target = generic_find(arg, FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP | FIND_CHAR_ROOM, ch,
+                          &tch, &tobj);
+  }
+
+  send_to_char(ch, "You invoke True Lore, drawing on a lifetime of hidden learning.\r\n");
+  act("$n invokes True Lore, eyes bright with sudden revelation.", FALSE, ch, NULL, NULL, TO_ROOM);
+  USE_STANDARD_ACTION(ch);
+  start_daily_use_cooldown(ch, FEAT_TRUE_LORE);
+
+  if (target && tobj)
+  {
+    SET_BIT_AR(GET_OBJ_EXTRA(tobj), ITEM_IDENTIFIED);
+    send_to_char(ch, "Every magical property of %s is laid bare to you.\r\n", tobj->short_description);
+    do_stat_object(ch, tobj, ITEM_STAT_MODE_LORE_SKILL);
+    return;
+  }
+
+  if (target && tch)
+  {
+    send_to_char(ch, "Hidden truths about %s flood your mind.\r\n", GET_NAME(tch));
+    lore_id_vict(ch, tch);
+    return;
+  }
+
+  if (!legend_mode)
+  {
+    legend_subject = argument;
+    skip_spaces_c(&legend_subject);
+  }
+
+  WAIT_STATE(ch, 60 * PASSES_PER_SEC);
+  send_to_char(ch,
+               "You spend a minute assembling fragments of legend about '%s'. The magic reveals "
+               "its notable history, powers, and dangers where the world's lore records them.\r\n",
+               legend_subject);
+  act("$n falls into a minute-long recitation of ancient legends.", FALSE, ch, NULL, NULL, TO_ROOM);
 }
 
 /* a generic command to get rid of a fly / levitate flag */

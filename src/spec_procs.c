@@ -1706,6 +1706,8 @@ int compute_ability_full(struct char_data *ch, int abilityNum, bool recursive)
       if (has_inquisitor_perfect_recall(ch))
         value += 4;
     }
+    if (HAS_FEAT(ch, FEAT_LORE))
+      value += CLASS_LEVEL(ch, CLASS_LOREMASTER) / 2;
     value += GET_INT_BONUS(ch);
     return value;
   case ABILITY_RIDE:
@@ -1874,6 +1876,8 @@ int compute_ability_full(struct char_data *ch, int abilityNum, bool recursive)
       if (terrain_mastery_bonus > 0)
         value += terrain_mastery_bonus;
     }
+    if (HAS_FEAT(ch, FEAT_LORE))
+      value += CLASS_LEVEL(ch, CLASS_LOREMASTER) / 2;
     /* Inquisitor Track and Hunt: double Survival modifier when tracking */
     /* Note: This is context-specific and would be applied in tracking code */
     return value;

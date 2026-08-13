@@ -179,15 +179,221 @@ int get_effective_draconic_bloodline_level(struct char_data *ch)
   return draconic_level;
 }
 
+bool is_loremaster_advancement_class(int class)
+{
+  switch (class)
+  {
+  case CLASS_WIZARD:
+  case CLASS_SORCERER:
+  case CLASS_BARD:
+  case CLASS_SUMMONER:
+  case CLASS_CLERIC:
+  case CLASS_DRUID:
+  case CLASS_RANGER:
+  case CLASS_PALADIN:
+  case CLASS_INQUISITOR:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+bool is_loremaster_spontaneous_class(int class)
+{
+  switch (class)
+  {
+  case CLASS_SORCERER:
+  case CLASS_BARD:
+  case CLASS_SUMMONER:
+  case CLASS_INQUISITOR:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+static bool loremaster_is_arcane_advancement_class(int class)
+{
+  switch (class)
+  {
+  case CLASS_WIZARD:
+  case CLASS_SORCERER:
+  case CLASS_BARD:
+  case CLASS_SUMMONER:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+static bool loremaster_is_divine_advancement_class(int class)
+{
+  switch (class)
+  {
+  case CLASS_CLERIC:
+  case CLASS_DRUID:
+  case CLASS_RANGER:
+  case CLASS_PALADIN:
+  case CLASS_INQUISITOR:
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+
+static bool loremaster_has_entry_snapshot(struct char_data *ch)
+{
+  int i = 0;
+
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    if (GET_LOREMASTER_ENTRY_CLASS(ch, i))
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+void ensure_loremaster_entry_snapshot(struct char_data *ch)
+{
+  int i = 0;
+
+  if (!ch || IS_NPC(ch))
+    return;
+  if (loremaster_has_entry_snapshot(ch))
+    return;
+  if (CLASS_LEVEL(ch, CLASS_LOREMASTER) <= 0)
+    return;
+
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    if (i != CLASS_LOREMASTER && is_loremaster_advancement_class(i) && CLASS_LEVEL(ch, i) > 0)
+      GET_LOREMASTER_ENTRY_CLASS(ch, i) = 1;
+  }
+}
+
+static int loremaster_current_level_index(struct char_data *ch)
+{
+  int level = 0;
+
+  if (!ch || IS_NPC(ch))
+    return -1;
+
+  if (LEVELUP(ch) && LEVELUP(ch)->class == CLASS_LOREMASTER)
+    level = LEVELUP(ch)->level;
+  else
+    level = CLASS_LEVEL(ch, CLASS_LOREMASTER);
+
+  if (level <= 0 || level > MAX_LOREMASTER_LEVELS)
+    return -1;
+
+  return level - 1;
+}
+
+int loremaster_staged_caster_class(struct char_data *ch)
+{
+  int index = 0;
+  int class = CLASS_UNDEFINED;
+
+  if (!ch || !LEVELUP(ch) || LEVELUP(ch)->class != CLASS_LOREMASTER)
+    return CLASS_UNDEFINED;
+
+  index = loremaster_current_level_index(ch);
+  if (index < 0 || index >= MAX_LOREMASTER_LEVELS)
+    return CLASS_UNDEFINED;
+
+  class = GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, index);
+  if (!is_loremaster_advancement_class(class))
+    return CLASS_UNDEFINED;
+
+  return class;
+}
+
+int loremaster_levels_advancing_class(struct char_data *ch, int class)
+{
+  int i = 0, levels = 0, current_index = -1;
+  int selected_class = CLASS_UNDEFINED;
+
+  if (!ch || IS_NPC(ch) || !is_loremaster_advancement_class(class))
+    return 0;
+
+  ensure_loremaster_entry_snapshot(ch);
+  if (!GET_LOREMASTER_ENTRY_CLASS(ch, class))
+    return 0;
+
+  if (LEVELUP(ch) && LEVELUP(ch)->class == CLASS_LOREMASTER)
+    current_index = loremaster_current_level_index(ch);
+
+  for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+  {
+    selected_class = GET_LOREMASTER_CASTER_CLASS(ch, i);
+    if (i == current_index)
+    {
+      if (GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, i) != CLASS_UNDEFINED)
+        selected_class = GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, i);
+    }
+    if (selected_class == class)
+      levels++;
+  }
+
+  return levels;
+}
+
+static int loremaster_levels_advancing_arcane(struct char_data *ch)
+{
+  int class = 0, levels = 0;
+
+  for (class = 0; class < NUM_CLASSES; class++)
+  {
+    if (loremaster_is_arcane_advancement_class(class))
+      levels += loremaster_levels_advancing_class(ch, class);
+  }
+
+  return levels;
+}
+
+static int loremaster_levels_advancing_divine(struct char_data *ch)
+{
+  int class = 0, levels = 0;
+
+  for (class = 0; class < NUM_CLASSES; class++)
+  {
+    if (loremaster_is_divine_advancement_class(class))
+      levels += loremaster_levels_advancing_class(ch, class);
+  }
+
+  return levels;
+}
+
+int has_loremaster_secret(struct char_data *ch, int secret)
+{
+  if (!ch || IS_NPC(ch))
+    return FALSE;
+  if (secret <= LOREMASTER_SECRET_UNDEFINED || secret >= NUM_LOREMASTER_SECRETS)
+    return FALSE;
+
+  return KNOWS_LOREMASTER_SECRET(ch, secret);
+}
+
 /* can this CH select the option to change their 'known' spells
  in the study system? */
 bool can_study_known_spells(struct char_data *ch)
 {
   int dragon_disciple_arcane_class = CLASS_UNDEFINED;
+  int loremaster_class = CLASS_UNDEFINED;
   bool is_arcane_progression_class = FALSE;
 
-  if (!ch)
+  if (!ch || !LEVELUP(ch))
     return FALSE;
+
+  if (LEVELUP(ch)->class == CLASS_LOREMASTER)
+  {
+    loremaster_class = loremaster_staged_caster_class(ch);
+    return is_loremaster_spontaneous_class(loremaster_class);
+  }
 
   dragon_disciple_arcane_class = get_dragon_disciple_arcane_class(ch);
   is_arcane_progression_class =
@@ -288,6 +494,8 @@ int compute_bonus_caster_level(struct char_data *ch, int class)
     break;
   }
 
+  bonus_levels += loremaster_levels_advancing_class(ch, class);
+
   return bonus_levels;
 }
 
@@ -319,6 +527,7 @@ int compute_arcane_level(struct char_data *ch)
   arcane_level +=
       CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) - (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 1) -
       (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 5) - (CLASS_LEVEL(ch, CLASS_DRAGON_DISCIPLE) >= 9);
+  arcane_level += loremaster_levels_advancing_arcane(ch);
 
   return arcane_level;
 }
@@ -344,6 +553,7 @@ int compute_divine_level(struct char_data *ch)
   divine_level += CLASS_LEVEL(ch, CLASS_MYSTIC_THEURGE) / 2;
   divine_level += CLASS_LEVEL(ch, CLASS_KNIGHT_OF_THE_SKULL);
   divine_level += compute_arcana_golem_level(ch) - (SPELLBATTLE(ch) / 2);
+  divine_level += loremaster_levels_advancing_divine(ch);
 
   return divine_level;
 }
@@ -5720,6 +5930,9 @@ int get_daily_uses(struct char_data *ch, int featnum)
     /* 1/day at 7th level (rank 1), 2/day at 10th level (rank 2) */
     daily_uses = HAS_FEAT(ch, FEAT_DRAGON_DISCIPLE_DRAGON_FORM);
     break;
+  case FEAT_TRUE_LORE:
+    daily_uses = 1;
+    break;
   case FEAT_TABAXI_CATS_CLAWS:
     daily_uses += MAX(1, GET_LEVEL(ch) / 3);
     break;
@@ -8769,6 +8982,13 @@ void calculate_max_hp(struct char_data *ch, bool display)
     if (display)
       send_to_char(ch, "%-40s = +%d\r\n", "Feat 'Epic Toughness'",
                    30 * HAS_FEAT(ch, FEAT_EPIC_TOUGHNESS));
+  }
+  if (HAS_FEAT(ch, FEAT_LOREMASTER_SECRET_HEALTH) ||
+      has_loremaster_secret(ch, LOREMASTER_SECRET_HEALTH))
+  {
+    max_hp += MAX(3, GET_LEVEL(ch));
+    if (display)
+      send_to_char(ch, "%-40s = +%d\r\n", "Loremaster Secret Health", MAX(3, GET_LEVEL(ch)));
   }
 
   // race

@@ -48,6 +48,12 @@ static void display_main_menu(struct descriptor_data *d);
 static void generic_main_disp_menu(struct descriptor_data *d);
 static void main_feat_disp_menu(struct descriptor_data *d);
 static void main_boosts_disp_menu(struct descriptor_data *d);
+static void loremaster_advance_menu(struct descriptor_data *d);
+static void loremaster_secret_menu(struct descriptor_data *d);
+static void loremaster_instant_mastery_menu(struct descriptor_data *d);
+static void loremaster_newfound_menu(struct descriptor_data *d, int circle, int mode);
+static void loremaster_applicable_knowledge_menu(struct descriptor_data *d);
+static bool loremaster_finalize_ready(struct descriptor_data *d);
 
 void init_study(struct descriptor_data *d, int class);
 void finalize_study(struct descriptor_data *d);
@@ -273,6 +279,19 @@ void init_study(struct descriptor_data *d, int class)
     LEVELUP(ch)->summoner_aspects[i] = HAS_REAL_EVOLUTION(ch, i);
   }
   LEVELUP(ch)->necromancer_bonus_levels = NECROMANCER_CAST_TYPE(ch);
+  if (class == CLASS_LOREMASTER)
+    ensure_loremaster_entry_snapshot(ch);
+  for (i = 0; i < NUM_CLASSES; i++)
+    GET_LEVELUP_LOREMASTER_ENTRY_CLASS(ch, i) = GET_LOREMASTER_ENTRY_CLASS(ch, i);
+  for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+    GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, i) = GET_LOREMASTER_CASTER_CLASS(ch, i);
+  for (i = 0; i < NUM_LOREMASTER_SECRETS; i++)
+    KNOWS_LEVELUP_LOREMASTER_SECRET(ch, i) = KNOWS_LOREMASTER_SECRET(ch, i);
+  GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch) = GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch);
+  GET_LEVELUP_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) =
+      GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch);
+  GET_LEVELUP_LOREMASTER_NEWFOUND_CLASS(ch) = GET_LOREMASTER_NEWFOUND_CLASS(ch);
+  GET_LEVELUP_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch);
 
   LEVELUP(ch)->dragon_rider_dragon_type = GET_DRAGON_RIDER_DRAGON_TYPE(ch);
   LEVELUP(ch)->dragon_rider_bond_type = GET_DRAGON_BOND_TYPE(ch);
@@ -281,7 +300,7 @@ void init_study(struct descriptor_data *d, int class)
 void finalize_study(struct descriptor_data *d)
 {
   struct char_data *ch = d->character;
-  int i = 0, j = 0, subfeat = 0;
+  int i = 0, j = 0, subfeat = 0, instant_skill = 0;
   struct damage_reduction_type *dr;
 
   /* Finalize the chosen data, applying the levelup structure to
@@ -301,11 +320,51 @@ void finalize_study(struct descriptor_data *d)
   GET_REAL_WIS(ch) = LEVELUP(ch)->wis;
   GET_REAL_CHA(ch) = LEVELUP(ch)->cha;
 
+  if (LEVELUP(ch)->class == CLASS_LOREMASTER)
+  {
+    for (i = 0; i < NUM_CLASSES; i++)
+      GET_LOREMASTER_ENTRY_CLASS(ch, i) = GET_LEVELUP_LOREMASTER_ENTRY_CLASS(ch, i);
+    for (i = 0; i < MAX_LOREMASTER_LEVELS; i++)
+      GET_LOREMASTER_CASTER_CLASS(ch, i) = GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, i);
+    for (i = 0; i < NUM_LOREMASTER_SECRETS; i++)
+      KNOWS_LOREMASTER_SECRET(ch, i) = KNOWS_LEVELUP_LOREMASTER_SECRET(ch, i);
+    GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch) =
+        GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch);
+    GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) =
+        GET_LEVELUP_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch);
+    GET_LOREMASTER_NEWFOUND_CLASS(ch) = GET_LEVELUP_LOREMASTER_NEWFOUND_CLASS(ch);
+    GET_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = GET_LEVELUP_LOREMASTER_MORE_NEWFOUND_CLASS(ch);
+
+    if (has_loremaster_secret(ch, LOREMASTER_SECRET_APPLICABLE_KNOWLEDGE))
+    {
+      i = GET_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch);
+      if (i > FEAT_UNDEFINED && i < FEAT_LAST_FEAT && feat_is_available(ch, i, 0, NULL) &&
+          !HAS_REAL_FEAT(ch, i) && LEVELUP(ch)->feats[i] <= 0)
+        LEVELUP(ch)->feats[i]++;
+    }
+    if (has_loremaster_secret(ch, LOREMASTER_SECRET_HEALTH) &&
+        !HAS_REAL_FEAT(ch, FEAT_LOREMASTER_SECRET_HEALTH) &&
+        LEVELUP(ch)->feats[FEAT_LOREMASTER_SECRET_HEALTH] <= 0)
+      LEVELUP(ch)->feats[FEAT_LOREMASTER_SECRET_HEALTH] = 1;
+    if (has_loremaster_secret(ch, LOREMASTER_SECRET_NEWFOUND_ARCANA) &&
+        !HAS_REAL_FEAT(ch, FEAT_LOREMASTER_NEWFOUND_ARCANA) &&
+        LEVELUP(ch)->feats[FEAT_LOREMASTER_NEWFOUND_ARCANA] <= 0)
+      LEVELUP(ch)->feats[FEAT_LOREMASTER_NEWFOUND_ARCANA] = 1;
+    if (has_loremaster_secret(ch, LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA) &&
+        !HAS_REAL_FEAT(ch, FEAT_LOREMASTER_MORE_NEWFOUND_ARCANA) &&
+        LEVELUP(ch)->feats[FEAT_LOREMASTER_MORE_NEWFOUND_ARCANA] <= 0)
+      LEVELUP(ch)->feats[FEAT_LOREMASTER_MORE_NEWFOUND_ARCANA] = 1;
+  }
+
   // assign skill choices
   for (i = START_GENERAL_ABILITIES; i < (END_GENERAL_ABILITIES + 1); i++)
   {
     SET_ABILITY(ch, i, GET_ABILITY(ch, i) + LEVELUP(ch)->skills[i]);
   }
+  instant_skill = GET_LOREMASTER_INSTANT_MASTERY_SKILL(ch);
+  if (LEVELUP(ch)->class == CLASS_LOREMASTER && instant_skill >= START_GENERAL_ABILITIES &&
+      instant_skill <= END_GENERAL_ABILITIES && GET_ABILITY(ch, instant_skill) == 0)
+    SET_ABILITY(ch, instant_skill, 4);
   // assign boost choice
   if (LEVELUP(ch)->boosts[0] > 0)
     GET_REAL_STR(ch) += 1;
@@ -737,6 +796,343 @@ bool add_levelup_feat(struct descriptor_data *d, int feat)
 static void display_main_menu(struct descriptor_data *d)
 {
   generic_main_disp_menu(d);
+}
+
+static int loremaster_study_index(struct char_data *ch)
+{
+  int level = 0;
+
+  if (!ch || !LEVELUP(ch) || LEVELUP(ch)->class != CLASS_LOREMASTER)
+    return -1;
+
+  level = LEVELUP(ch)->level;
+  if (level <= 0 || level > MAX_LOREMASTER_LEVELS)
+    return -1;
+
+  return level - 1;
+}
+
+static bool loremaster_advancement_choice_valid(struct char_data *ch, int class)
+{
+  if (!ch || !LEVELUP(ch))
+    return FALSE;
+  if (!is_loremaster_advancement_class(class))
+    return FALSE;
+  if (class < 0 || class >= NUM_CLASSES)
+    return FALSE;
+  if (!GET_LEVELUP_LOREMASTER_ENTRY_CLASS(ch, class))
+    return FALSE;
+  if (CLASS_LEVEL(ch, class) <= 0)
+    return FALSE;
+
+  return TRUE;
+}
+
+static int loremaster_secret_count_saved(struct char_data *ch)
+{
+  int i = 0, count = 0;
+
+  for (i = 1; i < NUM_LOREMASTER_SECRETS; i++)
+  {
+    if (KNOWS_LOREMASTER_SECRET(ch, i))
+      count++;
+  }
+
+  return count;
+}
+
+static int loremaster_secret_count_levelup(struct char_data *ch)
+{
+  int i = 0, count = 0;
+
+  for (i = 1; i < NUM_LOREMASTER_SECRETS; i++)
+  {
+    if (KNOWS_LEVELUP_LOREMASTER_SECRET(ch, i))
+      count++;
+  }
+
+  return count;
+}
+
+static int loremaster_required_secret_count(struct char_data *ch)
+{
+  int level = 0;
+
+  if (!ch || !LEVELUP(ch) || LEVELUP(ch)->class != CLASS_LOREMASTER)
+    return 0;
+
+  level = LEVELUP(ch)->level;
+  if (level < 1)
+    return 0;
+  if (level > 9)
+    level = 9;
+
+  return (level + 1) / 2;
+}
+
+static const char *loremaster_secret_name(int secret)
+{
+  switch (secret)
+  {
+  case LOREMASTER_SECRET_INSTANT_MASTERY:
+    return "Instant Mastery";
+  case LOREMASTER_SECRET_HEALTH:
+    return "Secret Health";
+  case LOREMASTER_SECRET_INNER_STRENGTH:
+    return "Secrets of Inner Strength";
+  case LOREMASTER_SECRET_TRUE_STAMINA:
+    return "Lore of True Stamina";
+  case LOREMASTER_SECRET_AVOIDANCE:
+    return "Secret Knowledge of Avoidance";
+  case LOREMASTER_SECRET_WEAPON_TRICK:
+    return "Weapon Trick";
+  case LOREMASTER_SECRET_DODGE_TRICK:
+    return "Dodge Trick";
+  case LOREMASTER_SECRET_APPLICABLE_KNOWLEDGE:
+    return "Applicable Knowledge";
+  case LOREMASTER_SECRET_NEWFOUND_ARCANA:
+    return "Newfound Arcana";
+  case LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA:
+    return "More Newfound Arcana";
+  default:
+    return "Unknown Secret";
+  }
+}
+
+static bool loremaster_can_select_secret(struct char_data *ch, int secret)
+{
+  if (!ch || !LEVELUP(ch) || LEVELUP(ch)->class != CLASS_LOREMASTER)
+    return FALSE;
+  if (secret <= LOREMASTER_SECRET_UNDEFINED || secret >= NUM_LOREMASTER_SECRETS)
+    return FALSE;
+  if (KNOWS_LEVELUP_LOREMASTER_SECRET(ch, secret))
+    return FALSE;
+  if (LEVELUP(ch)->level + ((LEVELUP(ch)->inte - 10) / 2) < secret)
+    return FALSE;
+
+  return TRUE;
+}
+
+static bool loremaster_applicable_knowledge_available(struct char_data *ch, int feat)
+{
+  if (feat <= FEAT_UNDEFINED || feat >= FEAT_LAST_FEAT)
+    return FALSE;
+  if (!feat_list[feat].can_learn)
+    return FALSE;
+  if (feat_list[feat].feat_type == FEAT_TYPE_CLASS_ABILITY)
+    return FALSE;
+  if (feat_to_cfeat(feat) != -1 || feat_to_sfeat(feat) != -1 || feat_to_skfeat(feat) != -1)
+    return FALSE;
+  if (!feat_is_available(ch, feat, 0, NULL))
+    return FALSE;
+
+  return TRUE;
+}
+
+static bool loremaster_newfound_choice_valid(struct char_data *ch, int class, int circle)
+{
+  if (!loremaster_advancement_choice_valid(ch, class))
+    return FALSE;
+  if (get_class_highest_circle(ch, class) < circle)
+    return FALSE;
+
+  return TRUE;
+}
+
+static void loremaster_advance_menu(struct descriptor_data *d)
+{
+  struct char_data *ch = d->character;
+  int i = 0, index = 0;
+
+  get_char_colors(ch);
+  clear_screen(d);
+
+  index = loremaster_study_index(ch);
+  write_to_output(d, "\r\n-- %sLoremaster Spellcasting Advancement\r\n\r\n", mgn);
+  if (index >= 0 && GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, index) != CLASS_UNDEFINED)
+    write_to_output(d, "Current choice: %s\r\n\r\n",
+                    CLSLIST_NAME(GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, index)));
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    if (loremaster_advancement_choice_valid(ch, i))
+      write_to_output(d, "%s%2d%s) %s\r\n", grn, i, nrm, CLSLIST_NAME(i));
+  }
+  write_to_output(d, "\r\nEnter class number/name (Q to quit): ");
+  OLC_MODE(d) = STUDY_SELECT_LOREMASTER_ADVANCE;
+}
+
+static void loremaster_secret_menu(struct descriptor_data *d)
+{
+  struct char_data *ch = d->character;
+  int i = 0;
+
+  get_char_colors(ch);
+  clear_screen(d);
+
+  write_to_output(d, "\r\n-- %sLoremaster Secret Selection\r\n\r\n", mgn);
+  write_to_output(d, "Secrets selected: %d of %d required for this level (%d persisted).\r\n\r\n",
+                  loremaster_secret_count_levelup(ch), loremaster_required_secret_count(ch),
+                  loremaster_secret_count_saved(ch));
+  for (i = 1; i < NUM_LOREMASTER_SECRETS; i++)
+  {
+    write_to_output(d, "%s%2d%s) %-32s %s\r\n", loremaster_can_select_secret(ch, i) ? grn : "\tD",
+                    i, nrm, loremaster_secret_name(i),
+                    KNOWS_LEVELUP_LOREMASTER_SECRET(ch, i) ? "(selected)" : "");
+  }
+  write_to_output(d, "\r\nEnter secret number (Q to quit): ");
+  OLC_MODE(d) = STUDY_SELECT_LOREMASTER_SECRET;
+}
+
+static void loremaster_instant_mastery_menu(struct descriptor_data *d)
+{
+  struct char_data *ch = d->character;
+  int i = 0;
+
+  get_char_colors(ch);
+  clear_screen(d);
+
+  write_to_output(d, "\r\n-- %sInstant Mastery Skill\r\n\r\n", mgn);
+  for (i = START_GENERAL_ABILITIES; i <= END_GENERAL_ABILITIES; i++)
+  {
+    switch (i)
+    {
+    case ABILITY_UNUSED_1:
+    case ABILITY_UNUSED_2:
+    case ABILITY_UNUSED_3:
+    case ABILITY_UNUSED_4:
+    case ABILITY_UNUSED_5:
+    case ABILITY_UNUSED_6:
+    case ABILITY_UNUSED_7:
+      continue;
+    }
+    if (GET_ABILITY(ch, i) == 0 && GET_LEVELUP_SKILL(ch, i) == 0)
+      write_to_output(d, "%s%3d%s) %s\r\n", grn, i, nrm, ability_names[i]);
+  }
+  write_to_output(d, "\r\nChoose a zero-rank skill (Q to quit): ");
+  OLC_MODE(d) = STUDY_INSTANT_MASTERY_SKILL;
+}
+
+static void loremaster_newfound_menu(struct descriptor_data *d, int circle, int mode)
+{
+  struct char_data *ch = d->character;
+  int i = 0;
+
+  get_char_colors(ch);
+  clear_screen(d);
+
+  write_to_output(d, "\r\n-- %s%s Target Class\r\n\r\n", mgn,
+                  circle == 1 ? "Newfound Arcana" : "More Newfound Arcana");
+  for (i = 0; i < NUM_CLASSES; i++)
+  {
+    if (loremaster_newfound_choice_valid(ch, i, circle))
+      write_to_output(d, "%s%2d%s) %s\r\n", grn, i, nrm, CLSLIST_NAME(i));
+  }
+  write_to_output(d, "\r\nEnter class number/name (Q to quit): ");
+  OLC_MODE(d) = mode;
+}
+
+static void loremaster_applicable_knowledge_menu(struct descriptor_data *d)
+{
+  struct char_data *ch = d->character;
+  int i = 0, columns = 0;
+
+  get_char_colors(ch);
+  clear_screen(d);
+
+  write_to_output(d, "\r\n-- %sApplicable Knowledge Feat\r\n\r\n", mgn);
+  for (i = 1; i < FEAT_LAST_FEAT; i++)
+  {
+    if (!loremaster_applicable_knowledge_available(ch, i))
+      continue;
+    write_to_output(d, "%s%4d%s) %-24.24s %s", grn, i, nrm, feat_list[i].name,
+                    !(++columns % 2) ? "\r\n" : "");
+  }
+  if (columns % 2)
+    write_to_output(d, "\r\n");
+  write_to_output(d, "\r\nEnter feat number (Q to quit): ");
+  OLC_MODE(d) = STUDY_APPLICABLE_KNOWLEDGE_FEAT;
+}
+
+static bool loremaster_finalize_ready(struct descriptor_data *d)
+{
+  struct char_data *ch = d->character;
+  int index = 0, class = CLASS_UNDEFINED, feat = FEAT_UNDEFINED, skill = 0;
+  bool instant_new = FALSE, applicable_new = FALSE, newfound_new = FALSE, more_newfound_new = FALSE;
+
+  if (!ch || !LEVELUP(ch) || LEVELUP(ch)->class != CLASS_LOREMASTER)
+    return TRUE;
+
+  index = loremaster_study_index(ch);
+  if (index < 0 || index >= MAX_LOREMASTER_LEVELS)
+  {
+    write_to_output(d, "Invalid Loremaster level state.\r\n");
+    return FALSE;
+  }
+
+  class = GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, index);
+  if (!loremaster_advancement_choice_valid(ch, class))
+  {
+    write_to_output(d, "Choose a valid Loremaster spellcasting advancement first.\r\n");
+    return FALSE;
+  }
+
+  if (loremaster_secret_count_levelup(ch) < loremaster_required_secret_count(ch))
+  {
+    write_to_output(d, "Choose a Loremaster secret first.\r\n");
+    return FALSE;
+  }
+
+  instant_new = KNOWS_LEVELUP_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_INSTANT_MASTERY) &&
+                !KNOWS_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_INSTANT_MASTERY);
+  applicable_new = KNOWS_LEVELUP_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_APPLICABLE_KNOWLEDGE) &&
+                   !KNOWS_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_APPLICABLE_KNOWLEDGE);
+  newfound_new = KNOWS_LEVELUP_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_NEWFOUND_ARCANA) &&
+                 !KNOWS_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_NEWFOUND_ARCANA);
+  more_newfound_new =
+      KNOWS_LEVELUP_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA) &&
+      !KNOWS_LOREMASTER_SECRET(ch, LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA);
+
+  if (instant_new &&
+      GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch) < 0)
+  {
+    write_to_output(d, "Choose an Instant Mastery skill first.\r\n");
+    return FALSE;
+  }
+
+  skill = GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch);
+  if (instant_new &&
+      (skill < START_GENERAL_ABILITIES || skill > END_GENERAL_ABILITIES ||
+       GET_ABILITY(ch, skill) != 0 || GET_LEVELUP_SKILL(ch, skill) != 0))
+  {
+    write_to_output(d, "Instant Mastery requires a skill with zero current and staged ranks.\r\n");
+    return FALSE;
+  }
+
+  if (applicable_new)
+  {
+    feat = GET_LEVELUP_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch);
+    if (!loremaster_applicable_knowledge_available(ch, feat))
+    {
+      write_to_output(d, "Choose a valid Applicable Knowledge feat first.\r\n");
+      return FALSE;
+    }
+  }
+
+  if (newfound_new &&
+      !loremaster_newfound_choice_valid(ch, GET_LEVELUP_LOREMASTER_NEWFOUND_CLASS(ch), 1))
+  {
+    write_to_output(d, "Choose a valid Newfound Arcana class first.\r\n");
+    return FALSE;
+  }
+
+  if (more_newfound_new &&
+      !loremaster_newfound_choice_valid(ch, GET_LEVELUP_LOREMASTER_MORE_NEWFOUND_CLASS(ch), 2))
+  {
+    write_to_output(d, "Choose a valid More Newfound Arcana class first.\r\n");
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 static void sorc_known_spells_disp_menu(struct descriptor_data *d)
@@ -1988,7 +2384,8 @@ static void choose_languages(struct descriptor_data *d)
   int langs_known = num_languages_learned(ch);
   int langs_can_learn = MAX(0, GET_REAL_INT_BONUS(ch)) +
                         MAX(0, GET_ABILITY(ch, ABILITY_LINGUISTICS)) +
-                        MAX(0, LEVELUP(ch)->skills[ABILITY_LINGUISTICS]);
+                        MAX(0, LEVELUP(ch)->skills[ABILITY_LINGUISTICS]) +
+                        loremaster_bonus_languages(ch);
 
   for (i = 0; i < NUM_LANGUAGES; i++)
   {
@@ -2636,6 +3033,8 @@ static void generic_main_disp_menu(struct descriptor_data *d)
       "%s H%s) Necromancer Casting Type%s\r\n"
       "%s I%s) Languages%s\r\n"
       "%s J%s) Dragon Riders%s\r\n"
+      "%s K%s) Loremaster Spellcasting Advancement%s\r\n"
+      "%s L%s) Loremaster Secret%s\r\n"
       "\r\n"
       "%s R%s) Reset Character%s\r\n"
       "%s Q%s) Quit\r\n"
@@ -2666,6 +3065,10 @@ static void generic_main_disp_menu(struct descriptor_data *d)
       has_necromancer_cast_type_unchosen(ch) ? "" : "*",                                 // H
       MENU_OPT(has_unchosen_languages(ch)), has_unchosen_languages(ch) ? "" : "*",       // I
       MENU_OPT(has_unchosen_dragon_rider(ch)), has_unchosen_dragon_rider(ch) ? "" : "*", // J
+      MENU_OPT(LEVELUP(ch) && LEVELUP(ch)->class == CLASS_LOREMASTER),
+      (LEVELUP(ch) && LEVELUP(ch)->class == CLASS_LOREMASTER) ? "" : "*", // K
+      MENU_OPT(LEVELUP(ch) && LEVELUP(ch)->class == CLASS_LOREMASTER),
+      (LEVELUP(ch) && LEVELUP(ch)->class == CLASS_LOREMASTER) ? "" : "*", // L
       MENU_OPT(GET_LEVEL(ch) == 1), GET_LEVEL(ch) == 1 ? "" : "*",                       // R
       grn, nrm,
       (GET_PREMADE_BUILD_CLASS(ch) != CLASS_UNDEFINED)
@@ -2845,6 +3248,11 @@ void study_parse(struct descriptor_data *d, char *arg)
     {
     case 'y':
     case 'Y':
+      if (!loremaster_finalize_ready(d))
+      {
+        OLC_MODE(d) = STUDY_GEN_MAIN_MENU;
+        return;
+      }
       /* Save the temporary values in LEVELUP(d->character) to the
        * character, print a message, free the structures and exit. */
       write_to_output(d, "Your choices have been finalized!\r\n\r\n");
@@ -2875,6 +3283,10 @@ void study_parse(struct descriptor_data *d, char *arg)
     {
     case 'q':
     case 'Q':
+      if (!loremaster_finalize_ready(d))
+      {
+        break;
+      }
       if (GET_LEVEL(ch) == 1)
       {
         write_to_output(
@@ -2923,7 +3335,19 @@ void study_parse(struct descriptor_data *d, char *arg)
 
       if (CAN_STUDY_KNOWN_SPELLS(ch))
       {
-        if (LEVELUP(ch)->class == CLASS_SORCERER ||
+        if (LEVELUP(ch)->class == CLASS_LOREMASTER &&
+            loremaster_staged_caster_class(ch) == CLASS_SORCERER)
+          sorc_known_spells_disp_menu(d);
+        else if (LEVELUP(ch)->class == CLASS_LOREMASTER &&
+                 loremaster_staged_caster_class(ch) == CLASS_BARD)
+          bard_known_spells_disp_menu(d);
+        else if (LEVELUP(ch)->class == CLASS_LOREMASTER &&
+                 loremaster_staged_caster_class(ch) == CLASS_SUMMONER)
+          summoner_known_spells_disp_menu(d);
+        else if (LEVELUP(ch)->class == CLASS_LOREMASTER &&
+                 loremaster_staged_caster_class(ch) == CLASS_INQUISITOR)
+          inquisitor_known_spells_disp_menu(d);
+        else if (LEVELUP(ch)->class == CLASS_SORCERER ||
             (is_arcane_progression_class &&
              ((LEVELUP(ch)->class == CLASS_DRAGON_DISCIPLE &&
                dragon_disciple_arcane_class == CLASS_SORCERER) ||
@@ -3168,6 +3592,28 @@ void study_parse(struct descriptor_data *d, char *arg)
       }
       break;
 
+    case 'k':
+    case 'K':
+      if (LEVELUP(ch)->class == CLASS_LOREMASTER)
+        loremaster_advance_menu(d);
+      else
+      {
+        write_to_output(d, "That is an invalid choice!\r\n");
+        generic_main_disp_menu(d);
+      }
+      break;
+
+    case 'l':
+    case 'L':
+      if (LEVELUP(ch)->class == CLASS_LOREMASTER)
+        loremaster_secret_menu(d);
+      else
+      {
+        write_to_output(d, "That is an invalid choice!\r\n");
+        generic_main_disp_menu(d);
+      }
+      break;
+
     // reset levelup, level 1 only.
     case 'R':
     case 'r':
@@ -3216,6 +3662,134 @@ void study_parse(struct descriptor_data *d, char *arg)
       display_main_menu(d);
       break;
     }
+    break;
+  case STUDY_SELECT_LOREMASTER_ADVANCE:
+    if (*arg == 'q' || *arg == 'Q')
+    {
+      display_main_menu(d);
+      break;
+    }
+    if (*arg >= '0' && *arg <= '9')
+      number = atoi(arg);
+    else
+      number = parse_class_long(arg);
+    counter = loremaster_study_index(ch);
+    if (counter < 0 || counter >= MAX_LOREMASTER_LEVELS ||
+        !loremaster_advancement_choice_valid(ch, number))
+    {
+      write_to_output(d, "That is not a valid Loremaster advancement class.\r\n");
+      loremaster_advance_menu(d);
+      break;
+    }
+    GET_LEVELUP_LOREMASTER_CASTER_CLASS(ch, counter) = number;
+    write_to_output(d, "Loremaster spellcasting advancement set to %s.\r\n", CLSLIST_NAME(number));
+    display_main_menu(d);
+    break;
+  case STUDY_SELECT_LOREMASTER_SECRET:
+    if (*arg == 'q' || *arg == 'Q')
+    {
+      display_main_menu(d);
+      break;
+    }
+    number = atoi(arg);
+    if (loremaster_secret_count_levelup(ch) >= loremaster_required_secret_count(ch))
+    {
+      write_to_output(d, "You have already selected the required Loremaster secret for this level.\r\n");
+      display_main_menu(d);
+      break;
+    }
+    if (!loremaster_can_select_secret(ch, number))
+    {
+      write_to_output(d, "That is not a valid Loremaster secret choice.\r\n");
+      loremaster_secret_menu(d);
+      break;
+    }
+    KNOWS_LEVELUP_LOREMASTER_SECRET(ch, number) = 1;
+    switch (number)
+    {
+    case LOREMASTER_SECRET_INSTANT_MASTERY:
+      GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch) = -1;
+      loremaster_instant_mastery_menu(d);
+      break;
+    case LOREMASTER_SECRET_APPLICABLE_KNOWLEDGE:
+      GET_LEVELUP_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) = FEAT_UNDEFINED;
+      loremaster_applicable_knowledge_menu(d);
+      break;
+    case LOREMASTER_SECRET_NEWFOUND_ARCANA:
+      GET_LEVELUP_LOREMASTER_NEWFOUND_CLASS(ch) = CLASS_UNDEFINED;
+      loremaster_newfound_menu(d, 1, STUDY_NEWFOUND_CLASS);
+      break;
+    case LOREMASTER_SECRET_MORE_NEWFOUND_ARCANA:
+      GET_LEVELUP_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = CLASS_UNDEFINED;
+      loremaster_newfound_menu(d, 2, STUDY_MORE_NEWFOUND_CLASS);
+      break;
+    default:
+      write_to_output(d, "Loremaster secret selected: %s.\r\n", loremaster_secret_name(number));
+      display_main_menu(d);
+      break;
+    }
+    break;
+  case STUDY_INSTANT_MASTERY_SKILL:
+    if (*arg == 'q' || *arg == 'Q')
+    {
+      display_main_menu(d);
+      break;
+    }
+    number = atoi(arg);
+    if (number < START_GENERAL_ABILITIES || number > END_GENERAL_ABILITIES ||
+        GET_ABILITY(ch, number) != 0 || GET_LEVELUP_SKILL(ch, number) != 0)
+    {
+      write_to_output(d, "Choose a skill with zero current and staged ranks.\r\n");
+      loremaster_instant_mastery_menu(d);
+      break;
+    }
+    GET_LEVELUP_LOREMASTER_INSTANT_MASTERY_SKILL(ch) = number;
+    write_to_output(d, "Instant Mastery skill set to %s.\r\n", ability_names[number]);
+    display_main_menu(d);
+    break;
+  case STUDY_NEWFOUND_CLASS:
+  case STUDY_MORE_NEWFOUND_CLASS:
+    if (*arg == 'q' || *arg == 'Q')
+    {
+      display_main_menu(d);
+      break;
+    }
+    if (*arg >= '0' && *arg <= '9')
+      number = atoi(arg);
+    else
+      number = parse_class_long(arg);
+    counter = (OLC_MODE(d) == STUDY_NEWFOUND_CLASS) ? 1 : 2;
+    if (!loremaster_newfound_choice_valid(ch, number, counter))
+    {
+      write_to_output(d, "That class cannot use the selected Loremaster bonus slot.\r\n");
+      loremaster_newfound_menu(d, counter, OLC_MODE(d));
+      break;
+    }
+    if (counter == 1)
+      GET_LEVELUP_LOREMASTER_NEWFOUND_CLASS(ch) = number;
+    else
+      GET_LEVELUP_LOREMASTER_MORE_NEWFOUND_CLASS(ch) = number;
+    write_to_output(d, "%s target class set to %s.\r\n",
+                    counter == 1 ? "Newfound Arcana" : "More Newfound Arcana",
+                    CLSLIST_NAME(number));
+    display_main_menu(d);
+    break;
+  case STUDY_APPLICABLE_KNOWLEDGE_FEAT:
+    if (*arg == 'q' || *arg == 'Q')
+    {
+      display_main_menu(d);
+      break;
+    }
+    number = atoi(arg);
+    if (!loremaster_applicable_knowledge_available(ch, number))
+    {
+      write_to_output(d, "That is not a valid Applicable Knowledge feat.\r\n");
+      loremaster_applicable_knowledge_menu(d);
+      break;
+    }
+    GET_LEVELUP_LOREMASTER_APPLICABLE_KNOWLEDGE_FEAT(ch) = number;
+    write_to_output(d, "Applicable Knowledge feat set to %s.\r\n", feat_list[number].name);
+    display_main_menu(d);
     break;
   case STUDY_MAIN_FEAT_MENU:
     /* This is the menu where the player chooses feats - This menu is actually a
@@ -3516,7 +4090,8 @@ void study_parse(struct descriptor_data *d, char *arg)
       int langs_can_learn = MAX(0, GET_REAL_INT_BONUS(ch)) +
                             MAX(0, GET_ABILITY(ch, ABILITY_LINGUISTICS)) +
                             MAX(0, LEVELUP(ch)->skills[ABILITY_LINGUISTICS]) +
-                            (has_inquisitor_perfect_recall(ch) ? 3 : 0);
+                            (has_inquisitor_perfect_recall(ch) ? 3 : 0) +
+                            loremaster_bonus_languages(ch);
       for (i = 0; i < NUM_LANGUAGES; i++)
       {
         if (LEVELUP(ch)->languages[i])
