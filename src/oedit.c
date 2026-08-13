@@ -366,14 +366,19 @@ void oedit_disp_weapon_spells(struct descriptor_data *d)
   {
     snprintf(buf, sizeof(buf), "[%s%d%s] ", cyn, counter + 1, nrm);
     send_to_char(d->character, "%s", buf);
-    snprintf(buf, sizeof(buf), "Spell: %s%20s%s ", cyn, 
-      (OLC_OBJ(d)->wpn_spells[counter].spellnum > 0) ? spell_info[OLC_OBJ(d)->wpn_spells[counter].spellnum].name : "none", nrm);
+    snprintf(buf, sizeof(buf), "Spell: %s%20s%s ", cyn,
+             (OLC_OBJ(d)->wpn_spells[counter].spellnum > 0)
+                 ? spell_info[OLC_OBJ(d)->wpn_spells[counter].spellnum].name
+                 : "none",
+             nrm);
     send_to_char(d->character, "%s", buf);
     snprintf(buf, sizeof(buf), "Level: %s%3d%s ", cyn, OLC_OBJ(d)->wpn_spells[counter].level, nrm);
     send_to_char(d->character, "%s", buf);
-    snprintf(buf, sizeof(buf), "Percent: %s%3d%s ", cyn, OLC_OBJ(d)->wpn_spells[counter].percent, nrm);
+    snprintf(buf, sizeof(buf), "Percent: %s%3d%s ", cyn, OLC_OBJ(d)->wpn_spells[counter].percent,
+             nrm);
     send_to_char(d->character, "%s", buf);
-    snprintf(buf, sizeof(buf), "Combat: %s%3d%s\r\n", cyn, OLC_OBJ(d)->wpn_spells[counter].inCombat, nrm);
+    snprintf(buf, sizeof(buf), "Combat: %s%3d%s\r\n", cyn, OLC_OBJ(d)->wpn_spells[counter].inCombat,
+             nrm);
     send_to_char(d->character, "%s", buf);
   }
   send_to_char(d->character, "Enter spell to edit : ");
@@ -1895,12 +1900,11 @@ static void oedit_disp_trap_menu(struct descriptor_data *d)
   clear_screen(d);
   if (!trap)
   {
-    write_to_output(d,
-                    "Object Trap Menu\r\n"
-                    "No trap attached to this object.\r\n\r\n"
-                    "1) Create default trap\r\n"
-                    "0) Back\r\n"
-                    "Enter choice : ");
+    write_to_output(d, "Object Trap Menu\r\n"
+                       "No trap attached to this object.\r\n\r\n"
+                       "1) Create default trap\r\n"
+                       "0) Back\r\n"
+                       "Enter choice : ");
     OLC_MODE(d) = OEDIT_TRAP_MENU;
     return;
   }
@@ -2113,8 +2117,8 @@ static void oedit_disp_menu(struct descriptor_data *d)
     snprintf(buf5, sizeof(buf5), "Not Set");
   }
 
-  write_to_output(d, "%sY%s) Trap Setup             : %s%s\r\nEnter choice : ", grn, nrm, cyn,
-                  buf5);
+  write_to_output(d, "%sY%s) Trap Setup             : %s%s%s\r\nEnter choice : ", grn, nrm, cyn,
+                  buf5, nrm);
   OLC_MODE(d) = OEDIT_MAIN_MENU;
 }
 
@@ -2538,12 +2542,11 @@ void oedit_parse(struct descriptor_data *d, char *arg)
         oedit_disp_trap_menu(d);
         return;
       }
-      write_to_output(d,
-                      "Select trigger type:\r\n"
-                      "1) Open object/container\r\n"
-                      "2) Unlock object/container\r\n"
-                      "3) Get object\r\n"
-                      "Enter choice : ");
+      write_to_output(d, "Select trigger type:\r\n"
+                         "1) Open object/container\r\n"
+                         "2) Unlock object/container\r\n"
+                         "3) Get object\r\n"
+                         "Enter choice : ");
       OLC_MODE(d) = OEDIT_TRAP_TRIGGER;
       return;
     case '3':
