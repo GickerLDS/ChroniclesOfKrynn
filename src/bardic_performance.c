@@ -24,6 +24,9 @@
 
 /* defines */
 #define DEBUG_MODE FALSE
+/* Affect durations are tracked in rounds; display code treats 15 rounds as one minute. */
+#define BARD_BASE_DURATION 15
+#define BARD_DEFAULT_DURATION_BONUS 3
 /* this will determine whether the system is ran through events or the tick system */
 /* #define EVENT_RAN */
 
@@ -484,6 +487,7 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
                         int effectiveness, int aoe)
 {
   int return_val = 1, i = 0; /* return_val is 1, very limited reasons to fail here! */
+  int songweaver_bonus = 0;
   bool nomessage = FALSE, engage = TRUE;
   struct affected_type af[BARD_AFFECTS];
 
@@ -499,28 +503,26 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
                  GET_NAME(tch), spellnum, effectiveness, aoe);
   }
 
+  if (!IS_NPC(ch))
+    songweaver_bonus = get_bard_songweaver_level_bonus(ch);
+
   /* init affect array */
   for (i = 0; i < BARD_AFFECTS; i++)
   {
     new_affect(&(af[i]));
 
     af[i].spell = spellnum;
-    af[i].duration = 3;
+    af[i].duration = BARD_BASE_DURATION + BARD_DEFAULT_DURATION_BONUS;
     af[i].bonus_type = BONUS_TYPE_INHERENT;
     af[i].modifier = 1;
     af[i].location = APPLY_NONE;
-    /* Bard Spellsinger: Songweaver I - add duration bonus */
-    if (!IS_NPC(ch))
-    {
-      int songweaver_bonus = get_bard_songweaver_level_bonus(ch);
-      if (songweaver_bonus > 0)
-      {
-        for (i = 0; i < BARD_AFFECTS; i++)
-        {
-          af[i].duration += songweaver_bonus;
-        }
-      }
-    }
+  }
+
+  /* Bard Spellsinger: Songweaver I - add duration bonus */
+  if (songweaver_bonus > 0)
+  {
+    for (i = 0; i < BARD_AFFECTS; i++)
+      af[i].duration += songweaver_bonus;
   }
 
   if (affected_by_spell(tch, spellnum))
@@ -545,31 +547,31 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
 
   case SKILL_DANCE_OF_PROTECTION:
     af[0].location = APPLY_AC_NEW;
-    af[0].modifier = (effectiveness + 1) / 7;
+    af[0].modifier = MAX(1, (effectiveness + 1) / 7);
 
     af[1].location = APPLY_SAVING_WILL;
-    af[1].modifier = effectiveness / 6;
+    af[1].modifier = MAX(1, effectiveness / 6);
 
     af[2].location = APPLY_DR;
-    af[2].modifier = effectiveness / 13;
+    af[2].modifier = MAX(1, effectiveness / 13);
 
     break;
 
   case SKILL_SONG_OF_HEROISM:
     af[0].location = APPLY_HITROLL;
-    af[0].modifier = 1 + effectiveness / 10;
+    af[0].modifier = MAX(1, 1 + effectiveness / 10);
 
     af[1].location = APPLY_DAMROLL;
-    af[1].modifier = effectiveness / 10;
+    af[1].modifier = MAX(1, effectiveness / 10);
 
     af[2].location = APPLY_STR;
-    af[2].modifier = effectiveness / 10;
+    af[2].modifier = MAX(1, effectiveness / 10);
 
     af[3].location = APPLY_DEX;
-    af[3].modifier = effectiveness / 10;
+    af[3].modifier = MAX(1, effectiveness / 10);
 
     af[4].location = APPLY_CON;
-    af[4].modifier = effectiveness / 10;
+    af[4].modifier = MAX(1, effectiveness / 10);
 
     if (GET_LEVEL(ch) >= 10 && !AFF_FLAGGED(tch, AFF_HASTE))
     {
@@ -639,31 +641,31 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
     af[0].bonus_type = BONUS_TYPE_INHERENT;
 
     af[1].location = APPLY_SAVING_REFL;
-    af[1].modifier = effectiveness / 5;
+    af[1].modifier = MAX(1, effectiveness / 5);
     af[1].bonus_type = BONUS_TYPE_INHERENT;
 
     af[2].location = APPLY_SAVING_DEATH;
-    af[2].modifier = effectiveness / 5;
+    af[2].modifier = MAX(1, effectiveness / 5);
     af[2].bonus_type = BONUS_TYPE_INHERENT;
 
     af[3].location = APPLY_SAVING_FORT;
-    af[3].modifier = effectiveness / 5;
+    af[3].modifier = MAX(1, effectiveness / 5);
     af[3].bonus_type = BONUS_TYPE_INHERENT;
 
     af[4].location = APPLY_SAVING_POISON;
-    af[4].modifier = effectiveness / 5;
+    af[4].modifier = MAX(1, effectiveness / 5);
     af[4].bonus_type = BONUS_TYPE_INHERENT;
 
     af[5].location = APPLY_SAVING_WILL;
-    af[5].modifier = effectiveness / 5;
+    af[5].modifier = MAX(1, effectiveness / 5);
     af[5].bonus_type = BONUS_TYPE_INHERENT;
 
     af[6].location = APPLY_CON;
-    af[6].modifier = 2 + effectiveness / 3;
+    af[6].modifier = MAX(1, 2 + effectiveness / 3);
     af[6].bonus_type = BONUS_TYPE_INHERENT;
 
     af[7].location = APPLY_HIT;
-    af[7].modifier = 40 + effectiveness * 4;
+    af[7].modifier = MAX(1, 40 + effectiveness * 4);
     af[7].bonus_type = BONUS_TYPE_INHERENT;
 
     break;
@@ -684,7 +686,7 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
     if (!AFF_FLAGGED(tch, AFF_FLYING))
     {
       af[0].location = APPLY_SPECIAL;
-      af[0].duration = 30;
+      af[0].duration += 30;
       SET_BIT_AR(af[0].bitvector, AFF_FLYING);
       act("You fly through the air, free as a bird!", FALSE, tch, 0, 0, TO_CHAR);
       act("$n fly through the air, free as a bird!", TRUE, tch, 0, 0, TO_ROOM);
@@ -696,11 +698,11 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
   /* increases memming / casting effectiveness */
   case SKILL_SONG_OF_FOCUSED_MIND:
     af[0].location = APPLY_INT;
-    af[0].modifier = 1 + effectiveness / 7;
+    af[0].modifier = MAX(1, 1 + effectiveness / 7);
     af[1].location = APPLY_WIS;
-    af[1].modifier = 1 + effectiveness / 7;
+    af[1].modifier = MAX(1, 1 + effectiveness / 7);
     af[2].location = APPLY_CHA;
-    af[2].modifier = 1 + effectiveness / 7;
+    af[2].modifier = MAX(1, 1 + effectiveness / 7);
 
     /* using affected_by_spell() for memorization bonus */
 
@@ -761,13 +763,13 @@ int performance_effects(struct char_data *ch, struct char_data *tch, int spellnu
       af[1].modifier = -(2 + effectiveness / 10);
 
       af[2].location = APPLY_INT;
-      af[2].modifier = 1 + effectiveness / 7;
+      af[2].modifier = MAX(1, 1 + effectiveness / 7);
 
       af[3].location = APPLY_WIS;
-      af[3].modifier = 1 + effectiveness / 7;
+      af[3].modifier = MAX(1, 1 + effectiveness / 7);
 
       af[4].location = APPLY_CHA;
-      af[4].modifier = 1 + effectiveness / 7;
+      af[4].modifier = MAX(1, 1 + effectiveness / 7);
     }
     break;
 

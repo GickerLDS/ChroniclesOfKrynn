@@ -1087,6 +1087,9 @@ void update_msdp_affects(struct char_data *ch)
   {
     char buf[500]; // Buffer for building the affect table for MSDP
     const char *bonus_type_name = "Untyped";
+    const char *apply_name = (af->location >= 0 && af->location < NUM_APPLIES)
+                                 ? apply_types[(int)af->location]
+                                 : "<Invalid>";
     bool has_bonus_type = false;
 
     next = af->next;
@@ -1110,10 +1113,10 @@ void update_msdp_affects(struct char_data *ch)
                "%c",
                (char)MSDP_VAL, (char)MSDP_TABLE_OPEN, (char)MSDP_VAR, "NAME", (char)MSDP_VAL,
                spell_name(af->spell), (char)MSDP_VAR, "LOCATION", (char)MSDP_VAL,
-               apply_types[(int)af->location], (char)MSDP_VAR, "MODIFIER", (char)MSDP_VAL,
-               af->modifier, (char)MSDP_VAR, "TYPE", (char)MSDP_VAL, bonus_type_name,
-               (char)MSDP_VAR, "BONUS_TYPE", (char)MSDP_VAL, bonus_type_name, (char)MSDP_VAR,
-               "DURATION", (char)MSDP_VAL, af->duration, (char)MSDP_TABLE_CLOSE);
+               apply_name, (char)MSDP_VAR, "MODIFIER", (char)MSDP_VAL, af->modifier,
+               (char)MSDP_VAR, "TYPE", (char)MSDP_VAL, bonus_type_name, (char)MSDP_VAR,
+               "BONUS_TYPE", (char)MSDP_VAL, bonus_type_name, (char)MSDP_VAR, "DURATION",
+               (char)MSDP_VAL, af->duration, (char)MSDP_TABLE_CLOSE);
     }
     else
     {
@@ -1127,9 +1130,9 @@ void update_msdp_affects(struct char_data *ch)
                "%c",
                (char)MSDP_VAL, (char)MSDP_TABLE_OPEN, (char)MSDP_VAR, "NAME", (char)MSDP_VAL,
                spell_name(af->spell), (char)MSDP_VAR, "LOCATION", (char)MSDP_VAL,
-               apply_types[(int)af->location], (char)MSDP_VAR, "MODIFIER", (char)MSDP_VAL,
-               af->modifier, (char)MSDP_VAR, "TYPE", (char)MSDP_VAL, bonus_type_name,
-               (char)MSDP_VAR, "DURATION", (char)MSDP_VAL, af->duration, (char)MSDP_TABLE_CLOSE);
+               apply_name, (char)MSDP_VAR, "MODIFIER", (char)MSDP_VAL, af->modifier,
+               (char)MSDP_VAR, "TYPE", (char)MSDP_VAL, bonus_type_name, (char)MSDP_VAR,
+               "DURATION", (char)MSDP_VAL, af->duration, (char)MSDP_TABLE_CLOSE);
     }
     strlcat(msdp_buffer, buf, sizeof(msdp_buffer));
   }

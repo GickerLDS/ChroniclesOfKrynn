@@ -3068,10 +3068,11 @@ void perform_affects(struct char_data *ch, struct char_data *k)
   }
   for (i = 0; i < NUM_AFF2_FLAGS; i++)
   {
-    if (IS_SET_AR(AFF_FLAGS(k), i))
+    if (IS_SET_AR(AFF2_FLAGS(k), i))
     {
-      send_to_char(ch, "%s%-20s%s - %s%s%s\r\n", CCNRM(ch, C_NRM), affected_bits[i],
-                   CCNRM(ch, C_NRM), CCNRM(ch, C_NRM), affected_bit_descs[i], CCNRM(ch, C_NRM));
+      send_to_char(ch, "%s%-20s%s - %s%s%s\r\n", CCNRM(ch, C_NRM), affected2_bits[i],
+                   CCNRM(ch, C_NRM), CCNRM(ch, C_NRM), affected2_bit_descs[i],
+                   CCNRM(ch, C_NRM));
     }
   }
 
@@ -3110,6 +3111,14 @@ void perform_affects(struct char_data *ch, struct char_data *k)
   {
     for (aff = k->affected; aff; aff = aff->next)
     {
+      const char *affect_name = spell_name(aff->spell);
+      const char *apply_name = (aff->location >= 0 && aff->location < NUM_APPLIES)
+                                   ? apply_types[(int)aff->location]
+                                   : "<Invalid>";
+      const char *bonus_name = (aff->bonus_type >= 0 && aff->bonus_type < NUM_BONUS_TYPES)
+                                   ? bonus_types[aff->bonus_type]
+                                   : bonus_types[BONUS_TYPE_UNDEFINED];
+
       if (aff->duration + 1 >= 900)
       { // how many rounds in an hour?
         snprintf(buf, sizeof(buf), "[%2d hour%s   ] ", (int)((aff->duration + 1) / 900),
@@ -3127,8 +3136,7 @@ void perform_affects(struct char_data *ch, struct char_data *k)
       }
 
       /* name */
-      snprintf(buf2, sizeof(buf2), "%s%-25s%s ", CCCYN(ch, C_NRM), spell_info[aff->spell].name,
-               CCNRM(ch, C_NRM));
+      snprintf(buf2, sizeof(buf2), "%s%-25s%s ", CCCYN(ch, C_NRM), affect_name, CCNRM(ch, C_NRM));
       strlcat(buf, buf2, sizeof(buf));
 
       buf2[0] = '\0';
@@ -3139,21 +3147,25 @@ void perform_affects(struct char_data *ch, struct char_data *k)
       }
       else if (aff->location == APPLY_SKILL)
       {
-        snprintf(buf3, sizeof(buf3), "%+d to %s (%s)", aff->modifier,
-                 apply_types[(int)aff->location], ability_names[aff->specific]);
+        const char *specific_name =
+            (aff->specific >= 0 && aff->specific <= NUM_ABILITIES) ? ability_names[aff->specific]
+                                                                    : "Unknown";
+        snprintf(buf3, sizeof(buf3), "%+d to %s (%s)", aff->modifier, apply_name, specific_name);
       }
       else if (aff->location >= APPLY_SPELL_CIRCLE_1 && aff->location <= APPLY_SPELL_CIRCLE_9)
       {
-        snprintf(buf3, sizeof(buf3), "%+d to %s (%s)", aff->modifier,
-                 apply_types[(int)aff->location], class_names[aff->specific]);
+        const char *specific_name =
+            (aff->specific >= 0 && aff->specific < NUM_CLASSES) ? class_names[aff->specific]
+                                                                : "Unknown";
+        snprintf(buf3, sizeof(buf3), "%+d to %s (%s)", aff->modifier, apply_name, specific_name);
       }
       else if (aff->location == APPLY_SPELL_POTENCY || aff->location == APPLY_SPELL_DURATION)
       {
-        snprintf(buf3, sizeof(buf3), "%+d%% to %s", aff->modifier, apply_types[(int)aff->location]);
+        snprintf(buf3, sizeof(buf3), "%+d%% to %s", aff->modifier, apply_name);
       }
       else
       {
-        snprintf(buf3, sizeof(buf3), "%+d to %s", aff->modifier, apply_types[(int)aff->location]);
+        snprintf(buf3, sizeof(buf3), "%+d to %s", aff->modifier, apply_name);
       }
 
       if (aff->bitvector[0] || aff->bitvector[1] || aff->bitvector[2] || aff->bitvector[3])
@@ -3166,7 +3178,7 @@ void perform_affects(struct char_data *ch, struct char_data *k)
       snprintf(buf2, sizeof(buf2), "%-34s", buf3);
       buf3[0] = '\0';
       /* Add the Bonus type. */
-      send_to_char(ch, "%s %s \tc(%s)\tn\r\n", buf, buf2, bonus_types[aff->bonus_type]);
+      send_to_char(ch, "%s %s \tc(%s)\tn\r\n", buf, buf2, bonus_name);
     } /* end for */
   }
 
