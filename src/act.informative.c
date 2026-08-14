@@ -2713,17 +2713,19 @@ void perform_cooldowns(struct char_data *ch, struct char_data *k)
   /* Wizard Controller perk: Defensive Casting - show if active */
   if (CONFIG_PERK_SYSTEM && !IS_NPC(k) && k->player_specials->saved.defensive_casting_timer > 0)
   {
+    int display_rounds = MAX(1, k->player_specials->saved.defensive_casting_timer - 1);
+
     send_to_char(ch, "\tGDefensive Casting Active\tn - +4 AC for %d round%s\r\n",
-                 k->player_specials->saved.defensive_casting_timer,
-                 k->player_specials->saved.defensive_casting_timer == 1 ? "" : "s");
+                 display_rounds, display_rounds == 1 ? "" : "s");
   }
 
   /* Wizard Versatile Caster perk: Spell Shield - show if active */
   if (CONFIG_PERK_SYSTEM && !IS_NPC(k) && k->player_specials->saved.spell_shield_timer > 0)
   {
+    int display_rounds = MAX(1, k->player_specials->saved.spell_shield_timer - 1);
+
     send_to_char(ch, "\tCSpell Shield Active\tn - 10 DR + 4 AC for %d round%s\r\n",
-                 k->player_specials->saved.spell_shield_timer,
-                 k->player_specials->saved.spell_shield_timer == 1 ? "" : "s");
+                 display_rounds, display_rounds == 1 ? "" : "s");
   }
 
   /* Spell Shield cooldown */

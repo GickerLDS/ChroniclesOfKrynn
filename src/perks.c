@@ -23132,6 +23132,8 @@ void use_split_enchantment_perk(struct char_data *ch)
   ch->player_specials->saved.split_enchantment_cooldown = time(0) + 300;
 }
 
+#define ONE_ROUND_PERK_TIMER_TICKS 2
+
 /**
  * Activate defensive casting AC bonus.
  * Sets a timer for 1 round of +4 dodge AC after casting a spell.
@@ -23146,8 +23148,8 @@ void activate_defensive_casting(struct char_data *ch)
   if (!has_perk(ch, PERK_WIZARD_DEFENSIVE_CASTING))
     return;
 
-  /* Set timer for 1 round (will be decremented in limits.c or combat) */
-  ch->player_specials->saved.defensive_casting_timer = 1;
+  /* Use a guard tick so the bonus survives the next global round pulse. */
+  ch->player_specials->saved.defensive_casting_timer = ONE_ROUND_PERK_TIMER_TICKS;
 }
 
 /**
@@ -25301,8 +25303,8 @@ void activate_spell_shield(struct char_data *ch)
   if (GET_SPELL_SHIELD_COOLDOWN(ch) > current_time)
     return; /* Still on cooldown, don't activate */
 
-  /* Activate the spell shield */
-  GET_SPELL_SHIELD_TIMER(ch) = 1;
+  /* Activate the spell shield. Use a guard tick so it survives the next pulse. */
+  GET_SPELL_SHIELD_TIMER(ch) = ONE_ROUND_PERK_TIMER_TICKS;
 
   /* Set cooldown to 2 minutes from now */
   GET_SPELL_SHIELD_COOLDOWN(ch) = current_time + 120;
