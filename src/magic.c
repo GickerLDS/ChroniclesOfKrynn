@@ -3655,7 +3655,7 @@ int mag_damage(int level, struct char_data *ch, struct char_data *victim, struct
     }
 
     if (affected_by_spell(ch, PSIONIC_ABILITY_PSIONIC_FOCUS))
-      dam *= 0.10;
+      dam = dam * 110 / 100;
   }
 
   // dwarven racial bonus to magic, gnomes to illusion
